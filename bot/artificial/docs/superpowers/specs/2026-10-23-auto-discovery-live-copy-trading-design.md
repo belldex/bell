@@ -1,7 +1,7 @@
 # Automatic On-Chain Wallet Discovery and Live Copy Trading
 
 Date: 2026-10-23
-Status: Self-reviewed; awaiting user review of this written specification.
+Status: Finalized after self-review; implementation not started.
 Scope: Solana/Pump and Robinhood Chain, automatic wallet discovery, wallet-performance accounting, and separately gated live-copy execution.
 
 ## 1. Goal
@@ -76,15 +76,15 @@ Every fact carries chain, block/slot, transaction signature/hash, instruction/lo
 ### B. Automatic wallet discovery and profitability ledger
 
 - Discover candidate wallets as a side effect of validated swaps on supported venues. No manually supplied wallet list is required.
-- For each `(chain, wallet, token, venue)`, maintain an append-only position ledger: buys, partial sells, transfers, fees, current holdings, and cost basis. A transfer, mint, airdrop, unknown venue, or missing prior history marks the position basis incomplete; it cannot be presented as a profitable closed trade.
-- Use weighted-average cost for fungible token inventory and proportionally allocate entry fees to remaining quantity; subtract exit fees/gas from sale proceeds. Convert native fees/tips to USD at the transaction's historical block/slot using a pinned, recorded price source—not today's price. Attribute Solana transaction fees to the fee payer and tips to the paying account; if that attribution is unknown, mark wallet PnL incomplete. Apply the same documented calculation on both chains. External transfers with unknown basis mark that token's PnL incomplete rather than assigning a zero-cost basis.
+- For each `(chain, wallet, token, venue)`, maintain an append-only position ledger: buys, partial sells, transfers, fees, current holdings, and cost basis. On Solana, identify the Pump instruction trader rather than assuming the fee payer is the trader. On EVM, identify the wallet whose net token balance changes in a verified swap rather than assuming `tx.from` is the recipient. A transfer, mint, airdrop, unknown venue, or missing prior history marks the position basis incomplete; it cannot be presented as a profitable closed trade.
+- Use weighted-average cost for fungible token inventory and proportionally allocate entry fees to remaining quantity; subtract exit fees/gas from sale proceeds. Keep primary PnL in the actual on-chain quote asset. Convert native fees/tips to USD only through a validated on-chain historical reference (oracle or block-pinned DEX quote) with source/version recorded—not today's or a vendor's current price. Attribute Solana transaction fees to the fee payer and tips to the paying account; if that attribution is unknown, mark wallet PnL incomplete. Apply the same documented calculation on both chains. External transfers with unknown basis mark that token's PnL incomplete rather than assigning a zero-cost basis.
 - Compute realized net PnL only on closed quantities after protocol fees, network fees, tips, and supported transfer costs. Keep unrealized PnL and mark source separate from realized qualification.
 - For each wallet, publish rolling 30-day and 90-day realized net PnL, number of fully closed positions, distinct tokens, ROI on capital deployed, win/loss distribution, drawdown, median hold, venue coverage, source-copy delay estimate, and concentration of profits by token.
 - Candidate statuses are automatic: `observing → eligible → suspended/excluded`. Unknown or incomplete data cannot promote a wallet. Promotion/demotion is deterministic and logged with reason codes; recovered data can restore eligibility only after the missing range is reconciled.
-- Default initial qualification rule, subject to historical replay before activation: at least 30 fully closed positions across at least 10 distinct tokens; positive net realized PnL on both 30-day and 90-day windows; maximum drawdown no greater than 50%; no single token responsible for more than 50% of realized profit; complete accounting for the qualifying venue history. These thresholds indicate sample/risk filters, not expected profitability.
+- Default initial qualification rule, subject to historical replay before activation: at least 30 fully closed positions across at least 10 distinct tokens; positive net realized PnL on both 30-day and 90-day windows; maximum drawdown no greater than 50%; no single token responsible for more than 50% of the sum of positive token-level realized PnL; complete accounting for the qualifying venue history. Drawdown is measured on a reconstructed equity curve including open holdings marked from on-chain prices, but unrealized PnL never qualifies a wallet as profitable. These thresholds indicate sample/risk filters, not expected profitability.
 - Candidate qualification requires a backfill window covering both score periods. If the provider cannot supply complete history, the candidate remains `observing`/incomplete. Late backfill may update a score, but cannot retroactively create a copy signal.
 - Exclude creator/deployer wallets, bundled/closely coordinated launch wallets, apparent wash/round-trip patterns, source wallets with non-swap inflows that distort cost basis, and traders whose apparent advantage disappears after measured copy latency/fees.
-- External services such as Birdeye, Nansen, and GMGN may be used to cross-check or prioritize backfill, but their scores never promote a wallet on their own.
+- External services such as Birdeye, Nansen, and GMGN may be compared after on-chain scoring to report discrepancies only. They do not discover candidates, prioritize backfill, qualify wallets, or alter the execution score.
 
 ### C. Copy decision and live execution
 
@@ -103,7 +103,7 @@ Every fact carries chain, block/slot, transaction signature/hash, instruction/lo
 - Prefer an external signer/KMS or isolated signing service. The trading process sends typed, policy-checked intents to the signer and cannot export key material.
 - Initial capital cap is $20 equivalent per chain. Only net realized profits increase that chain’s cap, by $20 per increment; unrealized profit does not raise the cap and external top-ups require explicit operator action.
 - Keep at least the greater of 15% of current equity or a dynamic chain fee/close reserve unspent. Maximum single entry is 25% of spendable equity; maximum 3 open positions per chain. Recompute limits as equity compounds. These defaults require user review and must be enforced at both decision and signing boundaries.
-- Recommended initial circuit breaker: stop new entries if daily net realized loss reaches 50% of that chain's current capital cap or if net equity drawdown from the session high reaches 50%. Existing positions remain managed by the separately reviewed exit policy; the reserve is never available to fund entries.
+- Proposed initial circuit breaker, pending user review: stop new entries if daily net realized loss reaches 50% of that chain's current capital cap or if net equity drawdown from the session high reaches 50%. Existing positions remain managed by the separately reviewed exit policy; the reserve is never available to fund entries.
 - Circuit breakers block new buys on stale quotes, decoder mismatch, unresolved data gaps, rate-limit/backfill failure, excessive slippage/impact, low liquidity, high loss/drawdown, signer/nonce/order-journal failure, or unexpected chain/router deployment. Sells/closures must have a separately reviewed emergency policy.
 - Logs and Telegram status disclose mode, health, candidates’ evidence/coverage, signal/fill latency, fee estimates, and transaction state without disclosing private keys, bot tokens, RPC credentials, or full secret-bearing URLs.
 
@@ -115,6 +115,8 @@ This is too broad for one safe live-trading change. Implementation is split into
 2. **Solana live pipeline:** Pump/PumpSwap decoding and quote tests, read-only replay, signer interface, simulation/preflight, durable order journal, status reconciliation, capped canary gates.
 3. **Robinhood live pipeline:** official deployment verification, Uniswap v2/v3 first (v4 only when its deployment/decoder is separately validated), pool indexing, copy signals, quote/simulation, nonce/receipt reconciliation, capped canary gates.
 4. **Shared risk/custody/operations:** external signer, separate wallets, policy enforcement, kill switch, monitoring, rollback, post-trade PnL and compounding caps.
+
+Implementation plans: [master rollout](../plans/2026-10-23-live-copy-master-rollout.md), [wallet intelligence](../plans/2026-10-23-onchain-wallet-intelligence-plan.md), [Solana](../plans/2026-10-23-solana-live-copy-plan.md), [Robinhood Chain](../plans/2026-10-23-robinhood-live-copy-plan.md), and [shared risk/custody](../plans/2026-10-23-shared-live-risk-custody-plan.md).
 
 Activation is one chain at a time even though discovery runs for both. Each chain needs a separate explicit go-live approval after its own read-only coverage and test gates pass. No automatic switching to live based on the presence of keys.
 
@@ -164,3 +166,4 @@ Activation is one chain at a time even though discovery runs for both. Each chai
 - The $20 cap grows only from cumulative net realized PnL and is still limited by current equity/reserve; losses do not leave a stale higher cap active.
 - RPC soft confirmation, on-chain transaction confirmation, and Ethereum L1 finality are distinct states.
 - No private key, wallet funding, live send, or claim of profitability is included in this spec approval.
+- The implementation is split into separate plans so wallet accounting, each chain's live adapter, and shared signer/risk controls can be reviewed independently.

@@ -1,7 +1,7 @@
 # Dual-Chain Paper Bot Hardening and Live-Ready Design
 
 Date: 2026-10-23
-Status: Approved for implementation; live mode must remain disabled.
+Status: Superseded by `2026-10-23-auto-discovery-live-copy-trading-design.md`; do not implement this paper-first design.
 
 ## Goal
 
