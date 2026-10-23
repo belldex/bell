@@ -1,7 +1,7 @@
 # Automatic On-Chain Wallet Discovery and Live Copy Trading
 
-Date: 2026-10-23  
-Status: Concept approved; awaiting user review of this written specification.  
+Date: 2026-10-23
+Status: Self-reviewed; awaiting user review of this written specification.
 Scope: Solana/Pump and Robinhood Chain, automatic wallet discovery, wallet-performance accounting, and separately gated live-copy execution.
 
 ## 1. Goal
@@ -21,6 +21,7 @@ This design is not an authorization to sign or broadcast live transactions. The 
 - Copy signals are acted on at Solana `confirmed` and Robinhood Chain sequencer soft-confirmation after validating the swap evidence. The bot then reconciles its own transaction status; it does not treat RPC acceptance as success.
 - Initial capital cap: USD $20 per chain. Increase a chain’s cap by $20 only after an additional $20 of net realized profit on that chain.
 - The operator accepts high strategy risk, but requires nonzero spendable balance for fees and future operation.
+- Automatic wallet source selection does not mean automatic key creation or funding; each chain needs a separately provisioned execution wallet.
 
 ## 3. Research findings and implications
 
@@ -39,13 +40,14 @@ Research on memecoin copy-trading identifies bundled wallets, coordinated buys, 
 - Pump bonding-curve trades and PumpSwap pool trades use different instruction accounts, quote state, and fee handling. The initial live venue universe is limited to Pump bonding curves and PumpSwap pools whose program/account/instruction layouts are explicitly supported.
 - Pump’s public docs describe v3 bonding-curve and v2 PumpSwap instruction families and dynamic fee behavior. A public issue in the official Pump docs repo reports an unresolved event serialization/IDL mismatch. Treat event decoding as untrusted until instruction data and aggregate token/quote balance deltas agree; unknown or contradictory evidence blocks copying.
 - PumpPortal offers free token creation/migration streams and metered account/token trade streams. Any paid subscription must use one multiplexed socket and an explicit cost budget. It is an optional transport, not a source of PnL truth.
+- The current live-adapter SDK packages are not in production dependencies because their transitive audit status has not been accepted. A live release must either clear the full runtime dependency audit or use an independently reviewed, pinned/vendored decoder and instruction builder with equivalent compatibility tests.
 
 ### 3.3 Robinhood Chain
 
 - Robinhood Chain is EVM-compatible, chain ID `4663`, with ETH as native gas. Robinhood recommends a production RPC provider; the public endpoints are rate-limited. The primary sequencer feed is best-effort and a delayed fallback is documented. Feed protocol/compression changes require an actively maintained client.
-- Uniswap v2/v3/v4 are available on Robinhood Chain. Official Uniswap deployment docs publish chain-specific factory/router/quoter addresses and warn not to reuse addresses from other chains. The initial live venue set is restricted to verified Uniswap deployments; other launchpads/DEXs require their own explicit address, event, and swap-decoder verification.
+- Uniswap v2/v3/v4 are available on Robinhood Chain. Official Uniswap deployment docs publish chain-specific factory/router/quoter addresses and warn not to reuse addresses from other chains. The **initial live venue set is Uniswap v2/v3 only**; v4 and other launchpads/DEXs remain disabled until their exact contracts, event formats, quoting, and execution paths are separately verified.
 - ERC-20 `Transfer` events alone are not swaps. A copied trade requires a recognized pool/router swap event plus token/native balance-flow evidence for the tracked wallet and relevant pool/route.
-- Robinhood confirmation is staged: sequencer soft-confirmation is fast; posting to Ethereum and Ethereum finality are later. Copying after soft confirmation accepts a bounded reorg/order risk; the bot must separately report soft-confirmed, L1-posted, and finalized status.
+- Robinhood confirmation is staged: sequencer soft-confirmation is fast; posting to Ethereum and Ethereum finality are later. Copying after soft confirmation accepts a bounded reorg/order risk; the bot must separately report soft-confirmed, L1-posted, and finalized status. A provider's ordinary JSON-RPC receipt must not be assumed to equal the official sequencer-feed soft-confirmation signal until that relationship is measured and documented.
 
 ## 4. Architecture
 
@@ -75,10 +77,12 @@ Every fact carries chain, block/slot, transaction signature/hash, instruction/lo
 
 - Discover candidate wallets as a side effect of validated swaps on supported venues. No manually supplied wallet list is required.
 - For each `(chain, wallet, token, venue)`, maintain an append-only position ledger: buys, partial sells, transfers, fees, current holdings, and cost basis. A transfer, mint, airdrop, unknown venue, or missing prior history marks the position basis incomplete; it cannot be presented as a profitable closed trade.
+- Use weighted-average cost for fungible token inventory and proportionally allocate entry fees to remaining quantity; subtract exit fees/gas from sale proceeds. Convert native fees/tips to USD at the transaction's historical block/slot using a pinned, recorded price source—not today's price. Attribute Solana transaction fees to the fee payer and tips to the paying account; if that attribution is unknown, mark wallet PnL incomplete. Apply the same documented calculation on both chains. External transfers with unknown basis mark that token's PnL incomplete rather than assigning a zero-cost basis.
 - Compute realized net PnL only on closed quantities after protocol fees, network fees, tips, and supported transfer costs. Keep unrealized PnL and mark source separate from realized qualification.
 - For each wallet, publish rolling 30-day and 90-day realized net PnL, number of fully closed positions, distinct tokens, ROI on capital deployed, win/loss distribution, drawdown, median hold, venue coverage, source-copy delay estimate, and concentration of profits by token.
 - Candidate statuses are automatic: `observing → eligible → suspended/excluded`. Unknown or incomplete data cannot promote a wallet. Promotion/demotion is deterministic and logged with reason codes; recovered data can restore eligibility only after the missing range is reconciled.
 - Default initial qualification rule, subject to historical replay before activation: at least 30 fully closed positions across at least 10 distinct tokens; positive net realized PnL on both 30-day and 90-day windows; maximum drawdown no greater than 50%; no single token responsible for more than 50% of realized profit; complete accounting for the qualifying venue history. These thresholds indicate sample/risk filters, not expected profitability.
+- Candidate qualification requires a backfill window covering both score periods. If the provider cannot supply complete history, the candidate remains `observing`/incomplete. Late backfill may update a score, but cannot retroactively create a copy signal.
 - Exclude creator/deployer wallets, bundled/closely coordinated launch wallets, apparent wash/round-trip patterns, source wallets with non-swap inflows that distort cost basis, and traders whose apparent advantage disappears after measured copy latency/fees.
 - External services such as Birdeye, Nansen, and GMGN may be used to cross-check or prioritize backfill, but their scores never promote a wallet on their own.
 
@@ -91,6 +95,7 @@ Every fact carries chain, block/slot, transaction signature/hash, instruction/lo
 - **Robinhood executor:** verify chain ID 4663, pool/router bytecode/address allowlist, token decimals, quote/minimum output, native gas reserve, and approved venue. Simulate/call before signing; obtain an EVM nonce with a single-writer nonce manager; submit and reconcile transaction receipt/status. Do not interpret a successful `eth_sendRawTransaction` response as a confirmed swap.
 - Keep order journal states `intent → signed → submitted → soft/confirmed → finalized`, plus `failed` and `unknown`. `unknown` is never blindly resubmitted.
 - Live signals use the approved policy: Solana `confirmed`; Robinhood validated sequencer soft-confirmation. Report later L1-posted/finalized status and retain the ability to pause entries if the chain/provider is unhealthy.
+- Compounding cap formula per chain: `baseCap = $20 + $20 × floor(max(0, cumulativeNetRealizedPnLSinceStart) / $20)`. The deployable amount is additionally capped by current net equity after open-position marks and the unspent reserve. Realized losses reduce current equity immediately; unrealized gains never raise `baseCap`. External deposits require explicit operator approval and do not count as profit.
 
 ### D. Signer, capital, risk, and operations
 
@@ -98,6 +103,7 @@ Every fact carries chain, block/slot, transaction signature/hash, instruction/lo
 - Prefer an external signer/KMS or isolated signing service. The trading process sends typed, policy-checked intents to the signer and cannot export key material.
 - Initial capital cap is $20 equivalent per chain. Only net realized profits increase that chain’s cap, by $20 per increment; unrealized profit does not raise the cap and external top-ups require explicit operator action.
 - Keep at least the greater of 15% of current equity or a dynamic chain fee/close reserve unspent. Maximum single entry is 25% of spendable equity; maximum 3 open positions per chain. Recompute limits as equity compounds. These defaults require user review and must be enforced at both decision and signing boundaries.
+- Recommended initial circuit breaker: stop new entries if daily net realized loss reaches 50% of that chain's current capital cap or if net equity drawdown from the session high reaches 50%. Existing positions remain managed by the separately reviewed exit policy; the reserve is never available to fund entries.
 - Circuit breakers block new buys on stale quotes, decoder mismatch, unresolved data gaps, rate-limit/backfill failure, excessive slippage/impact, low liquidity, high loss/drawdown, signer/nonce/order-journal failure, or unexpected chain/router deployment. Sells/closures must have a separately reviewed emergency policy.
 - Logs and Telegram status disclose mode, health, candidates’ evidence/coverage, signal/fill latency, fee estimates, and transaction state without disclosing private keys, bot tokens, RPC credentials, or full secret-bearing URLs.
 
@@ -121,6 +127,7 @@ Activation is one chain at a time even though discovery runs for both. Each chai
 - Transaction adapter tests use fake signers/senders and local/testnet/forked deployment fixtures; tests prove no paper path can reach a signer or sender and no live intent can bypass the policy gate.
 - The candidate selector is evaluated against held-out time periods and reports net copy PnL after observed delay, fees, gas, failed fills, and missed sells. No profit claim is an acceptance condition.
 - Live readiness requires a separate operator checklist: dedicated funded wallet per chain, verified router/program deployments, paid RPC capacity with measured headroom, recovery/rollback, loss limits, and explicit signed approval. Until then, remain read-only/paper.
+- The complete live runtime dependency graph must have no unreviewed critical/high advisory; exceptions require a written security decision, pinned transitive versions, and a re-audit before any signer is enabled.
 
 ## 7. Explicit non-goals
 
@@ -148,3 +155,12 @@ Activation is one chain at a time even though discovery runs for both. Each chai
 - [Birdeye wallet PnL](https://docs.birdeye.so/reference/get-wallet-v2-pnl) and [PnL summary](https://docs.birdeye.so/reference/get-wallet-v2-pnl-summary).
 - [Nansen copytrading workflow](https://docs.nansen.ai/guides/templates/complex-use-cases/use-case-4-copytrading-top-performing-wallets).
 - [Research: Resisting Manipulative Bots in Meme Coin Copy Trading](https://arxiv.org/abs/2601.08641).
+
+## Self-review notes
+
+- The project is intentionally decomposed into wallet-indexing/accounting, Solana execution, Robinhood execution, and shared risk/custody plans; one plan should not simultaneously enable both chains.
+- Initial Robinhood execution scope is consistent across the document: Uniswap v2/v3 first; v4 deferred.
+- PnL eligibility is based on closed realized trades with a fixed weighted-average cost method; external transfers/unknown venues cannot create artificial profit.
+- The $20 cap grows only from cumulative net realized PnL and is still limited by current equity/reserve; losses do not leave a stale higher cap active.
+- RPC soft confirmation, on-chain transaction confirmation, and Ethereum L1 finality are distinct states.
+- No private key, wallet funding, live send, or claim of profitability is included in this spec approval.
