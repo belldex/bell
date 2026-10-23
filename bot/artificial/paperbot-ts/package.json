@@ -1,0 +1,28 @@
+{
+  "name": "solana-smart-bot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Dual-chain paper trading and locked live-ready copy-trading service",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test test/*.test.ts",
+    "start": "node --env-file=.env dist/main.js"
+  },
+  "engines": {
+    "node": ">=22.23.0"
+  },
+  "dependencies": {
+    "@pump-fun/pump-sdk": "4.3.1",
+    "@solana/web3.js": "^1.98.4",
+    "viem": "^2.38.6",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
