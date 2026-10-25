@@ -67,13 +67,16 @@
     },
     "M01-01": {
       "title": "Ambil katalog sumber dan verifier",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "scripts/discovery/fetch-catalog.mjs",
         "scripts/discovery/catalog.mjs",
         "scripts/discovery/preflight-catalog.mjs",
         "scripts/discovery/preflight-catalog.test.mjs",
-        "evidence/runtime/catalog-mainnet-preflight-2026-10-25.json"
+        "evidence/runtime/catalog-mainnet-preflight-2026-10-25.json",
+        "evidence/runtime/chainlink-streams-testnet-catalog-2026-10-25.json",
+        "evidence/runtime/chainlink-credential-verified-2026-10-25.json",
+        "https://docs.robinhood.com/chain/data-streams/ (verifier proxy 0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7)"
       ],
       "blockers": [
         "Public Discovery metadata is complete for nine v11 AAPL/NVDA/TSLA phase streams, but verifier/source tables and authenticated sample-report entitlement are not verified.",
@@ -110,12 +113,15 @@
         "evidence/runtime/rpc-preflight-testnet-agree-2026-10-25.json",
         "evidence/runtime/rpc-discovery-pinax-testnet-2026-10-25.json",
         "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
-        "evidence/runtime/rpc-capability-matrix-2026-10-25.json"
+        "evidence/runtime/rpc-capability-matrix-2026-10-25.json",
+        "scripts/discovery/chainlink-report-probe.mjs",
+        "evidence/runtime/chainlink-credential-verified-2026-10-25.json"
       ],
       "blockers": [
         "Pengukuran 72 jam formal (latency p50/p95/p99, 429/5xx, head lag antar provider, reconnect) baru dimulai 2026-10-25 - keputusan provider aktif paling cepat 2026-10-28",
         "Capability preflight membuktikan pembacaan historical pada head-1000, bukan kedalaman archive historis penuh; archive retention perlu pengukuran lebih dalam sebelum diklaim",
-        "WSS tidak tersedia di Alchemy Robinhood Free (HTTPS only saat pemeriksaan 2026-10-25); Pinax menawarkan wss://ws.pinax.network namun WSS tetap opsional - HTTP polling adalah transport wajib"
+        "WSS tidak tersedia di Alchemy Robinhood Free (HTTPS only saat pemeriksaan 2026-10-25); Pinax menawarkan wss://ws.pinax.network namun WSS tetap opsional - HTTP polling adalah transport wajib",
+        "report fetch butuh subscription aktif (keputusan bisnis) - auth client sudah terbukti live"
       ]
     },
     "M01-04": {
@@ -403,7 +409,7 @@
         "Only the immutable pure computation transport and a test-only pinned-core snapshot hook are implemented. Production BellHook still has SWAP_EXECUTION_READY=false and does not pin/settle a real swap. M05-05 is not DONE and LIVE/factory activation must not advertise trading.",
         "Authenticated active/frozen price and corporate timer snapshots, referenceMode profile admission, source deviation/provenance binding, coherent executable PolicyView and production callback/budget wiring remain unfinished. No numeric reference-mode mapping or live price profile was invented.",
         "Reviewed real source rights/profiles and Robinhood pinned-fork/Cancun compatibility remain unavailable. Synthetic context/core tests do not establish these dependencies or production availability.",
-        "Size-safe production snapshot integration and hot-path gas benchmarking remain required. Current helper/core fixture results are arithmetic/rollback evidence only; no callback gas-target or release gate is claimed. See swap-policy-integration.md for current runtime/initcode sizes and verification results."
+        "Size-safe production snapshot integration and hot-path gas benchmarking remain required. Current helper/core fixture results are arithmetic/rollback evidence only; no callback gas-target or release gate is claimed. See swap-policy-integration.md for current runtime/initcode sizes and latest full-check evidence."
       ]
     },
     "M06-01": {
@@ -508,11 +514,11 @@
         "supabase/migrations/20261025000003_jobs_cron.sql",
         "docs/runbooks/migrations.md",
         "evidence/runtime/supabase-live-verification-2026-10-25.json",
-        "supabase/migrations/20261025000003_jobs_cron.sql",
         "evidence/runtime/pg-cron-keeper-live-2026-10-25.json"
       ],
       "blockers": [
-        "pg_cron schedule wiring menunggu edge functions M08/M09-01 terdeploy; tabel scheduled_jobs + prune sudah ter-install idempoten"
+        "pg_cron schedule wiring menunggu edge functions M08/M09-01 terdeploy; tabel scheduled_jobs + prune sudah ter-install idempoten",
+        "keeper-a 30s schedule is live with no-op runs, but actual indexer/maintenance schedules and their executions are not evidenced; tables, cron install and idempotency remain locally installed"
       ]
     },
     "M08-01": {
@@ -524,9 +530,7 @@
         "supabase/functions/bell-api/index.ts",
         "evidence/runtime/edge-functions-live-2026-10-25.json"
       ],
-      "blockers": [
-        "Deployment supabase/functions/bell-api butuh platform; kontrak router/schema/error sudah teruji offline"
-      ]
+      "blockers": []
     },
     "M08-02": {
       "title": "Implementasikan katalog, policy dan transaction reads",
@@ -550,8 +554,7 @@
         "packages/protocol/test/api-routes.test.mjs",
         "evidence/runtime/edge-functions-live-2026-10-25.json",
         "evidence/runtime/api-quota-live-2026-10-25.json",
-        "supabase/functions/bell-api/index.ts",
-        "packages/protocol/src/api-quote.mjs"
+        "supabase/functions/bell-api/index.ts"
       ],
       "blockers": [
         "Simulasi eksekusi nyata butuh hook/factory (M05/M06) dan fork test berautentikasi"
@@ -565,8 +568,7 @@
         "packages/protocol/test/api-routes.test.mjs",
         "evidence/runtime/edge-functions-live-2026-10-25.json",
         "evidence/runtime/api-quota-live-2026-10-25.json",
-        "supabase/functions/bell-api/index.ts",
-        "packages/protocol/src/api-create.mjs"
+        "supabase/functions/bell-api/index.ts"
       ],
       "blockers": [
         "Prediksi factory CREATE2 butuh M06; admission/intake logic sudah teruji"
@@ -580,9 +582,7 @@
         "packages/domain/test/quota.test.mjs",
         "evidence/runtime/api-quota-live-2026-10-25.json"
       ],
-      "blockers": [
-        "Shared monthly meter lintas instance butuh DB; meter lokal + allowlist sudah teruji"
-      ]
+      "blockers": []
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
@@ -595,7 +595,8 @@
         "evidence/runtime/edge-functions-live-2026-10-25.json"
       ],
       "blockers": [
-        "Supabase function + entitlement RPC live belum tersedia; tick deadline/lease/no-op logic sudah teruji"
+        "Supabase function + entitlement RPC live belum tersedia; tick deadline/lease/no-op logic sudah teruji",
+        "keeper-a edge function, fenced no-op ticks and cron invocation are live; entitled report fetch/validation, signing path and receipt reconciliation with the real provider remain unimplemented/unverified"
       ]
     },
     "M09-02": {
