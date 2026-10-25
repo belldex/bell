@@ -1,0 +1,58 @@
+{
+  "capturedAt": "2026-10-25T13:05:59.693Z",
+  "project": "yaulnphhomzbfkpjeklh",
+  "what": "pg_cron + pg_net scheduled keeper-a-tick every 30s -> edge function -> fenced lease (M07-05, M09-01 automation live)",
+  "setup": {
+    "extensions": {
+      "pg_cron": "1.6.4",
+      "pg_net": "0.20.4",
+      "schema": "extensions"
+    },
+    "cronJob": {
+      "jobid": 1,
+      "name": "keeper-a-tick",
+      "schedule": "30 seconds",
+      "command": "net.http_post to keeper-a with x-cron-secret from private.cron_secrets"
+    },
+    "secretStore": "private.cron_secrets (schema not exposed via PostgREST; supabase_vault insert blocked by platform permission _crypto_aead_det_noncegen even after GRANT)",
+    "secretRotation": "CRON_SECRET regenerated as 64-char hex (old 49-char value lost 1 char through shell transport -> length mismatch env vs db)"
+  },
+  "observedRuns": [
+    {
+      "runid": 3,
+      "started": "13:03:21",
+      "status": "succeeded"
+    },
+    {
+      "runid": 4,
+      "started": "13:03:51",
+      "status": "succeeded"
+    },
+    {
+      "runid": 5,
+      "started": "13:04:21",
+      "status": "succeeded"
+    },
+    {
+      "runid": 6,
+      "started": "13:04:51",
+      "status": "succeeded"
+    },
+    {
+      "runid": 7,
+      "started": "13:05:22",
+      "status": "succeeded"
+    }
+  ],
+  "leaseEvidence": {
+    "maxFence": 10,
+    "totalTicks": 10,
+    "activeLeasesAfter": 1,
+    "note": "release sets expires_at=now() (row persists for audit, immediately reclaimable); fences strictly monotonic across manual + automated ticks"
+  },
+  "manualTick": {
+    "status": "NO_OP",
+    "fence": "9",
+    "durationMs": 110
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "capturedAt": "2026-10-25T12:59:00.156Z",
+  "project": "yaulnphhomzbfkpjeklh",
+  "what": "Live smoke test of deployed Supabase edge functions bell-api + keeper-a (M08-01, M09-01)",
+  "bellApi": {
+    "assetsChain4663": {
+      "http": 200,
+      "envelope": "OK",
+      "observedBlockNumber": 97591077,
+      "observedBlockHash": "0xa079cf190d86cfe51360f52dfac04b1e0a75572f2d232985e86563ece28805ec",
+      "provenanceSource": "Alchemy RH_MAINNET_RPC_PRIMARY eth_getBlockByNumber(latest)"
+    },
+    "quoteMalformed": {
+      "http": 400,
+      "code": "VALIDATION",
+      "message": "amount: exactly one of amountIn/amountOut (exact-input or exact-output)"
+    },
+    "unknownPoolPolicy": {
+      "http": 404,
+      "code": "NOT_FOUND"
+    }
+  },
+  "keeperA": {
+    "noSecret": {
+      "http": 401,
+      "status": "UNAUTHORIZED"
+    },
+    "tick1": {
+      "http": 200,
+      "status": "NO_OP",
+      "fence": "4",
+      "dueWork": 0,
+      "durationMs": 154
+    },
+    "tick2": {
+      "http": 200,
+      "status": "NO_OP",
+      "fence": "5",
+      "dueWork": 0,
+      "durationMs": 120
+    },
+    "leaseSemantics": "acquire_job_lease fenced monotonic (job_lease_history max fence 5), lease released after no-op tick, active leases after test: 0",
+    "bugsFoundAndFixed": [
+      "chains table empty -> FK violation on job_leases insert; seeded chains 4663 (robinhood-mainnet), 46630 (robinhood-sepolia)",
+      "owner token was 32 hex chars (16 bytes) from crypto.randomUUID; SQL requires 32 bytes -> crypto.getRandomValues(Uint8Array(32)) hex-encoded",
+      "bytea via PostgREST needs \\x hex format, not 0x prefix",
+      "release_job_lease returns 204 empty body; rpc helper now tolerates empty body"
+    ]
+  }
+}

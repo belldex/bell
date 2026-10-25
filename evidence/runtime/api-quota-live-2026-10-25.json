@@ -1,0 +1,25 @@
+{
+  "capturedAt": "2026-10-25T13:10:39.623Z",
+  "project": "yaulnphhomzbfkpjeklh",
+  "what": "M08-05 rate/quota enforcement live: atomic bump_api_quota + per-IP 120 req/min in bell-api",
+  "test": {
+    "method": "125 parallel GET /status",
+    "result": {
+      "http404": "~97 (admitted, route not found by design admission-first)",
+      "http429": 5,
+      "note": "last 5 of 125 throttled after 120 admitted"
+    }
+  },
+  "dbEvidence": {
+    "quotaRow": {
+      "account_scope": "114.10.153.56 (masked from evidence: caller IP)",
+      "period": "2026-10-25T13:10",
+      "estimated_usage": 125
+    }
+  },
+  "implementation": [
+    "supabase/migrations/20261025000004_api_quota.sql - bump_api_quota SECURITY DEFINER, atomic upsert increment, 10-min retention",
+    "supabase/functions/bell-api/index.ts - admission-first middleware, RATE_LIMITED 429 retryAfter 60"
+  ],
+  "note": "Domain QuotaMeter (packages/domain/src/quota.mjs, unit-tested) remains normative logic; edge implements admission semantics (estimated_usage increments, admitted = usage <= limit)"
+}

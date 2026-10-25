@@ -394,17 +394,28 @@
     },
     "M06-01": {
       "title": "Bangun atomic create-and-seed factory",
-      "status": "IN_PROGRESS",
+      "status": "BLOCKED_DEPENDENCY",
       "evidence": [
         "contracts/src/libraries/PositionReceipt.sol",
         "contracts/test/unit/hook/PositionReceipt.t.sol",
         "contracts/src/BellHookDeployer.sol",
         "contracts/test/unit/hook/BellHookDeployer.t.sol",
-        "contracts/src/BellHook.sol"
+        "contracts/src/BellHook.sol",
+        "contracts/src/BellPoolFactory.sol",
+        "contracts/test/integration/factory/BellPoolFactory.t.sol",
+        "evidence/factory-atomic-results.md",
+        "contracts/src/BellModeEvaluator.sol",
+        "contracts/src/libraries/CreationCodeChunk.sol",
+        "contracts/src/libraries/AssetPolicy.sol",
+        "contracts/src/registries/SessionRegistry.sol"
       ],
       "blockers": [
-        "BellPoolFactory execution path (CREATE2 hook deployment, request replay/deadline checks, initialize, explicit-liquidity mint, settlement, refund and activation) remains unimplemented.",
-        "Atomic rollback and actual PositionManager recipient/liquidity receipt integration still need end-to-end tests."
+        "No verified protocol USDG token address/decimals or project service-recipient deployment binding is supplied. Constructor inputs are explicit manifest trust boundaries; zero fee token fails closed, not a free pilot. Local fixture tokens do not establish USDG identity.",
+        "PRICE_GUARDED creation explicitly fails closed with PriceGuardUnavailable until the configured-reference initial-price band evaluator is integrated and tested. This product class remains BLOCKED, not silently treated as SESSION_ONLY or marked done.",
+        "Local tests now include real AssetRegistry and SessionRegistry oracleless SESSION_ONLY activation in both currency orders, alongside real pinned PoolManager and PositionManager. Permit2, source/verifier adapters, calendar and safety remain doubles; real Permit2 and entitled production source integration remain BLOCKED. Pinned Permit2 implementation requires Solidity 0.8.17, unlike the single 0.8.26 compilation unit.",
+        "EIP-170 artifact size blocker is locally resolved (BellHook 24390 B, BellHookDeployer 2996 B, immutable evaluator 4770 B; size gates pass). Target-chain deployment/Cancun capability and fork compatibility remain unverified and BLOCKED; local bytecode size compliance is not target-chain deployment evidence.",
+        "Reviewed deployment manifests and calibrated immutable profiles for all required classes/reference modes/assets are not supplied. The candidate factory binds one explicit profile per deployment and does not infer a referenceMode numeric mapping or claim full product/class coverage.",
+        "M05-05 swap enforcement is unimplemented and remains fail-closed even after LIVE activation. TREASURY_ONLY is explicitly rejected pending M06-03; PUBLIC LP add/remove/collect evidence remains M06-02 work."
       ]
     },
     "M06-02": {
@@ -479,11 +490,13 @@
     },
     "M07-05": {
       "title": "Susun migrations, cron dan retention install",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "supabase/migrations/20261025000003_jobs_cron.sql",
         "docs/runbooks/migrations.md",
-        "evidence/runtime/supabase-live-verification-2026-10-25.json"
+        "evidence/runtime/supabase-live-verification-2026-10-25.json",
+        "supabase/migrations/20261025000003_jobs_cron.sql",
+        "evidence/runtime/pg-cron-keeper-live-2026-10-25.json"
       ],
       "blockers": [
         "pg_cron schedule wiring menunggu edge functions M08/M09-01 terdeploy; tabel scheduled_jobs + prune sudah ter-install idempoten"
@@ -491,10 +504,12 @@
     },
     "M08-01": {
       "title": "Bangun API router dan response schemas",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-schema.mjs",
-        "packages/protocol/test/api-schema.test.mjs"
+        "packages/protocol/test/api-schema.test.mjs",
+        "supabase/functions/bell-api/index.ts",
+        "evidence/runtime/edge-functions-live-2026-10-25.json"
       ],
       "blockers": [
         "Deployment supabase/functions/bell-api butuh platform; kontrak router/schema/error sudah teruji offline"
@@ -502,10 +517,13 @@
     },
     "M08-02": {
       "title": "Implementasikan katalog, policy dan transaction reads",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-reads.mjs",
-        "packages/protocol/test/api-routes.test.mjs"
+        "packages/protocol/test/api-routes.test.mjs",
+        "evidence/runtime/edge-functions-live-2026-10-25.json",
+        "evidence/runtime/api-quota-live-2026-10-25.json",
+        "supabase/functions/bell-api/index.ts"
       ],
       "blockers": [
         "Read onchain live perlu M06+M07; kontrak read state machine sudah teruji"
@@ -513,10 +531,14 @@
     },
     "M08-03": {
       "title": "Implementasikan executable quote",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-quote.mjs",
-        "packages/protocol/test/api-routes.test.mjs"
+        "packages/protocol/test/api-routes.test.mjs",
+        "evidence/runtime/edge-functions-live-2026-10-25.json",
+        "evidence/runtime/api-quota-live-2026-10-25.json",
+        "supabase/functions/bell-api/index.ts",
+        "packages/protocol/src/api-quote.mjs"
       ],
       "blockers": [
         "Simulasi eksekusi nyata butuh hook/factory (M05/M06) dan fork test berautentikasi"
@@ -524,10 +546,14 @@
     },
     "M08-04": {
       "title": "Implementasikan create preview dan intake status",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-create.mjs",
-        "packages/protocol/test/api-routes.test.mjs"
+        "packages/protocol/test/api-routes.test.mjs",
+        "evidence/runtime/edge-functions-live-2026-10-25.json",
+        "evidence/runtime/api-quota-live-2026-10-25.json",
+        "supabase/functions/bell-api/index.ts",
+        "packages/protocol/src/api-create.mjs"
       ],
       "blockers": [
         "Prediksi factory CREATE2 butuh M06; admission/intake logic sudah teruji"
@@ -535,10 +561,11 @@
     },
     "M08-05": {
       "title": "Implementasikan rate/quota enforcement dan RPC proxy",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/quota.mjs",
-        "packages/domain/test/quota.test.mjs"
+        "packages/domain/test/quota.test.mjs",
+        "evidence/runtime/api-quota-live-2026-10-25.json"
       ],
       "blockers": [
         "Shared monthly meter lintas instance butuh DB; meter lokal + allowlist sudah teruji"
@@ -546,10 +573,13 @@
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/keeper-tick.mjs",
-        "packages/domain/test/keeper-tick.test.mjs"
+        "packages/domain/test/keeper-tick.test.mjs",
+        "supabase/functions/keeper-a/index.ts",
+        "evidence/runtime/pg-cron-keeper-live-2026-10-25.json",
+        "evidence/runtime/edge-functions-live-2026-10-25.json"
       ],
       "blockers": [
         "Supabase function + entitlement RPC live belum tersedia; tick deadline/lease/no-op logic sudah teruji"

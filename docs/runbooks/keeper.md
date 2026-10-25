@@ -20,3 +20,12 @@
 2. Ack di `incident_records` (private ops), catat hash kode/config/source terdampak.
 3. Guardian boleh pause; tidak boleh sweep dana atau reset budget.
 4. Recovery: bukti dua checkpoint sehat berjarak >= 60 dtk sebelum resume normal.
+
+## Wiring live (2026-10-25, project yaulnphhomzbfkpjeklh)
+- Extensions aktif: pg_cron 1.6.4 + pg_net 0.20.4 (schema `extensions`).
+- Job cron `keeper-a-tick` (jobid 1, `30 seconds`): `net.http_post` ke edge function `keeper-a`, header `x-cron-secret` dibaca dari `private.cron_secrets` (schema tidak terekspos PostgREST).
+- `supabase_vault` DIPAKAI JANGAN untuk insert via role postgres: platform memblokir `_crypto_aead_det_noncegen` meski GRANT EXECUTE sudah diberikan. Secret cron disimpan di `private.cron_secrets`.
+- Secret format: hex-only 64 char. Secret dengan karakter non-hex berisiko terpotong saat lewat shell (pernah 49-char env vs 48-char db).
+- Rotasi secret: (1) `supabase secrets set CRON_SECRET=...`, (2) `UPDATE private.cron_secrets ...`. Keduanya harus sinkron.
+- Edge function keeper-a: acquire lease 25s (fence monotonik) -> no-op jujur tanpa entitlement oracle (M01) -> release (`expires_at = now()`; row persist untuk audit, langsung reclaimable).
+- Bukti live: `evidence/runtime/pg-cron-keeper-live-2026-10-25.json` (5 run cron `succeeded` interval 30s, fence s/d 10).
