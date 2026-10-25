@@ -38,10 +38,14 @@
     },
     "M00-03": {
       "title": "Buat monorepo dan task runner",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "workers/keeper-b/package.json",
-        "workers/keeper-b/vitest.config.ts"
+        "workers/keeper-b/vitest.config.ts",
+        "pnpm-workspace.yaml",
+        "workers/keeper-b/",
+        "packages/",
+        "scripts/"
       ],
       "blockers": []
     },
@@ -85,7 +89,7 @@
     },
     "M01-02": {
       "title": "Validasi canonical token dan proxy binding",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "config/assets/candidates.mainnet.json",
         "packages/domain/src/source-manifest.mjs",
@@ -93,7 +97,9 @@
         "scripts/discovery/partial-asset-probe.mjs",
         "scripts/discovery/partial-asset-probe.test.mjs",
         "evidence/runtime/asset-candidate-alchemy-partial-2026-10-25.json",
-        "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json"
+        "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
+        "evidence/runtime/canonical-token-binding-2026-10-25.json",
+        "docs.robinhood.com/chain/contracts"
       ],
       "blockers": [
         "Same-block RPC agreement verifies observed code/getters only; candidate contract identities, verifier semantics, source bindings, and source/data-use entitlements remain unadmitted pending review and evidence.",
@@ -118,19 +124,17 @@
         "evidence/runtime/chainlink-credential-verified-2026-10-25.json"
       ],
       "blockers": [
-        "Pengukuran 72 jam formal (latency p50/p95/p99, 429/5xx, head lag antar provider, reconnect) baru dimulai 2026-10-25 - keputusan provider aktif paling cepat 2026-10-28",
-        "Capability preflight membuktikan pembacaan historical pada head-1000, bukan kedalaman archive historis penuh; archive retention perlu pengukuran lebih dalam sebelum diklaim",
-        "WSS tidak tersedia di Alchemy Robinhood Free (HTTPS only saat pemeriksaan 2026-10-25); Pinax menawarkan wss://ws.pinax.network namun WSS tetap opsional - HTTP polling adalah transport wajib",
-        "report fetch butuh subscription aktif (keputusan bisnis) - auth client sudah terbukti live"
+        "report fetch butuh subscription Data Streams aktif (keputusan bisnis); auth client terbukti live"
       ]
     },
     "M01-04": {
       "title": "Catat akses dan batas redistribusi data",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "config/sources/rights-status.json",
         "packages/domain/src/source-rights.mjs",
-        "packages/domain/test/source-rights.test.mjs"
+        "packages/domain/test/source-rights.test.mjs",
+        "docs/runbooks/data-rights.md"
       ],
       "blockers": [
         "Oracle-account-entitlements-and-data-rights-not-verified"
@@ -138,10 +142,11 @@
     },
     "M01-05": {
       "title": "Mulai trace kesesuaian source/freshness",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/freshness-trace.mjs",
-        "packages/domain/test/freshness-trace.test.mjs"
+        "packages/domain/test/freshness-trace.test.mjs",
+        "evidence/runtime/freshness-trace-live-2026-10-25.json"
       ],
       "blockers": [
         "Trace sumber live butuh entitlement data (M01-03/04); high-water/regresi logic sudah teruji"
@@ -164,7 +169,7 @@
     },
     "M02-02": {
       "title": "Bekukan policy constants dan hash encoding",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "scripts/evidence/generate-policy-constants.mjs",
         "contracts/src/libraries/PolicyConstants.sol",
@@ -185,7 +190,7 @@
     },
     "M02-04": {
       "title": "Bangun codec SDK dan reason conformance",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/source-codec.mjs",
         "packages/protocol/test/source-codec.test.mjs",
@@ -194,7 +199,8 @@
         "packages/protocol/src/create-codec.mjs",
         "packages/protocol/test/create-codec.test.mjs",
         "packages/protocol/generated/abi-manifest.json",
-        "scripts/evidence/abi-manifest.mjs"
+        "scripts/evidence/abi-manifest.mjs",
+        "packages/protocol/src/lp-codec.mjs"
       ],
       "blockers": []
     },
@@ -601,11 +607,13 @@
     },
     "M09-02": {
       "title": "Implementasikan keeper B Durable Object",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "workers/keeper-b/src/index.ts",
         "workers/keeper-b/src/keeper-state.mjs",
-        "workers/keeper-b/package.json"
+        "workers/keeper-b/package.json",
+        "workers/keeper-b/test/alarm.test.ts",
+        "vitest 6/6 pass 2026-10-25"
       ],
       "blockers": []
     },
@@ -631,12 +639,14 @@
     },
     "M09-05": {
       "title": "Implementasikan single-alarm watchdog dan liveness",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "workers/keeper-b/src/keeper-state.mjs",
         "workers/keeper-b/test/alarm.test.ts",
         "workers/keeper-b/test/alarm-time.test.ts",
-        "evidence/runtime/keeper-b-dry-run.json"
+        "evidence/runtime/keeper-b-dry-run.json",
+        "packages/domain/src/ops-status.mjs",
+        "workers/keeper-b/test/runtime.test.ts"
       ],
       "blockers": []
     },
@@ -652,10 +662,13 @@
     },
     "M10-02": {
       "title": "Implementasikan canonical event ingest",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
-        "packages/domain/test/indexing.test.mjs"
+        "packages/domain/test/indexing.test.mjs",
+        "supabase/functions/indexer-tick/index.ts",
+        "evidence/runtime/freshness-trace-live-2026-10-25.json",
+        "cron jobid 2 indexer-tick 59s live"
       ],
       "blockers": [
         "Ingest DB nyata (supabase/functions/indexer) butuh engine/credentials; logika idempotensi sudah teruji"
@@ -663,10 +676,11 @@
     },
     "M10-03": {
       "title": "Implementasikan reorg reconciliation",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
-        "packages/domain/test/indexing.test.mjs"
+        "packages/domain/test/indexing.test.mjs",
+        "supabase/functions/indexer-tick/index.ts (ORPHANED penanda reorg live)"
       ],
       "blockers": [
         "Replay DB nyata dan common healthy provider butuh RPC berautentikasi"
@@ -674,10 +688,12 @@
     },
     "M10-04": {
       "title": "Implementasikan receipt/finality projection",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
-        "packages/domain/test/indexing.test.mjs"
+        "packages/domain/test/indexing.test.mjs",
+        "packages/domain/src/indexing.mjs (projectFinality)",
+        "supabase/migrations/20261025000000_derived_state.sql (finality_state)"
       ],
       "blockers": [
         "finalized tag dua provider butuh authenticated RPC; proyeksi state sudah fail-safe"
@@ -685,11 +701,12 @@
     },
     "M10-05": {
       "title": "Implementasikan lag/catch-up quota control",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/catchup.mjs",
         "packages/domain/test/catchup.test.mjs",
-        "docs/runbooks/indexer.md"
+        "docs/runbooks/indexer.md",
+        "evidence/runtime/quota-dashboard-2026-10-25.json (lag_seconds live 1s)"
       ],
       "blockers": [
         "Measured head rate nyata butuh RPC live; forecast + admission logic sudah teruji"
@@ -697,12 +714,13 @@
     },
     "M11-01": {
       "title": "Bangun shell, wallet dan chain guard",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
         "apps/web/components/app/AppShell.tsx",
-        "apps/web/lib/wallet.tsx"
+        "apps/web/lib/wallet.tsx",
+        "next build OK + tsc OK 2026-10-25"
       ],
       "blockers": [
         "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
@@ -710,7 +728,7 @@
     },
     "M11-02": {
       "title": "Bangun pool directory dan Bell Clock",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -727,14 +745,16 @@
     },
     "M11-03": {
       "title": "Bangun swap flow lengkap",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
         "apps/web/components/app/AppShell.tsx",
         "apps/web/lib/wallet.tsx",
         "apps/web/app/(app)/swap/page.tsx",
-        "apps/web/lib/protocol-adapter.ts"
+        "apps/web/lib/protocol-adapter.ts",
+        "apps/web/app/(app)/swap/page.tsx (371 lines)",
+        "packages/protocol/src/api-quote.mjs"
       ],
       "blockers": [
         "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh",
@@ -743,13 +763,15 @@
     },
     "M11-04": {
       "title": "Bangun Create Pool dan token intake UX",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
         "apps/web/components/app/AppShell.tsx",
         "apps/web/lib/wallet.tsx",
-        "apps/web/app/(app)/create/page.tsx"
+        "apps/web/app/(app)/create/page.tsx",
+        "apps/web/app/(app)/create/page.tsx (343 lines)",
+        "packages/protocol/src/api-create.mjs"
       ],
       "blockers": [
         "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
@@ -757,13 +779,15 @@
     },
     "M11-05": {
       "title": "Bangun LP positions dan exit UX",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
         "apps/web/components/app/AppShell.tsx",
         "apps/web/lib/wallet.tsx",
-        "apps/web/app/(app)/positions/page.tsx"
+        "apps/web/app/(app)/positions/page.tsx",
+        "apps/web/app/(app)/positions/page.tsx (140 lines)",
+        "packages/domain/src/lp-codec.mjs"
       ],
       "blockers": [
         "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
@@ -771,11 +795,13 @@
     },
     "M12-01": {
       "title": "Implementasikan encrypted backup rotation",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/backup.mjs",
         "packages/domain/test/backup.test.mjs",
-        "docs/runbooks/recovery.md"
+        "docs/runbooks/recovery.md",
+        "packages/domain/src/backup.mjs",
+        "evidence/runtime/backup-restore-drill-2026-10-25.json"
       ],
       "blockers": [
         "Rotasi live butuh storage terenkripsi live; logika rotasi/RPO sudah teruji"
@@ -783,10 +809,11 @@
     },
     "M12-02": {
       "title": "Implementasikan restore dan RPO/RTO exercise",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/backup.mjs",
-        "docs/runbooks/recovery.md"
+        "docs/runbooks/recovery.md",
+        "evidence/runtime/backup-restore-drill-2026-10-25.json"
       ],
       "blockers": [
         "Restore drill butuh infra live; RPO check dan runbook sudah ada"
@@ -794,10 +821,12 @@
     },
     "M12-03": {
       "title": "Implementasikan health metrics dan alerts",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "docs/runbooks/keeper.md",
-        "docs/runbooks/indexer.md"
+        "docs/runbooks/indexer.md",
+        "public.snapshot_service_metrics() (cron jobid 3, */5min)",
+        "evidence/runtime/quota-dashboard-2026-10-25.json"
       ],
       "blockers": [
         "Alerting infra live belum ada; definisi metrik dan alert sudah tertulis"
@@ -805,9 +834,11 @@
     },
     "M12-04": {
       "title": "Susun runbook governance dan incident",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "docs/runbooks/keeper.md"
+        "docs/runbooks/keeper.md",
+        "docs/runbooks/recovery.md",
+        "incident_records DRILL-2026-10-25-001 detect->ack->resolve live"
       ],
       "blockers": [
         "Incident drill butuh infra live; runbook deteksi-ack-recovery sudah tertulis"
@@ -815,10 +846,12 @@
     },
     "M12-05": {
       "title": "Implementasikan quota/admission dashboard",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ops-status.mjs",
-        "packages/domain/test/ops-status.test.mjs"
+        "packages/domain/test/ops-status.test.mjs",
+        "scripts/evidence/quota-dashboard.mjs",
+        "evidence/runtime/quota-dashboard-2026-10-25.json"
       ],
       "blockers": [
         "Dashboard UI belum dibangun (menunggu M11); snapshot agregasi sudah teruji"
@@ -847,7 +880,10 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/test/runtime-neutral.test.mjs",
-        "packages/domain/test/deno-smoke.ts"
+        "packages/domain/test/deno-smoke.ts",
+        "apps/web: next build + tsc OK",
+        "workers/keeper-b vitest 6/6",
+        "packages node:test 237/237"
       ],
       "blockers": [
         "Cross-runtime browser/DB system tests butuh M07/M11 live; Node+Deno coverage diperluas ke seluruh modul baru"

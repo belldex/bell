@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-10-25T15:33:36.523Z",
+  "admission": {
+    "stocks": 6,
+    "pricedQuoteAssets": 8,
+    "indexedPools": 24,
+    "note": "ceiling per brief 20.L; bukan klaim terpenuhi"
+  },
+  "health": {
+    "indexLag": {
+      "latest": 1,
+      "threshold_stop": 300,
+      "threshold_warn": 120
+    },
+    "keeperTicks15m": {
+      "count": 30
+    },
+    "apiQuota": {
+      "total": 0,
+      "limit_per_ip": 120
+    }
+  },
+  "indexerCheckpoints": [
+    {
+      "shard_id": "head",
+      "last_block_number": 97692369,
+      "lag_seconds": 1
+    }
+  ],
+  "activeLeases": [
+    {
+      "chain_id": 4663,
+      "job_kind": "indexer-tick",
+      "fence": 16,
+      "expires_at": "2026-10-25T15:32:47.073517+00:00"
+    },
+    {
+      "chain_id": 4663,
+      "job_kind": "keeper-a-tick",
+      "fence": 306,
+      "expires_at": "2026-10-25T15:33:31.13669+00:00"
+    }
+  ],
+  "topQuotaConsumers": [
+    {
+      "scope": "114.10.1***",
+      "period": "2026-10-25T13:10",
+      "used": 125
+    },
+    {
+      "scope": "114.10.1***",
+      "period": "2026-10-25T13:09",
+      "used": 1
+    }
+  ],
+  "alerts": []
+}

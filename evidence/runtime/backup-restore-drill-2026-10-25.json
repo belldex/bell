@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-10-25T15:31:03.485Z",
+  "what": "M12-01/M12-02 live drill: encrypted DB backup -> object storage -> verified restore",
+  "backup": {
+    "source": "pg_dump -n public (live Supabase, 81,969 bytes SQL)",
+    "encryption": "AES-256-GCM, random 12-byte IV prefixed, key BACKUP_ENCRYPTION_KEY (32-byte hex, .env gitignored)",
+    "ciphertextSha256Prefix": "8551e8737dea23cc",
+    "uploaded": [
+      "bell-archive/backups/2026-10-25T15-30-09-056Z/db-dump.sql.enc (HTTP 200)",
+      "bell-archive/backups/2026-10-25T15-30-09-056Z/db-dump.sql.enc.manifest.json (HTTP 200)"
+    ],
+    "retention": "versioned immutable key, keep-latest-2, verified-export-before-prune"
+  },
+  "restore": {
+    "download": "HTTP 200",
+    "decrypt": "AES-GCM auth tag valid, byte-identical to original dump (true)",
+    "restoreValidation": "entire dump executed via psql in BEGIN..ROLLBACK with ON_ERROR_STOP=1 -> exit 0 (all statements valid against live schema)",
+    "rtoMs": 10332,
+    "rpo": "0 (backup = live snapshot; post-backup writes re-ingestible from chain as source of truth via indexer-tick)"
+  },
+  "keyLifecycle": "BACKUP_ENCRYPTION_KEY generated 2026-10-25, never displayed, never committed"
+}

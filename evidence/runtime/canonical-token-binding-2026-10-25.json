@@ -1,0 +1,52 @@
+{
+  "capturedAt": "2026-10-25T15:35:31.556Z",
+  "what": "M01-02 canonical token binding via eth_call",
+  "caveat": "ticker sama dengan alamat beda BUKAN canonical (docs resmi); binding divalidasi per alamat",
+  "results": [
+    {
+      "expected": "TSLA",
+      "onchainSymbol": "TSLA",
+      "onchainName": "Tesla • Robinhood Token",
+      "decimals": 18,
+      "bytecodeBytes": 283,
+      "match": true,
+      "addr": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"
+    },
+    {
+      "expected": "AAPL",
+      "onchainSymbol": "AAPL",
+      "onchainName": "Apple • Robinhood Token",
+      "decimals": 18,
+      "bytecodeBytes": 283,
+      "match": true,
+      "addr": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
+    },
+    {
+      "expected": "NVDA",
+      "onchainSymbol": "NVDA",
+      "onchainName": "NVIDIA • Robinhood Token",
+      "decimals": 18,
+      "bytecodeBytes": 283,
+      "match": true,
+      "addr": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+    },
+    {
+      "expected": "USDG",
+      "onchainSymbol": "USDG",
+      "onchainName": "Global Dollar",
+      "decimals": 6,
+      "bytecodeBytes": 170,
+      "match": true,
+      "addr": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+    },
+    {
+      "expected": "WETH",
+      "onchainSymbol": "WETH",
+      "onchainName": "WETH",
+      "decimals": 18,
+      "bytecodeBytes": 2202,
+      "match": true,
+      "addr": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+    }
+  ]
+}

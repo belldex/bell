@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-10-25T15:35:59.923Z",
+  "source": "chain_blocks canonical (indexer-tick cron 59s)",
+  "samples": 19,
+  "headBlock": 97694081,
+  "observedAgeSeconds": {
+    "p50": 547,
+    "p95": 1069,
+    "p99": 1069,
+    "max": 1069
+  },
+  "guard": "freshness source live (Data Streams) menunggu entitlement; trace ini mengukur freshness ingest infra, bukan harga"
+}
