@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-10-25T13:20:47.348Z",
+  "project": "yaulnphhomzbfkpjeklh",
+  "what": "M07-04 bounded object archive live roundtrip: private bucket bell-archive, versioned immutable key upload, byte-identical verified download, anon denied",
+  "steps": {
+    "createBucket": {
+      "http": 200,
+      "name": "bell-archive",
+      "public": false,
+      "fileSizeLimit": 10485760
+    },
+    "upload": {
+      "http": 200,
+      "key": "bell-archive/manifests/2026-10-25/0001-verified-export.json"
+    },
+    "verifiedDownload": {
+      "http": 200,
+      "contentIdentical": true
+    }
+  },
+  "mapping": "domain archive.mjs objectKey (versioned immutable) + verified-export-before-prune semantics exercised by live storage"
+}
