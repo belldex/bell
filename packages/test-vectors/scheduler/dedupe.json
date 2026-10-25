@@ -1,0 +1,12 @@
+{
+  "description": "Same feed observation scheduled by two pools is submitted once; urgency takeover is recorded (plan M09-04)",
+  "vector": "dedupe-across-pools",
+  "input": {
+    "now": 1000,
+    "tasks": [
+      { "id": "pool-a", "kind": "FRESHNESS", "assetId": "a1", "feedId": "f1", "deadline": 2000, "observationHash": "obs1" },
+      { "id": "pool-b", "kind": "CORPORATE", "assetId": "a1", "feedId": "f1", "deadline": 1500, "observationHash": "obs1" }
+    ]
+  },
+  "expected": { "dueCount": 1, "deduped": 1, "winningId": "pool-b", "reusedBy": ["pool-a"] }
+}

@@ -18,10 +18,13 @@
     "./reference-policy": "./src/reference-policy.mjs",
     "./report-ledger": "./src/report-ledger.mjs",
     "./price-source": "./src/price-source.mjs",
-    "./source-rights": "./src/source-rights.mjs"
+    "./source-rights": "./src/source-rights.mjs",
+    "./transactions": "./src/transactions.mjs",
+    "./scheduler": "./src/scheduler.mjs",
+    "./indexing": "./src/indexing.mjs"
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/amounts.mjs && node --check src/ports.mjs && node --check src/fee-policy.mjs && node --check src/flow-budget.mjs && node --check src/closure-budget.mjs && node --check src/wide-price.mjs && node --check src/policy-config.mjs && node --check src/seed-budget.mjs && node --check src/source-manifest.mjs && node --check src/freshness.mjs && node --check src/log-planner.mjs && node --check src/reference-policy.mjs && node --check src/report-ledger.mjs && node --check src/price-source.mjs && node --check src/source-rights.mjs"
+    "check": "node --check src/amounts.mjs && node --check src/ports.mjs && node --check src/fee-policy.mjs && node --check src/flow-budget.mjs && node --check src/closure-budget.mjs && node --check src/wide-price.mjs && node --check src/policy-config.mjs && node --check src/seed-budget.mjs && node --check src/source-manifest.mjs && node --check src/freshness.mjs && node --check src/log-planner.mjs && node --check src/reference-policy.mjs && node --check src/report-ledger.mjs && node --check src/price-source.mjs && node --check src/source-rights.mjs && node --check src/transactions.mjs && node --check src/scheduler.mjs && node --check src/indexing.mjs"
   }
 }

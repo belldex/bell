@@ -1,0 +1,14 @@
+{
+  "description": "Scheduler fault vectors: priority order, dedupe, batch cap, byte deferral (plan M09-04, G13/G14/G20)",
+  "vector": "priority-order",
+  "input": {
+    "now": 1000,
+    "tasks": [
+      { "id": "house", "kind": "HOUSEKEEPING", "assetId": "a1", "feedId": "f1", "deadline": 10 },
+      { "id": "fresh", "kind": "FRESHNESS", "assetId": "a1", "feedId": "f1", "deadline": 20 },
+      { "id": "reopen", "kind": "REOPEN", "assetId": "a1", "feedId": "f1", "deadline": 30 },
+      { "id": "pause", "kind": "PAUSE", "assetId": "a1", "feedId": "f1", "deadline": 40 }
+    ]
+  },
+  "expectedOrder": ["pause", "reopen", "fresh", "house"]
+}

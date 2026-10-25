@@ -8,13 +8,14 @@
     "./identity": "./src/identity.mjs",
     "./source-codec": "./src/source-codec.mjs",
     "./swap-codec": "./src/swap-codec.mjs",
-    "./create-codec": "./src/create-codec.mjs"
+    "./create-codec": "./src/create-codec.mjs",
+    "./api-schema": "./src/api-schema.mjs"
   },
   "dependencies": {
     "viem": "2.57.11"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check src/calendar.mjs && node --check src/identity.mjs && node --check src/source-codec.mjs && node --check src/swap-codec.mjs && node --check src/create-codec.mjs"
+    "check": "node --check src/calendar.mjs && node --check src/identity.mjs && node --check src/source-codec.mjs && node --check src/swap-codec.mjs && node --check src/create-codec.mjs && node --check src/api-schema.mjs"
   }
 }

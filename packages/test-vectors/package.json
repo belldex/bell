@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./runtime-compat": "./runtime-compat.json"
+    "./runtime-compat": "./runtime-compat.json",
+    "./scheduler-plan": "./scheduler/plan.json",
+    "./scheduler-dedupe": "./scheduler/dedupe.json"
   }
 }
