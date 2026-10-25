@@ -11,7 +11,10 @@ const OFFICIAL_ENDPOINTS = Object.freeze({
   }),
   pinax: Object.freeze({
     mainnet: 'robinhood.rpc.pinax.network',
-    testnet: null,
+    // Verified 2026-10-25: live probe returned chainId 46630 (same chain as the
+    // Alchemy testnet endpoint) with a continuous head; 'Robinhood Sepolia' is
+    // the Robinhood testnet brand on Pinax.
+    testnet: 'robsepolia.rpc.pinax.network',
   }),
 });
 

@@ -1,0 +1,14 @@
+{
+  "host": "robsepolia.rpc.pinax.network",
+  "recordedAt": "2026-10-25T11:03:28.528Z",
+  "chainIdHex": "0xb626",
+  "chainId": 46630,
+  "head": {
+    "blockNumber": "142410012",
+    "blockHash": "0x940b5ea693c7d7599e6885e965f4dee2fb0323bd198c3acac96e883cf37f1784"
+  },
+  "historicalBlockOk": true,
+  "error": {
+    "code": "RPC_ERROR {\"code\":-32602,\"message\":\"invalid argument 0: hex "
+  }
+}

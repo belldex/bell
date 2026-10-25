@@ -1,0 +1,19 @@
+{
+  "status": "HEADS_AGREE_ONLY",
+  "providersAgree": true,
+  "providerResults": [
+    {
+      "provider": "alchemy",
+      "status": "HEAD_READ_OK",
+      "blockNumber": "97538004"
+    },
+    {
+      "provider": "pinax",
+      "status": "HEAD_READ_OK",
+      "blockNumber": "97538015"
+    }
+  ],
+  "commonBlock": "97538004",
+  "commonBlockHash": "0x511fcde7f3d7e2ab09cea8e3094201792d3a5dfa59c55bab8fb4da35eeb7e4f5",
+  "mainnetBroadcastAllowed": false
+}
