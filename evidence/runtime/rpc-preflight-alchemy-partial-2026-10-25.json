@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "kind": "RPC_PARTIAL_PREFLIGHT",
+  "provider": "alchemy",
+  "status": "PARTIAL",
+  "crossCheck": "PENDING_PINAX",
+  "recordedAt": "2026-10-25T10:55:55.763Z",
+  "mainnet": {
+    "label": "mainnet",
+    "networkType": "mainnet",
+    "expectedChainId": 4663,
+    "endpointHost": "robinhood-mainnet.g.alchemy.com",
+    "checks": {
+      "head": {
+        "ok": true,
+        "blockNumber": "97533852",
+        "blockHash": "0xb8e87213e4bd0aeb2f2ba6730c70524124fd4efa1599d00835f0334eaebce0bf",
+        "latencyMs": 1663
+      },
+      "headLatencySamplesMs": [
+        176,
+        172,
+        194
+      ],
+      "historicalBlock": {
+        "ok": true,
+        "blockNumber": "0x5d03bb4",
+        "hashMatchesHeight": true,
+        "latencyMs": 158
+      },
+      "historicalEthCall": {
+        "ok": true,
+        "returned": "0x",
+        "latencyMs": 176
+      },
+      "getLogsTenBlocks": {
+        "ok": true,
+        "count": 0,
+        "latencyMs": 178
+      },
+      "receiptMethod": {
+        "ok": true
+      }
+    }
+  },
+  "testnet": {
+    "label": "testnet",
+    "networkType": "testnet",
+    "expectedChainId": 46630,
+    "endpointHost": "robinhood-testnet.g.alchemy.com",
+    "checks": {
+      "head": {
+        "ok": true,
+        "blockNumber": "142407056",
+        "blockHash": "0x481d441240fa120a97c0f72f7cce60edbf9931423feb76af5e5db30939017a82",
+        "latencyMs": 662
+      },
+      "headLatencySamplesMs": [
+        275,
+        162,
+        160
+      ],
+      "historicalBlock": {
+        "ok": true,
+        "blockNumber": "0x87cf1a8",
+        "hashMatchesHeight": true,
+        "latencyMs": 139
+      },
+      "historicalEthCall": {
+        "ok": true,
+        "returned": "0x",
+        "latencyMs": 172
+      },
+      "getLogsTenBlocks": {
+        "ok": true,
+        "count": 0,
+        "latencyMs": 174
+      },
+      "receiptMethod": {
+        "ok": true
+      }
+    }
+  }
+}
