@@ -5,7 +5,7 @@
 export class LeaseGuard {
   #chainId;
   #jobKind;
-  #ownerToken;      // 32-byte hex, generated per process
+  #ownerToken;      // 32-byte hex, generated per runtime instance
   #store;           // { acquire, renew, release } talking to the SQL functions
   #fence = null;
   #expiresAt = null;

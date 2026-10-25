@@ -29,10 +29,11 @@
     "./archive": "./src/archive.mjs",
     "./backup": "./src/backup.mjs",
     "./ops-status": "./src/ops-status.mjs",
-    "./freshness-trace": "./src/freshness-trace.mjs"
+    "./freshness-trace": "./src/freshness-trace.mjs",
+    "./ui-state": "./src/ui-state.mjs"
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/amounts.mjs && node --check src/ports.mjs && node --check src/fee-policy.mjs && node --check src/flow-budget.mjs && node --check src/closure-budget.mjs && node --check src/wide-price.mjs && node --check src/policy-config.mjs && node --check src/seed-budget.mjs && node --check src/source-manifest.mjs && node --check src/freshness.mjs && node --check src/log-planner.mjs && node --check src/reference-policy.mjs && node --check src/report-ledger.mjs && node --check src/price-source.mjs && node --check src/source-rights.mjs && node --check src/transactions.mjs && node --check src/scheduler.mjs && node --check src/indexing.mjs && node --check src/jobs.mjs && node --check src/quota.mjs && node --check src/catchup.mjs && node --check src/keeper-tick.mjs && node --check src/archive.mjs && node --check src/backup.mjs && node --check src/ops-status.mjs && node --check src/freshness-trace.mjs"
+    "check": "node --check src/amounts.mjs && node --check src/ports.mjs && node --check src/fee-policy.mjs && node --check src/flow-budget.mjs && node --check src/closure-budget.mjs && node --check src/wide-price.mjs && node --check src/policy-config.mjs && node --check src/seed-budget.mjs && node --check src/source-manifest.mjs && node --check src/freshness.mjs && node --check src/log-planner.mjs && node --check src/reference-policy.mjs && node --check src/report-ledger.mjs && node --check src/price-source.mjs && node --check src/source-rights.mjs && node --check src/transactions.mjs && node --check src/scheduler.mjs && node --check src/indexing.mjs && node --check src/jobs.mjs && node --check src/quota.mjs && node --check src/catchup.mjs && node --check src/keeper-tick.mjs && node --check src/archive.mjs && node --check src/backup.mjs && node --check src/ops-status.mjs && node --check src/freshness-trace.mjs && node --check src/ui-state.mjs"
   }
 }

@@ -18,6 +18,9 @@ import { hashCalendarLeaf } from '../../protocol/src/calendar.mjs';
 import { canonicalTokenId } from '../../protocol/src/identity.mjs';
 import { encodeSourceWires } from '../../protocol/src/source-codec.mjs';
 import { encodeSwapRequest } from '../../protocol/src/swap-codec.mjs';
+import { deriveUiState, UI_STATES } from '../src/ui-state.mjs';
+import { planTick } from '../src/scheduler.mjs';
+import { planIngest, projectFinality } from '../src/indexing.mjs';
 
 // Deno-specific smoke test; Node's automatic test discovery intentionally excludes this file.
 
