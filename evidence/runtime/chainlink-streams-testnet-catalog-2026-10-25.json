@@ -1,0 +1,1506 @@
+{
+  "capturedAt": "2026-10-25T14:46:37.174Z",
+  "endpoint": "api.testnet-dataengine.chain.link/api/v1/discovery",
+  "publicNoAuth": true,
+  "totalFeeds": 187,
+  "equities": 75,
+  "note": "public catalog; entitled/hidden streams visible only with auth; per-market-hours feeds (Regular/Extended/Overnight), schema V11",
+  "feeds": [
+    {
+      "feedId": "0x000b2aed745c338543691e4e9eb4e5f28c018d76dacf46781dd9740be0d5012a",
+      "base": "COIN",
+      "quote": "USD",
+      "name": "Updated-COIN/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003f5986c45a49cff2a92d19147dca956c23ced6f809034fdd5df2eac497038",
+      "base": "AR",
+      "quote": "USD",
+      "name": "AR/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00036bc01bddd458520622f9275d97385d2c47e3ff6fe9ec83ca3c39e62fd0d8",
+      "base": "GMX",
+      "quote": "USD",
+      "name": "GMX/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00030da896de6f10f89c9c209988461ca9ebe89dac2fb979f871f4844db7cda5",
+      "base": "MELANIA",
+      "quote": "USD",
+      "name": "MELANIA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00032062e05ef90877d833e4d44d585cb7bf76c18944fd45e5c098dd5d76f654",
+      "base": "STETH",
+      "quote": "USD",
+      "name": "STETH/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007307baccd13063aa1ff8f27d90403ba0cb09136bda5d514835e65e8cf9d0b",
+      "base": "INF",
+      "quote": "SOL",
+      "name": "INF/SOL-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00032874077216155926e26c159c1c20a572921371d9de605fe9633e48d136f9",
+      "base": "USDT",
+      "quote": "USD",
+      "name": "USDT/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b7a21450b66ae1b3dfcd1177a2482c14b542dcb613087cf8edbf46928b244",
+      "base": "ABBV",
+      "quote": "USD",
+      "name": "Updated-ABBV/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b4642144cb2e2f0e38ba57cc15a6549fd1522da1e7560f3d9e198b23fbe50",
+      "base": "TSLA",
+      "quote": "USD",
+      "name": "Updated-TSLA/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00035122398062eea784e25499ffd83a63ca11358569e5e61cfe64543d1c6881",
+      "base": "FET",
+      "quote": "USD",
+      "name": "FET/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b03c8145f0582fbfb32eb9406141eadf15131bacc1ba8e09cca4098f0d117",
+      "base": "ABBV",
+      "quote": "USD",
+      "name": "Updated-ABBV/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0008a5f1391bcc93839075abbbd2b10eaf17cbc278996e843a2e38352f60a7a5",
+      "base": "EUR",
+      "quote": "USD",
+      "name": "EUR/USD-Streams-ForexPrice",
+      "assetClass": "Forex",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007c492b655f374e13efd40d35401b10eb7163c671ac6c95afb8a1134afa167",
+      "base": "WSTUSR",
+      "quote": "STUSR",
+      "name": "WSTUSR/STUSR-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003b9b77396e9c706cde5b35257da9e47ac7967665057d85590edee322a6b78",
+      "base": "EIGEN",
+      "quote": "USD",
+      "name": "EIGEN/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b5e364fcb5e516193d704b7718d3efc423a706356bce968eb8bd8aa9c10af",
+      "base": "UNH",
+      "quote": "USD",
+      "name": "Updated-UNH/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b3bd1b4e6d2d4e4940bd8ee83ff00ea5f8d2ed434aaa1d81d2861517da8c8",
+      "base": "PLTR",
+      "quote": "USD",
+      "name": "Updated-PLTR/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bb5ccf08dd3ad9e9a0f3c1794acbd0d1039601630c75fe3a0d19bdbe0bacb",
+      "base": "QQQ",
+      "quote": "USD",
+      "name": "Updated-QQQ/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000ba5d0e4901f55fc1eb70de4ead14d94ccf5a1a83ecd4dd27c710bd4ecdc4a",
+      "base": "PLTR",
+      "quote": "USD",
+      "name": "Updated-PLTR/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00076636ad4e088d18e80711a9244529b291278eb786b828b60c97eb4c267678",
+      "base": "cUSDO",
+      "quote": "USDO",
+      "name": "cUSDO/USDO-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0009b4330931b61511f35c23ed3eecfc9addff295176bbdbd14a6fdadb9f348e",
+      "base": "USCC",
+      "quote": "USD",
+      "name": "USCC/NAV-SmartData-NetAssetValue",
+      "assetClass": "NAV",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003e8603d529f6b6c0f48c5bb123df5f91394c5d804019802d74a81139af8fa",
+      "base": "EDEN",
+      "quote": "USD",
+      "name": "EDEN/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x10037918eae3dfc81e2551e2ee883a3a61493fd89635596335e996f888c60a7b",
+      "base": "SOL",
+      "quote": "USD",
+      "name": "SOL/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b08f5e1a8c355e9982cea5707cf7b60be8ef91c42bb8022fd63f1bd71f6ab",
+      "base": "TSLA",
+      "quote": "USD",
+      "name": "Updated-TSLA/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bebb97e1da3eb1a71ac362a99255f944224355ef09067cd54f2fe2d0075f6",
+      "base": "QQQ",
+      "quote": "USD",
+      "name": "Updated-QQQ/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003a1da5a2672b83a70fb2c01b93a89c170f5fab3f2b4f67b95dd89b4a763cf",
+      "base": "BONK",
+      "quote": "USD",
+      "name": "BONK/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bad4f5ae0c04dcff958b9049ed1b9c99017f34a9b5853869d2f7d17fd684a",
+      "base": "MSTR",
+      "quote": "USD",
+      "name": "Updated-MSTR/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00038dfa2d0ae0617193210c1e6a4a9c4c263453ecb8147091a9be5a79b6de7f",
+      "base": "BCH",
+      "quote": "USD",
+      "name": "BCH/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000396c6add917a353b365034437f527e2b43e6db586d13c7eaa0c3f819354a9",
+      "base": "JTO",
+      "quote": "USD",
+      "name": "JTO/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000baf98e4b35d614fbf1acb5f95990245334913ae1e06ba564a3943c1e52b27",
+      "base": "6871.JP",
+      "quote": "JPY",
+      "name": "6871.JP/JPY-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000377ac7b6d9c76bb728aacd39179e3e5884cc64b88e0198593e151f771185c",
+      "base": "ICP",
+      "quote": "USD",
+      "name": "ICP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00034881db604b551ff226aa414ba73dd5b2be0a06834124dafa9bf66871ce89",
+      "base": "SUI",
+      "quote": "USD",
+      "name": "SUI/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003675e8721a97b94f3ed48cbec8c7990ddeea9608e8823e22d5566b6592529",
+      "base": "POL",
+      "quote": "USD",
+      "name": "POL/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b61d6dec069be40efc5f21f0345142a827f42966a07fa4743773383a8dd7b",
+      "base": "AAPL",
+      "quote": "USD",
+      "name": "Updated-AAPL/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000321a87e74af3dd766d1a5d730d777fad4650e4bdbe13313cefd3f8e060e1f",
+      "base": "ASTR",
+      "quote": "USD",
+      "name": "ASTR/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003e78d7e9dc688cdc06620629fcd5ee7427f36f8740bea66588596e7dc085e",
+      "base": "APT",
+      "quote": "USD",
+      "name": "APT/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00036eb08189a0e380561bd30da531993a383ba5ea972410541949e6af3fcf6c",
+      "base": "",
+      "quote": "",
+      "name": "GLV [BTC-USDC]/USD-RefPrice",
+      "assetClass": "",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bb3ea8fcb8a853f5d489d54d64441ad986ecabd1b977d35cd6ed89ee43e08",
+      "base": "ORCL",
+      "quote": "USD",
+      "name": "Updated-ORCL/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bc2e10c1be47af4411dc2719a3195ec8eb554be2c27f9de68b2bf02b8f188",
+      "base": "CRCL",
+      "quote": "USD",
+      "name": "Updated-CRCL/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x000bc10943a8c16f49ccec18764dfbed0c8d367503caf3a6e8af2087e79e81b7",
+      "base": "AAPL",
+      "quote": "USD",
+      "name": "Updated-AAPL/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00035e3ddda6345c3c8ce45639d4449451f1d5828d7a70845e446f04905937cd",
+      "base": "XRP",
+      "quote": "USD",
+      "name": "XRP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007cb51455836f3cd465a4cc67a0b37fe6cce20eac981e691081f580ee7a03a",
+      "base": "eUSX",
+      "quote": "USX",
+      "name": "EUSX/USX-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000706ad7092fdc2310335a82828efe1d4c0220e5bf0fc46100da431f3433743",
+      "base": "WSRUSD",
+      "quote": "RUSD",
+      "name": "WSRUSD/RUSD-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b220be6fe94b85d6d8e8d5d4d212f5b86a644cbcc1dbf28b9e77b6810a5ec",
+      "base": "SPY",
+      "quote": "USD",
+      "name": "Updated-SPY/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003f8e0f04a13e4f469ef7f238f083549c22afbfbac4ef14c8b9c142ab048c9",
+      "base": "DYDX",
+      "quote": "USD",
+      "name": "DYDX/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000ba838691a7e23aa66efe8a097c9392a8fb5a14bf317f384610983dd109ba7",
+      "base": "035420.KR",
+      "quote": "KRW",
+      "name": "035420.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003a808fe2efaa5a870c3ca103cdbb31a8ccbf34a10843b6f968d5a3dc57bf3",
+      "base": "JUP",
+      "quote": "USD",
+      "name": "JUP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00037125729795bb3ec738f3a721213382d928754ec587473670afbfd95fd895",
+      "base": "CHZ",
+      "quote": "USD",
+      "name": "CHZ/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003c94e392a52263b47a98d2898cc099eb88c44d25ea694af5e15b93b9cf380",
+      "base": "INJ",
+      "quote": "USD",
+      "name": "INJ/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003dba2d8553dfd7afe35c2bfe217ef5106d7805e5272c04a08940ddb868117",
+      "base": "SEI",
+      "quote": "USD",
+      "name": "SEI/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000be47860e5ff774802b45f11a48bd6a2f92ac5305337a879f6b6f4902b7b10",
+      "base": "MRK",
+      "quote": "USD",
+      "name": "Updated-MRK/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00092d3b80cd37a9228656cf2d1983f4469b30babcd7a0eaa2cdfaf15f604d9f",
+      "base": "KRWQ",
+      "quote": "KRW",
+      "name": "KRWQ/POR-SmartData-PoR-NetAssetValue",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b6bf432e4226efb3f4c329d418a7bce6a50c52cab7874eb37a8d7ac828f77",
+      "base": "HOOD",
+      "quote": "USD",
+      "name": "Updated-HOOD/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00072a5e66ec8a808fec605ce9f6f5daa7f553e1a9c8889275279e8403d99416",
+      "base": "syrupUSDC",
+      "quote": "USDC",
+      "name": "SYRUPUSDC/USDC-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bde8f56ba936ea2894160dcecf29623dc3c903f9965b03c52a00dc2abca1c",
+      "base": "035720.KR",
+      "quote": "KRW",
+      "name": "035720.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000374afc737ea4e5601a915f135a676f383e44d501d270f0785a814ce263a9c",
+      "base": "VIRTUAL",
+      "quote": "USD",
+      "name": "VIRTUAL/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003d60c5bedb0cac1e875bb2766f1a589766705ae0e5324fa1db8648e3cb538",
+      "base": "WIF",
+      "quote": "USD",
+      "name": "WIF/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bc5368548bbb3f08180703681f161461aef281408338d7c647035b65d6284",
+      "base": "MSTR",
+      "quote": "USD",
+      "name": "Updated-MSTR/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b7ea63d443ccc75036402017a33e3e3c780dcd1713e6c7675c6c6fb744ef0",
+      "base": "HOOD",
+      "quote": "USD",
+      "name": "Updated-HOOD/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b448a652c3cf6cd6d76828c40d4141e9a12b46e0a21385478bc630092c891",
+      "base": "005380.KR",
+      "quote": "KRW",
+      "name": "005380.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00076c5d41ffef947b17af4b22b974b8b65e77da5bc42d18763adf5ab4c51916",
+      "base": "FBTC",
+      "quote": "BTC",
+      "name": "FBTC/BTC-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000baf8f851438c4f58a9ce1677ab87dfb653c0e2c62557636ba2289a4a149a5",
+      "base": "005930.KR",
+      "quote": "KRW",
+      "name": "005930.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b3a32200a6ca3e3c55a7de7ba690c86a071c58167f34778ab0cbf1d37fdc6",
+      "base": "AMZN",
+      "quote": "USD",
+      "name": "Updated-AMZN/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00064c1a6e968ec50ec4f949e8be88f6d3d14b3fe122e5dbd2d0c46fcf7c0738",
+      "base": "BTC-ETH-SOL-USDC-USDT",
+      "quote": "USD",
+      "name": "USDT/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0008b1a733b1daa9311a29b2331e95e62dc6329120aef6c456dd3532b49aea7b",
+      "base": "ABT",
+      "quote": "USD",
+      "name": "ABT/USD-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x1003ca7ce685fe37a98eee896261e0dff7c3d87e94e05af52dba1a9613aeceb8",
+      "base": "BNB",
+      "quote": "USD",
+      "name": "BNB/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003f7c2aa7659d36212f7a7f5b3b6a645b15b0d67009c624998f8623e226a06",
+      "base": " GLV WAVAX",
+      "quote": "USD",
+      "name": "GLV [WAVAX-USDC]/USD-RefPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003a298a69e06f226760e8de637e249d572047ec88ab826aa649f1c328dd941",
+      "base": "ZRO",
+      "quote": "USD",
+      "name": "ZRO/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003fd6124771660b4a03b8ce1715b7ca49acbe5caa5625c78d7ee8a1c5ae056",
+      "base": "KNC",
+      "quote": "USD",
+      "name": "KNC/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b084fdb7383d198d9a793f5bda0d526a479722c3dd60166e0ebde078962d8",
+      "base": "QQQ",
+      "quote": "USD",
+      "name": "Updated-QQQ/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0002ad9c450be4c9b40626e8f0e1b7a9ababfa7189e6bea2e1d2424a850ef39a",
+      "base": "EZETH",
+      "quote": "ETH",
+      "name": "EZETH/ETH-Datalink-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b111e9145a77cf4479a8c1d6767932d877fdaf63295b98042609ef01d43cc",
+      "base": "HOOD",
+      "quote": "USD",
+      "name": "Updated-HOOD/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x000b032fac53b731d7e9e8b0767151984f97ef151900a78be2fcc9713455ffc5",
+      "base": "MSFT",
+      "quote": "USD",
+      "name": "Updated-MSFT/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782",
+      "base": "ETH",
+      "quote": "USD",
+      "name": "ETH/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00035e67fb5b7fda97e43ba4f97983426c16b82a421a43b9f6cc0d136a33ae7d",
+      "base": "APE",
+      "quote": "USD",
+      "name": "APE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000390435939e60e4bc171cadadaf24129a64bb251442cf8b3b5a629320d98a2",
+      "base": "MOODENG",
+      "quote": "USD",
+      "name": "MOODENG/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bb3991a740a35cafa5cdb2f9bd9372d575ec137a99543e943caa4a6b9c4bc",
+      "base": "META",
+      "quote": "USD",
+      "name": "Updated-META/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003369f7f042ba1e180cc8d260ba60c53cf786fdc80ec60077a7d4527110859",
+      "base": "ANIME",
+      "quote": "USD",
+      "name": "ANIME/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000376d1131aa62825b57c71399fdbf6d8deb26dd0866f25d441c5d53aeabb15",
+      "base": "BERA",
+      "quote": "USD",
+      "name": "BERA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00075344d9a0ca6bc5b326e12be9d9758624b3bb72986f57962546f82a7d4a9e",
+      "base": "LBTC",
+      "quote": "BTC",
+      "name": "LBTC/BTC-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000361a5174a8f49f69804340bca283dfeb7275f3923a86a2fbdf6680354d7f9",
+      "base": "GALA",
+      "quote": "USD",
+      "name": "GALA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b2729962eb0c3e39d0778279004b52cdce9bc511a79c31c7f14516b2e3652",
+      "base": "TSLA",
+      "quote": "USD",
+      "name": "Updated-TSLA/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b2bba8b7a8f22b2175e95997312389df8b77c841a982814eba028817efa15",
+      "base": "COIN",
+      "quote": "USD",
+      "name": "Updated-COIN/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003d49a4b1e436ed619ca0c195fbeb4476deb753bcd0afe4aebc89eaa045b57",
+      "base": "",
+      "quote": "",
+      "name": "GLV [WETH-USDC]/USD-RefPrice",
+      "assetClass": "",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00031f882aba7dd7a82da178cb7cb465d5a5bec9936f28f4eb959fba205aa373",
+      "base": "FARTCOIN",
+      "quote": "USD",
+      "name": "FARTCOIN/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00037dfe3b67b7552cf15e10ee5fb0c0ab6d658b20eb558effe2ae4579d24c58",
+      "base": "XLM",
+      "quote": "USD",
+      "name": "XLM/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0009d00855b75b94e0f97b0d052e387231e1842a8569f5056e172c3e461b509d",
+      "base": "tKalshi",
+      "quote": "USD",
+      "name": "tKalshi/NAV-SmartData-AUM-NetAssetValue",
+      "assetClass": "Tokenized Asset",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00090e1fa3d279bc974f1b838571620f27b6b52b4f702735333bfe8a740aa0b4",
+      "base": "USDu",
+      "quote": "USD",
+      "name": "USDU-NAV/USD-SmartData-NetAssetValue",
+      "assetClass": "NAV",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000be8074d6c74c18ce03c639d39fb32fdd9d315d0481bea605f630060dc6d98",
+      "base": "BMNR",
+      "quote": "USD",
+      "name": "Updated-BMNR/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0009da48d54b0ac936961a8f27c926a033185d6e44f6dbd5928abda819f9a6d8",
+      "base": "tSpaceX",
+      "quote": "USD",
+      "name": "tSpaceX/NAV-SmartData-AUM-NetAssetValue",
+      "assetClass": "Tokenized Asset",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b5cc35465de354cc3938ce05f13b4dce33e477b57e876b10d8e6aa938b2aa",
+      "base": "ORCL",
+      "quote": "USD",
+      "name": "Updated-ORCL/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00036fe43f87884450b4c7e093cd5ed99cac6640d8c2000e6afc02c8838d0265",
+      "base": "LINK",
+      "quote": "USD",
+      "name": "LINK/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b9286033bf3e5c4d13f90805a60498616862ee3bbef5bfecf2f93e1819c2a",
+      "base": "BMNR",
+      "quote": "USD",
+      "name": "Updated-BMNR/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x000305a183fedd7f783d99ac138950cff229149703d2a256d61227ad1e5e66ea",
+      "base": "OP",
+      "quote": "USD",
+      "name": "OP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000be1d56b190af6de92c002ce3c274f8e69f4767f93650a64bbf8accc45a482",
+      "base": "COIN",
+      "quote": "USD",
+      "name": "Updated-COIN/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000387d7c042a9d5c97c15354b531bd01bf6d3a351e190f2394403cf2f79bde9",
+      "base": "BNB",
+      "quote": "USD",
+      "name": "BNB/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b27e8a01b15d1151b1dec1f33702d3d4966414b9b750bbb261f75a2c29bb4",
+      "base": "GOOGL",
+      "quote": "USD",
+      "name": "Updated-GOOGL/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003c8541bf8517752d466f6efc2057b54a9e189e45f08fa37a4db73452df4d4",
+      "base": "PEPE",
+      "quote": "USD",
+      "name": "PEPE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007ecbb9e7bdced649180d9a14ddc5264e476449d9b839d1780f022e0f9a480",
+      "base": "deJAAA",
+      "quote": "USD",
+      "name": "deJAAA-USD-Streams-SmartData-ExchangeRate",
+      "assetClass": "Tokenized CLO",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003c8e550d2fc5304993010112de9b69798297e4cc11990ee6250e464daf760",
+      "base": "AAVE",
+      "quote": "USD",
+      "name": "AAVE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00039bacff0b43ef3cb1bffa0cb2bcc403b2349a3db41ecd656dfaff9dfa7d4b",
+      "base": "TAO",
+      "quote": "USD",
+      "name": "TAO/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00091a5a07048a91723e998a7bace2333b2d1d3a18ef53b9696383c4855f2c60",
+      "base": "deJTRSY",
+      "quote": "",
+      "name": "deJTRSY-NAV-SmartData-NetAssetValue",
+      "assetClass": "Tokenized Asset",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000753105fca547ff1206e38f12f4d8a22186bd210410ace1e3bc6ac59b297a4",
+      "base": "USX",
+      "quote": "USD",
+      "name": "USX/USD-Streams-RedemptionRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000325ad17b53e588bc2c9ced633c5444f7291f3d5b071a7ad0ebec8891659e2",
+      "base": "ATOM",
+      "quote": "USD",
+      "name": "ATOM/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007ef551ba08375f54e0d15934f4052935f0eb3a97fb3d2287d95ffa9f9f817",
+      "base": "PRIME",
+      "quote": "wYLDS",
+      "name": "PRIMEWLYDS/WLYDS-Streams-ExchangeRate",
+      "assetClass": "Tokenized Debt",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b48add0681d9ca52424c1eccda5bcbf038eb85db3e67fe9b2931f1c2fd97a",
+      "base": "MSFT",
+      "quote": "USD",
+      "name": "Updated-MSFT/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x1003425d2cbdff57d15d3bd8facbc4d0fe37aacc38e40556dd2dd933a09c00d0",
+      "base": "XRP",
+      "quote": "USD",
+      "name": "XRP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000be85318002f5de2c0f2a5852c3f6b4e9aa3ca440f95295baec5d3ee925174",
+      "base": "ORCL",
+      "quote": "USD",
+      "name": "Updated-ORCL/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003dc85e8b01946bf9dfd8b0db860129181eb6105a8c8981d9f28e00b6f60d9",
+      "base": "USDC",
+      "quote": "USD",
+      "name": "USDC/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000363af8867422027b90720ad9f20e7fee02e5e8f1686a115da29e020e45de2",
+      "base": "FIL",
+      "quote": "USD",
+      "name": "FIL/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b15fa88b2c2f8cc73331f0e8d1dd6288961a4f17b5be9314b7f15ae19b941",
+      "base": "CRCL",
+      "quote": "USD",
+      "name": "Updated-CRCL/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bdef42cf3cdf77829384c87df17f680312a6a015942c6cdd481f13b23c331",
+      "base": "MRK",
+      "quote": "USD",
+      "name": "Updated-MRK/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003d338ea2ac3be9e026033b1aa601673c37bab5e13851c59966f9f820754d6",
+      "base": "SOL",
+      "quote": "USD",
+      "name": "SOL/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003ea9ea9bd6d9ce89165185d25d02e606aece110d3897516f4d629433944ff",
+      "base": "RENDER",
+      "quote": "USD",
+      "name": "RENDER/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003167e54377caae2bdbefbefabb839916ed73e70468519a3b6a26b9c54e2f2",
+      "base": "GRAM",
+      "quote": "USD",
+      "name": "Updated-GRAM/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00036173437e26ef8dc971c19070b2c05f6575bdb484c2c45e06e99fec290bd2",
+      "base": "TIA",
+      "quote": "USD",
+      "name": "TIA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00073fedd1ad10d94eea0cf887ee3d248a54150b2a2d2afa432396cbda2e6b27",
+      "base": "kmHYPE",
+      "quote": "HYPE",
+      "name": "kmHYPE/HYPE-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bbd1cd7d27e9371ac1dea295e39579d5140374212ad89972094e16bdf3744",
+      "base": "285A.JP",
+      "quote": "JPY",
+      "name": "285A.JP/JPY-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x1003e13d34b92a64ccedf46a3c5dfd6ba33725cb90a125e60542921af90d97fc",
+      "base": "USDC",
+      "quote": "USD",
+      "name": "USDC/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003e5dfcb9c8fda20285c89ab6b289926b17dde5e704a1c228a8b468913f56a",
+      "base": "SHIB",
+      "quote": "USD",
+      "name": "SHIB/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b0daa3a35d1c7ebf68a29981b74e04051ba6515c5b60204b213e533009dc4",
+      "base": "SPY",
+      "quote": "USD",
+      "name": "Updated-SPY/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b9c9578d4dbbdccac4685fa2b06f14e7e9e06d46fe4aae8747a078c341acc",
+      "base": "UNH",
+      "quote": "USD",
+      "name": "Updated-UNH/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000795e26e737df47bfee91ee10b0091391bceffbbc253944197fc08f21d1ad1",
+      "base": "wstETH",
+      "quote": "stETH",
+      "name": "wstETH/stETH-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b601b0f5488f0ca3435e9dc17acdee0d42d4795d18a08d821b0702eb207ab",
+      "base": "CRCL",
+      "quote": "USD",
+      "name": "Updated-CRCL/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b38cecfeca43e3b5cce05b2e25abebad62de192727e5d6fae47846ff90e0a",
+      "base": "GOOGL",
+      "quote": "USD",
+      "name": "Updated-GOOGL/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b6c19a4d69c64726a10cc1e77ebc0610388558114c082c9bc9062d90cc0dd",
+      "base": "GOOGL",
+      "quote": "USD",
+      "name": "Updated-GOOGL/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x00099520bfc41c566e5caa7bc7f9d8a9245d741aa1e1d0f2ad696baf076aced6",
+      "base": "TOPENAI",
+      "quote": "",
+      "name": "TOPENAI-NAV-SmartData-PoR-NetAssetValue",
+      "assetClass": "Tokenized Asset",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x10034c079a40f979e76d5528fb4ebc3735c7e9054f3486378be208a768649f5f",
+      "base": "ETH",
+      "quote": "USD",
+      "name": "ETH/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x10038f8d2a7b7798993a2aaf19c7a52180d6ec6f682daa2c6479686d662818b2",
+      "base": "DOGE",
+      "quote": "USD",
+      "name": "DOGE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bbff670f86a195158a347cb04693bdc7d475ab43c645448c8835268b1d099",
+      "base": "AAPL",
+      "quote": "USD",
+      "name": "Updated-AAPL/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000babb1ff3f6920ebb15da8439f03f3b8669cc3f4c6b69594289e2e6af485ef",
+      "base": "AMZN",
+      "quote": "USD",
+      "name": "Updated-AMZN/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b2b3024c02879858074f2da0be8b7b168f2435501e7d265ae1ef9d620c6db",
+      "base": "BMNR",
+      "quote": "USD",
+      "name": "Updated-BMNR/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003fe9eb0a08dff18e93ec3ffb6406fa503243fb199bee68ec7fd0c877e85e5",
+      "base": "WAVES",
+      "quote": "USD",
+      "name": "WAVES/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bf689e4aa5c006c89c207eb155ae99184e433a518753eb745cc552391a743",
+      "base": "NVDA",
+      "quote": "USD",
+      "name": "Updated-NVDA/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003c90f4d0e133914a02466e44f3392560c86248925ce651ef8e44f1ec2ef4a",
+      "base": "ARB",
+      "quote": "USD",
+      "name": "ARB/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bcb933a568a59cdfea204659cf432a8aa2818e26c6fb50e861cb5bf474650",
+      "base": "MRK",
+      "quote": "USD",
+      "name": "Updated-MRK/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003f87966ed1dfa11732a80d5d3633152f93be3b579c49501279bad15102232",
+      "base": "DOT",
+      "quote": "USD",
+      "name": "DOT/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b2ef7c9d5369d8494a1000933a6815fd79dead95acb8ae07ce4f10127f926",
+      "base": "META",
+      "quote": "USD",
+      "name": "Updated-META/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bddbb9750b520906073bd4d836c62f3bb45ed0d9c6d79948703d0c85fc120",
+      "base": "ORCL",
+      "quote": "USD",
+      "name": "Updated-ORCL/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x0003230f515fb7fe01b637b65451fe02293ea94f0880b647ec35b087496ab3ad",
+      "base": "TRUMP",
+      "quote": "USD",
+      "name": "TRUMP/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000380fd590efd03f8368469267e187c251231fcf42bdf4c6ff08f56fe495b71",
+      "base": "ONDO",
+      "quote": "USD",
+      "name": "ONDO/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003ae19a5ecabaa16492790f460098851cd7bfa2378464da2fdee842d9944a3",
+      "base": "TRX",
+      "quote": "USD",
+      "name": "TRX/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b3e52384c77710feff2e0310147614c47eb8af4fe70474247cc1a54319029",
+      "base": "UNH",
+      "quote": "USD",
+      "name": "Updated-UNH/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003d63e80ff4a4db92a06e3490ba30ab01dadcc082bb39735ee9c37802078dc",
+      "base": "STX",
+      "quote": "USD",
+      "name": "STX/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b6cc3a1a1dbbd6f8e887bf474dd00d65571be6664a7c99f22ac99ad856ae8",
+      "base": "ABBV",
+      "quote": "USD",
+      "name": "Updated-ABBV/USD-Streams-RegularHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003a7879e3f3ea836b0ad1a17ac8f361b5c1f8cc24cc1bffd90164a6bf1d7b4",
+      "base": "BNB",
+      "quote": "USDT",
+      "name": "BNB/USDT-Datalink-Binance-TopOfBook",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00037da06d56d083fe599397a4769a042d63aa73dc4ef57709d31e9971a5b439",
+      "base": "BTC",
+      "quote": "USD",
+      "name": "BTC/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bd230c2a3f549aad1288360bcd329e8b5591ae205b31595d009bb122dcf8e",
+      "base": "MSFT",
+      "quote": "USD",
+      "name": "Updated-MSFT/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b9f6f0cfd548ac766a8322f7d1c65ffa2295135b5bd4fe495cf48249f293d",
+      "base": "9984.JP",
+      "quote": "JPY",
+      "name": "9984.JP/JPY-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b042e894fb4404a2384854e4d678a85f943f2b83b25b2d837a426218dfcb3",
+      "base": "AMZN",
+      "quote": "USD",
+      "name": "Updated-AMZN/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003a12fe943707199e0ae5a5ee1383166ba539d3262fbefc6815c50dc87990d",
+      "base": "USDe",
+      "quote": "USD",
+      "name": "Updated-USDE/USD-Streams-DexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000934ff15f405af6d77d02b1bcedcd926a42b614c0fbac005620f555df6d162",
+      "base": "DEJAAA",
+      "quote": "",
+      "name": "DEJAAA-NAV-SmartData-NetAssetValue",
+      "assetClass": "Tokenized Asset",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000700f43b35146a1cb16373ac6225ad597535e928e6dc4d179c3b4225f2b6d3",
+      "base": "PRIMEwLYDS",
+      "quote": "wLYDS",
+      "name": "TEST-PRIMEWLYDS/WLYDS-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bc285d5193fd4372490ecd0ad83c837d11533c852da21e120cb0c49bff8bb",
+      "base": "PLTR",
+      "quote": "USD",
+      "name": "Updated-PLTR/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007e8026f5ea5d2b55d592612c975c41a5d345d5812c4e175ff3ce254867cf7",
+      "base": "sUSDu ",
+      "quote": "USDU",
+      "name": "sUSDu/USDU-Streams-ExchangeRate",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b486fc1b09c1dceb3d47d5d044381b57823a18c7ffaeaadef1ad0c1c4ed40",
+      "base": "MSTR",
+      "quote": "USD",
+      "name": "Updated-MSTR/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00032057c7f224d0266b4311a81cdc3e38145e36442713350d3300fb12e85c99",
+      "base": "DOGE",
+      "quote": "USD",
+      "name": "DOGE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bc81331a7cf741ad26fb3c6db92f5f47040e1116f3683fc81c88ffcff67c6",
+      "base": "CRCL",
+      "quote": "USD",
+      "name": "Updated-CRCL/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b1d444945231e44dd47736c6abe288b10cb1b53941c7c68012fbdd2b1755c",
+      "base": "NVDA",
+      "quote": "USD",
+      "name": "Updated-NVDA/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003c915006ba88731510bb995c190e80b5c9cfe8cd8a19aaf00e0ed61d0b3bc",
+      "base": "LTC",
+      "quote": "USD",
+      "name": "LTC/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000bcfc1f3f6ce9f3554ed8e26719f5158d860f27ea558b99bb90082dd2020a4",
+      "base": "PLTR",
+      "quote": "USD",
+      "name": "Updated-PLTR/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x000bf6e47a8297f1c3f0a10e67fe982be37c808ce22c123e06b08ef6794f2e83",
+      "base": "HOOD",
+      "quote": "USD",
+      "name": "Updated-HOOD/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b5197360a398d3fa52c25c43f2be1f782bba7f576373548b8414117e3a039",
+      "base": "SPY",
+      "quote": "USD",
+      "name": "Updated-SPY/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b33d66c6d65acddb94c1a0c9125a12902bb57bb803d4da927fc0601833c12",
+      "base": "QQQ",
+      "quote": "USD",
+      "name": "Updated-QQQ/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x00032b6edb94b883e95693b8fdae3deeedab2c48dd699cafa43a8d134d344813",
+      "base": "UNI",
+      "quote": "USD",
+      "name": "UNI/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b82a9bb7a1094d935c25c44ebd6315dbba7da5e58a1f29ba9129740a09cec",
+      "base": "BMNR",
+      "quote": "USD",
+      "name": "Updated-BMNR/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003735a076086936550bd316b18e5e27fc4f280ee5b6530ce68f5aad404c796",
+      "base": "AVAX",
+      "quote": "USD",
+      "name": "AVAX/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000be1809fd91c6f605643215a64b368fd6db9c11af33757ccccb3bb0131452a",
+      "base": "373220.KR",
+      "quote": "KRW",
+      "name": "373220.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00034a0de1bbc09c34f56cb087c3691c7bd283a3f0aab9e441eb1a26bf278a49",
+      "base": "ASTER",
+      "quote": "USD",
+      "name": "ASTER/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00033470b2bb164a50c5a6fda879ddabcf8fb91fcfca048ac81a6bd5763fa1e3",
+      "base": "ADA",
+      "quote": "USD",
+      "name": "ADA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003d64b0bdb0046a65e4ebb0a9866215044634524673c65bff4096a197fcff5",
+      "base": "NEAR",
+      "quote": "USD",
+      "name": "NEAR/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b450eb755e3d6fbc217d0e5e85999fac31f3335d84b3fd0b4c0bdfdba0ab5",
+      "base": "SPY",
+      "quote": "USD",
+      "name": "Updated-SPY/USD-Streams-ExtendedHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "dead"
+    },
+    {
+      "feedId": "0x0003082efd3fb60ac36251d02b7efdc3b1ec5fbe2f93a67f193b51a2e241ae0b",
+      "base": "ORDI",
+      "quote": "USD",
+      "name": "ORDI/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00038e9b9fe9e6aa44fb43de71d4a24944dcbc0c851b17ef9e96f9055b5a94d0",
+      "base": "PENGU",
+      "quote": "USD",
+      "name": "PENGU/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b7a8a64a03bee8c58f32e24bef3cad363bd33cf5384f485d301f0c8cf2fc0",
+      "base": "META",
+      "quote": "USD",
+      "name": "Updated-META/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b99b86a91cc317e2db8370f1466844dd9460cb51c3bf12fcc8d19d53d97bb",
+      "base": "NVDA",
+      "quote": "USD",
+      "name": "Updated-NVDA/USD-Streams-OvernightHoursEquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003fdc62b679158fbd230eb6ef1f350368f5de603af0ea4369bd3940d5312a3",
+      "base": "LDO",
+      "quote": "USD",
+      "name": "LDO/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00035f53bfb39e634d28d9c00cdc6ae53bdd9ad83a692341c2495aa5a24cc245",
+      "base": "WLD",
+      "quote": "USD",
+      "name": "WLD/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007b7abe10028a83f94cdf627bc3247996095cafd214fd7b2a0ac2460b64f34",
+      "base": "deJTRSY",
+      "quote": "USD",
+      "name": "deJTRSY-USD-Streams-SmartData-ExchangeRate",
+      "assetClass": "Tokenized Treasuries",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x1003b2bf9a6f2469262ee0c777a54290175b9eb7c9d219c97419fdeb93fb613e",
+      "base": "LINK",
+      "quote": "USD",
+      "name": "LINK/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x00034f89517f4dc9594face46c10c8bbfcf4733822908ebdbc6395d7b3a2e5c8",
+      "base": "PAXG",
+      "quote": "USD",
+      "name": "PAXG/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003f04d6244b2fb6bb366b405f63d87fa3550647acbc1c93f9c116df4645772",
+      "base": "ENA",
+      "quote": "USD",
+      "name": "ENA/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0007915f4b61ecea1525e03e1e5aef5afe9ca4049d2be3fa87b53b3599b2af91",
+      "base": "TRUCPI.US",
+      "quote": "USD",
+      "name": "TRUCPI/USD-Streams-ExchangeRate",
+      "assetClass": "Macroeconomics",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b42d7e420b25568652b04b4f95dfde74bd33444b22f0163e80064d9b665c4",
+      "base": "000660.KR",
+      "quote": "KRW",
+      "name": "000660.KR/KRW-Streams-EquityPrice",
+      "assetClass": "Equities",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003eaad4d4b02c2fb606e29db22c5fbbc1ac29ae6e79c4703b924e473abf9fb",
+      "base": "PENDLE",
+      "quote": "USD",
+      "name": "PENDLE/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x100334677029ff1f94a1b91fe60349e7478275ef38cc988103612e83ae4656ed",
+      "base": "BTC",
+      "quote": "USD",
+      "name": "BTC/USD-Streams-CexPrice",
+      "assetClass": "",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x0003e35ba9242261003459b8c97933127cdff9b727b9492ab017de9484fdc6b9",
+      "base": "FLOKI",
+      "quote": "USD",
+      "name": "FLOKI/USD-Streams-CexPrice",
+      "assetClass": "Crypto",
+      "status": "testing"
+    },
+    {
+      "feedId": "0x000b62925feea3a68e02358e2cdd0edade49ba782cd7ba605bd834cdfd5e04af",
+      "base": "GOOGL",
+      "quote": "USD",
+      "name": "Updated-GOOGL/USD-Streams-RegularHoursEquityPrice-2",
+      "assetClass": "Equities",
+      "status": "testing"
+    }
+  ]
+}

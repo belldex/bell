@@ -34,13 +34,14 @@
     "build": "node scripts/tooling/check-build-prerequisites.mjs && pnpm compile:solidity && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm build:worker && pnpm exec forge build --root contracts"
   },
   "devDependencies": {
+    "@chainlink/data-streams-sdk": "2.0.0",
     "solc": "0.8.26"
   },
   "optionalDependencies": {
-    "@foundry-rs/forge-win32-amd64": "1.7.1",
+    "@foundry-rs/forge-darwin-amd64": "1.7.1",
+    "@foundry-rs/forge-darwin-arm64": "1.7.1",
     "@foundry-rs/forge-linux-amd64": "1.7.1",
     "@foundry-rs/forge-linux-arm64": "1.7.1",
-    "@foundry-rs/forge-darwin-amd64": "1.7.1",
-    "@foundry-rs/forge-darwin-arm64": "1.7.1"
+    "@foundry-rs/forge-win32-amd64": "1.7.1"
   }
 }
