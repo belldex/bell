@@ -398,6 +398,8 @@
       "evidence": [
         "contracts/src/libraries/PositionReceipt.sol",
         "contracts/test/unit/hook/PositionReceipt.t.sol",
+        "contracts/src/BellHookDeployer.sol",
+        "contracts/test/unit/hook/BellHookDeployer.t.sol",
         "contracts/src/BellHook.sol"
       ],
       "blockers": [
@@ -425,9 +427,14 @@
     },
     "M06-05": {
       "title": "Bangun address mining dan deploy manifest tooling",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/BellHookDeployer.sol",
+        "contracts/test/unit/hook/BellHookDeployer.t.sol"
+      ],
+      "blockers": [
+        "CREATE2 init-code hash and exact hook-address prediction/deployment are implemented, but the salt-mining CLI and signed/reviewed deployment manifest are not implemented."
+      ]
     },
     "M07-01": {
       "title": "Buat schema derived state",
