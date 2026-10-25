@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-10-25T14:10:48.622Z",
+  "what": "Archive endpoint selection: probed 4 HTTPS endpoints for archive capability",
+  "findings": {
+    "archiveState": "ALL 4 endpoints full-archive: eth_getBalance at block 999,999 returns state on mainnet+testnet both vendors",
+    "alchemyGetLogs": "Free tier live-confirms 10-block range cap (-32600: 'up to a 10 block range')",
+    "pinaxGetLogs": "500-block range returns logs OK on mainnet and testnet"
+  },
+  "decision": "RH_MAINNET_ARCHIVE_RPC = Pinax mainnet; RH_TESTNET_ARCHIVE_RPC = Pinax testnet (different vendor from Alchemy primary = separate quota; wide getLogs ranges for backfill)",
+  "slosPreserved": "no public fallback; P95<=1s revalidated on snapshot probes; revalidation trigger on plan change"
+}

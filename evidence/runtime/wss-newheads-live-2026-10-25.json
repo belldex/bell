@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-10-25T14:06:30.923Z",
+  "what": "WSS endpoints derived from tested HTTPS (same Alchemy API key), filled into .env, live-tested with eth_subscribe newHeads",
+  "mainnet": {
+    "network": "robinhood-mainnet (4663)",
+    "open": true,
+    "subscribed": true,
+    "observedHead": 97642321,
+    "observedHash": "0x224145013f2e5faa91a4c3e5ee0d9854081df4002601a7cec51fb7eab48611d9"
+  },
+  "testnet": {
+    "network": "robinhood-testnet (46630)",
+    "open": true,
+    "subscribed": true,
+    "observedHead": 142481739,
+    "observedHash": "0xbc658c180c537224a7770a3c632b4014152fee3377dfb1dff6fb09cbbdea98e0"
+  },
+  "note": "block numbers consistent with 2026-10-25 preflight (mainnet 97.5M scale, testnet 142.4M scale); raw wscat-equivalent probe via Node native WebSocket, temp script deleted"
+}
