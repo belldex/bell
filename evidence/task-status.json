@@ -317,7 +317,7 @@
         "contracts/test/unit/hook/BellHookLifecycle.t.sol"
       ],
       "blockers": [
-        "DEPLOYED->SEEDING->LIVE activation remains blocked on M05-04/M06 seed principal and post-settlement activatePool; BellHook stays DEPLOYED/SETUP and fail-closed.",
+        "BellHook now exposes factory-only beginSeed/callback/activatePool transitions, but production lifecycle is not proven until the M06 factory atomically settles and verifies PUBLIC NFT or TREASURY receipt before calling activatePool.",
         "Ordinary fault->RECOVERING joint recovery now lives in M05-03 (60s + every-stock advance + old-validity continuity); M05-02 lifecycle/health priority itself is implemented, but activation (M05-04/M06) and swap execution (M05-05) remain blocked.",
         "SessionRegistry is a fourth constructor dependency because normative PoolConfig has no sessionRegistry field; stateHash now binds its address and consumed dependency observations, but M06 deploy-manifest binding is still required.",
         "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false keeps getPolicy/refreshState/beforeSwap fail-closed with SETUP, so even a synthetic LIVE/healthy policy cannot advertise canSwap=true.",
@@ -336,7 +336,7 @@
         "contracts/src/registries/CalendarRegistry.sol"
       ],
       "blockers": [
-        "Activation is not reachable: LIVE requires the normative non-zero bellStart marker from M05-04/M06 seed principal + activatePool; synthetic LIVE tests set bellStart via vm.store with an explicit caveat and are not a production activation path.",
+        "Closure/recovery logic is unit-tested with synthetic LIVE state; the M06 factory has not yet proven atomic seed settlement/receipt verification and production activatePool ordering.",
         "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false makes recovery release the latch/candidate but return HALTED + SETUP with canSwap=false until the execution path exists.",
         "No stateful invariant suite exists under contracts/test/invariant/closure/; overlap, flicker, root rollover, 96h anchor expiry and corporate/multiplier faults are covered only by unit vectors.",
         "Recovery requires a persisted fault checkpoint via refreshState; a transient view-only fault is not stored and cannot start recovery (matches the reference FSM, keeper must checkpoint).",
