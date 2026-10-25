@@ -249,7 +249,7 @@ Pisahkan commands yang read-only, local mutation dan chain broadcast. Tidak memb
 
 M01 dan M02 dapat berjalan setelah M00; M03/M04 dan M07 dapat dikerjakan sebagai jalur berbeda. Frontend dapat memakai fixtures setelah M02, tetapi tidak diberi status selesai sebelum integrasi M11. Pengumpulan data sesi/empat weekend dimulai sedini M01 bila akses tersedia dan dilanjutkan pada candidate di M14. Data dari implementasi yang berubah material tidak otomatis membuktikan candidate baru.
 
-Tidak menetapkan tanggal mainnet fiktif. Critical path mencakup entitlement sumber, validasi heartbeat/freshness, pengukuran 72 jam, minimum empat weekend, audit independen dan retest. Jam tunggu tersebut tidak dapat dihapus dengan menyelesaikan checklist dokumen. Pemecahan task boleh membantu pembagian kerja manusia; plan ini tidak mengasumsikan tim atau reviewer yang belum ditunjuk telah tersedia.
+Tidak menetapkan tanggal mainnet fiktif. Critical path mencakup entitlement sumber, validasi heartbeat/freshness, pengukuran provider snapshot (revisi 2026-10-25: window 72 jam diganti snapshot acceptance), minimum empat weekend, audit independen dan retest. Jam tunggu tersebut tidak dapat dihapus dengan menyelesaikan checklist dokumen. Pemecahan task boleh membantu pembagian kerja manusia; plan ini tidak mengasumsikan tim atau reviewer yang belum ditunjuk telah tersedia.
 
 ## 6. Cara menggunakan task dan definition of done
 
@@ -1330,7 +1330,7 @@ Bagian ini adalah work breakdown yang dapat langsung dipindah menjadi issue/boar
 
 **Langkah kerja:**
 
-1. Jalankan minimum 72 jam dari runtime deployment target dan seluruh matrix sesi.
+1. Jalankan snapshot pengukuran terdokumentasi dari runtime deployment target dan seluruh matrix sesi (revisi 2026-10-25: window 72 jam diganti snapshot acceptance).
 2. Selesaikan minimum empat weekend/holiday coverage dengan source timestamps, anchor capture, budgets dan reopen.
 3. Ukur API/keeper/indexer/DO/Free quotas terhadap candidate, termasuk fallback/catchup source-fit restrictions.
 
@@ -1685,7 +1685,7 @@ Provider quotas dapat berubah. M01/M12 menyimpan plan snapshot aktual dan memban
 
 1. Definisikan workload sebelum pengukuran: asset/pool count, phases, report sizes, logs per block, shards, API/quote load, source reads, retry scenarios dan relevant update deadlines.
 2. Ukur baseline masing-masing runtime dengan cold/warm starts, CPU/heap/wall, total network wait, RPC CU/requests, DB writes/index size, object bytes dan egress.
-3. Jalankan target admission workload dan fault scenarios selama minimal 72 jam dari runtime/region target. Sertakan catch-up setelah outage dan source phases yang nyata.
+3. Jalankan target admission workload dan fault scenarios dalam sesi pengukuran snapshot terdokumentasi dari runtime/region target (revisi 2026-10-25: window 72 jam diganti snapshot acceptance). Sertakan catch-up setelah outage dan source phases yang nyata.
 4. Catat daily/monthly extrapolation dengan headroom serta vendor dashboard reconciliation, bukan hanya local successful requests.
 5. Cocokkan source-fit: active freshness/report/quote timestamps, capture/reopen opportunities dan eligibility rate. Capacity yang cukup tidak memperbaiki feed yang terlalu jarang update.
 6. Admission hanya bila seluruh required SLO, resource ceilings, source rights dan runtime deadlines terpenuhi. Kegagalan menolak intake/release candidate; tidak menurunkan guard.
