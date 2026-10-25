@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+  "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6",
+  "buildCommit": null,
+  "artifactHashes": {},
+  "sourceManifestHash": null,
+  "gates": {
+    "E01": "NOT_RUN",
+    "E02": "NOT_RUN",
+    "E03": "NOT_RUN",
+    "E04": "NOT_RUN",
+    "E05": "NOT_RUN",
+    "E06": "NOT_RUN"
+  },
+  "mainnetFundingAllowed": false,
+  "publicReleaseAllowed": false,
+  "reviewedBy": []
+}

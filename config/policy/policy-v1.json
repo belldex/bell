@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "policyVersion": "BELL_POLICY_V1",
+  "sessions": {
+    "phase": {
+      "UNKNOWN": 0,
+      "PRE": 1,
+      "REGULAR": 2,
+      "POST": 3,
+      "OVERNIGHT": 4,
+      "CLOSED": 5
+    },
+    "capabilityMaskValidBits": [1, 2, 3, 4]
+  },
+  "fees": {
+    "session": {
+      "REGULAR": 500,
+      "PRE": 3000,
+      "POST": 3000,
+      "OVERNIGHT": 5000,
+      "CLOSED": 10000
+    },
+    "bell": {
+      "durationSeconds": 300,
+      "rounding": "CEIL",
+      "maximumFeeUnits": 10000
+    },
+    "corporate": {
+      "minimumFeeUnits": 10000,
+      "durationSeconds": 1800
+    },
+    "repricingMinimumFeeUnits": 10000
+  },
+  "freshness": {
+    "reportAgeSeconds": 120,
+    "inputAgeSeconds": {
+      "REGULAR": 60,
+      "PRE": 120,
+      "POST": 120,
+      "OVERNIGHT": 300
+    },
+    "directPriceMaximumAgeSeconds": 600,
+    "quoteMaximumAgeSeconds": 600,
+    "officialHeartbeatCapSeconds": 600,
+    "maximumCrossSourceDeviationBps": 100
+  },
+  "closure": {
+    "captureWindowSeconds": 300,
+    "maximumAnchorAgeSeconds": 345600,
+    "reopenMinimumSeparationSeconds": 60
+  },
+  "price": {
+    "activeBandBps": 200,
+    "frozenStockBandBps": 500,
+    "normalizedPriceDecimals": 18,
+    "maximumTokenDecimals": 18,
+    "comparisonWidthBits": 768
+  },
+  "budgets": {
+    "rollingWindowSeconds": 300,
+    "sessionFactors": {
+      "REGULAR": { "tradeNumerator": 1, "tradeDenominator": 1, "windowNumerator": 1, "windowDenominator": 1 },
+      "PRE": { "tradeNumerator": 1, "tradeDenominator": 2, "windowNumerator": 1, "windowDenominator": 2 },
+      "POST": { "tradeNumerator": 1, "tradeDenominator": 2, "windowNumerator": 1, "windowDenominator": 2 },
+      "OVERNIGHT": { "tradeNumerator": 1, "tradeDenominator": 4, "windowNumerator": 1, "windowDenominator": 4 },
+      "CLOSED": { "tradeNumerator": 1, "tradeDenominator": 5, "windowNumerator": 1, "windowDenominator": 4 }
+    },
+    "guardMinimum": { "tradeNumerator": 1, "tradeDenominator": 5, "windowNumerator": 1, "windowDenominator": 4 },
+    "maximumClosureTimesTradeCap": 2,
+    "maximumClosureSeedFractionDenominator": 10
+  },
+  "bounds": {
+    "maxStocksPerPool": 2,
+    "maxReports": 6,
+    "maxReportBytes": 16384,
+    "maxBatchBytes": 98304,
+    "maxSourceWiresPerAsset": 5,
+    "maxSourceReturnBytes": 4096,
+    "maxStaticCallGas": 100000,
+    "maxMerkleProofNodes": 32,
+    "governanceMinimumDelaySeconds": 172800,
+    "calendarPublicationLeadSeconds": 604800,
+    "governanceOperationExpirySeconds": 604800
+  },
+  "transactions": {
+    "quoteExpiryMaximumSeconds": 30,
+    "deadlineMaximumSeconds": 120
+  }
+}

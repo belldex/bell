@@ -1,0 +1,46 @@
+{
+  "name": "bell-protocol-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check": "pnpm test:unit && pnpm test:reference && pnpm policy:check && pnpm compile:solidity && pnpm test:contracts && pnpm abi:check && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm test:runtime:portable && pnpm test:workers && pnpm build:worker && pnpm evidence:check && pnpm check:secrets",
+    "test:unit": "node --test packages/domain/test/*.test.mjs packages/protocol/test/*.test.mjs scripts/discovery/*.test.mjs scripts/evidence/*.test.mjs scripts/tooling/*.test.mjs",
+    "test:domain": "pnpm --filter @bell/domain test",
+    "test:contracts": "pnpm exec forge test --root contracts",
+    "test:invariants": "node scripts/tooling/blocked-command.mjs test:invariants EVM-invariant-suite-not-implemented",
+    "test:reference": "python tests/reference/engineering_checks.py && python tests/reference/infra_spec_checks.py",
+    "test:runtime": "pnpm test:runtime:portable && pnpm test:workers",
+    "test:runtime:portable": "node --test packages/domain/test/runtime-neutral.test.mjs && deno test packages/domain/test/deno-smoke.ts",
+    "test:workers": "pnpm --filter @bell/keeper-b test",
+    "build:worker": "pnpm --filter @bell/keeper-b exec wrangler deploy --dry-run --outdir dist",
+    "test:e2e": "node scripts/tooling/blocked-command.mjs test:e2e browser-E2E-suite-not-implemented",
+    "preflight:rpc": "node scripts/discovery/collect-rpc-preflight.mjs mainnet",
+    "preflight:sources": "node scripts/tooling/blocked-command.mjs preflight:sources entitled-source-access-and-verifier-checks-not-available",
+    "sources:catalog": "node scripts/discovery/preflight-catalog.mjs mainnet",
+    "test:fork": "node scripts/tooling/blocked-command.mjs test:fork pinned-authenticated-fork-prerequisites-not-available",
+    "release:dry-run": "node scripts/tooling/blocked-command.mjs release:dry-run deployable-contracts-and-release-manifest-not-implemented",
+    "compile:solidity": "node scripts/tooling/compile-solidity.mjs",
+    "abi:generate": "node scripts/evidence/generate-abi.mjs",
+    "abi:check": "node scripts/evidence/check-abi.mjs",
+    "policy:generate": "node scripts/evidence/generate-policy-constants.mjs",
+    "policy:check": "node scripts/evidence/check-policy-constants.mjs",
+    "evidence:check": "node scripts/evidence/check-release.mjs",
+    "check:secrets": "node scripts/tooling/check-secret-boundary.mjs",
+    "tasks:sync": "node scripts/evidence/sync-task-status.mjs",
+    "build": "node scripts/tooling/check-build-prerequisites.mjs && pnpm compile:solidity && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm build:worker && pnpm exec forge build --root contracts"
+  },
+  "devDependencies": {
+    "solc": "0.8.26"
+  },
+  "optionalDependencies": {
+    "@foundry-rs/forge-win32-amd64": "1.7.1",
+    "@foundry-rs/forge-linux-amd64": "1.7.1",
+    "@foundry-rs/forge-linux-arm64": "1.7.1",
+    "@foundry-rs/forge-darwin-amd64": "1.7.1",
+    "@foundry-rs/forge-darwin-arm64": "1.7.1"
+  }
+}

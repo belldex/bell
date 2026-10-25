@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "status": "BLOCKED_CHAIN_COMPATIBILITY_EVIDENCE",
+  "observed": {
+    "node": "24.15.0",
+    "pnpm": "9.15.0",
+    "python": "3.11.9",
+    "deno": "2.9.5",
+    "wrangler": "4.112.0",
+    "foundry": "1.7.1",
+    "forgeBinary": "@foundry-rs/forge-win32-amd64@1.7.1",
+    "solcBuild": "0.8.26+commit.8a97fa7a"
+  },
+  "lockedWorkspacePackages": {
+    "@cloudflare/vitest-plugin": "1.4.7",
+    "vitest": "5.0.5",
+    "@foundry-rs/forge-win32-amd64": "1.7.1 (optional platform binary)",
+    "wrangler": "4.112.0",
+    "viem": "2.57.11",
+    "solc-js": "0.8.26"
+  },
+  "requiredButUnresolved": {
+    "supabaseCli": null,
+    "positionManagerExecutionOnPinnedV4": null,
+    "robinhoodChainEvmCompatibility": null,
+    "fullCompatibilityAudit": null
+  },
+  "dependencyCandidates": {
+    "solidityCompiler": "0.8.26",
+    "v4Core": {
+      "commit": "59d3ecf53afa9264a16bba0e38f4c5d2231f80bc",
+      "vendoredSource": "contracts/lib/v4-core/src",
+      "baseHookCompileSpike": "PASS_FOUNDRY_1.7.1_SOLC_0.8.26_CANCUN"
+    },
+    "uniswapV4Periphery": {
+      "commit": "0c4e5bd3715ce2e72fd7609a1e2835f8300baf7b",
+      "coreSubmoduleCommit": "59d3ecf53afa9264a16bba0e38f4c5d2231f80bc",
+      "vendoredSource": "contracts/lib/v4-periphery/src",
+      "positionManagerCompileSpike": "PASS_FOUNDRY_1.7.1_SOLC_0.8.26_CANCUN",
+      "executionAndLPTests": "NOT_RUN"
+    },
+    "openzeppelinHooks": {
+      "commit": "acbd604c409a827f7f98c9517236da860c4fca1a",
+      "coreSubmoduleCommit": "d153b048868a60c2403a3ef5b2301bb247884d46",
+      "vendoredSource": "contracts/lib/openzeppelin-uniswap-hooks/src/base/BaseHook.sol",
+      "locallyCompiledAgainstSelectedCore": true,
+      "sourceCompilationStatus": "PASS"
+    },
+    "permit2": { "commit": "cc56ad0f3439c502c246fc5cfcc3db92bb8b7219", "vendoredSource": "contracts/lib/permit2/src" },
+    "openzeppelinContracts": { "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3", "vendoredSource": "contracts/lib/openzeppelin-contracts/contracts" },
+    "solmate": { "commit": "4b47a19038b798b4a33d9749d25e570443520647", "vendoredSource": "contracts/lib/solmate/src" },
+    "compatibilityVerified": false,
+    "note": "Pinned v4-core, BaseHook, v4-periphery PositionManager, Permit2, OpenZeppelin Contracts, and Solmate sources compile together. Local PoolManager transient-storage unlock and BaseHook compile spikes pass. PositionManager execution/LP flows, Robinhood Chain EVM compatibility, and audit remain unverified; do not mark M00-02 complete."
+  },
+  "note": "Observed versions are not a compatibility lock. Do not claim reproducible Solidity/runtime builds until exact compatible versions and dependency commits are selected and verified."
+}

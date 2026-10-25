@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "command": "pnpm --filter @bell/keeper-b exec wrangler deploy --dry-run --outdir dist",
+  "wranglerVersion": "4.112.0",
+  "result": "PASS_BUNDLE_ONLY",
+  "reportedTotalUpload": "58.73 KiB",
+  "reportedGzipUpload": "13.62 KiB",
+  "bindings": [
+    { "name": "KEEPER_DO", "resource": "Durable Object SQLite class" }
+  ],
+  "broadcast": false,
+  "limitations": [
+    "This is a bundler smoke test, not a hosted Worker deployment or a complete Keeper B source/RPC scheduler acceptance test."
+  ]
+}

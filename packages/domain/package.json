@@ -1,0 +1,27 @@
+{
+  "name": "@bell/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./amounts": "./src/amounts.mjs",
+    "./ports": "./src/ports.mjs",
+    "./fee-policy": "./src/fee-policy.mjs",
+    "./flow-budget": "./src/flow-budget.mjs",
+    "./closure-budget": "./src/closure-budget.mjs",
+    "./wide-price": "./src/wide-price.mjs",
+    "./policy-config": "./src/policy-config.mjs",
+    "./seed-budget": "./src/seed-budget.mjs",
+    "./source-manifest": "./src/source-manifest.mjs",
+    "./freshness": "./src/freshness.mjs",
+    "./log-planner": "./src/log-planner.mjs",
+    "./reference-policy": "./src/reference-policy.mjs",
+    "./report-ledger": "./src/report-ledger.mjs",
+    "./price-source": "./src/price-source.mjs",
+    "./source-rights": "./src/source-rights.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/amounts.mjs && node --check src/ports.mjs && node --check src/fee-policy.mjs && node --check src/flow-budget.mjs && node --check src/closure-budget.mjs && node --check src/wide-price.mjs && node --check src/policy-config.mjs && node --check src/seed-budget.mjs && node --check src/source-manifest.mjs && node --check src/freshness.mjs && node --check src/log-planner.mjs && node --check src/reference-policy.mjs && node --check src/report-ledger.mjs && node --check src/price-source.mjs && node --check src/source-rights.mjs"
+  }
+}

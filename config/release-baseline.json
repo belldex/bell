@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "project": "BELL",
+  "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+  "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6",
+  "scope": {
+    "milestones": 16,
+    "tasks": 80,
+    "gaps": 40,
+    "decisions": 12,
+    "releaseGates": 6
+  },
+  "traceability": {
+    "gapIds": ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08", "G09", "G10", "G11", "G12", "G13", "G14", "G15", "G16", "G17", "G18", "G19", "G20", "G21", "G22", "G23", "G24", "G25", "G26", "G27", "G28", "G29", "G30", "G31", "G32", "G33", "G34", "G35", "G36", "G37", "G38", "G39", "G40"],
+    "decisionIds": ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11", "D12"],
+    "releaseGateIds": ["E01", "E02", "E03", "E04", "E05", "E06"]
+  },
+  "chains": {
+    "mainnet": 4663,
+    "testnet": 46630
+  },
+  "mandate": {
+    "productScope": "full-product",
+    "platformTokenDependency": false,
+    "publicManagedVault": false,
+    "publicRpcFallback": false,
+    "paidHostingOrAutomaticUpgrade": false,
+    "publicLpPositions": "noncustodial-via-position-manager",
+    "canaryMayNarrowImplementationScope": false
+  },
+  "costClassification": {
+    "hostingDatabaseStorageCronRpcCi": "free-tier-only-no-overage",
+    "oracleEntitlementTestingGasDeploymentAudit": "separate-mainnet-requirement",
+    "developerAutomaticallyFundsProject": false
+  },
+  "roleBoundaries": {
+    "productReleaseOwner": "project-owner",
+    "capitalProvider": "explicit-owner-approval-required",
+    "independentReviewer": "must-not-be-author-of-reviewed-change",
+    "keeperSignersAreGovernanceOrTreasury": false,
+    "tokenLaunchWalletRequired": false
+  },
+  "gates": {
+    "E01": "NOT_RUN",
+    "E02": "NOT_RUN",
+    "E03": "NOT_RUN",
+    "E04": "NOT_RUN",
+    "E05": "NOT_RUN",
+    "E06": "NOT_RUN"
+  },
+  "evidenceByGate": {},
+  "mainnetFundingAllowed": false,
+  "publicReleaseAllowed": false
+}

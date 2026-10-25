@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "status": "BLOCKED_ACCESS",
+  "discoveryMetadataPublic": true,
+  "reportEntitlementA": "NOT_VERIFIED",
+  "reportEntitlementB": "NOT_VERIFIED",
+  "internalProcessing": "NOT_VERIFIED",
+  "encryptedBackup": "NOT_VERIFIED",
+  "rawReportRedistribution": "NOT_ALLOWED",
+  "derivedCustomerProduct": "NOT_VERIFIED"
+}

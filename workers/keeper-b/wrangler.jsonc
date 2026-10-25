@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bell-keeper-b",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-24",
+  "durable_objects": {
+    "bindings": [
+      { "name": "KEEPER_DO", "class_name": "KeeperState" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["KeeperState"] }
+  ]
+}

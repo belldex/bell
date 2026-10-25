@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+.env
+.env.*
+!.env.example
+out/
+cache/
+artifacts/
+coverage/
+.next/
+dist/
+__pycache__/
+*.py[cod]
+wrangler.local.json
+supabase/.temp/
+evidence/raw/
+evidence/private/

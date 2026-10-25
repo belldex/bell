@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "status": "DOCUMENTED_CANDIDATES_NOT_ADMITTED",
+  "network": { "name": "Robinhood Chain mainnet", "chainId": 4663 },
+  "snapshot": {
+    "retrievedAt": "2026-10-24",
+    "discoverySha256": "9f6045fe8f83e5b6c96972c4d747088a3378ea15ef99a8f8ace44d41e117ba68",
+    "assetsSha256": "b46a1ac90968cff5823757642b2c681fd324010349803187492f93e5ff3905f7"
+  },
+  "verifier": {
+    "address": "0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7",
+    "codeHash": null,
+    "verifiedOnchain": false
+  },
+  "quoteFeeds": {
+    "ETH_USD": { "proxy": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9", "decimals": 8, "heartbeatSeconds": 86400, "verifiedOnchain": false },
+    "USDG_USD": { "proxy": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2", "decimals": 8, "heartbeatSeconds": 86400, "verifiedOnchain": false }
+  },
+  "assets": [
+    {
+      "symbol": "AAPL",
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "assetId": "0x00000000000000000000000000000000c2425be3658540dd8e2424cbf3c5c649",
+      "decimals": 18,
+      "capabilities": ["REGULAR", "EXTENDED", "OVERNIGHT"],
+      "directAdjustedTokenUsd": { "proxy": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0", "decimals": 8, "heartbeatSeconds": 86400 },
+      "streamsV11": {
+        "REGULAR": "0x000bbd87a23775b4c11092ae9a1fc7b3393636ae1dbb9f1ef460f845c0f4cff1",
+        "EXTENDED": "0x000b8b9394931d376dbfd988ab3e459b1954ca10880d6a2ec706cd2573910b5b",
+        "OVERNIGHT": "0x000b313c8a4997a3bc871130415ffeb42cd37b79cf68c11478780650cc553c0b"
+      },
+      "schemaVersion": 11,
+      "codeHash": null,
+      "implementationFingerprint": null,
+      "sampleReportsVerified": false,
+      "entitlementVerified": false,
+      "admitted": false
+    },
+    {
+      "symbol": "NVDA",
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "assetId": "0x00000000000000000000000000000000915f477416294f5099a5e0e09f327ce5",
+      "decimals": 18,
+      "capabilities": ["REGULAR", "EXTENDED", "OVERNIGHT"],
+      "directAdjustedTokenUsd": { "proxy": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", "decimals": 8, "heartbeatSeconds": 86400 },
+      "streamsV11": {
+        "REGULAR": "0x000b6aa036224454037bab103184565f6aa9ea589c3b349f6d8471ee753524b9",
+        "EXTENDED": "0x000bb043961643d051393c085a4dd0cded6f67b4b71e47e9dcec739b7b3e2145",
+        "OVERNIGHT": "0x000b47988e89f3e63e1d679c84b774e6c38bb9929ad9de6e5e56d657a80388a9"
+      },
+      "schemaVersion": 11,
+      "codeHash": null,
+      "implementationFingerprint": null,
+      "sampleReportsVerified": false,
+      "entitlementVerified": false,
+      "admitted": false
+    },
+    {
+      "symbol": "TSLA",
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "assetId": "0x00000000000000000000000000000000cfece3244ea34bb29414dd9488b32d9f",
+      "decimals": 18,
+      "capabilities": ["REGULAR", "EXTENDED", "OVERNIGHT"],
+      "directAdjustedTokenUsd": { "proxy": "0x4A1166a659A55625345e9515b32adECea5547C38", "decimals": 8, "heartbeatSeconds": 86400 },
+      "streamsV11": {
+        "REGULAR": "0x000b2dbed1640ead18d37338b75e4755630a900649261baf4ed79d9a749be13d",
+        "EXTENDED": "0x000b9e87f3f1ac8e590e47cce07a3e964d94f2abd5692b2f92f1dbab79874b07",
+        "OVERNIGHT": "0x000b67554457bf6c7e70d4d599d9634888fc8d79145c534ddd77ba1dae840107"
+      },
+      "schemaVersion": 11,
+      "codeHash": null,
+      "implementationFingerprint": null,
+      "sampleReportsVerified": false,
+      "entitlementVerified": false,
+      "admitted": false
+    }
+  ],
+  "admissionEvidence": {
+    "authenticatedCommonBlockReads": false,
+    "rightsMatrix": false,
+    "calendarCoverage": false,
+    "testnetVerificationSubmission": false,
+    "freshnessSuitability": false
+  }
+}

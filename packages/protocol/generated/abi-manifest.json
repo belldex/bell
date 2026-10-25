@@ -1,0 +1,3190 @@
+{
+  "schemaVersion": 1,
+  "compilerVersion": "0.8.26",
+  "abiSha256": "a58ac7590e26e84dc7856c09562b5712bc800a9f1e22ae46bf4353b41c918dda",
+  "interfaces": {
+    "IAssetRegistry": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "activateAsset",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "descriptorId",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "cancel",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "descriptorId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "descriptor",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "id",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "bool",
+                "name": "isStock",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "capabilityMask",
+                "type": "uint8"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenPriceAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "regularAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "extendedAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "overnightAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "secondaryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "expectedCodeHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "implementationFingerprint",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "evidenceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct AssetDescriptor",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "name": "descriptorIdForToken",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "operation",
+        "outputs": [
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "payloadHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "expiry",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint8",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "id",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "bool",
+                "name": "isStock",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "capabilityMask",
+                "type": "uint8"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenPriceAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "regularAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "extendedAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "overnightAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "secondaryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "expectedCodeHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "implementationFingerprint",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "evidenceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct AssetDescriptor",
+            "name": "descriptor",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sourceConfig",
+            "type": "bytes"
+          }
+        ],
+        "name": "queueAsset",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "descriptorId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "sourceConfig",
+        "outputs": [
+          {
+            "internalType": "bytes",
+            "name": "",
+            "type": "bytes"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "IBellErrors": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "BadCalendarProof",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "reason",
+            "type": "bytes32"
+          }
+        ],
+        "name": "BadConfig",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint8",
+            "name": "lifecycle",
+            "type": "uint8"
+          }
+        ],
+        "name": "BadLifecycle",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "feedId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint8",
+            "name": "reason",
+            "type": "uint8"
+          }
+        ],
+        "name": "BadReport",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "BadSeed",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint8",
+            "name": "currency",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "capKind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "limit",
+            "type": "uint256"
+          }
+        ],
+        "name": "CapExceeded",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ContextMismatch",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint64",
+            "name": "deadline",
+            "type": "uint64"
+          }
+        ],
+        "name": "DeadlineExpired",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint64",
+            "name": "expected",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "supplied",
+            "type": "uint64"
+          }
+        ],
+        "name": "NonceMismatch",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "reasonBits",
+            "type": "uint256"
+          }
+        ],
+        "name": "PolicyBlocked",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "PricePathRejected",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "feedId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "observation",
+            "type": "uint64"
+          }
+        ],
+        "name": "Replay",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "name": "SettlementMismatch",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "SlippageExceeded",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "Unauthorized",
+        "type": "error"
+      }
+    ],
+    "IBellEvents": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "descriptorId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "evidenceHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "AssetActivated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "descriptorId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          }
+        ],
+        "name": "AssetQueued",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "epoch",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "closureNonce",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "gross0",
+            "type": "uint128"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "gross1",
+            "type": "uint128"
+          }
+        ],
+        "name": "BudgetConsumed",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "boundaryHash",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "price18",
+            "type": "uint128"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "inputAt",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "multiplier18",
+            "type": "uint128"
+          }
+        ],
+        "name": "CloseCaptured",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "ClosureEnded",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "ClosureStarted",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "reasonBits",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "validUntil",
+            "type": "uint64"
+          }
+        ],
+        "name": "HealthCheckpoint",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "leafHash",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "start",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "end",
+            "type": "uint64"
+          }
+        ],
+        "name": "IntervalActivated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "mode",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "reasons",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "closureNonce",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "reopenCandidateAt",
+            "type": "uint64"
+          }
+        ],
+        "name": "ModeCheckpoint",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "OperationCancelled",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "target",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "Paused",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "positionKey",
+            "type": "bytes32"
+          }
+        ],
+        "name": "PoolActivated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "hook",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "configHash",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          }
+        ],
+        "name": "PoolCreated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "feedId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "observedAt",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "inputAt",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint8",
+            "name": "phase",
+            "type": "uint8"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "reportHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "ReportAccepted",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "target",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          }
+        ],
+        "name": "ResumeQueued",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "target",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "Resumed",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "root",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "datasetHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "RootActivated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "root",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          }
+        ],
+        "name": "RootQueued",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "principal0",
+            "type": "uint128"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "principal1",
+            "type": "uint128"
+          }
+        ],
+        "name": "SeedCaptured",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint128",
+            "name": "amount",
+            "type": "uint128"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          }
+        ],
+        "name": "ServiceFeePaid",
+        "type": "event"
+      }
+    ],
+    "IBellHook": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "requestHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          }
+        ],
+        "name": "activatePool",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "apiVersion",
+        "outputs": [
+          {
+            "internalType": "uint32",
+            "name": "",
+            "type": "uint32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "buckets",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "uint64",
+                "name": "epoch",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "currentGross",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "previousGross",
+                "type": "uint128[2]"
+              }
+            ],
+            "internalType": "struct Buckets",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "config",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "token0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token1",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset0",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset1",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "poolManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "positionManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "assetRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "calendarRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "safetyController",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "treasuryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "uint8",
+                "name": "poolClass",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "liquidityMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "referenceMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "tradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "windowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "policyId",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PoolConfig",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "episodeGross",
+        "outputs": [
+          {
+            "internalType": "uint128[2]",
+            "name": "",
+            "type": "uint128[2]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getPolicy",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "canSwap",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "mode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint16",
+                "name": "flags",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "reasonBits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint24",
+                "name": "lpFeeUnits",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "bandBps",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveTradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveWindowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "rollingRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "referencePrice18",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "configHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "stateHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PolicyView",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "poolId",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "refreshState",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "canSwap",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "mode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint16",
+                "name": "flags",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "reasonBits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint24",
+                "name": "lpFeeUnits",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "bandBps",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveTradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveWindowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "rollingRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "referencePrice18",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "configHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "stateHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PolicyView",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "state",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "uint8",
+                "name": "lifecycle",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "mode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "closedLatched",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "reopenCandidateAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "oldValidUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64[2]",
+                "name": "reopenBaseObservations",
+                "type": "uint64[2]"
+              },
+              {
+                "internalType": "uint64[2]",
+                "name": "lastOpenObservations",
+                "type": "uint64[2]"
+              },
+              {
+                "internalType": "uint64",
+                "name": "pauseNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "bellStart",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "corporateUntil",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct PoolState",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "IBellPoolFactory": [
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "token0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "token1",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset0",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset1",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "poolManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "positionManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "factory",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "assetRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "calendarRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "safetyController",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "treasuryAdapter",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "poolClass",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "liquidityMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "referenceMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "int24",
+                    "name": "tickSpacing",
+                    "type": "int24"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "tradeCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "windowCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "closureCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "policyId",
+                    "type": "bytes32"
+                  }
+                ],
+                "internalType": "struct PoolConfig",
+                "name": "config",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "salt",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "nonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "deadline",
+                "type": "uint64"
+              },
+              {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+              },
+              {
+                "internalType": "uint160",
+                "name": "sqrtPriceX96",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickLower",
+                "type": "int24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickUpper",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128",
+                "name": "liquidity",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "amountMax",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128",
+                "name": "maxServiceFee",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct CreateRequest",
+            "name": "request",
+            "type": "tuple"
+          }
+        ],
+        "name": "createAndSeed",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "hook",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "poolId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "positionKey",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint128",
+                "name": "liquidity",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "seedPrincipal",
+                "type": "uint128[2]"
+              }
+            ],
+            "internalType": "struct CreateResult",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          }
+        ],
+        "name": "nonces",
+        "outputs": [
+          {
+            "internalType": "uint64",
+            "name": "",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "token0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "token1",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset0",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset1",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "poolManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "positionManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "factory",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "assetRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "calendarRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "safetyController",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "treasuryAdapter",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "poolClass",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "liquidityMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "referenceMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "int24",
+                    "name": "tickSpacing",
+                    "type": "int24"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "tradeCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "windowCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "closureCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "policyId",
+                    "type": "bytes32"
+                  }
+                ],
+                "internalType": "struct PoolConfig",
+                "name": "config",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "salt",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "nonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "deadline",
+                "type": "uint64"
+              },
+              {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+              },
+              {
+                "internalType": "uint160",
+                "name": "sqrtPriceX96",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickLower",
+                "type": "int24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickUpper",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128",
+                "name": "liquidity",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "amountMax",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128",
+                "name": "maxServiceFee",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct CreateRequest",
+            "name": "request",
+            "type": "tuple"
+          }
+        ],
+        "name": "predict",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "hook",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "requestHash",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "IBellRouter": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "payer",
+            "type": "address"
+          }
+        ],
+        "name": "nonces",
+        "outputs": [
+          {
+            "internalType": "uint64",
+            "name": "",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "hook",
+                "type": "address"
+              },
+              {
+                "internalType": "bool",
+                "name": "zeroForOne",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "exactInput",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint128",
+                "name": "amountSpecified",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "limitAmount",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint160",
+                "name": "sqrtPriceLimitX96",
+                "type": "uint160"
+              },
+              {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+              },
+              {
+                "internalType": "uint64",
+                "name": "nonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "deadline",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "expectedConfigHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bool",
+                "name": "wrapInput",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "unwrapOutput",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "unwrapRefund",
+                "type": "bool"
+              }
+            ],
+            "internalType": "struct SwapRequest",
+            "name": "request",
+            "type": "tuple"
+          }
+        ],
+        "name": "swap",
+        "outputs": [
+          {
+            "internalType": "uint128",
+            "name": "amountIn",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amountOut",
+            "type": "uint128"
+          }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ],
+    "ICalendarRegistry": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "year",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "index",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "start",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "provenanceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarLeaf",
+            "name": "current",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "year",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "index",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "start",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "provenanceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarLeaf",
+            "name": "previous",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "year",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "index",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "start",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "provenanceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarLeaf",
+            "name": "next",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes32[][]",
+            "name": "proofs",
+            "type": "bytes32[][]"
+          }
+        ],
+        "name": "activateInterval",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "activateRoot",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "cancel",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "currentInterval",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "year",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "index",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "start",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "provenanceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarLeaf",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "nextInterval",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "year",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "index",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "start",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "end",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "provenanceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarLeaf",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "operation",
+        "outputs": [
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "payloadHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "expiry",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint8",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "root",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "leafCount",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "coverageStart",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "coverageEnd",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "queuedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "executableAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "datasetHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct CalendarRoot",
+            "name": "metadata",
+            "type": "tuple"
+          }
+        ],
+        "name": "queueRoot",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "ISafetyController": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "acceptRoleRotation",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "cancel",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "executeResume",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "governance",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "guardian",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "operation",
+        "outputs": [
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "payloadHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "eta",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "expiry",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint8",
+            "name": "status",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "name": "pauseAsset",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "hook",
+            "type": "address"
+          }
+        ],
+        "name": "pausePool",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "target",
+            "type": "bytes32"
+          }
+        ],
+        "name": "pauseState",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "paused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "target",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "nonce",
+            "type": "uint64"
+          }
+        ],
+        "name": "queueResume",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint8",
+            "name": "role",
+            "type": "uint8"
+          },
+          {
+            "internalType": "address",
+            "name": "successor",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "evidenceHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "queueRoleRotation",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "operationId",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "ISessionRegistry": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "boundaryHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "captureClose",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "boundaryHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "multiplier18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "capturedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureStart",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "sourceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct Anchor",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "boundaryHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "closeAnchor",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "boundaryHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "multiplier18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "capturedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureStart",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "sourceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct Anchor",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "health",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "ready",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint256",
+                "name": "reasonBits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint64",
+                "name": "healthySince",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "baselineObservation",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "latestObservation",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct HealthView",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint8",
+            "name": "phase",
+            "type": "uint8"
+          }
+        ],
+        "name": "latestSample",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "refreshHealth",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "reasons",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes[]",
+            "name": "reports",
+            "type": "bytes[]"
+          }
+        ],
+        "name": "submitReports",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "ISourceAdapterIdentity": [
+      {
+        "inputs": [],
+        "name": "fingerprint",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "sourceConfigHash",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "ITreasuryAdapter": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "positionKey",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint128",
+            "name": "fee0Min",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "fee1Min",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "deadline",
+            "type": "uint64"
+          }
+        ],
+        "name": "collect",
+        "outputs": [
+          {
+            "internalType": "uint128",
+            "name": "fee0",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "fee1",
+            "type": "uint128"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "positionKey",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint128",
+            "name": "liquidity",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount0Min",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount1Min",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint64",
+            "name": "deadline",
+            "type": "uint64"
+          }
+        ],
+        "name": "remove",
+        "outputs": [
+          {
+            "internalType": "uint128",
+            "name": "amount0",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "amount1",
+            "type": "uint128"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "requestHash",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "token0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "token1",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset0",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "asset1",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "poolManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "positionManager",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "factory",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "assetRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "calendarRegistry",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "safetyController",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "treasuryAdapter",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "poolClass",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "liquidityMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "referenceMode",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "int24",
+                    "name": "tickSpacing",
+                    "type": "int24"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "tradeCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "windowCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "uint128[2]",
+                    "name": "closureCap",
+                    "type": "uint128[2]"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "policyId",
+                    "type": "bytes32"
+                  }
+                ],
+                "internalType": "struct PoolConfig",
+                "name": "config",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "salt",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "nonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "deadline",
+                "type": "uint64"
+              },
+              {
+                "internalType": "address",
+                "name": "recipient",
+                "type": "address"
+              },
+              {
+                "internalType": "uint160",
+                "name": "sqrtPriceX96",
+                "type": "uint160"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickLower",
+                "type": "int24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickUpper",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128",
+                "name": "liquidity",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "amountMax",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128",
+                "name": "maxServiceFee",
+                "type": "uint128"
+              }
+            ],
+            "internalType": "struct CreateRequest",
+            "name": "request",
+            "type": "tuple"
+          }
+        ],
+        "name": "seed",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "positionKey",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ]
+  }
+}

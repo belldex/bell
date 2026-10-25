@@ -1,0 +1,636 @@
+{
+  "schemaVersion": 1,
+  "planTaskCount": 80,
+  "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+  "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6",
+  "tasks": {
+    "M00-01": {
+      "title": "Catat baseline dan batas mandat",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "config/release-baseline.json"
+      ],
+      "blockers": []
+    },
+    "M00-02": {
+      "title": "Bekukan compatibility set",
+      "status": "BLOCKED_DEPENDENCY",
+      "evidence": [
+        "toolchain.lock.json",
+        "contracts/foundry.toml",
+        "pnpm-lock.yaml",
+        "contracts/lib/v4-core/src",
+        "contracts/lib/v4-periphery/src",
+        "contracts/lib/permit2/src",
+        "contracts/lib/openzeppelin-contracts/contracts",
+        "contracts/lib/solmate/src",
+        "contracts/lib/openzeppelin-uniswap-hooks/src/base/BaseHook.sol",
+        "contracts/test/BaseHookCompatibilityHarness.sol",
+        "contracts/test/PeripheryCompatibilityHarness.sol",
+        "contracts/test/V4CoreCompatibility.t.sol"
+      ],
+      "blockers": [
+        "PositionManager-and-public-LP-execution-tests-not-run",
+        "Robinhood-chain-EVM-capability-and-fork-compatibility-not-verified"
+      ]
+    },
+    "M00-03": {
+      "title": "Buat monorepo dan task runner",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "workers/keeper-b/package.json",
+        "workers/keeper-b/vitest.config.ts"
+      ],
+      "blockers": []
+    },
+    "M00-04": {
+      "title": "Buktikan runtime-neutral package boundary",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/test/source-codec.test.mjs",
+        "packages/test-vectors/runtime-compat.json"
+      ],
+      "blockers": []
+    },
+    "M00-05": {
+      "title": "Pasang CI minimum dan secret boundary",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "scripts/tooling/secret-boundary.mjs",
+        "scripts/tooling/secret-boundary.test.mjs",
+        "scripts/tooling/check-secret-boundary.mjs",
+        "pnpm-lock.yaml"
+      ],
+      "blockers": []
+    },
+    "M01-01": {
+      "title": "Ambil katalog sumber dan verifier",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "scripts/discovery/fetch-catalog.mjs",
+        "scripts/discovery/catalog.mjs"
+      ],
+      "blockers": []
+    },
+    "M01-02": {
+      "title": "Validasi canonical token dan proxy binding",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "config/assets/candidates.mainnet.json",
+        "packages/domain/src/source-manifest.mjs",
+        "packages/domain/test/source-manifest.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M01-03": {
+      "title": "Implementasikan authenticated RPC probes",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "scripts/discovery/rpc-client.mjs"
+      ],
+      "blockers": [
+        "Authenticated-RPC-endpoints-not-configured"
+      ]
+    },
+    "M01-04": {
+      "title": "Catat akses dan batas redistribusi data",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "config/sources/rights-status.json",
+        "packages/domain/src/source-rights.mjs",
+        "packages/domain/test/source-rights.test.mjs"
+      ],
+      "blockers": [
+        "Oracle-account-entitlements-and-data-rights-not-verified"
+      ]
+    },
+    "M01-05": {
+      "title": "Mulai trace kesesuaian source/freshness",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M02-01": {
+      "title": "Implementasikan types/ABI/errors/events normatif",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/types/ProtocolTypes.sol",
+        "contracts/src/interfaces/IBellProtocol.sol",
+        "contracts/src/interfaces/ProtocolEvents.sol",
+        "contracts/test/ProtocolTypesHarness.sol",
+        "scripts/tooling/solidity-compile.mjs",
+        "scripts/tooling/solidity-compile.test.mjs",
+        "packages/protocol/generated/abi-manifest.json",
+        "scripts/evidence/check-abi.mjs"
+      ],
+      "blockers": []
+    },
+    "M02-02": {
+      "title": "Bekukan policy constants dan hash encoding",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "scripts/evidence/generate-policy-constants.mjs",
+        "contracts/src/libraries/PolicyConstants.sol",
+        "scripts/evidence/check-policy-constants.mjs",
+        "config/policy/policy-v1.json"
+      ],
+      "blockers": []
+    },
+    "M02-03": {
+      "title": "Port model brief menjadi test vectors",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "tests/reference/engineering_checks.py",
+        "tests/reference/policy_checks.py",
+        "tests/reference/infra_spec_checks.py"
+      ],
+      "blockers": []
+    },
+    "M02-04": {
+      "title": "Bangun codec SDK dan reason conformance",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/src/source-codec.mjs",
+        "packages/protocol/test/source-codec.test.mjs",
+        "packages/protocol/src/swap-codec.mjs",
+        "packages/protocol/test/swap-codec.test.mjs",
+        "packages/protocol/src/create-codec.mjs",
+        "packages/protocol/test/create-codec.test.mjs",
+        "packages/protocol/generated/abi-manifest.json",
+        "scripts/evidence/abi-manifest.mjs"
+      ],
+      "blockers": []
+    },
+    "M03-01": {
+      "title": "Buat direct-price adapters",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/adapters/AggregatorAdapter.sol",
+        "contracts/test/AggregatorAdapter.t.sol",
+        "packages/domain/src/price-source.mjs",
+        "packages/domain/test/price-source.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M03-02": {
+      "title": "Buat verified v11 adapter",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/adapters/EquityV11Adapter.sol",
+        "contracts/test/EquityV11Adapter.t.sol",
+        "contracts/src/interfaces/ProtocolEvents.sol"
+      ],
+      "blockers": []
+    },
+    "M03-03": {
+      "title": "Implementasikan AssetRegistry append-only",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/registries/AssetRegistry.sol",
+        "contracts/test/AssetRegistry.t.sol",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M03-04": {
+      "title": "Implementasikan SessionRegistry",
+      "status": "DONE",
+      "evidence": [
+        "contracts/src/registries/SessionRegistry.sol",
+        "contracts/test/SessionRegistry.t.sol",
+        "contracts/src/adapters/StockTokenStatusAdapter.sol",
+        "packages/domain/src/report-ledger.mjs",
+        "packages/domain/test/report-ledger.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M03-05": {
+      "title": "Implementasikan CalendarRegistry dan proof tooling",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/registries/CalendarRegistry.sol",
+        "contracts/test/CalendarRegistry.t.sol",
+        "contracts/src/libraries/CalendarProof.sol",
+        "contracts/test/CalendarProof.t.sol",
+        "packages/protocol/src/calendar.mjs",
+        "packages/protocol/test/calendar.test.mjs",
+        "scripts/calendar/calendar-builder.mjs",
+        "scripts/calendar/calendar-builder.test.mjs"
+      ],
+      "blockers": [
+        "Entitled-source-calendar-access-and-rights-evidence-for-actual-schedule-data-not-verified",
+        "Actual-venue-schedules-holidays-early-closes-and-timezone-database-inputs-not-sourced-or-verified",
+        "CalendarRoot-year-identity-is-lazy-bound-on-first-valid-proof-use-and-needs-governance-acceptance"
+      ]
+    },
+    "M03-06": {
+      "title": "Implementasikan SafetyController",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/SafetyController.sol",
+        "contracts/test/SafetyController.t.sol",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M04-01": {
+      "title": "Implementasikan exact wide-price math",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/wide-price.mjs",
+        "packages/domain/test/wide-price.test.mjs",
+        "contracts/src/libraries/WidePriceMath.sol",
+        "contracts/test/WidePriceMath.t.sol",
+        "contracts/test/WidePriceMathHarness.sol"
+      ],
+      "blockers": []
+    },
+    "M04-02": {
+      "title": "Implementasikan fee composition",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/libraries/FeePolicy.sol",
+        "contracts/test/FeePolicyHarness.sol",
+        "contracts/test/FeeAndBudget.t.sol",
+        "packages/domain/src/fee-policy.mjs",
+        "packages/domain/test/fee-policy.test.mjs",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M04-03": {
+      "title": "Implementasikan rolling gross budget",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/libraries/FlowBudget.sol",
+        "contracts/test/FlowBudgetHarness.sol",
+        "contracts/test/FeeAndBudget.t.sol",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M04-04": {
+      "title": "Implementasikan closure episode ledger",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/libraries/ClosureBudget.sol",
+        "contracts/test/ClosureBudgetHarness.sol",
+        "contracts/test/FeeAndBudget.t.sol",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M04-05": {
+      "title": "Implementasikan reference dan class behavior",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/reference-policy.mjs",
+        "packages/domain/test/reference-policy.test.mjs"
+      ],
+      "blockers": []
+    },
+    "M05-01": {
+      "title": "Bangun immutable hook template",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M05-02": {
+      "title": "Implementasikan lifecycle dan health priority",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M05-03": {
+      "title": "Implementasikan planned closure dan joint recovery",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M05-04": {
+      "title": "Implementasikan seed principal callbacks",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M05-05": {
+      "title": "Integrasikan swap pre/post enforcement",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M06-01": {
+      "title": "Bangun atomic create-and-seed factory",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M06-02": {
+      "title": "Integrasikan PUBLIC PositionManager",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M06-03": {
+      "title": "Implementasikan TreasuryAdapter terbatas",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M06-04": {
+      "title": "Implementasikan direct router dan settlement",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M06-05": {
+      "title": "Bangun address mining dan deploy manifest tooling",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M07-01": {
+      "title": "Buat schema derived state",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M07-02": {
+      "title": "Terapkan RLS dan akses Storage",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M07-03": {
+      "title": "Implementasikan atomic leases dan fencing",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M07-04": {
+      "title": "Implementasikan bounded object archive",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M07-05": {
+      "title": "Susun migrations, cron dan retention install",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M08-01": {
+      "title": "Bangun API router dan response schemas",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M08-02": {
+      "title": "Implementasikan katalog, policy dan transaction reads",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M08-03": {
+      "title": "Implementasikan executable quote",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M08-04": {
+      "title": "Implementasikan create preview dan intake status",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M08-05": {
+      "title": "Implementasikan rate/quota enforcement dan RPC proxy",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M09-01": {
+      "title": "Implementasikan tick keeper A",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M09-02": {
+      "title": "Implementasikan keeper B Durable Object",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "workers/keeper-b/src/index.ts",
+        "workers/keeper-b/src/keeper-state.mjs",
+        "workers/keeper-b/package.json"
+      ],
+      "blockers": []
+    },
+    "M09-03": {
+      "title": "Implementasikan nonce/pending transaction reconciliation",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M09-04": {
+      "title": "Implementasikan earliest-deadline scheduling",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M09-05": {
+      "title": "Implementasikan single-alarm watchdog dan liveness",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "workers/keeper-b/src/keeper-state.mjs",
+        "workers/keeper-b/test/alarm.test.ts",
+        "workers/keeper-b/test/alarm-time.test.ts",
+        "evidence/runtime/keeper-b-dry-run.json"
+      ],
+      "blockers": []
+    },
+    "M10-01": {
+      "title": "Bangun bounded log planner",
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/log-planner.mjs",
+        "packages/domain/test/log-planner.test.mjs",
+        "tests/reference/infra_spec_checks.py"
+      ],
+      "blockers": []
+    },
+    "M10-02": {
+      "title": "Implementasikan canonical event ingest",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M10-03": {
+      "title": "Implementasikan reorg reconciliation",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M10-04": {
+      "title": "Implementasikan receipt/finality projection",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M10-05": {
+      "title": "Implementasikan lag/catch-up quota control",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M11-01": {
+      "title": "Bangun shell, wallet dan chain guard",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M11-02": {
+      "title": "Bangun pool directory dan Bell Clock",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M11-03": {
+      "title": "Bangun swap flow lengkap",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M11-04": {
+      "title": "Bangun Create Pool dan token intake UX",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M11-05": {
+      "title": "Bangun LP positions dan exit UX",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M12-01": {
+      "title": "Implementasikan encrypted backup rotation",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M12-02": {
+      "title": "Implementasikan restore dan RPO/RTO exercise",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M12-03": {
+      "title": "Implementasikan health metrics dan alerts",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M12-04": {
+      "title": "Susun runbook governance dan incident",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M12-05": {
+      "title": "Implementasikan quota/admission dashboard",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M13-01": {
+      "title": "Lengkapi contract unit/fuzz boundaries",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M13-02": {
+      "title": "Jalankan stateful/economic invariants",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M13-03": {
+      "title": "Jalankan authenticated fork integration",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M13-04": {
+      "title": "Jalankan cross-runtime, DB dan browser system tests",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M13-05": {
+      "title": "Buat release candidate dan evidence index",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M14-01": {
+      "title": "Deploy candidate ke testnet dan rehearse handover",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M14-02": {
+      "title": "Selesaikan source/capacity/session evidence",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M14-03": {
+      "title": "Serahkan full-scope independent security review",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M14-04": {
+      "title": "Perbaiki temuan dan retest audited commit",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M14-05": {
+      "title": "Jalankan mainnet readiness review",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M15-01": {
+      "title": "Bekukan exact mainnet dry-run bundle",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M15-02": {
+      "title": "Deploy, verify dan handover privileges",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M15-03": {
+      "title": "Jalankan treasury canary tanpa mengurangi produk",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M15-04": {
+      "title": "Buka public flows sesuai acceptance",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    },
+    "M15-05": {
+      "title": "Serahkan operasi dan repository lengkap",
+      "status": "NOT_STARTED",
+      "evidence": [],
+      "blockers": []
+    }
+  }
+}
