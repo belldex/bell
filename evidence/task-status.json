@@ -6,9 +6,11 @@
   "tasks": {
     "M00-01": {
       "title": "Catat baseline dan batas mandat",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "config/release-baseline.json"
+        "docs/BELL-Developer-Brief-Final.md",
+        "docs/BELL-Implementation-Plan-Final.md",
+        "evidence/releases/index.json"
       ],
       "blockers": []
     },
@@ -45,10 +47,10 @@
     },
     "M00-04": {
       "title": "Buktikan runtime-neutral package boundary",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "packages/protocol/test/source-codec.test.mjs",
-        "packages/test-vectors/runtime-compat.json"
+        "packages/domain/test/runtime-neutral.test.mjs",
+        "packages/domain/test/deno-smoke.ts"
       ],
       "blockers": []
     },
@@ -106,13 +108,18 @@
     },
     "M01-05": {
       "title": "Mulai trace kesesuaian source/freshness",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/freshness-trace.mjs",
+        "packages/domain/test/freshness-trace.test.mjs"
+      ],
+      "blockers": [
+        "Trace sumber live butuh entitlement data (M01-03/04); high-water/regresi logic sudah teruji"
+      ]
     },
     "M02-01": {
       "title": "Implementasikan types/ABI/errors/events normatif",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/types/ProtocolTypes.sol",
         "contracts/src/interfaces/IBellProtocol.sol",
@@ -138,7 +145,7 @@
     },
     "M02-03": {
       "title": "Port model brief menjadi test vectors",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "tests/reference/engineering_checks.py",
         "tests/reference/policy_checks.py",
@@ -163,7 +170,7 @@
     },
     "M03-01": {
       "title": "Buat direct-price adapters",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/adapters/AggregatorAdapter.sol",
         "contracts/test/AggregatorAdapter.t.sol",
@@ -174,7 +181,7 @@
     },
     "M03-02": {
       "title": "Buat verified v11 adapter",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/adapters/EquityV11Adapter.sol",
         "contracts/test/EquityV11Adapter.t.sol",
@@ -184,7 +191,7 @@
     },
     "M03-03": {
       "title": "Implementasikan AssetRegistry append-only",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/registries/AssetRegistry.sol",
         "contracts/test/AssetRegistry.t.sol",
@@ -225,7 +232,7 @@
     },
     "M03-06": {
       "title": "Implementasikan SafetyController",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/SafetyController.sol",
         "contracts/test/SafetyController.t.sol",
@@ -235,7 +242,7 @@
     },
     "M04-01": {
       "title": "Implementasikan exact wide-price math",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/wide-price.mjs",
         "packages/domain/test/wide-price.test.mjs",
@@ -247,7 +254,7 @@
     },
     "M04-02": {
       "title": "Implementasikan fee composition",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/libraries/FeePolicy.sol",
         "contracts/test/FeePolicyHarness.sol",
@@ -260,7 +267,7 @@
     },
     "M04-03": {
       "title": "Implementasikan rolling gross budget",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/libraries/FlowBudget.sol",
         "contracts/test/FlowBudgetHarness.sol",
@@ -271,7 +278,7 @@
     },
     "M04-04": {
       "title": "Implementasikan closure episode ledger",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "contracts/src/libraries/ClosureBudget.sol",
         "contracts/test/ClosureBudgetHarness.sol",
@@ -282,7 +289,7 @@
     },
     "M04-05": {
       "title": "Implementasikan reference dan class behavior",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/reference-policy.mjs",
         "packages/domain/test/reference-policy.test.mjs"
@@ -291,27 +298,67 @@
     },
     "M05-01": {
       "title": "Bangun immutable hook template",
-      "status": "NOT_STARTED",
-      "evidence": [],
+      "status": "DONE",
+      "evidence": [
+        "contracts/src/BellHook.sol",
+        "contracts/test/unit/hook/BellHook.t.sol",
+        "scripts/tooling/compile-solidity.mjs",
+        "scripts/tooling/solidity-compile.test.mjs"
+      ],
       "blockers": []
     },
     "M05-02": {
       "title": "Implementasikan lifecycle dan health priority",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/BellHook.sol",
+        "contracts/src/libraries/ModePolicy.sol",
+        "contracts/test/unit/hook/BellHook.t.sol",
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol"
+      ],
+      "blockers": [
+        "DEPLOYED->SEEDING->LIVE activation remains blocked on M05-04/M06 seed principal and post-settlement activatePool; BellHook stays DEPLOYED/SETUP and fail-closed.",
+        "Ordinary fault->RECOVERING joint recovery now lives in M05-03 (60s + every-stock advance + old-validity continuity); M05-02 lifecycle/health priority itself is implemented, but activation (M05-04/M06) and swap execution (M05-05) remain blocked.",
+        "SessionRegistry is a fourth constructor dependency because normative PoolConfig has no sessionRegistry field; stateHash now binds its address and consumed dependency observations, but M06 deploy-manifest binding is still required.",
+        "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false keeps getPolicy/refreshState/beforeSwap fail-closed with SETUP, so even a synthetic LIVE/healthy policy cannot advertise canSwap=true.",
+        "stateHash binds sessionRegistry plus consumed descriptor/health/calendar/pause observations, but full §20.A accepted report hashes, anchors, active calendar leaf hashes and reference snapshots remain M05-03/M05-05/M04-05 data; the full §20.A hash is not claimed complete."
+      ]
     },
     "M05-03": {
       "title": "Implementasikan planned closure dan joint recovery",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/BellHook.sol",
+        "contracts/src/libraries/ModePolicy.sol",
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol",
+        "contracts/test/unit/hook/BellHookClosure.t.sol",
+        "contracts/src/registries/SessionRegistry.sol",
+        "contracts/src/registries/CalendarRegistry.sol"
+      ],
+      "blockers": [
+        "Activation is not reachable: LIVE requires the normative non-zero bellStart marker from M05-04/M06 seed principal + activatePool; synthetic LIVE tests set bellStart via vm.store with an explicit caveat and are not a production activation path.",
+        "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false makes recovery release the latch/candidate but return HALTED + SETUP with canSwap=false until the execution path exists.",
+        "No stateful invariant suite exists under contracts/test/invariant/closure/; overlap, flicker, root rollover, 96h anchor expiry and corporate/multiplier faults are covered only by unit vectors.",
+        "Recovery requires a persisted fault checkpoint via refreshState; a transient view-only fault is not stored and cannot start recovery (matches the reference FSM, keeper must checkpoint).",
+        "anchorStatus depends on captureClose for the 300s pre-close window; malformed-storage branches are unreachable through the public API and are exercised only through mocks.",
+        "Anchor binding hashes the current CLOSED leaf via CalendarProof.hashLeaf; confirm the normative reading against the 'upcoming CLOSED leaf' wording before M05-03 is marked DONE."
+      ]
     },
     "M05-04": {
       "title": "Implementasikan seed principal callbacks",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/libraries/SeedAccounting.sol",
+        "contracts/test/unit/hook/SeedAccounting.t.sol",
+        "contracts/src/BellHook.sol",
+        "contracts/test/unit/hook/BellHook.t.sol",
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol"
+      ],
+      "blockers": [
+        "M06 factory atomic context, settlement, owner/liquidity/receipt verification, and requestHash wiring are not implemented; hook activation relies on the immutable factory trust boundary.",
+        "TREASURY_ONLY callback path is implemented but lacks a focused integration test against the real adapter context.",
+        "Seed helper unit tests and direct hook callbacks do not prove public PositionManager or TreasuryAdapter settlement integration."
+      ]
     },
     "M05-05": {
       "title": "Integrasikan swap pre/post enforcement",
@@ -351,69 +398,125 @@
     },
     "M07-01": {
       "title": "Buat schema derived state",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "supabase/migrations/20261025000000_derived_state.sql",
+        "packages/domain/test/schema.test.mjs"
+      ],
+      "blockers": [
+        "Live Postgres/Supabase reset belum tersedia offline; baru validasi struktural schema"
+      ]
     },
     "M07-02": {
       "title": "Terapkan RLS dan akses Storage",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "supabase/migrations/20261025000001_rls.sql",
+        "supabase/migrations/20261025000000_derived_state.sql"
+      ],
+      "blockers": [
+        "Negative tests di live Postgres/Supabase belum bisa dijalankan offline; struktur default-deny + public views sudah ditulis"
+      ]
     },
     "M07-03": {
       "title": "Implementasikan atomic leases dan fencing",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "supabase/migrations/20261025000002_leases_and_jobs.sql",
+        "packages/domain/src/jobs.mjs",
+        "packages/domain/test/jobs.test.mjs"
+      ],
+      "blockers": [
+        "SQL transaction race tests butuh live Postgres; logika lease guard sudah teruji"
+      ]
     },
     "M07-04": {
       "title": "Implementasikan bounded object archive",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/archive.mjs",
+        "packages/domain/test/archive.test.mjs"
+      ],
+      "blockers": [
+        "Object storage/Supabase functions belum tersedia offline; logika manifest/prune sudah teruji"
+      ]
     },
     "M07-05": {
       "title": "Susun migrations, cron dan retention install",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "supabase/migrations/20261025000003_jobs_cron.sql",
+        "docs/runbooks/migrations.md"
+      ],
+      "blockers": [
+        "Cron install dan rehearsal butuh platform live"
+      ]
     },
     "M08-01": {
       "title": "Bangun API router dan response schemas",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/src/api-schema.mjs",
+        "packages/protocol/test/api-schema.test.mjs"
+      ],
+      "blockers": [
+        "Deployment supabase/functions/bell-api butuh platform; kontrak router/schema/error sudah teruji offline"
+      ]
     },
     "M08-02": {
       "title": "Implementasikan katalog, policy dan transaction reads",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/src/api-reads.mjs",
+        "packages/protocol/test/api-routes.test.mjs"
+      ],
+      "blockers": [
+        "Read onchain live perlu M06+M07; kontrak read state machine sudah teruji"
+      ]
     },
     "M08-03": {
       "title": "Implementasikan executable quote",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/src/api-quote.mjs",
+        "packages/protocol/test/api-routes.test.mjs"
+      ],
+      "blockers": [
+        "Simulasi eksekusi nyata butuh hook/factory (M05/M06) dan fork test berautentikasi"
+      ]
     },
     "M08-04": {
       "title": "Implementasikan create preview dan intake status",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/protocol/src/api-create.mjs",
+        "packages/protocol/test/api-routes.test.mjs"
+      ],
+      "blockers": [
+        "Prediksi factory CREATE2 butuh M06; admission/intake logic sudah teruji"
+      ]
     },
     "M08-05": {
       "title": "Implementasikan rate/quota enforcement dan RPC proxy",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/quota.mjs",
+        "packages/domain/test/quota.test.mjs"
+      ],
+      "blockers": [
+        "Shared monthly meter lintas instance butuh DB; meter lokal + allowlist sudah teruji"
+      ]
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/keeper-tick.mjs",
+        "packages/domain/test/keeper-tick.test.mjs"
+      ],
+      "blockers": [
+        "Supabase function + entitlement RPC live belum tersedia; tick deadline/lease/no-op logic sudah teruji"
+      ]
     },
     "M09-02": {
       "title": "Implementasikan keeper B Durable Object",
@@ -427,14 +530,22 @@
     },
     "M09-03": {
       "title": "Implementasikan nonce/pending transaction reconciliation",
-      "status": "NOT_STARTED",
-      "evidence": [],
+      "status": "DONE",
+      "evidence": [
+        "packages/domain/src/transactions.mjs",
+        "packages/domain/test/transactions.test.mjs"
+      ],
       "blockers": []
     },
     "M09-04": {
       "title": "Implementasikan earliest-deadline scheduling",
-      "status": "NOT_STARTED",
-      "evidence": [],
+      "status": "DONE",
+      "evidence": [
+        "packages/domain/src/scheduler.mjs",
+        "packages/domain/test/scheduler.test.mjs",
+        "packages/test-vectors/scheduler/plan.json",
+        "packages/test-vectors/scheduler/dedupe.json"
+      ],
       "blockers": []
     },
     "M09-05": {
@@ -450,7 +561,7 @@
     },
     "M10-01": {
       "title": "Bangun bounded log planner",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/log-planner.mjs",
         "packages/domain/test/log-planner.test.mjs",
@@ -460,87 +571,177 @@
     },
     "M10-02": {
       "title": "Implementasikan canonical event ingest",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/indexing.mjs",
+        "packages/domain/test/indexing.test.mjs"
+      ],
+      "blockers": [
+        "Ingest DB nyata (supabase/functions/indexer) butuh engine/credentials; logika idempotensi sudah teruji"
+      ]
     },
     "M10-03": {
       "title": "Implementasikan reorg reconciliation",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/indexing.mjs",
+        "packages/domain/test/indexing.test.mjs"
+      ],
+      "blockers": [
+        "Replay DB nyata dan common healthy provider butuh RPC berautentikasi"
+      ]
     },
     "M10-04": {
       "title": "Implementasikan receipt/finality projection",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/indexing.mjs",
+        "packages/domain/test/indexing.test.mjs"
+      ],
+      "blockers": [
+        "finalized tag dua provider butuh authenticated RPC; proyeksi state sudah fail-safe"
+      ]
     },
     "M10-05": {
       "title": "Implementasikan lag/catch-up quota control",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/catchup.mjs",
+        "packages/domain/test/catchup.test.mjs",
+        "docs/runbooks/indexer.md"
+      ],
+      "blockers": [
+        "Measured head rate nyata butuh RPC live; forecast + admission logic sudah teruji"
+      ]
     },
     "M11-01": {
       "title": "Bangun shell, wallet dan chain guard",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ui-state.mjs",
+        "packages/domain/test/ui-state.test.mjs",
+        "apps/web/components/app/AppShell.tsx",
+        "apps/web/lib/wallet.tsx"
+      ],
+      "blockers": [
+        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
+      ]
     },
     "M11-02": {
       "title": "Bangun pool directory dan Bell Clock",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ui-state.mjs",
+        "packages/domain/test/ui-state.test.mjs",
+        "apps/web/components/app/AppShell.tsx",
+        "apps/web/lib/wallet.tsx",
+        "apps/web/app/(app)/pools/page.tsx",
+        "apps/web/app/(app)/pool/page.tsx",
+        "apps/web/components/policy/PoolCard.tsx",
+        "apps/web/components/policy/BudgetBar.tsx"
+      ],
+      "blockers": [
+        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
+      ]
     },
     "M11-03": {
       "title": "Bangun swap flow lengkap",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ui-state.mjs",
+        "packages/domain/test/ui-state.test.mjs",
+        "apps/web/components/app/AppShell.tsx",
+        "apps/web/lib/wallet.tsx",
+        "apps/web/app/(app)/swap/page.tsx",
+        "apps/web/lib/protocol-adapter.ts"
+      ],
+      "blockers": [
+        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh",
+        "Swap flow penuh butuh M06 router + M08 quote live"
+      ]
     },
     "M11-04": {
       "title": "Bangun Create Pool dan token intake UX",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ui-state.mjs",
+        "packages/domain/test/ui-state.test.mjs",
+        "apps/web/components/app/AppShell.tsx",
+        "apps/web/lib/wallet.tsx",
+        "apps/web/app/(app)/create/page.tsx"
+      ],
+      "blockers": [
+        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
+      ]
     },
     "M11-05": {
       "title": "Bangun LP positions dan exit UX",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ui-state.mjs",
+        "packages/domain/test/ui-state.test.mjs",
+        "apps/web/components/app/AppShell.tsx",
+        "apps/web/lib/wallet.tsx",
+        "apps/web/app/(app)/positions/page.tsx"
+      ],
+      "blockers": [
+        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
+      ]
     },
     "M12-01": {
       "title": "Implementasikan encrypted backup rotation",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/backup.mjs",
+        "packages/domain/test/backup.test.mjs",
+        "docs/runbooks/recovery.md"
+      ],
+      "blockers": [
+        "Rotasi live butuh storage terenkripsi live; logika rotasi/RPO sudah teruji"
+      ]
     },
     "M12-02": {
       "title": "Implementasikan restore dan RPO/RTO exercise",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/backup.mjs",
+        "docs/runbooks/recovery.md"
+      ],
+      "blockers": [
+        "Restore drill butuh infra live; RPO check dan runbook sudah ada"
+      ]
     },
     "M12-03": {
       "title": "Implementasikan health metrics dan alerts",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "docs/runbooks/keeper.md",
+        "docs/runbooks/indexer.md"
+      ],
+      "blockers": [
+        "Alerting infra live belum ada; definisi metrik dan alert sudah tertulis"
+      ]
     },
     "M12-04": {
       "title": "Susun runbook governance dan incident",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "docs/runbooks/keeper.md"
+      ],
+      "blockers": [
+        "Incident drill butuh infra live; runbook deteksi-ack-recovery sudah tertulis"
+      ]
     },
     "M12-05": {
       "title": "Implementasikan quota/admission dashboard",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/src/ops-status.mjs",
+        "packages/domain/test/ops-status.test.mjs"
+      ],
+      "blockers": [
+        "Dashboard UI belum dibangun (menunggu M11); snapshot agregasi sudah teruji"
+      ]
     },
     "M13-01": {
       "title": "Lengkapi contract unit/fuzz boundaries",
@@ -562,9 +763,14 @@
     },
     "M13-04": {
       "title": "Jalankan cross-runtime, DB dan browser system tests",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "packages/domain/test/runtime-neutral.test.mjs",
+        "packages/domain/test/deno-smoke.ts"
+      ],
+      "blockers": [
+        "Cross-runtime browser/DB system tests butuh M07/M11 live; Node+Deno coverage diperluas ke seluruh modul baru"
+      ]
     },
     "M13-05": {
       "title": "Buat release candidate dan evidence index",

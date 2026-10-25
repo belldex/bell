@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
-import {AssetDescriptor, SourceWire, SourceSample, HealthView, Anchor, CalendarLeaf} from "../src/types/ProtocolTypes.sol";
+import {AssetDescriptor, SourceWire, SourceSample, HealthView, Anchor, CalendarLeaf, ReasonBits} from "../src/types/ProtocolTypes.sol";
 import {SourceConfigHash} from "../src/libraries/SourceConfigHash.sol";
 import {CalendarProof} from "../src/libraries/CalendarProof.sol";
 
@@ -864,5 +864,51 @@ contract SessionRegistryTest {
         direct.setSample(future);
         (ok,) = address(paused).call(abi.encodeCall(paused.captureClose, (ASSET, pausedBoundary)));
         require(!ok && paused.closeAnchor(ASSET, pausedBoundary).assetId == bytes32(0), "future direct input accepted");
+    }
+
+    // These views are the minimal M05-03 closure dependency. They prove anchor age and live corporate binding
+    // against stored capture metadata; they do not prove calendar truth or source authenticity.
+    function testAnchorStatusValidatesAgeBoundaryAndCorporateState() external {
+        (SessionRegistry registry,,,, bytes32 boundary) = _prepareCloseCapture(1_000, 100);
+        registry.captureClose(ASSET, boundary);
+        (Anchor memory anchor, bool valid, uint256 reasons, uint64 validUntil) = registry.anchorStatus(ASSET, boundary);
+        require(valid && reasons == 0, "valid anchor rejected");
+        require(validUntil == 1_000 + 345_600 + 1, "exclusive anchor deadline");
+        require(anchor.boundaryHash == boundary && anchor.closureStart == 1_100, "anchor identity");
+
+        (, valid, reasons,) = registry.anchorStatus(ASSET, bytes32(uint256(7)));
+        require(!valid && reasons & ReasonBits.ANCHOR_MISSING_OR_EXPIRED != 0, "unknown boundary accepted");
+
+        vm.warp(1_000 + 345_600);
+        (, valid, reasons,) = registry.anchorStatus(ASSET, boundary);
+        require(valid && reasons == 0, "inclusive 96h age rejected");
+
+        vm.warp(1_000 + 345_600 + 1);
+        (, valid, reasons,) = registry.anchorStatus(ASSET, boundary);
+        require(!valid && reasons & ReasonBits.ANCHOR_MISSING_OR_EXPIRED != 0, "expired anchor accepted");
+    }
+
+    function testAnchorStatusRejectsMultiplierChangePauseAndPendingBoundary() external {
+        (SessionRegistry registry,, MockSessionStockToken token,, bytes32 boundary) = _prepareCloseCapture(1_000, 100);
+        registry.captureClose(ASSET, boundary);
+        token.set(2e18, 2e18, 0, false);
+        bool valid;
+        uint256 reasons;
+        (, valid, reasons,) = registry.anchorStatus(ASSET, boundary);
+        require(!valid && reasons & ReasonBits.CORPORATE_INCONSISTENT != 0, "multiplier change accepted");
+
+        token.set(1e18, 1e18, 0, true);
+        (, valid, reasons,) = registry.anchorStatus(ASSET, boundary);
+        require(!valid && reasons & ReasonBits.ISSUER_PAUSE != 0, "issuer pause accepted");
+
+        token.set(1e18, 2e18, 1_100, false);
+        uint64 validUntil;
+        (, valid, reasons, validUntil) = registry.anchorStatus(ASSET, boundary);
+        require(valid && reasons == 0, "pending multiplier rejected early");
+        require(validUntil == 1_100, "pending multiplier not capped");
+
+        vm.warp(1_100);
+        (, valid, reasons,) = registry.anchorStatus(ASSET, boundary);
+        require(!valid && reasons & ReasonBits.CORPORATE_INCONSISTENT != 0, "effective multiplier change accepted");
     }
 }

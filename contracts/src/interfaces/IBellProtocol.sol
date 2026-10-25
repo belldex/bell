@@ -35,6 +35,10 @@ interface ISessionRegistry {
     function captureClose(bytes32 assetId, bytes32 boundaryHash) external returns (Anchor memory);
     function latestSample(bytes32 assetId, uint8 phase) external view returns (SourceSample memory);
     function closeAnchor(bytes32 assetId, bytes32 boundaryHash) external view returns (Anchor memory);
+    function anchorStatus(bytes32 assetId, bytes32 boundaryHash)
+        external
+        view
+        returns (Anchor memory anchor, bool valid, uint256 reasons, uint64 validUntil);
 }
 
 interface ICalendarRegistry {

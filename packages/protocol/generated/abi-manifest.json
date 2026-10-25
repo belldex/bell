@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "a58ac7590e26e84dc7856c09562b5712bc800a9f1e22ae46bf4353b41c918dda",
+  "abiSha256": "0038234be4f4b67f8d54a9d149eb078c3c1634f2a8c8c76a0820eee2afc5cc4d",
   "interfaces": {
     "IAssetRegistry": [
       {
@@ -2588,6 +2588,92 @@
       }
     ],
     "ISessionRegistry": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "boundaryHash",
+            "type": "bytes32"
+          }
+        ],
+        "name": "anchorStatus",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "boundaryHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint128",
+                "name": "multiplier18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "capturedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureStart",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "sourceHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct Anchor",
+            "name": "anchor",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "valid",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reasons",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint64",
+            "name": "validUntil",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
         "inputs": [
           {

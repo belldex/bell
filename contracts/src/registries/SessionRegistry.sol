@@ -600,4 +600,55 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
     function closeAnchor(bytes32 assetId, bytes32 boundaryHash) external view override returns (Anchor memory) {
         return _anchors[keccak256(abi.encode(assetId, boundaryHash))];
     }
+
+    /// @notice Validates a stored close anchor against its own capture metadata and the live corporate getters.
+    /// @dev This is the minimal onchain view the hook needs for the planned-closure branch. It deliberately does
+    /// not re-read the calendar: the caller binds `boundaryHash` to the canonical upcoming/current CLOSED leaf
+    /// through `CalendarProof.hashLeaf(chainId, calendarRegistry, leaf)` and checks `closureStart` itself.
+    /// A pending multiplier caps validity at its effective time; an immediate/past multiplier change or issuer
+    /// pause invalidates the anchor instead of silently rescaling it.
+    function anchorStatus(bytes32 assetId, bytes32 boundaryHash)
+        external
+        view
+        override
+        returns (Anchor memory anchor, bool valid, uint256 reasons, uint64 validUntil)
+    {
+        anchor = _anchors[keccak256(abi.encode(assetId, boundaryHash))];
+        if (assetId == ZERO32 || boundaryHash == ZERO32 || anchor.assetId != assetId
+            || anchor.boundaryHash != boundaryHash || anchor.price18 == 0 || anchor.multiplier18 == 0
+            || anchor.capturedAt == 0 || anchor.observedAt == 0 || anchor.inputAt == 0 || anchor.closureStart == 0
+            || anchor.sourceHash == ZERO32 || anchor.capturedAt >= anchor.closureStart
+            || anchor.observedAt > anchor.capturedAt || anchor.inputAt > anchor.capturedAt
+            || anchor.inputAt > block.timestamp || anchor.observedAt > block.timestamp) {
+            return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, 0);
+        }
+
+        uint256 deadline = uint256(anchor.inputAt) + PolicyConstants.MAX_ANCHOR_AGE_SECONDS + 1;
+        validUntil = deadline > type(uint64).max ? type(uint64).max : uint64(deadline);
+        if (block.timestamp >= validUntil) {
+            return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, validUntil);
+        }
+
+        AssetDescriptor memory descriptor_ = assetRegistry.descriptor(assetId);
+        if (!descriptor_.isStock) {
+            return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, validUntil);
+        }
+        (bool corporateOk, uint128 multiplier, uint64 corporateUntil,, uint256 corporateReasons) =
+            _readCorporate(descriptor_.token);
+        if (!corporateOk || multiplier != anchor.multiplier18) {
+            return (
+                anchor,
+                false,
+                corporateReasons == 0 ? ReasonBits.CORPORATE_INCONSISTENT : corporateReasons,
+                validUntil
+            );
+        }
+        // A pending multiplier is still the current multiplier until `effectiveAt`; the frozen price cannot
+        // outlive that boundary.
+        if (corporateUntil < validUntil) validUntil = corporateUntil;
+        if (block.timestamp >= validUntil) {
+            return (anchor, false, ReasonBits.CORPORATE_INCONSISTENT, validUntil);
+        }
+        return (anchor, true, 0, validUntil);
+    }
 }

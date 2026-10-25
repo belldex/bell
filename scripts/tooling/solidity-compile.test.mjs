@@ -31,8 +31,10 @@ test('compiles normative protocol types with the pinned Solidity compiler', asyn
 
   const sessionRegistry = output.contracts['contracts/src/interfaces/IBellProtocol.sol'].ISessionRegistry;
   assert.deepEqual(sessionRegistry.abi.filter(({ type }) => type === 'function').map(({ name }) => name), [
-    'captureClose', 'closeAnchor', 'health', 'latestSample', 'refreshHealth', 'submitReports',
+    'anchorStatus', 'captureClose', 'closeAnchor', 'health', 'latestSample', 'refreshHealth', 'submitReports',
   ]);
+  const anchorStatus = sessionRegistry.abi.find(({ type, name }) => type === 'function' && name === 'anchorStatus');
+  assert.deepEqual(anchorStatus.outputs.map(({ type }) => type), ['tuple', 'bool', 'uint256', 'uint64']);
   const calendarRegistry = output.contracts['contracts/src/interfaces/IBellProtocol.sol'].ICalendarRegistry;
   assert.deepEqual(calendarRegistry.abi.filter(({ type }) => type === 'function').map(({ name }) => name), [
     'activateInterval', 'activateRoot', 'cancel', 'currentInterval', 'nextInterval', 'operation', 'queueRoot',
@@ -72,7 +74,9 @@ test('standard-json compiler profile is fixed to the current candidate config', 
   assert.equal(output.compilerVersion, '0.8.26');
   assert.equal(output.profile.evmVersion, 'cancun');
   assert.equal(output.profile.optimizerRuns, 200);
+  assert.equal(output.profile.bytecodeHash, 'none');
   assert.match(foundry, /^solc_version\s*=\s*"0\.8\.26"$/m);
   assert.match(foundry, /^optimizer_runs\s*=\s*200$/m);
   assert.match(foundry, /^evm_version\s*=\s*"cancun"$/m);
+  assert.match(foundry, /^bytecode_hash\s*=\s*"none"$/m);
 });
