@@ -45,6 +45,7 @@ test('rejects invalid provider identity and endpoint protocols', () => {
   assert.throws(() => createRpcClient({ provider: 'alchemy', networkType: 'mainnet', endpoint: 'https://rpc.example.invalid/v2/key' }), /official Robinhood endpoint/i);
   assert.throws(() => createRpcClient({ provider: 'pinax', networkType: 'mainnet', endpoint: 'https://robinhood.rpc.pinax.network/v1/' }), /credential/i);
   assert.throws(() => createRpcClient({ provider: 'alchemy', networkType: 'mainnet', endpoint: 'file:///tmp/rpc' }), /HTTPS/i);
-  assert.throws(() => createRpcClient({ provider: 'pinax', networkType: 'testnet', endpoint: 'https://robinhood.rpc.pinax.network/v1/key/' }), /not verified/i);
+  assert.doesNotThrow(() => createRpcClient({ provider: 'pinax', networkType: 'testnet', endpoint: 'https://robsepolia.rpc.pinax.network/v1/key/' }));
+  assert.throws(() => createRpcClient({ provider: 'pinax', networkType: 'testnet', endpoint: 'https://robinhood.rpc.pinax.network/v1/key/' }), /official Robinhood endpoint/i);
   assert.throws(() => createRpcClient({ provider: 'alchemy', networkType: 'mainnet', endpoint: 'https://robinhood-mainnet.g.alchemy.com:8443/v2/key' }), /port/i);
 });

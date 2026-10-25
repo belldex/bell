@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "kind": "ASSET_CANDIDATE_PARTIAL_PREFLIGHT",
+  "status": "PARTIAL_ALCHEMY_ONLY",
+  "provider": "alchemy",
+  "network": "Robinhood Chain mainnet",
+  "chainId": 4663,
+  "block": {
+    "number": "97543900",
+    "hash": "0x41e9eeac7435451d3b8bdb224dba1a3f575b22f4700b8034200eb11739f8b7b7"
+  },
+  "assets": [
+    {
+      "symbol": "AAPL",
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "codePresent": true,
+      "codeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+      "observedDecimals": "18",
+      "decimalsMatches": true,
+      "corporateStatus": {
+        "multiplier18": "1000566080061092436",
+        "pendingMultiplier18": "1000566080061092436",
+        "effectiveAt": "1786720366",
+        "oraclePaused": false
+      }
+    },
+    {
+      "symbol": "NVDA",
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "codePresent": true,
+      "codeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+      "observedDecimals": "18",
+      "decimalsMatches": true,
+      "corporateStatus": {
+        "multiplier18": "1000775159164630595",
+        "pendingMultiplier18": "1000775159164630595",
+        "effectiveAt": "1788998430",
+        "oraclePaused": false
+      }
+    },
+    {
+      "symbol": "TSLA",
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "codePresent": true,
+      "codeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+      "observedDecimals": "18",
+      "decimalsMatches": true,
+      "corporateStatus": {
+        "multiplier18": "1000000000000000000",
+        "pendingMultiplier18": "1000000000000000000",
+        "effectiveAt": "0",
+        "oraclePaused": false
+      }
+    }
+  ],
+  "feeds": [
+    {
+      "name": "ETH_USD",
+      "proxy": "0x78F3556b67E17Df817D51Ef5a990cDaF09E8d3A9",
+      "proxyCodePresent": true,
+      "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+      "observedDecimals": "8",
+      "decimalsMatches": true,
+      "implementation": "0x6091e64eb7138eef066a80fd3a0d7427b91f2721",
+      "implementationCodePresent": true,
+      "implementationCodeHash": "0x8cbea1fd25321771256158fd6beb8689fe60cd36230b22c65e77c2a03c5972fd"
+    },
+    {
+      "name": "USDG_USD",
+      "proxy": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2",
+      "proxyCodePresent": true,
+      "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+      "observedDecimals": "8",
+      "decimalsMatches": true,
+      "implementation": "0x8beee3503f6860d5dac4ce26b5eee92982951c2e",
+      "implementationCodePresent": true,
+      "implementationCodeHash": "0x206a881c94ecf09d4b9e94ce7d859d6b0acdec074f05f9917072d8da659b6764"
+    },
+    {
+      "name": "AAPL_ADJUSTED_USD",
+      "proxy": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
+      "proxyCodePresent": true,
+      "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+      "observedDecimals": "8",
+      "decimalsMatches": true,
+      "implementation": "0xbb11a21267cfdb63d4935d99a499133dd1744acb",
+      "implementationCodePresent": true,
+      "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+    },
+    {
+      "name": "NVDA_ADJUSTED_USD",
+      "proxy": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+      "proxyCodePresent": true,
+      "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+      "observedDecimals": "8",
+      "decimalsMatches": true,
+      "implementation": "0xc9d16e4f2569b9e3ea0468fd85844953713dc2a2",
+      "implementationCodePresent": true,
+      "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+    },
+    {
+      "name": "TSLA_ADJUSTED_USD",
+      "proxy": "0x4A1166a659A55625345e9515b32adECea5547C38",
+      "proxyCodePresent": true,
+      "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+      "observedDecimals": "8",
+      "decimalsMatches": true,
+      "implementation": "0x7a6b81ba7fbcb90104d8c496158cf383cd7233b1",
+      "implementationCodePresent": true,
+      "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+    }
+  ],
+  "verifier": {
+    "address": "0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7",
+    "codePresent": true,
+    "codeHash": "0x4bd86e898b2952f6f0d20fee037accf52490dbdd9279345cd4b0a7161b5c022b"
+  },
+  "mismatches": [],
+  "providersAgree": false,
+  "admissionGranted": false,
+  "limitations": [
+    "Single-provider reads are preliminary and do not verify a common block against an independent provider.",
+    "Public metadata and code presence do not establish source entitlement, report signatures, redistribution rights, or token admission."
+  ]
+}

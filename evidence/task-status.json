@@ -70,9 +70,15 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "scripts/discovery/fetch-catalog.mjs",
-        "scripts/discovery/catalog.mjs"
+        "scripts/discovery/catalog.mjs",
+        "scripts/discovery/preflight-catalog.mjs",
+        "scripts/discovery/preflight-catalog.test.mjs",
+        "evidence/runtime/catalog-mainnet-preflight-2026-10-25.json"
       ],
-      "blockers": []
+      "blockers": [
+        "Public Discovery metadata is complete for nine v11 AAPL/NVDA/TSLA phase streams, but verifier/source tables and authenticated sample-report entitlement are not verified.",
+        "Data rights and admission remain NOT_VERIFIED / NOT_ADMITTED."
+      ]
     },
     "M01-02": {
       "title": "Validasi canonical token dan proxy binding",
@@ -80,18 +86,36 @@
       "evidence": [
         "config/assets/candidates.mainnet.json",
         "packages/domain/src/source-manifest.mjs",
-        "packages/domain/test/source-manifest.test.mjs"
+        "packages/domain/test/source-manifest.test.mjs",
+        "scripts/discovery/partial-asset-probe.mjs",
+        "scripts/discovery/partial-asset-probe.test.mjs",
+        "evidence/runtime/asset-candidate-alchemy-partial-2026-10-25.json",
+        "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json"
       ],
-      "blockers": []
+      "blockers": [
+        "Same-block RPC agreement verifies observed code/getters only; candidate contract identities, verifier semantics, source bindings, and source/data-use entitlements remain unadmitted pending review and evidence.",
+        "Current evidence is a single read-only snapshot and does not replace required production validation or governance approval."
+      ]
     },
     "M01-03": {
       "title": "Implementasikan authenticated RPC probes",
       "status": "IN_PROGRESS",
       "evidence": [
-        "scripts/discovery/rpc-client.mjs"
+        "scripts/discovery/rpc-client.mjs",
+        "scripts/discovery/partial-alchemy-probe.mjs",
+        "scripts/discovery/rpc-capability-probe.mjs",
+        "scripts/discovery/rpc-capability-probe.test.mjs",
+        "evidence/runtime/rpc-preflight-alchemy-partial-2026-10-25.json",
+        "evidence/runtime/rpc-preflight-mainnet-agree-2026-10-25.json",
+        "evidence/runtime/rpc-preflight-testnet-agree-2026-10-25.json",
+        "evidence/runtime/rpc-discovery-pinax-testnet-2026-10-25.json",
+        "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
+        "evidence/runtime/rpc-capability-matrix-2026-10-25.json"
       ],
       "blockers": [
-        "Authenticated-RPC-endpoints-not-configured"
+        "Pengukuran 72 jam formal (latency p50/p95/p99, 429/5xx, head lag antar provider, reconnect) baru dimulai 2026-10-25 - keputusan provider aktif paling cepat 2026-10-28",
+        "Capability preflight membuktikan pembacaan historical pada head-1000, bukan kedalaman archive historis penuh; archive retention perlu pengukuran lebih dalam sebelum diklaim",
+        "WSS tidak tersedia di Alchemy Robinhood Free (HTTPS only saat pemeriksaan 2026-10-25); Pinax menawarkan wss://ws.pinax.network namun WSS tetap opsional - HTTP polling adalah transport wajib"
       ]
     },
     "M01-04": {

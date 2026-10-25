@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "kind": "RPC_CAPABILITY_MATRIX",
+  "recordedAt": "2026-10-25T11:42:14.770Z",
+  "providers": [
+    "alchemy",
+    "pinax"
+  ],
+  "networks": {
+    "mainnet": {
+      "alchemy": {
+        "schemaVersion": 1,
+        "kind": "RPC_CAPABILITY_PREFLIGHT",
+        "status": "CAPABILITIES_OK",
+        "provider": "alchemy",
+        "chainId": 4663,
+        "head": {
+          "blockNumber": "97559653",
+          "blockHash": "0xf20c3f66afe25c9437ac11c09d84dfceae016ab8df2422c10df8af9bf671647c"
+        },
+        "checks": {
+          "code": {
+            "ok": true,
+            "value": {
+              "codePresent": false
+            }
+          },
+          "nonce": {
+            "ok": true,
+            "value": {
+              "value": "0"
+            }
+          },
+          "gasPrice": {
+            "ok": true,
+            "value": {
+              "wei": "20030000"
+            }
+          },
+          "estimateGas": {
+            "ok": true,
+            "value": {
+              "gas": "24455"
+            }
+          },
+          "historicalBlock": {
+            "ok": true,
+            "value": {
+              "blockNumber": "97558653",
+              "blockHash": "0xcf848b642065b0b301f32111c2a986707e158dcb5a38ea8c5e51f3c6ce7f542e"
+            }
+          },
+          "historicalCall": {
+            "ok": true,
+            "value": {
+              "returnedBytes": 0
+            }
+          },
+          "boundedLogs": {
+            "ok": true,
+            "value": {
+              "count": 0,
+              "fromBlock": "0x5d0a45c",
+              "toBlock": "0x5d0a465",
+              "maxBlocks": 10
+            }
+          },
+          "receipt": {
+            "ok": true,
+            "value": {
+              "responseShapeValid": true
+            }
+          }
+        },
+        "mainnetBroadcastAllowed": false,
+        "limitations": [
+          "Read-only RPC capability checks do not establish production SLOs, account entitlements, or transaction execution readiness.",
+          "eth_estimateGas is a simulation only; no transaction was signed or broadcast."
+        ]
+      },
+      "pinax": {
+        "schemaVersion": 1,
+        "kind": "RPC_CAPABILITY_PREFLIGHT",
+        "status": "CAPABILITIES_OK",
+        "provider": "pinax",
+        "chainId": 4663,
+        "head": {
+          "blockNumber": "97559676",
+          "blockHash": "0x9975d52cfb0e3427f3a0c81e7a4a408d8d41d07d67658ba2806bb4688f5bc47a"
+        },
+        "checks": {
+          "code": {
+            "ok": true,
+            "value": {
+              "codePresent": false
+            }
+          },
+          "nonce": {
+            "ok": true,
+            "value": {
+              "value": "0"
+            }
+          },
+          "gasPrice": {
+            "ok": true,
+            "value": {
+              "wei": "20032000"
+            }
+          },
+          "estimateGas": {
+            "ok": true,
+            "value": {
+              "gas": "24455"
+            }
+          },
+          "historicalBlock": {
+            "ok": true,
+            "value": {
+              "blockNumber": "97558676",
+              "blockHash": "0x1b402551adf062caa13eaf8be79fcb13884823e92cdd942d16ba0afcdec96e0c"
+            }
+          },
+          "historicalCall": {
+            "ok": true,
+            "value": {
+              "returnedBytes": 0
+            }
+          },
+          "boundedLogs": {
+            "ok": true,
+            "value": {
+              "count": 0,
+              "fromBlock": "0x5d0a473",
+              "toBlock": "0x5d0a47c",
+              "maxBlocks": 10
+            }
+          },
+          "receipt": {
+            "ok": true,
+            "value": {
+              "responseShapeValid": true
+            }
+          }
+        },
+        "mainnetBroadcastAllowed": false,
+        "limitations": [
+          "Read-only RPC capability checks do not establish production SLOs, account entitlements, or transaction execution readiness.",
+          "eth_estimateGas is a simulation only; no transaction was signed or broadcast."
+        ]
+      }
+    },
+    "testnet": {
+      "alchemy": {
+        "schemaVersion": 1,
+        "kind": "RPC_CAPABILITY_PREFLIGHT",
+        "status": "CAPABILITIES_OK",
+        "provider": "alchemy",
+        "chainId": 46630,
+        "head": {
+          "blockNumber": "142427169",
+          "blockHash": "0x332bac9d6abb1d91278460de4a0907639eaa2f6852690f1eeef67405894d79c7"
+        },
+        "checks": {
+          "code": {
+            "ok": true,
+            "value": {
+              "codePresent": false
+            }
+          },
+          "nonce": {
+            "ok": true,
+            "value": {
+              "value": "0"
+            }
+          },
+          "gasPrice": {
+            "ok": true,
+            "value": {
+              "wei": "10000000"
+            }
+          },
+          "estimateGas": {
+            "ok": true,
+            "value": {
+              "gas": "24338"
+            }
+          },
+          "historicalBlock": {
+            "ok": true,
+            "value": {
+              "blockNumber": "142426169",
+              "blockHash": "0x7a3ca6065cad5db0ebdfdf2993298e48872c31bc16b7766c9953c09744ed342a"
+            }
+          },
+          "historicalCall": {
+            "ok": true,
+            "value": {
+              "returnedBytes": 0
+            }
+          },
+          "boundedLogs": {
+            "ok": true,
+            "value": {
+              "count": 0,
+              "fromBlock": "0x87d4418",
+              "toBlock": "0x87d4421",
+              "maxBlocks": 10
+            }
+          },
+          "receipt": {
+            "ok": true,
+            "value": {
+              "responseShapeValid": true
+            }
+          }
+        },
+        "mainnetBroadcastAllowed": false,
+        "limitations": [
+          "Read-only RPC capability checks do not establish production SLOs, account entitlements, or transaction execution readiness.",
+          "eth_estimateGas is a simulation only; no transaction was signed or broadcast."
+        ]
+      },
+      "pinax": {
+        "schemaVersion": 1,
+        "kind": "RPC_CAPABILITY_PREFLIGHT",
+        "status": "CAPABILITIES_OK",
+        "provider": "pinax",
+        "chainId": 46630,
+        "head": {
+          "blockNumber": "142427186",
+          "blockHash": "0x383c598391dd1bcb2f0f480e50b47fb14e477e1c388f4cfea225d27b4bbfa1b1"
+        },
+        "checks": {
+          "code": {
+            "ok": true,
+            "value": {
+              "codePresent": false
+            }
+          },
+          "nonce": {
+            "ok": true,
+            "value": {
+              "value": "0"
+            }
+          },
+          "gasPrice": {
+            "ok": true,
+            "value": {
+              "wei": "10000000"
+            }
+          },
+          "estimateGas": {
+            "ok": true,
+            "value": {
+              "gas": "24338"
+            }
+          },
+          "historicalBlock": {
+            "ok": true,
+            "value": {
+              "blockNumber": "142426186",
+              "blockHash": "0x9e4c0876924f82de39cd66cd9278bd38cb39bfb02171219e3b128b8963683ffa"
+            }
+          },
+          "historicalCall": {
+            "ok": true,
+            "value": {
+              "returnedBytes": 0
+            }
+          },
+          "boundedLogs": {
+            "ok": true,
+            "value": {
+              "count": 0,
+              "fromBlock": "0x87d4429",
+              "toBlock": "0x87d4432",
+              "maxBlocks": 10
+            }
+          },
+          "receipt": {
+            "ok": true,
+            "value": {
+              "responseShapeValid": true
+            }
+          }
+        },
+        "mainnetBroadcastAllowed": false,
+        "limitations": [
+          "Read-only RPC capability checks do not establish production SLOs, account entitlements, or transaction execution readiness.",
+          "eth_estimateGas is a simulation only; no transaction was signed or broadcast."
+        ]
+      }
+    }
+  },
+  "mainnetBroadcastAllowed": false
+}
