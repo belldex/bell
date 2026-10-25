@@ -32,16 +32,21 @@ alter table backup_manifests        enable row level security;
 
 -- Sanitized public projections: the only shapes exposed to the publishable
 -- client. They must not join to licensed payloads or service metadata.
-create view if not exists public_assets as
+-- Postgres has no CREATE VIEW IF NOT EXISTS; drop-then-create keeps reruns
+-- idempotent for the sanitized views themselves.
+drop view if exists public_assets;
+create view public_assets as
   select chain_id, descriptor_id, token_address, class, capabilities, canonical_state
   from asset_descriptors;
 
-create view if not exists public_pools as
+drop view if exists public_pools;
+create view public_pools as
   select c.chain_id, c.pool_id, c.hook_address, c.class, c.immutable_caps,
          c.reference_mode, c.policy_hash, c.config_hash
   from pool_configs c;
 
-create view if not exists public_status as
+drop view if exists public_status;
+create view public_status as
   select b.chain_id, b.block_number, b.block_hash, b.finality_state
   from chain_blocks b
   where b.canonical;

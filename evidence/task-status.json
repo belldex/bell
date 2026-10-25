@@ -376,12 +376,14 @@
         "contracts/test/unit/hook/SeedAccounting.t.sol",
         "contracts/src/BellHook.sol",
         "contracts/test/unit/hook/BellHook.t.sol",
-        "contracts/test/unit/hook/BellHookLifecycle.t.sol"
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol",
+        "contracts/src/libraries/PositionReceipt.sol",
+        "contracts/test/unit/hook/PositionReceipt.t.sol"
       ],
       "blockers": [
         "M06 factory atomic context, settlement, owner/liquidity/receipt verification, and requestHash wiring are not implemented; hook activation relies on the immutable factory trust boundary.",
         "TREASURY_ONLY callback path is implemented but lacks a focused integration test against the real adapter context.",
-        "Seed helper unit tests and direct hook callbacks do not prove public PositionManager or TreasuryAdapter settlement integration."
+        "PositionReceipt now has isolated owner/pool/ticks/liquidity verification tests, but seed helper unit tests and direct hook callbacks still do not prove public PositionManager or TreasuryAdapter settlement integration."
       ]
     },
     "M05-05": {
@@ -392,9 +394,16 @@
     },
     "M06-01": {
       "title": "Bangun atomic create-and-seed factory",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/libraries/PositionReceipt.sol",
+        "contracts/test/unit/hook/PositionReceipt.t.sol",
+        "contracts/src/BellHook.sol"
+      ],
+      "blockers": [
+        "BellPoolFactory execution path (CREATE2 hook deployment, request replay/deadline checks, initialize, explicit-liquidity mint, settlement, refund and activation) remains unimplemented.",
+        "Atomic rollback and actual PositionManager recipient/liquidity receipt integration still need end-to-end tests."
+      ]
     },
     "M06-02": {
       "title": "Integrasikan PUBLIC PositionManager",
@@ -422,37 +431,33 @@
     },
     "M07-01": {
       "title": "Buat schema derived state",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "supabase/migrations/20261025000000_derived_state.sql",
-        "packages/domain/test/schema.test.mjs"
+        "packages/domain/test/schema.test.mjs",
+        "evidence/runtime/supabase-live-verification-2026-10-25.json"
       ],
-      "blockers": [
-        "Live Postgres/Supabase reset belum tersedia offline; baru validasi struktural schema"
-      ]
+      "blockers": []
     },
     "M07-02": {
       "title": "Terapkan RLS dan akses Storage",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "supabase/migrations/20261025000001_rls.sql",
-        "supabase/migrations/20261025000000_derived_state.sql"
+        "evidence/runtime/supabase-live-verification-2026-10-25.json"
       ],
-      "blockers": [
-        "Negative tests di live Postgres/Supabase belum bisa dijalankan offline; struktur default-deny + public views sudah ditulis"
-      ]
+      "blockers": []
     },
     "M07-03": {
       "title": "Implementasikan atomic leases dan fencing",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "supabase/migrations/20261025000002_leases_and_jobs.sql",
         "packages/domain/src/jobs.mjs",
-        "packages/domain/test/jobs.test.mjs"
+        "packages/domain/test/jobs.test.mjs",
+        "evidence/runtime/supabase-live-verification-2026-10-25.json"
       ],
-      "blockers": [
-        "SQL transaction race tests butuh live Postgres; logika lease guard sudah teruji"
-      ]
+      "blockers": []
     },
     "M07-04": {
       "title": "Implementasikan bounded object archive",
@@ -470,10 +475,11 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "supabase/migrations/20261025000003_jobs_cron.sql",
-        "docs/runbooks/migrations.md"
+        "docs/runbooks/migrations.md",
+        "evidence/runtime/supabase-live-verification-2026-10-25.json"
       ],
       "blockers": [
-        "Cron install dan rehearsal butuh platform live"
+        "pg_cron schedule wiring menunggu edge functions M08/M09-01 terdeploy; tabel scheduled_jobs + prune sudah ter-install idempoten"
       ]
     },
     "M08-01": {

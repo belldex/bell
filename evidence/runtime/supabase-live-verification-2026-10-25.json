@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "kind": "SUPABASE_LIVE_VERIFICATION",
+  "recordedAt": "2026-10-25T12:30:00Z",
+  "method": "supabase db push (migrasi 1-2) + docker psql via session pooler (migrasi 3-4, parser CLI mengabaikan statement)",
+  "schema": {
+    "tables": 21,
+    "sanitizedViews": ["public_assets", "public_pools", "public_status"],
+    "rlsEnabledTables": 19,
+    "migrationsApplied": [
+      "20261025000000_derived_state",
+      "20261025000001_rls",
+      "20261025000002_leases_and_jobs",
+      "20261025000003_jobs_cron"
+    ]
+  },
+  "rlsNegativeTests": {
+    "anonSelectRowsPendingSubmissions": 0,
+    "anonSelectRowsJobLeases": 0,
+    "anonSelectRowsChains": 0,
+    "anonInsertPendingSubmissions": "BLOCKED (row-level security policy)",
+    "anonExecuteAcquireJobLease": false,
+    "anonExecuteRenewJobLease": false,
+    "anonExecuteReleaseJobLease": false,
+    "anonExecuteRecordPendingSubmission": false
+  },
+  "leaseRaceTests": {
+    "firstAcquire": "fence=1 OK",
+    "secondAcquireOtherWorker": "LEASE_HELD (ditolak)",
+    "renewByOwner": "true",
+    "renewByForeignWorker": "false",
+    "releaseThenReacquire": "fence=2 (monotonic)"
+  },
+  "cronInstall": {
+    "scheduledJobs": ["keeper-a-tick 30s", "indexer-tick 60s", "maintenance 3600s"],
+    "idempotentInstall": "on conflict do nothing terbukti",
+    "pgCronScheduleWiring": "menunggu edge functions (M08/M09-01)"
+  },
+  "findings": [
+    "Host direct db.<ref>.supabase.co hanya IPv6 - jaringan tanpa IPv6 wajib pakai session pooler aws-0-ap-southeast-1.pooler.supabase.com (IPv4)",
+    "Postgres tidak mendukung CREATE VIEW IF NOT EXISTS - migrasi RLS memakai drop-then-create untuk 3 view sanitized",
+    "Signature revoke fungsi harus tanpa typmod (numeric, bukan numeric(39,0))",
+    "supabase CLI parser mengabaikan statement setelah plpgsql body pada pooler ini - migrasi fungsi dieksekusi via psql langsung dan didaftarkan manual ke supabase_migrations.schema_migrations"
+  ]
+}

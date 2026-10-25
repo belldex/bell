@@ -5,7 +5,7 @@
 
 create extension if not exists pgcrypto;
 
-create table if not exists job_lease_history (
+create table if not exists public.job_lease_history (
   chain_id    integer not null references chains(chain_id),
   job_kind    text not null,
   fence       numeric(39, 0) not null check (fence >= 0),
@@ -19,7 +19,8 @@ create table if not exists job_lease_history (
 -- Acquire or take over an expired lease in one atomic statement. Fence is
 -- monotonic per (chain_id, job_kind): a stale worker holding an old fence is
 -- rejected by any newer generation.
-create or replace function acquire_job_lease(
+drop function if exists public.acquire_job_lease(integer, text, bytea, integer);
+create or replace function public.acquire_job_lease(
   p_chain_id integer,
   p_job_kind text,
   p_owner_token bytea,
@@ -63,11 +64,12 @@ begin
   return query select v_fence, v_expires;
 end;
 $$;
-revoke all on function acquire_job_lease(integer, text, bytea, integer) from anon, authenticated;
+revoke all on function public.acquire_job_lease(integer, text, bytea, integer) from anon, authenticated;
 
 -- Renew only while the caller still owns the current generation. The result
 -- must be re-checked after every await and before any signing decision.
-create or replace function renew_job_lease(
+drop function if exists public.renew_job_lease(integer, text, bytea, numeric, integer);
+create or replace function public.renew_job_lease(
   p_chain_id integer,
   p_job_kind text,
   p_owner_token bytea,
@@ -87,9 +89,10 @@ as $$
      and expires_at > now()
    returning true;
 $$;
-revoke all on function renew_job_lease(integer, text, numeric(39,0), bytea, integer) from anon, authenticated;
+revoke all on function public.renew_job_lease(integer, text, bytea, numeric, integer) from anon, authenticated;
 
-create or replace function release_job_lease(
+drop function if exists public.release_job_lease(integer, text, bytea, numeric);
+create or replace function public.release_job_lease(
   p_chain_id integer,
   p_job_kind text,
   p_owner_token bytea,
@@ -105,10 +108,11 @@ as $$
      and owner_token = p_owner_token
      and fence = p_fence;
 $$;
-revoke all on function release_job_lease(integer, text, bytea, numeric(39,0)) from anon, authenticated;
+revoke all on function public.release_job_lease(integer, text, bytea, numeric) from anon, authenticated;
 
 -- Pending signed submissions are written BEFORE broadcast (service-only).
-create or replace function record_pending_submission(
+drop function if exists public.record_pending_submission(integer, bytea, numeric, bytea, bytea, jsonb);
+create or replace function public.record_pending_submission(
   p_chain_id integer,
   p_signer bytea,
   p_nonce numeric(39,0),
@@ -124,4 +128,11 @@ as $$
   values (p_chain_id, p_signer, p_nonce, p_signed_bytes, p_tx_hash, p_report_identity, 0)
   on conflict (chain_id, signer, nonce) do nothing;
 $$;
-revoke all on function record_pending_submission(integer, bytea, numeric(39,0), bytea, bytea, jsonb) from anon, authenticated;
+revoke all on function public.record_pending_submission(integer, bytea, numeric, bytea, bytea, jsonb) from anon, authenticated;
+
+-- Default Postgres grants EXECUTE on functions to PUBLIC; brief §8.3 requires
+-- minimal privileges, so the service functions are closed to PUBLIC entirely.
+revoke execute on function public.acquire_job_lease(integer, text, bytea, integer) from public;
+revoke execute on function public.renew_job_lease(integer, text, bytea, numeric, integer) from public;
+revoke execute on function public.release_job_lease(integer, text, bytea, numeric) from public;
+revoke execute on function public.record_pending_submission(integer, bytea, numeric, bytea, bytea, jsonb) from public;
