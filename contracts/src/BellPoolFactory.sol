@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {BellHook} from "./BellHook.sol";
 import {BellHookDeployer} from "./BellHookDeployer.sol";
 import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, LiquidityMode} from "./types/ProtocolTypes.sol";
+import {TreasuryAdapter} from "./TreasuryAdapter.sol";
 import {IBellPoolFactory, IAssetRegistry, ISessionRegistry} from "./interfaces/IBellProtocol.sol";
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
 import {PositionReceipt, IPositionReceiptManager} from "./libraries/PositionReceipt.sol";
@@ -48,6 +49,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     address public immutable serviceToken;
     address public immutable serviceRecipient;
     uint128 public immutable serviceFee;
+    uint8 public immutable liquidityMode;
     bytes32 public immutable profileHash;
     mapping(address => uint64) public override nonces;
     bool private _entered;
@@ -55,9 +57,8 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     constructor(PoolConfig memory profile, BellHookDeployer deployer, address usdg, address recipient) {
         if (profile.factory != address(this) || address(deployer).code.length == 0
             || deployer.factory() != address(this) || profile.poolManager.code.length == 0
-            || profile.positionManager.code.length == 0 || profile.assetRegistry.code.length == 0
+            || profile.assetRegistry.code.length == 0
             || profile.calendarRegistry.code.length == 0 || profile.safetyController.code.length == 0
-            || profile.liquidityMode != uint8(LiquidityMode.PUBLIC) || profile.treasuryAdapter != address(0)
             || profile.tickSpacing != 60 || profile.poolClass > 1 || profile.policyId == bytes32(0)
             || recipient == address(0) || recipient == address(this)) revert InvalidConfiguration();
         for (uint256 i; i < 2; ++i) {
@@ -65,10 +66,22 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
                 || uint256(profile.closureCap[i]) > 2 * uint256(profile.tradeCap[i])
                 || profile.closureCap[i] > profile.windowCap[i]) revert InvalidConfiguration();
         }
-        IPositionManager pm = IPositionManager(profile.positionManager);
-        if (address(pm.poolManager()) != profile.poolManager) revert InvalidConfiguration();
-        IAllowanceTransfer p2 = IPositionManagerPermit2(address(pm)).permit2();
-        if (address(p2).code.length == 0) revert InvalidConfiguration();
+        IPositionManager pm;
+        IAllowanceTransfer p2;
+        if (profile.liquidityMode == uint8(LiquidityMode.PUBLIC)) {
+            if (profile.positionManager == address(0) || profile.positionManager.code.length == 0
+                || profile.treasuryAdapter != address(0)) revert InvalidConfiguration();
+            pm = IPositionManager(profile.positionManager);
+            if (address(pm.poolManager()) != profile.poolManager) revert InvalidConfiguration();
+            p2 = IPositionManagerPermit2(address(pm)).permit2();
+            if (address(p2).code.length == 0) revert InvalidConfiguration();
+        } else if (profile.liquidityMode == uint8(LiquidityMode.TREASURY_ONLY)) {
+            if (profile.treasuryAdapter == address(0) || profile.treasuryAdapter.code.length == 0) {
+                revert InvalidConfiguration();
+            }
+        } else {
+            revert InvalidConfiguration();
+        }
         uint256 fee;
         if (usdg != address(0)) {
             if (usdg.code.length == 0) revert InvalidConfiguration();
@@ -82,6 +95,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         serviceToken = usdg;
         serviceRecipient = recipient;
         serviceFee = uint128(fee); // decimals <= 18 proves the bound
+        liquidityMode = profile.liquidityMode;
         profileHash = _profileHash(profile);
     }
 
@@ -107,46 +121,64 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         address hook = hookDeployer.deploy(request.config, key, _salt(request));
         if (hook != predicted) revert InvalidConfiguration();
         key.hooks = IHooks(hook);
-        uint256 tokenId = positionManager.nextTokenId();
-        if (tokenId == 0) revert InvalidRequest();
-        BellHook(hook).beginSeed(requestHash, request.tickLower, request.tickUpper, bytes32(tokenId), request.liquidity);
-        emit PoolCreated(hook, id, BellHook(hook).configHash(), msg.sender, request.recipient);
-        IPoolManager(request.config.poolManager).initialize(key, request.sqrtPriceX96);
 
-        uint256[2] memory starting = [IERC20(request.config.token0).balanceOf(address(this)),
-            IERC20(request.config.token1).balanceOf(address(this))];
-        _fund(request.config.token0, request.amountMax[0], request.deadline);
-        _fund(request.config.token1, request.amountMax[1], request.deadline);
-        _mint(request, key);
-        _clear(request.config.token0);
-        _clear(request.config.token1);
-        PositionReceipt.verifyPublicPosition(IPositionReceiptManager(address(positionManager)), tokenId,
-            request.recipient, key, request.tickLower, request.tickUpper, request.liquidity);
-        if (positionManager.nextTokenId() != tokenId + 1 || !BellHook(hook).seedCaptured()) revert InvalidRequest();
-        uint128[2] memory principal = BellHook(hook).seedPrincipal();
-        _verifySpent(request.config.token0, starting[0], request.amountMax[0], principal[0]);
-        _verifySpent(request.config.token1, starting[1], request.amountMax[1], principal[1]);
-        bytes32 positionKey = keccak256(abi.encodePacked(address(positionManager), request.tickLower, request.tickUpper, bytes32(tokenId)));
-        BellHook(hook).activatePool(requestHash, tokenId);
-        emit PoolActivated(id, tokenId, positionKey);
-        _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
-        emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
-        _refund(request.config.token0, starting[0], request.amountMax[0] - principal[0]);
-        _refund(request.config.token1, starting[1], request.amountMax[1] - principal[1]);
-        result = CreateResult(hook, id, tokenId, positionKey, request.liquidity, principal);
+        if (request.config.liquidityMode == uint8(LiquidityMode.PUBLIC)) {
+            uint256 tokenId = positionManager.nextTokenId();
+            if (tokenId == 0) revert InvalidRequest();
+            BellHook(hook).beginSeed(requestHash, request.tickLower, request.tickUpper, bytes32(tokenId), request.liquidity);
+            emit PoolCreated(hook, id, BellHook(hook).configHash(), msg.sender, request.recipient);
+            IPoolManager(request.config.poolManager).initialize(key, request.sqrtPriceX96);
+
+            uint256[2] memory starting = [IERC20(request.config.token0).balanceOf(address(this)),
+                IERC20(request.config.token1).balanceOf(address(this))];
+            _fund(request.config.token0, request.amountMax[0], request.deadline);
+            _fund(request.config.token1, request.amountMax[1], request.deadline);
+            _mint(request, key);
+            _clear(request.config.token0);
+            _clear(request.config.token1);
+            PositionReceipt.verifyPublicPosition(IPositionReceiptManager(address(positionManager)), tokenId,
+                request.recipient, key, request.tickLower, request.tickUpper, request.liquidity);
+            if (positionManager.nextTokenId() != tokenId + 1 || !BellHook(hook).seedCaptured()) revert InvalidRequest();
+            uint128[2] memory principal = BellHook(hook).seedPrincipal();
+            _verifySpent(request.config.token0, starting[0], request.amountMax[0], principal[0]);
+            _verifySpent(request.config.token1, starting[1], request.amountMax[1], principal[1]);
+            bytes32 positionKey = keccak256(abi.encodePacked(address(positionManager), request.tickLower, request.tickUpper, bytes32(tokenId)));
+            BellHook(hook).activatePool(requestHash, tokenId);
+            emit PoolActivated(id, tokenId, positionKey);
+            _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
+            emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
+            _refund(request.config.token0, starting[0], request.amountMax[0] - principal[0]);
+            _refund(request.config.token1, starting[1], request.amountMax[1] - principal[1]);
+            result = CreateResult(hook, id, tokenId, positionKey, request.liquidity, principal);
+        } else {
+            bytes32 salt = request.salt;
+            BellHook(hook).beginSeed(requestHash, request.tickLower, request.tickUpper, salt, request.liquidity);
+            emit PoolCreated(hook, id, BellHook(hook).configHash(), msg.sender, request.recipient);
+            IPoolManager(request.config.poolManager).initialize(key, request.sqrtPriceX96);
+
+            bytes32 positionKey = TreasuryAdapter(request.config.treasuryAdapter).seed(requestHash, request);
+            if (!BellHook(hook).seedCaptured()) revert InvalidRequest();
+            uint128[2] memory principal = BellHook(hook).seedPrincipal();
+            BellHook(hook).activatePool(requestHash, 0);
+            emit PoolActivated(id, 0, positionKey);
+            _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
+            emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
+            result = CreateResult(hook, id, 0, positionKey, request.liquidity, principal);
+        }
         _entered = false;
     }
 
     function _validate(CreateRequest calldata r) private view {
         if (serviceToken == address(0)) revert FeeTokenNotBound();
-        if (r.config.liquidityMode != uint8(LiquidityMode.PUBLIC)) revert UnsupportedLiquidityMode();
+        if (r.config.liquidityMode != liquidityMode) revert UnsupportedLiquidityMode();
         // No configured-reference-band evaluator is integrated yet. Never imply priced protection.
         if (r.config.poolClass == 0) revert PriceGuardUnavailable();
         if (_profileHash(r.config) != profileHash || r.config.token0 == address(0) || r.config.token0 >= r.config.token1
             || r.config.token0.code.length == 0 || r.config.token1.code.length == 0) revert InvalidConfiguration();
         if (msg.sender == serviceRecipient || block.timestamp > r.deadline || r.nonce != nonces[msg.sender] || r.nonce == type(uint64).max
             || r.deadline > type(uint48).max || r.recipient <= address(2) || r.recipient == address(this)
-            || r.recipient == address(positionManager) || r.liquidity == 0 || r.tickLower >= r.tickUpper
+            || (address(positionManager) != address(0) && r.recipient == address(positionManager))
+            || r.liquidity == 0 || r.tickLower >= r.tickUpper
             || r.tickLower < TickMath.MIN_TICK || r.tickUpper > TickMath.MAX_TICK
             || r.tickLower % 60 != 0 || r.tickUpper % 60 != 0 || r.amountMax[0] == 0 || r.amountMax[1] == 0
             || r.maxServiceFee < serviceFee) revert InvalidRequest();

@@ -102,23 +102,28 @@ contract DeployTestnet {
     function _writeManifest(
         Deployment memory d, address deployer, address treasury, address recipient, address feeToken
     ) private {
-        string memory json = string.concat(
+        string memory p1 = string.concat(
             '{\n  "chainId": ', vm.toString(block.chainid),
             ',\n  "deployer": "', _hex(deployer),
             '",\n  "treasury": "', _hex(treasury),
             '",\n  "serviceRecipient": "', _hex(recipient),
-            '",\n  "feeToken": "', _hex(feeToken),
+            '",\n  "feeToken": "', _hex(feeToken)
+        );
+        string memory p2 = string.concat(
             '",\n  "permit2": "', _hex(CANONICAL_PERMIT2),
             '",\n  "safetyController": "', _hex(d.safetyController),
             '",\n  "assetRegistry": "', _hex(d.assetRegistry),
             '",\n  "calendarRegistry": "', _hex(d.calendarRegistry),
-            '",\n  "sessionRegistry": "', _hex(d.sessionRegistry),
+            '",\n  "sessionRegistry": "', _hex(d.sessionRegistry)
+        );
+        string memory p3 = string.concat(
             '",\n  "poolManager": "', _hex(d.poolManager),
             '",\n  "positionManager": "', _hex(d.positionManager),
             '",\n  "hookDeployer": "', _hex(d.hookDeployer),
             '",\n  "poolFactory": "', _hex(d.poolFactory),
             '",\n  "status": "REHEARSAL",\n  "note": "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked."\n}\n'
         );
+        string memory json = string.concat(p1, p2, p3);
         vm.writeFile("../evidence/deploy/testnet-46630.json", json);
     }
 

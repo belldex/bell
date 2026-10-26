@@ -19,6 +19,17 @@ TESTNET_POOL_CLASS=1             # SESSION_ONLY
 ```
 Pastikan wallet deployer punya ETH testnet (faucet) — kebutuhan ±0.02 ETH untuk seluruh fase.
 
+## 1b. (Opsional) Token fee rehearsal
+Factory butuh token fee untuk createAndSeed; tanpa itu setiap create revert FeeTokenNotBound.
+Untuk rehearsal, deploy mock 6-desimal sekali lalu isi alamatnya:
+
+    cd contracts
+    set -a; source ../.env; set +a
+    forge script script/DeployFeeToken.s.sol --rpc-url "$RH_TESTNET_RPC_PRIMARY" --broadcast -vv
+    # salin address dari evidence/deploy/testnet-46630-fee-token.json ke TESTNET_FEE_TOKEN_ADDRESS
+
+Ini fixture (bukan USDG) dan hanya membuktikan jalur fee/desimal; identitas USDG tetap MISSING.
+
 ## 2. Deploy
 ```bash
 cd contracts

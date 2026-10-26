@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellPoolFactory} from "../../../src/BellPoolFactory.sol";
+import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
@@ -609,5 +610,77 @@ contract BellPoolFactoryTest {
         assets.admit(token,id);
         assets.setDescriptor(AssetDescriptor(id,token,stock,6,4,address(0),address(0),address(0),address(0),address(0),token.codehash,bytes32(uint256(1)),bytes32(uint256(1))));
         sessions.setHealth(id, HealthView(true,0,9000,11000,9900,9950));
+    }
+
+    function _mineTreasurySalt(address deployerAddr, address factoryAddr, bytes32 initHash) private view returns (bytes32 foundSalt) {
+        bytes memory ns = abi.encode(block.chainid, factoryAddr, address(this), uint64(0), bytes32(0));
+        bytes memory cp = abi.encodePacked(bytes1(0xff), deployerAddr, bytes32(0), initHash);
+        for (uint256 i; i < 200000; ++i) {
+            bytes32 digest;
+            assembly ("memory-safe") {
+                mstore(add(ns, 160), i)
+                let s := keccak256(add(ns, 32), 160)
+                mstore(add(cp, 53), s)
+                digest := keccak256(add(cp, 32), 85)
+            }
+            if (uint160(uint256(digest)) & 0x3fff == 0x2cc0) {
+                return bytes32(i);
+            }
+        }
+        revert("treasury salt search");
+    }
+
+    function testTreasuryOnlyFactoryCanCreateAndSeedPool() external {
+        uint64 n0 = vm.getNonce(address(this));
+        address predictedDeployer = vm.computeCreateAddress(address(this), n0);
+        address predictedAdapter = vm.computeCreateAddress(address(this), n0 + 1);
+        address predictedFactory = vm.computeCreateAddress(address(this), n0 + 2);
+
+        PoolConfig memory tc = request.config;
+        tc.factory = predictedFactory;
+        tc.liquidityMode = 1; // TREASURY_ONLY
+        tc.treasuryAdapter = predictedAdapter;
+        tc.positionManager = address(manager);
+
+        BellHookDeployer tDeployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode));
+        bytes32 initHash = tDeployer.initCodeHash(tc, PoolKey(Currency.wrap(tc.token0), Currency.wrap(tc.token1), LPFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(0))));
+        bytes32 foundSalt = _mineTreasurySalt(predictedDeployer, predictedFactory, initHash);
+        bytes32 create2Salt = keccak256(abi.encode(block.chainid, predictedFactory, address(this), uint64(0), foundSalt));
+        address predictedHook = address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), predictedDeployer, create2Salt, initHash)))));
+
+        address TREASURY_ADDR = address(0xAAAA1);
+        TreasuryAdapter tAdapter = new TreasuryAdapter(manager, predictedFactory, TREASURY_ADDR, RECIPIENT, predictedHook, Currency.wrap(tc.token0), Currency.wrap(tc.token1), 60);
+        BellPoolFactory tFactory = new BellPoolFactory(tc, tDeployer, address(usdg), SERVICE);
+
+        CreateRequest memory tReq = CreateRequest({
+            config: tc,
+            salt: foundSalt,
+            nonce: 0,
+            deadline: 10100,
+            recipient: RECIPIENT,
+            sqrtPriceX96: uint160(1 << 96),
+            tickLower: -120,
+            tickUpper: 120,
+            liquidity: 1_000_000,
+            amountMax: [uint128(100000), uint128(100000)],
+            maxServiceFee: tFactory.serviceFee()
+        });
+
+        token0.mint(TREASURY_ADDR, 1e9);
+        token1.mint(TREASURY_ADDR, 1e9);
+        vm.prank(TREASURY_ADDR);
+        token0.approve(address(tAdapter), type(uint256).max);
+        vm.prank(TREASURY_ADDR);
+        token1.approve(address(tAdapter), type(uint256).max);
+
+        usdg.mint(address(this), tReq.maxServiceFee);
+        usdg.approve(address(tFactory), tReq.maxServiceFee);
+
+        CreateResult memory res = tFactory.createAndSeed(tReq);
+        require(res.tokenId == 0, "treasury tokenId must be 0");
+        require(res.positionKey != bytes32(0), "positionKey must be valid");
+        require(res.seedPrincipal[0] > 0 && res.seedPrincipal[1] > 0, "principal recorded");
+        require(BellHook(res.hook).state().lifecycle == uint8(Lifecycle.LIVE), "hook must be live");
+        require(tAdapter.position(res.positionKey).active, "adapter position must be active");
     }
 }
