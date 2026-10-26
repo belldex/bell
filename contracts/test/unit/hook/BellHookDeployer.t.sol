@@ -111,6 +111,38 @@ contract BellHookDeployerTest {
         require(!ok, "non-factory deployed hook");
     }
 
+    /// @dev v4's isValidHookAddress would accept these salts (one flag bit is set), but the hook
+    /// would then never receive beforeSwap/afterSwap, so every swap guard would be skipped.
+    function testDeployRejectsSaltOutsideNormativePermissionMask() external {
+        bytes32 salt = _saltWithWrongMask();
+        address predicted = deployer.predict(config, key, salt);
+        require(uint160(predicted) & HOOK_FLAG_MASK != EXPECTED_HOOK_FLAGS, "fixture salt is conforming");
+        (bool ok, bytes memory reason) =
+            address(deployer).call(abi.encodeCall(deployer.deploy, (config, key, salt)));
+        require(!ok, "wrong-mask salt deployed a hook");
+        require(reason.length >= 4 && bytes4(reason) == BellHookDeployer.InvalidHookAddress.selector,
+            "unexpected revert reason");
+    }
+
+    function testDeployAcceptsOnlyTheNormativeMask() external {
+        address hook = deployer.deploy(config, key, _validSalt());
+        require(uint160(hook) & HOOK_FLAG_MASK == EXPECTED_HOOK_FLAGS, "deployed hook mask");
+    }
+
+    function _saltWithWrongMask() private view returns (bytes32 salt) {
+        bytes32 initHash = deployer.initCodeHash(config, key);
+        for (uint256 i = 1; i < 100_000; ++i) {
+            salt = bytes32(i);
+            address predicted = address(uint160(uint256(keccak256(abi.encodePacked(
+                bytes1(0xff), address(deployer), salt, initHash
+            )))));
+            uint160 bits = uint160(predicted) & HOOK_FLAG_MASK;
+            // Keep a flag set so v4's isValidHookAddress still passes, but drop beforeSwap/afterSwap.
+            if (bits != 0 && bits != EXPECTED_HOOK_FLAGS) return salt;
+        }
+        revert("wrong-mask hook salt not found");
+    }
+
     function _validSalt() private view returns (bytes32 salt) {
         bytes32 initHash = deployer.initCodeHash(config, key);
         for (uint256 i = 1; i < 100_000; ++i) {

@@ -15,6 +15,12 @@ contract BellHookDeployer {
     error InvalidHookAddress(address predicted);
     error DeploymentFailed();
 
+    /// @notice Normative BellHook permission mask (beforeInitialize, before/afterAddLiquidity,
+    /// before/afterSwap). v4's Hooks.isValidHookAddress only rejects inconsistent delta flags and
+    /// requires one bit to be set, so a salt could otherwise land the hook on an address that never
+    /// receives swap callbacks: guards would be skipped silently while the pool still activates.
+    uint160 internal constant EXPECTED_HOOK_MASK = 0x2cc0;
+
     address public immutable factory;
     address public immutable sessionRegistry;
     bytes32 public immutable templateCodeHash;
@@ -48,7 +54,8 @@ contract BellHookDeployer {
     function deploy(PoolConfig memory config, PoolKey memory key, bytes32 salt) external returns (address hook) {
         if (msg.sender != factory) revert Unauthorized();
         address predicted = predict(config, key, salt);
-        if (!Hooks.isValidHookAddress(IHooks(address(uint160(predicted))), key.fee)) {
+        if (!Hooks.isValidHookAddress(IHooks(address(uint160(predicted))), key.fee)
+            || uint160(predicted) & Hooks.ALL_HOOK_MASK != EXPECTED_HOOK_MASK) {
             revert InvalidHookAddress(predicted);
         }
         bytes memory code = _initCode(config, key);
