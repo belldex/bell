@@ -18,6 +18,7 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/type
 import {SwapParams, ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 
@@ -36,6 +37,7 @@ contract RouterTestToken is ERC20 {
 contract RouterMockHook {
     using PoolIdLibrary for PoolKey;
     using BalanceDeltaLibrary for BalanceDelta;
+    using StateLibrary for IPoolManager;
 
     IPoolManager public immutable manager;
     IBellSwapEvaluator public immutable evaluator;
@@ -400,7 +402,7 @@ contract BellRouterTest is IUnlockCallback {
             hook: address(wethHook),
             zeroForOne: wethIsZero,
             exactInput: true,
-            amountSpecified: 1 ether,
+            amountSpecified: 1e8,
             limitAmount: 1e7,
             sqrtPriceLimitX96: wethIsZero ? TickMath.MIN_SQRT_PRICE + 1 : TickMath.MAX_SQRT_PRICE - 1,
             recipient: ALICE,
@@ -412,13 +414,13 @@ contract BellRouterTest is IUnlockCallback {
             unwrapRefund: true
         });
 
-        // Alice sends 2 ether (1 ether swap, 1 ether refund)
+        // Alice sends 2e8 wei (1e8 swap, 1e8 refund)
         vm.prank(ALICE);
-        (uint128 inAmount, uint128 outAmount) = router.swap{value: 2 ether}(req);
+        (uint128 inAmount, uint128 outAmount) = router.swap{value: 2e8}(req);
 
-        require(inAmount == 1 ether, "used 1 ether");
+        require(inAmount == 1e8, "used 1e8");
         require(outAmount >= 1e7, "output received");
-        require(ALICE.balance == 9 ether, "1 ether refunded to alice");
+        require(ALICE.balance == 10 ether - 1e8, "1e8 refunded to alice");
         require(address(router).balance == 0, "no eth left in router");
         require(token1.balanceOf(ALICE) >= 1e7, "alice got token1");
     }
@@ -455,5 +457,38 @@ contract BellRouterTest is IUnlockCallback {
         require(ALICE.balance == aliceEthBefore + outAmount, "alice received native eth");
         require(address(router).balance == 0, "no eth left in router");
         require(weth.balanceOf(address(router)) == 0, "no weth left in router");
+    }
+
+    function testInvalidRecipientReverts() external {
+        SwapRequest memory req = SwapRequest({
+            hook: address(hook),
+            zeroForOne: true,
+            exactInput: true,
+            amountSpecified: 1e8,
+            limitAmount: 1e7,
+            sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1,
+            recipient: address(0), // Zero recipient!
+            nonce: 0,
+            deadline: 10100,
+            expectedConfigHash: CONFIG_HASH,
+            wrapInput: false,
+            unwrapOutput: false,
+            unwrapRefund: false
+        });
+
+        vm.prank(ALICE);
+        (bool ok, bytes memory reason) = address(router).call(abi.encodeCall(router.swap, (req)));
+        require(!ok && bytes4(reason) == BellRouter.InvalidRecipient.selector, "zero recipient allowed");
+
+        req.recipient = address(router); // Router itself as recipient!
+        vm.prank(ALICE);
+        (ok, reason) = address(router).call(abi.encodeCall(router.swap, (req)));
+        require(!ok && bytes4(reason) == BellRouter.InvalidRecipient.selector, "router recipient allowed");
+    }
+
+    function testUnlockCallbackUnauthorizedForStranger() external {
+        vm.prank(ALICE);
+        (bool ok, bytes memory reason) = address(router).call(abi.encodeCall(router.unlockCallback, ("")));
+        require(!ok && bytes4(reason) == BellRouter.Unauthorized.selector, "stranger unlock allowed");
     }
 }
