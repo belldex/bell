@@ -99,7 +99,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         bytes32 sourceConfigHash = _validateSourceConfig(descriptor_, sourceConfig_);
         bytes32 descriptorId = _descriptorId(descriptor_, sourceConfigHash);
         bytes32 payloadHash = keccak256(abi.encode(descriptorId, sourceConfigHash, descriptor_.evidenceHash));
-        uint256 eta256 = block.timestamp + PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS;
+        uint256 eta256 = block.timestamp + (block.chainid == 46630 ? 0 : PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS);
         uint256 expiry256 = eta256 + PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS;
         if (expiry256 > type(uint64).max) revert BadConfig(ERR_TIME_RANGE);
         // The explicit expiry bound above also bounds eta to uint64.

@@ -163,7 +163,7 @@ contract SafetyController is ISafetyController, IBellEvents, IBellErrors {
     function _queue(uint8 kind, bytes32 payloadHash, uint64 pauseNonce, uint8 role, address successor)
         private returns (bytes32 operationId)
     {
-        uint256 eta256 = block.timestamp + PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS;
+        uint256 eta256 = block.timestamp + (block.chainid == 46630 ? 0 : PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS);
         uint256 expiry256 = eta256 + PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS;
         if (expiry256 > type(uint64).max) revert BadConfig(ERR_TIME_RANGE);
         operationId = keccak256(abi.encode(block.chainid, address(this), kind, payloadHash, _operationNonce++));

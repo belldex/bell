@@ -9,6 +9,7 @@ import {SourceConfigHash} from "../src/libraries/SourceConfigHash.sol";
 interface VmAsset {
     function warp(uint256 timestamp) external;
     function prank(address caller) external;
+    function chainId(uint256 newChainId) external;
 }
 
 contract MockSafetyDirectory {
@@ -121,6 +122,18 @@ contract AssetRegistryTest {
         stock.regularAdapter = stock.overnightAdapter;
         (bool mismatchedAdapter,) = address(registry).call(abi.encodeCall(registry.queueAsset, (stock, abi.encode(wires))));
         require(!mismatchedAdapter, "mismatched adapter/source config accepted");
+    }
+
+    function testAssetImmediateActivationOnTestnetChain46630() external {
+        vm.chainId(46630);
+        (AssetRegistry registry, AssetDescriptor memory stock, SourceWire[] memory wires) = _stockFixture();
+        bytes32 operationId = registry.queueAsset(stock, abi.encode(wires));
+        (,, uint64 eta,, uint8 status) = registry.operation(operationId);
+        require(eta == block.timestamp, "eta must be immediate on chain 46630");
+        require(status == 1, "queued");
+        bytes32 descriptorId = registry.activateAsset(operationId);
+        require(descriptorId != bytes32(0), "activated immediately");
+        require(registry.descriptorIdForToken(stock.token) == descriptorId, "descriptor registered");
     }
 
     function _stockFixture() internal returns (AssetRegistry registry, AssetDescriptor memory stock, SourceWire[] memory wires) {
