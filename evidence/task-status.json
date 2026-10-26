@@ -121,10 +121,11 @@
         "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
         "evidence/runtime/rpc-capability-matrix-2026-10-25.json",
         "scripts/discovery/chainlink-report-probe.mjs",
-        "evidence/runtime/chainlink-credential-verified-2026-10-25.json"
+        "evidence/runtime/chainlink-credential-verified-2026-10-25.json",
+        "evidence/runtime/chainlink-testnet-report-entitlement-2026-10-26.json"
       ],
       "blockers": [
-        "report fetch butuh subscription Data Streams aktif (keputusan bisnis); auth client terbukti live"
+        "Testnet Data Streams report fetch was attempted against the public AAPL V11 regular-hours test feed and returned Unauthorized. Testnet account entitlement / correct testnet credentials must be provisioned locally before sample report, stock health, or real-stock admission can be verified. No raw payload/signature was persisted."
       ]
     },
     "M01-04": {

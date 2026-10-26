@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-26",
+  "network": "Robinhood Testnet",
+  "chainId": 46630,
+  "provider": "Chainlink Data Streams testnet endpoint",
+  "feedId": "0x000b61d6dec069be40efc5f21f0345142a827f42966a07fa4743773383a8dd7b",
+  "feedLabel": "AAPL/USD Regular Hours Equity Price (V11 test catalog)",
+  "probe": "getLatestReport",
+  "result": "UNAUTHORIZED",
+  "interpretation": "Public discovery metadata exists, but authenticated live testnet report access/entitlement was not proven. No report payload, signature, sample, or admission evidence was recorded.",
+  "credentialHandling": "Credential values intentionally excluded. CHAINLINK_SOURCE_CREDENTIAL_B is currently unset in local .env; credential A was present but testnet report request returned Unauthorized.",
+  "status": "BLOCKED_SOURCE_ENTITLEMENT"
+}
