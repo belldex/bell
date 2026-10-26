@@ -7,9 +7,25 @@ import { validateDeployManifest, formatDeployManifest } from './deploy-manifest.
 const ROOT_URL = new URL('../../', import.meta.url);
 const MANIFEST_PATH = new URL('evidence/deploy/testnet-46630.json', ROOT_URL);
 
+async function loadEnv() {
+  const env = { ...process.env };
+  try {
+    const raw = await readFile(new URL('.env', ROOT_URL), 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+      if (match && !env[match[1]]) {
+        env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, '');
+      }
+    }
+  } catch {}
+  return env;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const isDryRun = args.includes('--dry-run');
+  const isSimulateOnly = args.includes('--simulate');
+  const env = await loadEnv();
 
   console.log('=== BELL Protocol: Robinhood Testnet (Chain 46630) Deployment Runner ===');
 
@@ -32,36 +48,41 @@ async function main() {
     return;
   }
 
-  const rpcUrl = process.env.RH_TESTNET_RPC_PRIMARY;
+  const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
   if (!rpcUrl) {
     console.error('ERROR: RH_TESTNET_RPC_PRIMARY environment variable is required.');
     process.exit(1);
   }
 
-  const privateKey = process.env.RH_TESTNET_DEPLOYER_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
+  const privateKey = env.RH_TESTNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
   if (!privateKey) {
     console.error('ERROR: RH_TESTNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required.');
     console.error('Please set RH_TESTNET_DEPLOYER_PRIVATE_KEY in your local .env file.');
     process.exit(1);
   }
 
-  console.log('Starting broadcast deployment via Foundry forge script...');
+  const forgeEnv = { ...env, DEPLOYER_PRIVATE_KEY: privateKey };
+  const forgeArgs = [
+    'script',
+    'script/DeployTestnet.s.sol',
+    '--rpc-url',
+    rpcUrl,
+    '-vv'
+  ];
 
-  const env = { ...process.env, DEPLOYER_PRIVATE_KEY: privateKey };
+  if (!isSimulateOnly) {
+    forgeArgs.push('--broadcast');
+    console.log('Starting broadcast deployment via Foundry forge script...');
+  } else {
+    console.log('Starting simulation check (read-only against live RPC, no broadcast)...');
+  }
 
   const child = spawn(
     'forge',
-    [
-      'script',
-      'script/DeployTestnet.s.sol',
-      '--rpc-url',
-      rpcUrl,
-      '--broadcast',
-      '-vv'
-    ],
+    forgeArgs,
     {
       cwd: fileURLToPath(new URL('contracts/', ROOT_URL)),
-      env,
+      env: forgeEnv,
       stdio: 'inherit'
     }
   );
