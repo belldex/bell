@@ -1,0 +1,42 @@
+{
+  "chainId": 46630,
+  "verifiedAt": "2026-10-26",
+  "status": "REHEARSAL_DEPLOYED",
+  "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+  "contracts": {
+    "safetyController": { "address": "0x41a3a17b28e88025bcd76d6ec58b00980e6b5c38", "codeBytes": 5036 },
+    "assetRegistry": { "address": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701", "codeBytes": 12234 },
+    "calendarRegistry": { "address": "0x9070021bd172cd9b4c9f0e093454b667c8f922a1", "codeBytes": 10429 },
+    "sessionRegistry": { "address": "0xe428b98f9c1c8a4cc1d89e30e5767097880db69c", "codeBytes": 18013 },
+    "poolManager": { "address": "0x2fcd196c50e348fbfe48a9d2a10776eee70d49a2", "codeBytes": 19725 },
+    "positionManager": { "address": "0x7bb0cbd999447758a343066ea99381766c0ae17e", "codeBytes": 20664 },
+    "hookDeployer": { "address": "0xdde28b3b3e5f52042bd0696de50c1ef5e88f9c1b", "codeBytes": 2996 },
+    "poolFactory": { "address": "0x193bdf3a8bfa8e866d73c5d6dfdf3db9b9ea2fd5", "codeBytes": 16877 },
+    "feeToken": { "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150", "decimals": 6, "label": "REHEARSAL_FIXTURE_NOT_USDG" }
+  },
+  "wiringChecks": {
+    "factory.hookDeployer": "0xdde28b3b3e5f52042bd0696de50c1ef5e88f9c1b",
+    "hookDeployer.factory": "0x193bdf3a8bfa8e866d73c5d6dfdf3db9b9ea2fd5",
+    "factory.serviceRecipient": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
+    "factory.serviceToken": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+    "factory.serviceFee": "49000000",
+    "factory.profileHash": "0xa8a64b5ec67468be26cd915ac4e3523a0330fcdd921ca70f01bbbcdfb0cf11d5",
+    "sessionRegistry.assetRegistry": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701",
+    "sessionRegistry.calendarRegistry": "0x9070021bd172cd9b4c9f0e093454b667c8f922a1",
+    "poolManager.owner": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+    "safetyController.roles": {
+      "governance": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+      "guardian": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
+      "treasury": "0x000000000000000000000000000000000000dead",
+      "distinct": true
+    }
+  },
+  "gas": { "used": 43682449, "priceWei": 20000001, "costEth": "0.000873649023682449" },
+  "notCovered": [
+    "PRICE_GUARDED pool class remains blocked",
+    "TreasuryAdapter is not invoked by BellPoolFactory (treasury path not integrated)",
+    "No pool has been created yet: asset admission needs queueAsset + delay, calendar root and healthy source",
+    "Keepers A/B not pointed at these addresses",
+    "PoolManager ownership still with deployer (handover rehearsal pending)"
+  ]
+}

@@ -935,12 +935,15 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "contracts/script/DeployTestnet.s.sol",
-        "docs/runbooks/testnet-deploy.md"
+        "docs/runbooks/testnet-deploy.md",
+        "evidence/deploy/testnet-46630.json",
+        "evidence/deploy/testnet-46630-verification.json",
+        "evidence/deploy/testnet-46630-fee-token.json"
       ],
       "blockers": [
-        "Script deploy testnet (registries + PoolManager/PositionManager + hook deployer + PUBLIC factory) siap; eksekusi menunggu DEPLOYER_PRIVATE_KEY/TESTNET_* diisi owner dan funding faucet.",
-        "Permit2 canonical terverifikasi ada di testnet; v4 PoolManager canonical tidak ada sehingga di-deploy sendiri (owner=deployer).",
-        "Handover rehearsal (transfer PoolManager ownership, role directory) belum dijalankan."
+        "Deployed & verified on Robinhood testnet 46630: 8 contracts live (safety/asset/calendar/session registries, PoolManager, PositionManager, hook deployer, PUBLIC factory) + 6-decimal rehearsal fee token; wiring checks pass; gas 43.68M (0.00087 ETH).",
+        "Handover rehearsal belum: PoolManager owner masih deployer, role directory rotation belum diuji.",
+        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health; TreasuryAdapter belum dipanggil factory."
       ]
     },
     "M14-02": {

@@ -8,6 +8,8 @@ import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
 import {BellHook} from "../src/BellHook.sol";
 import {BellHookDeployer} from "../src/BellHookDeployer.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
+import {BellRouter} from "../src/BellRouter.sol";
+import {WETH} from "solmate/src/tokens/WETH.sol";
 import {PoolConfig} from "../src/types/ProtocolTypes.sol";
 import {PoolManager} from "@uniswap/v4-core/src/PoolManager.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -52,22 +54,29 @@ contract DeployTestnet {
         address positionManager;
         address hookDeployer;
         address poolFactory;
+        address weth;
+        address router;
     }
 
     function run() external returns (Deployment memory d) {
         require(block.chainid == EXPECTED_CHAIN_ID, "wrong chain: expected Robinhood testnet 46630");
-        uint256 pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 pk = vm.envOr("RH_TESTNET_DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (pk == 0) pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(pk);
         require(deployer != address(0), "missing deployer");
+        // SafetyController enforces strict role separation: three distinct addresses.
+        address governance = vm.envOr("TESTNET_GOVERNANCE_ADDRESS", deployer);
+        address guardian = vm.envAddress("TESTNET_GUARDIAN_ADDRESS");
         address treasury = vm.envAddress("TESTNET_TREASURY_ADDRESS");
         address recipient = vm.envAddress("TESTNET_SERVICE_RECIPIENT");
-        require(treasury != address(0) && recipient != address(0), "missing treasury/recipient");
+        require(treasury != address(0) && recipient != address(0) && guardian != address(0), "missing role address");
+        require(governance != guardian && governance != treasury && guardian != treasury, "roles must be distinct");
         address feeToken = vm.envOr("TESTNET_FEE_TOKEN_ADDRESS", address(0));
         uint8 poolClass = uint8(vm.envOr("TESTNET_POOL_CLASS", uint256(1)));
         require(poolClass == 1, "only SESSION_ONLY rehearsal is enabled; PRICE_GUARDED stays blocked");
 
         vm.startBroadcast(pk);
-        d.safetyController = address(new SafetyController(treasury, treasury, treasury));
+        d.safetyController = address(new SafetyController(governance, guardian, treasury));
         d.assetRegistry = address(new AssetRegistry(d.safetyController));
         d.calendarRegistry = address(new CalendarRegistry(d.safetyController));
         d.sessionRegistry = address(new SessionRegistry(d.assetRegistry, d.calendarRegistry));
@@ -94,9 +103,18 @@ contract DeployTestnet {
         });
         d.poolFactory = address(new BellPoolFactory(profile, BellHookDeployer(d.hookDeployer), feeToken, recipient));
         require(d.poolFactory == futureFactory, "factory address prediction mismatch");
+
+        address weth = vm.envOr("TESTNET_WETH_ADDRESS", address(0));
+        if (weth == address(0)) {
+            weth = address(new WETH());
+        }
+        d.weth = weth;
+        d.router = address(new BellRouter(IPoolManager(d.poolManager), weth));
+
         vm.stopBroadcast();
 
         _writeManifest(d, deployer, treasury, recipient, feeToken);
+        // governance/guardian are recorded in the manifest by the caller's env; see runbook.
     }
 
     function _writeManifest(
@@ -121,6 +139,8 @@ contract DeployTestnet {
             '",\n  "positionManager": "', _hex(d.positionManager),
             '",\n  "hookDeployer": "', _hex(d.hookDeployer),
             '",\n  "poolFactory": "', _hex(d.poolFactory),
+            '",\n  "weth": "', _hex(d.weth),
+            '",\n  "router": "', _hex(d.router),
             '",\n  "status": "REHEARSAL",\n  "note": "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked."\n}\n'
         );
         string memory json = string.concat(p1, p2, p3);

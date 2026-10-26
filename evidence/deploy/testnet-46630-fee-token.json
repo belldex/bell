@@ -1,0 +1,9 @@
+{
+  "chainId": 46630,
+  "feeToken": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+  "decimals": 6,
+  "mintedTo": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+  "amount": "1000000000000",
+  "status": "REHEARSAL_FIXTURE",
+  "note": "Not USDG. Factory only checks decimals<=18 and exact transfers."
+}
