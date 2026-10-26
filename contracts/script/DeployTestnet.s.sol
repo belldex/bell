@@ -81,12 +81,16 @@ contract DeployTestnet {
         d.calendarRegistry = address(new CalendarRegistry(d.safetyController));
         d.sessionRegistry = address(new SessionRegistry(d.assetRegistry, d.calendarRegistry));
         d.poolManager = address(new PoolManager(deployer));
+        // WETH for the wrap/unwrap path. No canonical WETH9 on this chain: deploy a fixture unless
+        // TESTNET_WETH_ADDRESS points at an existing one. Must exist before PositionManager is built.
+        d.weth = vm.envOr("TESTNET_WETH_ADDRESS", address(0));
+        if (d.weth == address(0)) d.weth = address(new WETH());
         d.positionManager = address(new PositionManager(
             IPoolManager(d.poolManager),
             IAllowanceTransfer(CANONICAL_PERMIT2),
             POSITION_MANAGER_UNSUBSCRIBE_GAS_LIMIT,
             IPositionDescriptor(address(0)),
-            IWETH9(address(0))
+            IWETH9(d.weth)
         ));
         address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
         d.hookDeployer = address(new BellHookDeployer(
@@ -103,13 +107,7 @@ contract DeployTestnet {
         });
         d.poolFactory = address(new BellPoolFactory(profile, BellHookDeployer(d.hookDeployer), feeToken, recipient));
         require(d.poolFactory == futureFactory, "factory address prediction mismatch");
-
-        address weth = vm.envOr("TESTNET_WETH_ADDRESS", address(0));
-        if (weth == address(0)) {
-            weth = address(new WETH());
-        }
-        d.weth = weth;
-        d.router = address(new BellRouter(IPoolManager(d.poolManager), weth));
+        d.router = address(new BellRouter(IPoolManager(d.poolManager), d.weth));
 
         vm.stopBroadcast();
 

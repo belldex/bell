@@ -31,31 +31,51 @@ Untuk rehearsal, deploy mock 6-desimal sekali lalu isi alamatnya:
 Ini fixture (bukan USDG) dan hanya membuktikan jalur fee/desimal; identitas USDG tetap MISSING.
 
 ## 2. Deploy
+
+Ada **dua entrypoint** untuk deployment yang sama. Pilih satu, jangan keduanya — keduanya
+memanggil script Foundry yang sama dan menulis manifest yang sama.
+
+**A. Langsung Foundry** (paling transparan, dipakai saat rehearsal pertama):
 ```bash
 cd contracts
 set -a; source ../.env; set +a
 forge script script/DeployTestnet.s.sol --rpc-url "$RH_TESTNET_RPC_PRIMARY" --broadcast -vv
 ```
-Script gagal-closed bila: chainId ≠ 46630, treasury/recipient kosong, poolClass ≠ 1, atau
-prediksi alamat factory tidak cocok.
+
+**B. Runner Node** (opsional; memvalidasi manifest dengan skema kanonik + mencetak hash):
+```bash
+set -a; source .env; set +a
+node scripts/deploy/deploy-testnet.mjs --dry-run   # cek urutan tanpa broadcast
+node scripts/deploy/deploy-testnet.mjs             # broadcast + validasi manifest
+```
+Runner Node memanggil binary `forge` dari `PATH`. Bila Foundry hanya ada di `~/.foundry/bin`,
+tambahkan ke `PATH` lebih dulu (`export PATH="$HOME/.foundry/bin:$PATH"`).
+
+Script gagal-closed bila: chainId ≠ 46630, treasury/guardian/recipient kosong, tiga role tidak
+saling berbeda, poolClass ≠ 1, atau prediksi alamat factory tidak cocok.
 
 Urutan deploy (satu transaksi per kontrak):
-1. `SafetyController(treasury, treasury, treasury)`
+1. `SafetyController(governance, guardian, treasury)` — tiga alamat **wajib** berbeda
 2. `AssetRegistry(safety)`
 3. `CalendarRegistry(safety)`
 4. `SessionRegistry(assets, calendar)`
 5. `PoolManager(deployer)`
-6. `PositionManager(manager, permit2, 100000, descriptor=0, weth9=0)`
-7. `BellHookDeployer(futureFactory, sessionRegistry, keccak256(BellHook.creationCode))`
-8. `BellPoolFactory(profile, hookDeployer, feeToken, recipient)`
+6. `WETH` fixture — hanya bila `TESTNET_WETH_ADDRESS` kosong (tidak ada WETH9 kanonik di chain ini)
+7. `PositionManager(manager, permit2, 100000, descriptor=0, weth9=WETH)`
+8. `BellHookDeployer(futureFactory, sessionRegistry, keccak256(BellHook.creationCode))`
+9. `BellPoolFactory(profile, hookDeployer, feeToken, recipient)`
+10. `BellRouter(poolManager, WETH)`
 
-Manifest ditulis otomatis ke `evidence/deploy/testnet-46630.json`.
+Manifest ditulis otomatis ke `evidence/deploy/testnet-46630.json` (14 field alamat wajib:
+`deployer, treasury, serviceRecipient, permit2, safetyController, assetRegistry, calendarRegistry,
+sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, router`).
 
 ## 3. Verifikasi pasca-deploy
 - `eth_getCode` semua alamat di manifest ≠ `0x`
 - `factory.hookDeployer()` dan `factory.profileHash()` sesuai manifest
-- `deployer.getNonce()` bertambah tepat 8
+- `deployer.getNonce()` bertambah tepat 10
 - `SessionRegistry.assetRegistry()`/`calendarRegistry()` menunjuk alamat manifest
+- `BellRouter.poolManager()` = manifest `poolManager`, `BellRouter.canonicalWeth()` = manifest `weth`
 - `PoolManager.owner()` = deployer (handover ownership saat rehearsal selesai)
 
 ## 4. Belum tercakup (jangan diklaim selesai)

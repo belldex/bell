@@ -941,7 +941,7 @@
         "evidence/deploy/testnet-46630-fee-token.json"
       ],
       "blockers": [
-        "Deployed & verified on Robinhood testnet 46630: 8 contracts live (safety/asset/calendar/session registries, PoolManager, PositionManager, hook deployer, PUBLIC factory) + 6-decimal rehearsal fee token; wiring checks pass; gas 43.68M (0.00087 ETH).",
+        "Deployed & verified on Robinhood testnet 46630: 8 contracts live (safety/asset/calendar/session registries, PoolManager, PositionManager, hook deployer, PUBLIC factory) + 6-decimal rehearsal fee token; wiring checks pass; gas 43.68M (0.00087 ETH). Deploy script sekarang juga men-deploy WETH fixture + BellRouter (10 kontrak) supaya manifest memenuhi skema validator scripts/deploy/deploy-manifest.mjs; set 8 kontrak yang live saat ini jadi SUPERSEDED sampai redeploy berikutnya.",
         "Handover rehearsal belum: PoolManager owner masih deployer, role directory rotation belum diuji.",
         "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health; TreasuryAdapter belum dipanggil factory."
       ]
