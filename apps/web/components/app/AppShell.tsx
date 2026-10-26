@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeftRight, Droplets, Layers, PlusCircle, WifiOff } 
 import { Logo } from '@/components/ui/Logo';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
+import { TestnetBanner } from '@/components/app/TestnetBanner';
 import { WalletProvider, useWallet } from '@/lib/wallet';
 import { SmoothScroll } from '@/lib/motion';
 import { cn } from '@/lib/format';
@@ -57,10 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_12%,transparent),transparent_70%)]" aria-hidden="true" />
           <div className="pointer-events-none fixed inset-0 -z-0 opacity-[0.35] [background-image:linear-gradient(var(--color-line)_1px,transparent_1px),linear-gradient(90deg,var(--color-line)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(70%_60%_at_50%_0%,#000,transparent)]" aria-hidden="true" />
 
-          <div className="relative z-10 border-b border-line bg-bg-1/80 px-4 py-2 text-center text-xs text-muted backdrop-blur">
-            <span className="mr-2 rounded bg-ion/15 px-1.5 py-0.5 font-semibold uppercase tracking-[0.12em] text-ion">Preview</span>
-            Sample data only · contracts not deployed · indexer and RPC not connected
-          </div>
+          <TestnetBanner />
           <ChainGuard />
 
           <header className="sticky top-0 z-40 border-b border-line/80 bg-bg-0/85 backdrop-blur-xl">

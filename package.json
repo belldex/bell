@@ -37,7 +37,8 @@
   },
   "devDependencies": {
     "@chainlink/data-streams-sdk": "2.0.0",
-    "solc": "0.8.26"
+    "solc": "0.8.26",
+    "viem": "2.57.11"
   },
   "optionalDependencies": {
     "@foundry-rs/forge-darwin-amd64": "1.7.1",

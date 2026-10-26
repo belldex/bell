@@ -27,7 +27,7 @@ export function Cta() {
           <span className="text-ion-gradient block">Respect the close.</span>
         </h2>
         <p data-stagger className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-          Browse sample pools, run the swap flow, and walk through pool creation. Everything runs on preview data until contracts are deployed.
+          Browse sample pools, run the swap flow, and walk through pool creation. Contracts are deployed on Robinhood Testnet (Chain 46630) for rehearsal.
         </p>
         <div data-stagger className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
           <ButtonLink href="/pools" size="lg">
@@ -67,7 +67,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <p className="mx-auto max-w-6xl px-4 py-6 text-xs leading-relaxed text-dim sm:px-6">
-          Preview build. No contract is deployed and no mainnet approval has been given. Sample data is not live pool state. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
+          Rehearsal build. Robinhood Testnet (Chain 46630) protocol suite is deployed; mainnet approval has not been given. Sample pools demonstrate interface behavior. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
         </p>
       </div>
     </footer>

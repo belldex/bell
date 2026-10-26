@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "chainId": 46630,
+  "verifiedAt": "2026-10-26T07:06:33.404Z",
+  "commonBlockNumber": "142870931",
+  "commonBlockHash": "0x668edb5b44057edc5e63f4e400b5aea6c484dbb8487fd1fdbe7ecf1a3f60d034",
+  "providers": [
+    "alchemy",
+    "pinax"
+  ],
+  "statusA": {
+    "chainId": 46630,
+    "blockNumber": "142870931",
+    "blockHash": "0x668edb5b44057edc5e63f4e400b5aea6c484dbb8487fd1fdbe7ecf1a3f60d034",
+    "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "guardian": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "treasury": "0x000000000000000000000000000000000000dEaD",
+    "serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "serviceFeeRaw": "49000000",
+    "feeDecimals": 6,
+    "liquidityMode": 0,
+    "contracts": [
+      {
+        "name": "safetyController",
+        "address": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+        "bytes": 5036,
+        "codeHash": "0x5a3f0efebba2daf4d9ee8d49bd0370042957e4012eb143bc363b925ab8d1fd96"
+      },
+      {
+        "name": "assetRegistry",
+        "address": "0x17e78bb5da6e4f3e9d4c3ba2b681c97e253f5c2c",
+        "bytes": 12234,
+        "codeHash": "0x01fad8e1ba30ad5bb953cf14362f53f7a43a24e1574bf5527ce37e2e89ef73ee"
+      },
+      {
+        "name": "calendarRegistry",
+        "address": "0x23a5c207bfa123c0b5d45a74575a09ea0ee09a2b",
+        "bytes": 10429,
+        "codeHash": "0x7feafcee5c5b795c8ee4aa7c1805031ee131ff248b7fee16050c4a154329c422"
+      },
+      {
+        "name": "sessionRegistry",
+        "address": "0x86359b79236b3134e9add30c0993c0f58e14656f",
+        "bytes": 18013,
+        "codeHash": "0x4b11a8e166fa16a6a6ff5b95f9d6ebc5c01e0228c58795ffad3c236f1d049820"
+      },
+      {
+        "name": "poolManager",
+        "address": "0xea4dfb0d60e057247f61433b98b4d9c2cee009bb",
+        "bytes": 19725,
+        "codeHash": "0x167283b0e559eaf9d5cd1984320d7a76dafab9357c4db84f3aea2ad1c2f047d5"
+      },
+      {
+        "name": "positionManager",
+        "address": "0x80ba217c27ccc41650dfeba8a4f160cd644bc0cd",
+        "bytes": 20664,
+        "codeHash": "0x813d347dda8a6e780e7de63ee4d673a83f9f59d501edce39889f9f71de3e09fe"
+      },
+      {
+        "name": "hookDeployer",
+        "address": "0xc7945fc3170e1f11cf7a60d3ffa5d22834fb8e5e",
+        "bytes": 3015,
+        "codeHash": "0x0f537f89359059d8c6de62b137648bf409fa9a07f85b680760da02347c8c8a76"
+      },
+      {
+        "name": "poolFactory",
+        "address": "0x90a8cd1d2c567ef26c234b6f8578ee3afc0ecdcc",
+        "bytes": 16877,
+        "codeHash": "0x424709a84918764ecbc9d04627e2f8ab5e59800770032169561829781850a5dd"
+      },
+      {
+        "name": "weth",
+        "address": "0x49dc49ed09fdcdfa0f8e1e672e74482232b55c7b",
+        "bytes": 3254,
+        "codeHash": "0x6f522f29feca7655c6634c9f1d644c4ec5aae1ac1eb0ea175849747785acd2cd"
+      },
+      {
+        "name": "router",
+        "address": "0x9471a3be9ca5d740bf07f764ca5b9710d3729111",
+        "bytes": 7502,
+        "codeHash": "0xd4a28c5036e53eeee3771617190848a89f0b79f007fd39cb088856ea02db1161"
+      },
+      {
+        "name": "feeToken",
+        "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+        "bytes": 1820,
+        "codeHash": "0x5d597ad010eef1f9e8f40b846b18a4a1c9aa62cd5fb4fadc609ca7f1c68f267c"
+      },
+      {
+        "name": "permit2",
+        "address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+        "bytes": 9152,
+        "codeHash": "0x0117e0ed818bc3f2a8729ffc336c837e63e965f04b473047b39b35ad86aac259"
+      }
+    ],
+    "issues": [
+      "UNUSABLE_ROLE_ADDRESS"
+    ]
+  },
+  "statusB": {
+    "chainId": 46630,
+    "blockNumber": "142870931",
+    "blockHash": "0x668edb5b44057edc5e63f4e400b5aea6c484dbb8487fd1fdbe7ecf1a3f60d034",
+    "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "guardian": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "treasury": "0x000000000000000000000000000000000000dEaD",
+    "serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "serviceFeeRaw": "49000000",
+    "feeDecimals": 6,
+    "liquidityMode": 0,
+    "contracts": [
+      {
+        "name": "safetyController",
+        "address": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+        "bytes": 5036,
+        "codeHash": "0x5a3f0efebba2daf4d9ee8d49bd0370042957e4012eb143bc363b925ab8d1fd96"
+      },
+      {
+        "name": "assetRegistry",
+        "address": "0x17e78bb5da6e4f3e9d4c3ba2b681c97e253f5c2c",
+        "bytes": 12234,
+        "codeHash": "0x01fad8e1ba30ad5bb953cf14362f53f7a43a24e1574bf5527ce37e2e89ef73ee"
+      },
+      {
+        "name": "calendarRegistry",
+        "address": "0x23a5c207bfa123c0b5d45a74575a09ea0ee09a2b",
+        "bytes": 10429,
+        "codeHash": "0x7feafcee5c5b795c8ee4aa7c1805031ee131ff248b7fee16050c4a154329c422"
+      },
+      {
+        "name": "sessionRegistry",
+        "address": "0x86359b79236b3134e9add30c0993c0f58e14656f",
+        "bytes": 18013,
+        "codeHash": "0x4b11a8e166fa16a6a6ff5b95f9d6ebc5c01e0228c58795ffad3c236f1d049820"
+      },
+      {
+        "name": "poolManager",
+        "address": "0xea4dfb0d60e057247f61433b98b4d9c2cee009bb",
+        "bytes": 19725,
+        "codeHash": "0x167283b0e559eaf9d5cd1984320d7a76dafab9357c4db84f3aea2ad1c2f047d5"
+      },
+      {
+        "name": "positionManager",
+        "address": "0x80ba217c27ccc41650dfeba8a4f160cd644bc0cd",
+        "bytes": 20664,
+        "codeHash": "0x813d347dda8a6e780e7de63ee4d673a83f9f59d501edce39889f9f71de3e09fe"
+      },
+      {
+        "name": "hookDeployer",
+        "address": "0xc7945fc3170e1f11cf7a60d3ffa5d22834fb8e5e",
+        "bytes": 3015,
+        "codeHash": "0x0f537f89359059d8c6de62b137648bf409fa9a07f85b680760da02347c8c8a76"
+      },
+      {
+        "name": "poolFactory",
+        "address": "0x90a8cd1d2c567ef26c234b6f8578ee3afc0ecdcc",
+        "bytes": 16877,
+        "codeHash": "0x424709a84918764ecbc9d04627e2f8ab5e59800770032169561829781850a5dd"
+      },
+      {
+        "name": "weth",
+        "address": "0x49dc49ed09fdcdfa0f8e1e672e74482232b55c7b",
+        "bytes": 3254,
+        "codeHash": "0x6f522f29feca7655c6634c9f1d644c4ec5aae1ac1eb0ea175849747785acd2cd"
+      },
+      {
+        "name": "router",
+        "address": "0x9471a3be9ca5d740bf07f764ca5b9710d3729111",
+        "bytes": 7502,
+        "codeHash": "0xd4a28c5036e53eeee3771617190848a89f0b79f007fd39cb088856ea02db1161"
+      },
+      {
+        "name": "feeToken",
+        "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+        "bytes": 1820,
+        "codeHash": "0x5d597ad010eef1f9e8f40b846b18a4a1c9aa62cd5fb4fadc609ca7f1c68f267c"
+      },
+      {
+        "name": "permit2",
+        "address": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+        "bytes": 9152,
+        "codeHash": "0x0117e0ed818bc3f2a8729ffc336c837e63e965f04b473047b39b35ad86aac259"
+      }
+    ],
+    "issues": [
+      "UNUSABLE_ROLE_ADDRESS"
+    ]
+  },
+  "unusableRoles": [
+    "UNUSABLE_ROLE_ADDRESS"
+  ],
+  "note": "Verified dual-provider consensus on Robinhood testnet chain 46630 contracts. Credentials redacted."
+}

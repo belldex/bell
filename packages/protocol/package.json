@@ -13,13 +13,14 @@
     "./api-schema": "./src/api-schema.mjs",
     "./api-reads": "./src/api-reads.mjs",
     "./api-quote": "./src/api-quote.mjs",
-    "./api-create": "./src/api-create.mjs"
+    "./api-create": "./src/api-create.mjs",
+    "./testnet-status": "./src/testnet-status.mjs"
   },
   "dependencies": {
     "viem": "2.57.11"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check src/calendar.mjs && node --check src/identity.mjs && node --check src/source-codec.mjs && node --check src/swap-codec.mjs && node --check src/create-codec.mjs && node --check src/api-schema.mjs && node --check src/api-reads.mjs && node --check src/api-quote.mjs && node --check src/api-create.mjs"
+    "check": "node --check src/calendar.mjs && node --check src/identity.mjs && node --check src/source-codec.mjs && node --check src/swap-codec.mjs && node --check src/create-codec.mjs && node --check src/api-schema.mjs && node --check src/api-reads.mjs && node --check src/api-quote.mjs && node --check src/api-create.mjs && node --check src/testnet-status.mjs"
   }
 }

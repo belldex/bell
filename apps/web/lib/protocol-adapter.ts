@@ -11,9 +11,10 @@ import { encodeSwapRequest, SWAP_REQUEST_COMPONENTS } from '@bell/protocol/swap-
 // @ts-expect-error Workspace package export
 import { encodeCreateRequest, POOL_CONFIG_COMPONENTS, CREATE_REQUEST_COMPONENTS } from '@bell/protocol/create-codec';
 // @ts-expect-error Workspace package export
-import { bellFeeUnits, effectiveFeeUnits } from '@bell/domain/fee-policy';
+import { bellFee, effectiveLpFee } from '@bell/domain/fee-policy';
 // @ts-expect-error Workspace package export
-import { computeClosureCap } from '@bell/domain/closure-budget';
+import { ClosureBudget } from '@bell/domain/closure-budget';
+import { readTestnetStatus, TESTNET, isUnusableRole, type TestnetStatus } from '@bell/protocol/testnet-status';
 
 export interface ProtocolAbiManifest {
   schemaVersion: number;
@@ -42,7 +43,11 @@ export {
   encodeCreateRequest,
   POOL_CONFIG_COMPONENTS,
   CREATE_REQUEST_COMPONENTS,
-  bellFeeUnits,
-  effectiveFeeUnits,
-  computeClosureCap,
+  bellFee,
+  effectiveLpFee,
+  ClosureBudget,
+  readTestnetStatus,
+  TESTNET,
+  isUnusableRole,
+  type TestnetStatus,
 };

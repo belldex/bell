@@ -30,6 +30,9 @@ importers:
       solc:
         specifier: 0.8.26
         version: 0.8.26
+      viem:
+        specifier: 2.57.11
+        version: 2.57.11(typescript@7.0.2)(zod@4.6.5)
 
   apps/web:
     dependencies:
