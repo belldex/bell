@@ -15,3 +15,7 @@ wrangler.local.json
 supabase/.temp/
 evidence/raw/
 evidence/private/
+
+# local artifacts
+*.tsbuildinfo
+.tmp-*

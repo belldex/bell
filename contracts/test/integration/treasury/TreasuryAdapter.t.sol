@@ -12,6 +12,8 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {LPFeeLibrary} from "@uniswap/v4-core/src/libraries/LPFeeLibrary.sol";
+import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
+import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -26,8 +28,28 @@ interface VmTreasury {
 }
 
 contract TreasuryToken is ERC20 {
+    bool public senderTax;
+    address public receiverTaxRecipient;
+    uint256 public receiverTaxAmount;
     constructor() ERC20("Treasury Fixture", "TTF") {}
     function mint(address to, uint256 amount) external { _mint(to, amount); }
+    function setSenderTax(bool value) external { senderTax = value; }
+    function setReceiverTax(address recipient_, uint256 amount_) external {
+        receiverTaxRecipient = recipient_;
+        receiverTaxAmount = amount_;
+    }
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        uint256 tax = to == receiverTaxRecipient ? receiverTaxAmount : 0;
+        if (tax != 0) {
+            require(amount > tax, "tax exceeds transfer");
+            super.transfer(to, amount - tax);
+            _burn(_msgSender(), tax);
+        } else {
+            super.transfer(to, amount);
+        }
+        if (senderTax) _burn(_msgSender(), 1);
+        return true;
+    }
 }
 
 /// @dev The seed authority. Only this contract may call adapter.seed, deploy the hook and
@@ -218,6 +240,28 @@ contract TreasuryAdapterTest {
         require(!ok && bytes4(reason) == TreasuryAdapter.BadSeed.selector, "over-remove bypass");
     }
 
+    function testRemoveMinimumIsPrincipalOnlyWhileReturnedAmountIncludesFees() external {
+        _donate(1_000_000, 1_000_000);
+        vm.prank(TREASURY);
+        (uint128 fee0, uint128 fee1) = adapter.collect(posKey, 0, 0, request.deadline);
+        require(fee0 > 100 && fee1 > 100, "fixture must accrue fees");
+
+        _donate(1_000_000, 1_000_000);
+        uint256 principal0 = SqrtPriceMath.getAmount0Delta(
+            TickMath.getSqrtPriceAtTick(0), TickMath.getSqrtPriceAtTick(request.tickUpper),
+            request.liquidity, false);
+        uint256 principal1 = SqrtPriceMath.getAmount1Delta(
+            TickMath.getSqrtPriceAtTick(request.tickLower), TickMath.getSqrtPriceAtTick(0),
+            request.liquidity, false);
+        uint128 min0 = uint128(principal0 + 10);
+        uint128 min1 = uint128(principal1 + 10);
+        (bool ok, bytes memory reason) = _callRemoveWithMins(
+            TREASURY, posKey, request.liquidity, min0, min1, request.deadline);
+        require(!ok && bytes4(reason) == TreasuryAdapter.SlippageExceeded.selector,
+            "accrued fees must not mask principal minimum failure");
+        require(adapter.position(posKey).liquidity == request.liquidity, "failed minima mutated position");
+    }
+
     function testFullExitNeedsNoOracleAndClearsPosition() external {
         sessions.setRevertReads(true);
         uint256 before0 = token0.balanceOf(RECIPIENT);
@@ -255,6 +299,28 @@ contract TreasuryAdapterTest {
         require(!ok && bytes4(reason) == TreasuryAdapter.Unauthorized.selector, "foreign balance sweep");
     }
 
+    function testSenderTaxCannotConsumeForeignAdapterDustDuringExit() external {
+        token0.mint(address(adapter), 100);
+        token0.setSenderTax(true);
+        uint256 beforeRecipient = token0.balanceOf(RECIPIENT);
+        (bool ok, bytes memory reason) = _callRemove(TREASURY, posKey, request.liquidity / 2, 0, request.deadline);
+        require(!ok && bytes4(reason) == TreasuryAdapter.SettlementMismatch.selector, "sender tax accepted");
+        require(token0.balanceOf(address(adapter)) == 100, "foreign dust consumed");
+        require(token0.balanceOf(RECIPIENT) == beforeRecipient, "recipient paid on failed exit");
+        require(adapter.position(posKey).liquidity == request.liquidity, "position changed on failed exit");
+    }
+
+    function testUndercreditedCoreTakeCannotConsumeForeignAdapterDust() external {
+        token0.mint(address(adapter), 100);
+        token0.setReceiverTax(address(adapter), 1);
+        uint256 beforeRecipient = token0.balanceOf(RECIPIENT);
+        (bool ok, bytes memory reason) = _callRemove(TREASURY, posKey, request.liquidity / 2, 0, request.deadline);
+        require(!ok && bytes4(reason) == TreasuryAdapter.SettlementMismatch.selector, "undercredited TAKE accepted");
+        require(token0.balanceOf(address(adapter)) == 100, "foreign dust consumed");
+        require(token0.balanceOf(RECIPIENT) == beforeRecipient, "recipient paid on failed exit");
+        require(adapter.position(posKey).liquidity == request.liquidity, "position changed on failed exit");
+    }
+
     function _callRemove(address who, bytes32 key_, uint128 liquidity, uint128 min0, uint64 deadline)
         private returns (bool ok, bytes memory reason)
     {
@@ -262,11 +328,37 @@ contract TreasuryAdapterTest {
         (ok, reason) = address(adapter).call(abi.encodeCall(adapter.remove, (key_, liquidity, min0, min0, deadline)));
     }
 
+    function _callRemoveWithMins(address who, bytes32 key_, uint128 liquidity, uint128 min0, uint128 min1, uint64 deadline)
+        private returns (bool ok, bytes memory reason)
+    {
+        vm.prank(who);
+        (ok, reason) = address(adapter).call(abi.encodeCall(adapter.remove, (key_, liquidity, min0, min1, deadline)));
+    }
+
     function _callCollect(address who, bytes32 key_, uint128 min0, uint64 deadline)
         private returns (bool ok, bytes memory reason)
     {
         vm.prank(who);
         (ok, reason) = address(adapter).call(abi.encodeCall(adapter.collect, (key_, min0, min0, deadline)));
+    }
+
+    function _donate(uint128 amount0, uint128 amount1) private {
+        token0.mint(address(this), amount0);
+        token1.mint(address(this), amount1);
+        manager.unlock(abi.encode(BellHook(hook).poolKey(), amount0, amount1));
+    }
+
+    function unlockCallback(bytes calldata data) external returns (bytes memory) {
+        require(msg.sender == address(manager), "only core");
+        (PoolKey memory key, uint128 amount0, uint128 amount1) = abi.decode(data, (PoolKey, uint128, uint128));
+        manager.donate(key, amount0, amount1, bytes(""));
+        manager.sync(key.currency0);
+        require(token0.transfer(address(manager), amount0), "token0 donation");
+        manager.settle();
+        manager.sync(key.currency1);
+        require(token1.transfer(address(manager), amount1), "token1 donation");
+        manager.settle();
+        return bytes("");
     }
 
     function _predictHook(address deployerAddress, bytes32 salt, bytes32 initHash) private pure returns (address) {

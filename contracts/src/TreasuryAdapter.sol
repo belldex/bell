@@ -106,9 +106,8 @@ contract TreasuryAdapter is IUnlockCallback {
 
         _pullExact(currency0, treasury, r.amountMax[0]);
         _pullExact(currency1, treasury, r.amountMax[1]);
-        (uint128 got0, uint128 got1) = abi.decode(
-            poolManager.unlock(abi.encode(r.tickLower, r.tickUpper, r.salt, int256(uint256(r.liquidity)))),
-            (uint128, uint128));
+        (uint128 got0, uint128 got1,,) = _unlockModify(
+            r.tickLower, r.tickUpper, r.salt, int256(uint256(r.liquidity)));
         uint128[2] memory principal = BellHook(hook).seedPrincipal();
         if (!BellHook(hook).seedCaptured() || got0 != principal[0] || got1 != principal[1]
             || got0 == 0 || got1 == 0
@@ -137,8 +136,11 @@ contract TreasuryAdapter is IUnlockCallback {
         if (block.timestamp > deadline) revert DeadlineExpired(deadline);
         Position storage p = positions[key_];
         if (!p.active || liquidity == 0 || liquidity > p.liquidity) revert BadSeed();
-        (amount0, amount1) = _unlockModify(p.tickLower, p.tickUpper, p.salt, -int256(uint256(liquidity)));
-        if (amount0 < amount0Min || amount1 < amount1Min) revert SlippageExceeded();
+        uint128 principal0;
+        uint128 principal1;
+        (amount0, amount1, principal0, principal1) =
+            _unlockModify(p.tickLower, p.tickUpper, p.salt, -int256(uint256(liquidity)));
+        if (principal0 < amount0Min || principal1 < amount1Min) revert SlippageExceeded();
         p.liquidity -= liquidity;
         if (p.liquidity == 0) {
             p.active = false;
@@ -158,7 +160,7 @@ contract TreasuryAdapter is IUnlockCallback {
         if (block.timestamp > deadline) revert DeadlineExpired(deadline);
         Position storage p = positions[key_];
         if (!p.active) revert BadSeed();
-        (amount0, amount1) = _unlockModify(p.tickLower, p.tickUpper, p.salt, int256(0));
+        (amount0, amount1,,) = _unlockModify(p.tickLower, p.tickUpper, p.salt, int256(0));
         if (amount0 < fee0Min || amount1 < fee1Min) revert SlippageExceeded();
         _entered = false;
     }
@@ -180,7 +182,7 @@ contract TreasuryAdapter is IUnlockCallback {
         (int24 tickLower, int24 tickUpper, bytes32 salt, int256 liquidityDelta) =
             abi.decode(data, (int24, int24, bytes32, int256));
         PoolKey memory key = _key();
-        (BalanceDelta callerDelta,) =
+        (BalanceDelta callerDelta, BalanceDelta feesAccrued) =
             poolManager.modifyLiquidity(key, ModifyLiquidityParams({
                 tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: liquidityDelta, salt: salt
             }), "");
@@ -188,20 +190,36 @@ contract TreasuryAdapter is IUnlockCallback {
         int128 a1 = callerDelta.amount1();
         uint128 got0;
         uint128 got1;
+        uint128 principal0;
+        uint128 principal1;
         // Adding liquidity owes the pool (negative delta): settle from the treasury-funded
         // balance. Removing/collecting is owed (positive delta): take and forward in-kind.
-        if (a0 < 0) got0 = _settle(key.currency0, uint128(-a0));
-        else if (a0 > 0) got0 = _takeForward(key.currency0, uint128(a0));
-        if (a1 < 0) got1 = _settle(key.currency1, uint128(-a1));
-        else if (a1 > 0) got1 = _takeForward(key.currency1, uint128(a1));
-        return abi.encode(got0, got1);
+        if (a0 < 0) got0 = _settle(key.currency0, uint128(uint256(-int256(a0))));
+        else if (a0 > 0) {
+            got0 = _takeForward(key.currency0, uint128(a0));
+            principal0 = _principalOut(a0, feesAccrued.amount0());
+        }
+        if (a1 < 0) got1 = _settle(key.currency1, uint128(uint256(-int256(a1))));
+        else if (a1 > 0) {
+            got1 = _takeForward(key.currency1, uint128(a1));
+            principal1 = _principalOut(a1, feesAccrued.amount1());
+        }
+        return abi.encode(got0, got1, principal0, principal1);
     }
 
     function _unlockModify(int24 tickLower, int24 tickUpper, bytes32 salt, int256 liquidityDelta)
-        private returns (uint128, uint128)
+        private returns (uint128 amount0, uint128 amount1, uint128 principal0, uint128 principal1)
     {
-        return abi.decode(
-            poolManager.unlock(abi.encode(tickLower, tickUpper, salt, liquidityDelta)), (uint128, uint128));
+        return abi.decode(poolManager.unlock(abi.encode(tickLower, tickUpper, salt, liquidityDelta)),
+            (uint128, uint128, uint128, uint128));
+    }
+
+    /// @dev PositionManager defines slippage minima against (liquidityDelta - feesAccrued).
+    /// TREASURY_ONLY removal follows the same principal-only promise while returning fees in-kind too.
+    function _principalOut(int128 delta, int128 feesAccrued) private pure returns (uint128 amount) {
+        int256 principal = int256(delta) - int256(feesAccrued);
+        if (principal < 0 || uint256(principal) > type(uint128).max) revert SettlementMismatch();
+        amount = uint128(uint256(principal));
     }
 
     function _key() private view returns (PoolKey memory) {
@@ -216,7 +234,10 @@ contract TreasuryAdapter is IUnlockCallback {
     }
 
     function _takeForward(Currency currency, uint128 amount) private returns (uint128) {
+        IERC20 token = IERC20(Currency.unwrap(currency));
+        uint256 hereBefore = token.balanceOf(address(this));
         poolManager.take(currency, address(this), amount);
+        if (token.balanceOf(address(this)) != hereBefore + amount) revert SettlementMismatch();
         _forwardExact(currency, recipient, amount);
         return amount;
     }
@@ -248,9 +269,13 @@ contract TreasuryAdapter is IUnlockCallback {
     function _forwardExact(Currency currency, address to, uint128 amount) private {
         if (amount == 0) return;
         IERC20 token = IERC20(Currency.unwrap(currency));
+        uint256 hereBefore = token.balanceOf(address(this));
         uint256 toBefore = token.balanceOf(to);
+        if (hereBefore < amount) revert SettlementMismatch();
         token.safeTransfer(to, amount);
-        if (token.balanceOf(to) != toBefore + amount) revert SettlementMismatch();
+        if (token.balanceOf(address(this)) != hereBefore - amount || token.balanceOf(to) != toBefore + amount) {
+            revert SettlementMismatch();
+        }
     }
 
     function _refundExact(Currency currency, uint128 amount) private {
