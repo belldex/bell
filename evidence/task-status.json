@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "planTaskCount": 80,
   "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
-  "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6",
+  "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
   "tasks": {
     "M00-01": {
       "title": "Catat baseline dan batas mandat",
@@ -71,7 +71,7 @@
     },
     "M01-01": {
       "title": "Ambil katalog sumber dan verifier",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "scripts/discovery/fetch-catalog.mjs",
         "scripts/discovery/catalog.mjs",
@@ -89,7 +89,7 @@
     },
     "M01-02": {
       "title": "Validasi canonical token dan proxy binding",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "config/assets/candidates.mainnet.json",
         "packages/domain/src/source-manifest.mjs",
@@ -129,7 +129,7 @@
     },
     "M01-04": {
       "title": "Catat akses dan batas redistribusi data",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "config/sources/rights-status.json",
         "packages/domain/src/source-rights.mjs",
@@ -142,7 +142,7 @@
     },
     "M01-05": {
       "title": "Mulai trace kesesuaian source/freshness",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/freshness-trace.mjs",
         "packages/domain/test/freshness-trace.test.mjs",
@@ -483,9 +483,14 @@
     },
     "M06-04": {
       "title": "Implementasikan direct router dan settlement",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/BellRouter.sol",
+        "contracts/test/integration/router/BellRouter.t.sol"
+      ],
+      "blockers": [
+        "Direct router and pinned core settlement implemented: caller=payer, nonce, deadline, exact-in/exact-out slippage, WETH wrap/unwrap, and zero dust verified locally across 10 tests. Target Robinhood testnet rehearsal with live funded accounts and audited dependencies remains outstanding."
+      ]
     },
     "M06-05": {
       "title": "Bangun address mining dan deploy manifest tooling",
@@ -494,10 +499,14 @@
         "contracts/src/BellHookDeployer.sol",
         "contracts/test/unit/hook/BellHookDeployer.t.sol",
         "scripts/tooling/mine-hook-salt.mjs",
-        "scripts/tooling/mine-hook-salt.test.mjs"
+        "scripts/tooling/mine-hook-salt.test.mjs",
+        "scripts/deploy/deploy-manifest.mjs",
+        "scripts/deploy/deploy-manifest.test.mjs",
+        "scripts/deploy/deploy-testnet.mjs",
+        "contracts/script/DeployTestnet.s.sol"
       ],
       "blockers": [
-        "Deterministic request-salt mining now mirrors BellPoolFactory's creator/chain/nonce CREATE2 namespace, but a signed/reviewed deployment manifest and target-chain fork/deploy verification are still missing."
+        "Deterministic request-salt mining, manifest generation tooling, and testnet deploy runner implemented. Execution against target testnet requires funded deployer key to broadcast and verify onchain."
       ]
     },
     "M07-01": {
@@ -542,7 +551,7 @@
     },
     "M07-05": {
       "title": "Susun migrations, cron dan retention install",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "supabase/migrations/20261025000003_jobs_cron.sql",
         "docs/runbooks/migrations.md",
@@ -567,7 +576,7 @@
     },
     "M08-02": {
       "title": "Implementasikan katalog, policy dan transaction reads",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/protocol/src/api-reads.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -581,7 +590,7 @@
     },
     "M08-03": {
       "title": "Implementasikan executable quote",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/protocol/src/api-quote.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -595,7 +604,7 @@
     },
     "M08-04": {
       "title": "Implementasikan create preview dan intake status",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/protocol/src/api-create.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -619,7 +628,7 @@
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/keeper-tick.mjs",
         "packages/domain/test/keeper-tick.test.mjs",
@@ -689,7 +698,7 @@
     },
     "M10-02": {
       "title": "Implementasikan canonical event ingest",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -703,7 +712,7 @@
     },
     "M10-03": {
       "title": "Implementasikan reorg reconciliation",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -715,7 +724,7 @@
     },
     "M10-04": {
       "title": "Implementasikan receipt/finality projection",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -728,7 +737,7 @@
     },
     "M10-05": {
       "title": "Implementasikan lag/catch-up quota control",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/catchup.mjs",
         "packages/domain/test/catchup.test.mjs",
@@ -741,7 +750,7 @@
     },
     "M11-01": {
       "title": "Bangun shell, wallet dan chain guard",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -755,7 +764,7 @@
     },
     "M11-02": {
       "title": "Bangun pool directory dan Bell Clock",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -772,7 +781,7 @@
     },
     "M11-03": {
       "title": "Bangun swap flow lengkap",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -790,7 +799,7 @@
     },
     "M11-04": {
       "title": "Bangun Create Pool dan token intake UX",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -806,7 +815,7 @@
     },
     "M11-05": {
       "title": "Bangun LP positions dan exit UX",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -822,7 +831,7 @@
     },
     "M12-01": {
       "title": "Implementasikan encrypted backup rotation",
-      "status": "DONE",
+      "status": "IN_PROGRESS",
       "evidence": [
         "packages/domain/src/backup.mjs",
         "packages/domain/test/backup.test.mjs",
@@ -835,7 +844,7 @@
     },
     "M12-02": {
       "title": "Implementasikan restore dan RPO/RTO exercise",
-      "status": "DONE",
+      "status": "IN_REVIEW",
       "evidence": [
         "packages/domain/src/backup.mjs",
         "docs/runbooks/recovery.md",
@@ -847,7 +856,7 @@
     },
     "M12-03": {
       "title": "Implementasikan health metrics dan alerts",
-      "status": "DONE",
+      "status": "IN_REVIEW",
       "evidence": [
         "docs/runbooks/keeper.md",
         "docs/runbooks/indexer.md",
@@ -860,7 +869,7 @@
     },
     "M12-04": {
       "title": "Susun runbook governance dan incident",
-      "status": "DONE",
+      "status": "IN_REVIEW",
       "evidence": [
         "docs/runbooks/keeper.md",
         "docs/runbooks/recovery.md",
@@ -872,7 +881,7 @@
     },
     "M12-05": {
       "title": "Implementasikan quota/admission dashboard",
-      "status": "DONE",
+      "status": "IN_REVIEW",
       "evidence": [
         "packages/domain/src/ops-status.mjs",
         "packages/domain/test/ops-status.test.mjs",
