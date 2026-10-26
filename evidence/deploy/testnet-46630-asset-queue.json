@@ -1,0 +1,31 @@
+{
+  "chainId": 46630,
+  "recordedAt": "2026-10-26",
+  "sourceCommit": "5f99b51",
+  "assetRegistry": "0x17e78bb5da6e4f3e9d4c3ba2b681c97e253f5c2c",
+  "safetyController": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+  "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "token": "0x49dc49ed09fdcdfa0f8e1e672e74482232b55c7b",
+  "tokenLabel": "REHEARSAL_WETH_FIXTURE",
+  "tokenRole": "COUNTERASSET (isStock=false, capabilityMask=0, no adapters, empty sourceConfig -> AssetPolicy.oraclelessCounterasset)",
+  "tokenDecimals": 18,
+  "operationId": "0x167d52c49a2ac1b211b7fde95f636b62c0b34ab442f30f9bb0190083f8058ea2",
+  "descriptorId": "0xecfa5e73de66b49e393b7a169b3477b2661b9faf62527809e4c53cb784609d41",
+  "queuedTx": "0x94921e1e92458fdd9581a74eac63778b85aafdadf93a78d10c40bb239b8a72e1",
+  "queuedBlock": 142878322,
+  "queuedAt": "2026-10-26T07:22:54Z",
+  "gasUsed": 331914,
+  "eta": 1793172174,
+  "etaIso": "2026-10-28T07:22:54Z",
+  "expiry": 1793776974,
+  "expiryIso": "2026-11-04T07:22:54Z",
+  "status": "QUEUED_PENDING_TIMELOCK",
+  "descriptorIdForTokenAtRecord": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "activationCommand": "node scripts/deploy/activate-testnet-asset.mjs --operation-id=0x167d52c49a2ac1b211b7fde95f636b62c0b34ab442f30f9bb0190083f8058ea2 --token=0x49dc49ed09fdcdfa0f8e1e672e74482232b55c7b --eta=1793172174 --broadcast",
+  "preflightObserved": "activateAsset simulated from governance reverts BadConfig(keccak(\"TIMELOCK\")) while now < eta, as expected",
+  "notes": [
+    "Counterasset side only. BellPoolFactory._admitted also requires the stock side, whose descriptor must carry adapters, a non-empty sourceConfig and SessionRegistry.health() ready with reasonBits == 0, so no pool can be created from this operation alone.",
+    "Cancellable by governance or guardian before activation; after activation the descriptor is append-only.",
+    "If the contract lane redeploys AssetRegistry, this operation belongs to the superseded registry and must be queued again."
+  ]
+}

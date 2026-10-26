@@ -947,13 +947,17 @@
         "docs/runbooks/testnet-deploy.md",
         "evidence/deploy/testnet-46630.json",
         "evidence/deploy/testnet-46630-verification.json",
-        "evidence/deploy/testnet-46630-fee-token.json"
+        "evidence/deploy/testnet-46630-fee-token.json",
+        "evidence/deploy/testnet-46630-asset-queue.json",
+        "scripts/deploy/queue-testnet-asset.mjs",
+        "scripts/deploy/activate-testnet-asset.mjs"
       ],
       "blockers": [
         "Rehearsal stack live on chain 46630 at sourceCommit b7577c3: 10 contracts (safety/asset/calendar/session registries, PoolManager, WETH fixture, PositionManager, hook deployer, PUBLIC factory, BellRouter) + 6-decimal fee fixture; all codeBytes non-zero, factory<->deployer wiring, role separation, serviceFee 49000000 and router WETH binding verified on-chain; 10 txs, gas 36.10M (0.000361 ETH).",
         "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0), so the TREASURY_ONLY branch cannot be exercised on this factory and TreasuryAdapter has no live deployment.",
         "Handover rehearsal belum: PoolManager owner masih deployer, role directory rotation belum diuji.",
-        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health."
+        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health.",
+        "Counterasset WETH queued on the live AssetRegistry (tx 0x94921e1e, block 142878322, operation 0x167d52c4); eta 2026-10-28T07:22:54Z, expiry 2026-11-04T07:22:54Z. Activation still pending the 48h timelock; the stock side of the pair is not queued and needs adapters + a healthy source before any createAndSeed can pass _admitted."
       ]
     },
     "M14-02": {
