@@ -102,6 +102,22 @@ Sudah didokumentasikan di `docs/runbooks/testnet-deploy.md` §2. Alternatif: hor
 
 ---
 
+## F6 — P3: `pnpm check` merah di Windows karena crash libuv pada `build:worker`
+
+`pnpm check` berhenti di `build:worker` dengan
+`Assertion failed: process_title, file src\win\util.c, line 412` (exit 3221226505 /
+`STATUS_STACK_BUFFER_OVERRUN`). Ini bug libuv/wrangler di Windows, bukan kode kita:
+
+- perintah yang sama dijalankan sendiri (`pnpm run build:worker`) → **lulus**, 5/5 percobaan;
+- semua langkah sebelum `build:worker` lulus (unit, reference, policy, compile, 339 test
+  kontrak, abi, domain, protocol, deno 15 test, worker 6 test);
+- `evidence:check` dan `check:secrets` (yang terlewati karena rantai berhenti) lulus saat
+  dijalankan terpisah.
+
+Jadi status sebenarnya: **seluruh gate hijau**, kecuali flake lingkungan pada satu langkah.
+Untuk CI Linux langkah ini normal. Di Windows: jalankan `pnpm run build:worker` terpisah setelah
+`pnpm check`.
+
 ## Temuan lama yang sudah ditutup
 
 - `serviceFee = 49 * 10**decimals` hard-coded → sekarang dari parameter konstruktor dengan batas
