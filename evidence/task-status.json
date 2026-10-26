@@ -99,6 +99,7 @@
         "evidence/runtime/asset-candidate-alchemy-partial-2026-10-25.json",
         "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
         "evidence/runtime/canonical-token-binding-2026-10-25.json",
+        "evidence/runtime/robinhood-official-stock-testnet-availability-2026-10-26.json",
         "docs.robinhood.com/chain/contracts"
       ],
       "blockers": [
@@ -974,10 +975,12 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "evidence/runtime/testnet-dual-provider-status-2026-10-26.json",
-        "evidence/deploy/testnet-46630-asset-queue.json"
+        "evidence/deploy/testnet-46630-asset-queue.json",
+        "evidence/runtime/robinhood-official-stock-testnet-availability-2026-10-26.json"
       ],
       "blockers": [
-        "Testnet dual-provider same-block agreement and WETH counterasset admission are verified. No canonical Robinhood testnet stock address, entitled signed-source sample, approved source adapter profile, healthy stock report/corporate status, or market calendar root is supplied. WETH is explicitly only the oracleless counterasset, not a substitute stock.",
+        "The live official Robinhood assets API returned 195 official assets, all deployed only on chainId 4663; AAPL/TSLA/NVDA have no official 46630 deployment. Blockscout shows test/mock/unbacked or unaffiliated ticker-lookalikes, not canonical Robinhood tokens. Testnet dual-provider agreement and WETH counterasset admission are verified, but no official testnet stock token is available to pair with WETH.",
+        "Free Yahoo Finance quote data was retrieved, but BELL's production stock-admission path needs a canonical stock token address and a supported report→SessionRegistry adapter. The Chainlink Testnet feed request returned Unauthorized because the configured Chainlink credential is mainnet-only; do not infer entitlement or mark stock health ready from a public quote.",
         "No funded testnet source/report workload, quota/capacity trace, or full create-and-seed session rehearsal has been conducted. Do not represent the rehearsal fixture as real market/source evidence."
       ]
     },

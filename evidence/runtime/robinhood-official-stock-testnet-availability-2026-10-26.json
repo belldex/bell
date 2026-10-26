@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-26T14:19:39.826Z",
+  "endpoint": "https://api.robinhood.com/rhj/assets",
+  "httpStatus": 200,
+  "payloadSha256": "f1139a89f522115e8551f3974b33cdf9bd8a0a05088c4820e485609cb1048c97",
+  "assetCount": 195,
+  "deploymentCountsByChainId": {
+    "4663": 195
+  },
+  "selectedOfficialAssets": {
+    "AAPL": {
+      "tokenName": "Apple • Robinhood Token",
+      "status": "ASSET_STATUS_ACTIVE",
+      "decimals": 18,
+      "chainId": 4663,
+      "contractAddress": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
+    },
+    "TSLA": {
+      "tokenName": "Tesla • Robinhood Token",
+      "status": "ASSET_STATUS_ACTIVE",
+      "decimals": 18,
+      "chainId": 4663,
+      "contractAddress": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"
+    },
+    "NVDA": {
+      "tokenName": "NVIDIA • Robinhood Token",
+      "status": "ASSET_STATUS_ACTIVE",
+      "decimals": 18,
+      "chainId": 4663,
+      "contractAddress": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+    }
+  },
+  "officialTestnetStockDeploymentCount": 0,
+  "explorerSearchFinding": "Testnet Blockscout AAPL/TSLA/NVDA search returns unrelated tokens; candidates named test/mock/unbacked or unverified. A source-verified token by itself is not issuer-canonical proof.",
+  "conclusion": "No official Robinhood stock-token contract deployment on chainId 46630 is listed by the current official assets API. Mainnet addresses must not be reused on Testnet. Do not admit third-party ticker matches as official stocks.",
+  "status": "BLOCKED_OFFICIAL_TESTNET_TOKEN_UNAVAILABLE"
+}
