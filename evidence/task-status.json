@@ -950,9 +950,10 @@
         "evidence/deploy/testnet-46630-fee-token.json"
       ],
       "blockers": [
-        "Deployed & verified on Robinhood testnet 46630: 8 contracts live (safety/asset/calendar/session registries, PoolManager, PositionManager, hook deployer, PUBLIC factory) + 6-decimal rehearsal fee token; wiring checks pass; gas 43.68M (0.00087 ETH). Deploy script sekarang juga men-deploy WETH fixture + BellRouter (10 kontrak) supaya manifest memenuhi skema validator scripts/deploy/deploy-manifest.mjs; set 8 kontrak yang live saat ini jadi SUPERSEDED sampai redeploy berikutnya.",
+        "Rehearsal stack live on chain 46630 at sourceCommit b7577c3: 10 contracts (safety/asset/calendar/session registries, PoolManager, WETH fixture, PositionManager, hook deployer, PUBLIC factory, BellRouter) + 6-decimal fee fixture; all codeBytes non-zero, factory<->deployer wiring, role separation, serviceFee 49000000 and router WETH binding verified on-chain; 10 txs, gas 36.10M (0.000361 ETH).",
+        "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0), so the TREASURY_ONLY branch cannot be exercised on this factory and TreasuryAdapter has no live deployment.",
         "Handover rehearsal belum: PoolManager owner masih deployer, role directory rotation belum diuji.",
-        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health; TreasuryAdapter belum dipanggil factory."
+        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health."
       ]
     },
     "M14-02": {

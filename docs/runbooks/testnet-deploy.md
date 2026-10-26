@@ -77,6 +77,10 @@ sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, 
 - `SessionRegistry.assetRegistry()`/`calendarRegistry()` menunjuk alamat manifest
 - `BellRouter.poolManager()` = manifest `poolManager`, `BellRouter.canonicalWeth()` = manifest `weth`
 - `PoolManager.owner()` = deployer (handover ownership saat rehearsal selesai)
+- `factory.liquidityMode()` = `0` (PUBLIC) untuk rehearsal ini. Profile immutable, jadi factory ini
+  **tidak bisa** membuat pool TREASURY_ONLY; jalur treasury butuh deployment factory kedua dengan
+  `liquidityMode=1` + `treasuryAdapter` terisi.
+- `router.poolManager()` / `router.canonicalWeth()` menunjuk manifest, `weth.symbol()` = `WETH`
 
 ## 4. Belum tercakup (jangan diklaim selesai)
 - Pool create-and-seed end-to-end: butuh asset admission (`queueAsset` + 48 jam delay) + calendar root

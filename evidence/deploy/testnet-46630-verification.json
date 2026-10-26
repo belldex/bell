@@ -2,75 +2,100 @@
   "chainId": 46630,
   "verifiedAt": "2026-10-26",
   "status": "REHEARSAL_DEPLOYED",
+  "sourceCommit": "b7577c3",
+  "manifestHash": "0xc66be27ebb80f40ac494e095f9db87a361613a8cfd852c1bee3a60829e4af120",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+  "blocks": {
+    "first": 142851178,
+    "last": 142851186,
+    "verifiedAtBlock": 142861828
+  },
   "contracts": {
     "safetyController": {
-      "address": "0x41a3a17b28e88025bcd76d6ec58b00980e6b5c38",
+      "address": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
       "codeBytes": 5036
     },
     "assetRegistry": {
-      "address": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701",
+      "address": "0x17e78bb5da6e4f3e9d4c3ba2b681c97e253f5c2c",
       "codeBytes": 12234
     },
     "calendarRegistry": {
-      "address": "0x9070021bd172cd9b4c9f0e093454b667c8f922a1",
+      "address": "0x23a5c207bfa123c0b5d45a74575a09ea0ee09a2b",
       "codeBytes": 10429
     },
     "sessionRegistry": {
-      "address": "0xe428b98f9c1c8a4cc1d89e30e5767097880db69c",
+      "address": "0x86359b79236b3134e9add30c0993c0f58e14656f",
       "codeBytes": 18013
     },
     "poolManager": {
-      "address": "0x2fcd196c50e348fbfe48a9d2a10776eee70d49a2",
+      "address": "0xea4dfb0d60e057247f61433b98b4d9c2cee009bb",
       "codeBytes": 19725
     },
     "positionManager": {
-      "address": "0x7bb0cbd999447758a343066ea99381766c0ae17e",
+      "address": "0x80ba217c27ccc41650dfeba8a4f160cd644bc0cd",
       "codeBytes": 20664
     },
     "hookDeployer": {
-      "address": "0xdde28b3b3e5f52042bd0696de50c1ef5e88f9c1b",
-      "codeBytes": 2996
+      "address": "0xc7945fc3170e1f11cf7a60d3ffa5d22834fb8e5e",
+      "codeBytes": 3015
     },
     "poolFactory": {
-      "address": "0x193bdf3a8bfa8e866d73c5d6dfdf3db9b9ea2fd5",
+      "address": "0x90a8cd1d2c567ef26c234b6f8578ee3afc0ecdcc",
       "codeBytes": 16877
+    },
+    "weth": {
+      "address": "0x49dc49ed09fdcdfa0f8e1e672e74482232b55c7b",
+      "codeBytes": 3254,
+      "label": "REHEARSAL_WETH_FIXTURE"
+    },
+    "router": {
+      "address": "0x9471a3be9ca5d740bf07f764ca5b9710d3729111",
+      "codeBytes": 7502
     },
     "feeToken": {
       "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+      "codeBytes": 1820,
       "decimals": 6,
       "label": "REHEARSAL_FIXTURE_NOT_USDG"
     }
   },
   "wiringChecks": {
-    "factory.hookDeployer": "0xdde28b3b3e5f52042bd0696de50c1ef5e88f9c1b",
-    "hookDeployer.factory": "0x193bdf3a8bfa8e866d73c5d6dfdf3db9b9ea2fd5",
-    "factory.serviceRecipient": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
-    "factory.serviceToken": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+    "factory.hookDeployer": "0xc7945fC3170E1f11CF7a60D3fFa5D22834fb8E5e",
+    "hookDeployer.factory": "0x90A8CD1d2c567ef26C234b6F8578eE3AFC0eCDcC",
+    "hookDeployer.templateCodeHash": "0x198514807e928807b15d7ba69512d5e7797767c28bbb37ae4c3e98f77cc62492",
+    "factory.profileHash": "0xe189362cde468329850bd1936e9e00fb905136e8963b117af219fb09b45623a7",
+    "factory.liquidityMode": "0 (PUBLIC only)",
+    "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "factory.serviceToken": "0xe683F39FbAf9CeD50C0ac2FD56c2032c58d82150",
     "factory.serviceFee": "49000000",
-    "factory.profileHash": "0xa8a64b5ec67468be26cd915ac4e3523a0330fcdd921ca70f01bbbcdfb0cf11d5",
-    "sessionRegistry.assetRegistry": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701",
-    "sessionRegistry.calendarRegistry": "0x9070021bd172cd9b4c9f0e093454b667c8f922a1",
-    "poolManager.owner": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+    "factory.positionManager": "0x80ba217c27ccC41650dFeBa8a4f160cD644bc0Cd",
+    "factory.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "sessionRegistry.assetRegistry": "0x17E78bb5da6E4F3E9D4C3ba2b681C97e253f5C2C",
+    "sessionRegistry.calendarRegistry": "0x23A5C207bFA123C0B5d45A74575A09ea0Ee09A2b",
+    "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "router.poolManager": "0xeA4dfB0D60e057247f61433B98B4D9c2cEE009BB",
+    "router.canonicalWeth": "0x49dC49Ed09FdcdFa0f8E1E672e74482232b55c7b",
+    "weth.symbol": "WETH",
+    "weth.decimals": "18",
+    "feeToken.decimals": "6",
     "safetyController.roles": {
-      "governance": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
-      "guardian": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
-      "treasury": "0x000000000000000000000000000000000000dead",
+      "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+      "guardian": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+      "treasury": "0x000000000000000000000000000000000000dEaD",
       "distinct": true
     }
   },
   "gas": {
-    "used": 43682449,
-    "priceWei": 20000001,
-    "costEth": "0.000873649023682449"
+    "txCount": 10,
+    "used": 36096241,
+    "priceWei": 10000000000,
+    "costEth": "0.00036096241"
   },
   "notCovered": [
     "PRICE_GUARDED pool class remains blocked",
-    "TreasuryAdapter is not invoked by BellPoolFactory (treasury path not integrated)",
-    "No pool has been created yet: asset admission needs queueAsset + delay, calendar root and healthy source",
-    "Keepers A/B not pointed at these addresses",
-    "PoolManager ownership still with deployer (handover rehearsal pending)"
-  ],
-  "sourceCommit": "be33f18",
-  "sourceState": "Snapshot saat deploy; jika lane kontrak berubah setelah ini, alamat ini STALE dan harus redeploy."
+    "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0): the TREASURY_ONLY path cannot be exercised on this factory, so TreasuryAdapter has no live deployment",
+    "No pool has been created yet: asset admission needs queueAsset + delay, a calendar root and a healthy source",
+    "Keeper A (Supabase) and Keeper B (Cloudflare) are not pointed at these addresses",
+    "PoolManager ownership is still held by the deployer; handover rehearsal has not run"
+  ]
 }
