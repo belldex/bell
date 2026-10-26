@@ -31,6 +31,14 @@ const ERC20_ABI = parseAbi([
   'function name() view returns (string)',
 ]);
 
+export function describeAssetAdmission(descriptorId) {
+  if (typeof descriptorId !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(descriptorId)) {
+    throw new TypeError('descriptorId must be bytes32');
+  }
+  if (/^0x0{64}$/i.test(descriptorId)) return { state: 'NOT_ADMITTED' };
+  return { state: 'ACTIVE', descriptorId };
+}
+
 export async function previewOrQueueAsset({
   tokenAddress,
   isStock = false,
@@ -86,6 +94,25 @@ export async function previewOrQueueAsset({
   };
 
   const registryAddress = TESTNET.contracts.assetRegistry;
+  const currentDescriptorId = await publicClient.readContract({
+    address: registryAddress,
+    abi: ASSET_REGISTRY_ABI,
+    functionName: 'descriptorIdForToken',
+    args: [tokenAddress],
+  });
+  const admission = describeAssetAdmission(currentDescriptorId);
+  if (admission.state === 'ACTIVE') {
+    return {
+      chainId,
+      registryAddress,
+      tokenAddress,
+      decimals,
+      tokenCodeHash,
+      alreadyActive: true,
+      descriptorId: admission.descriptorId,
+      broadcast: false,
+    };
+  }
 
   // Check governance address
   const safetyAddress = await publicClient.readContract({
@@ -191,6 +218,13 @@ async function runCli() {
     rpcUrl,
     privateKey,
   });
+
+  if (result.alreadyActive) {
+    console.log('Asset is already ACTIVE on the current AssetRegistry. No queue transaction was sent.');
+    console.log(`- Token:        ${result.tokenAddress}`);
+    console.log(`- DescriptorID: ${result.descriptorId}`);
+    return;
+  }
 
   console.log('Result:');
   console.log(`- Token:        ${result.tokenAddress} (Decimals: ${result.decimals})`);

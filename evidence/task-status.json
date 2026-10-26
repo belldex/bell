@@ -950,14 +950,16 @@
         "evidence/deploy/testnet-46630-fee-token.json",
         "evidence/deploy/testnet-46630-asset-queue.json",
         "scripts/deploy/queue-testnet-asset.mjs",
-        "scripts/deploy/activate-testnet-asset.mjs"
+        "scripts/deploy/activate-testnet-asset.mjs",
+        "scripts/deploy/verify-testnet-dual-provider.mjs",
+        "evidence/runtime/testnet-dual-provider-status-2026-10-26.json"
       ],
       "blockers": [
-        "Rehearsal stack live on chain 46630 at sourceCommit b7577c3: 10 contracts (safety/asset/calendar/session registries, PoolManager, WETH fixture, PositionManager, hook deployer, PUBLIC factory, BellRouter) + 6-decimal fee fixture; all codeBytes non-zero, factory<->deployer wiring, role separation, serviceFee 49000000 and router WETH binding verified on-chain; 10 txs, gas 36.10M (0.000361 ETH).",
-        "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0), so the TREASURY_ONLY branch cannot be exercised on this factory and TreasuryAdapter has no live deployment.",
-        "Handover rehearsal belum: PoolManager owner masih deployer, role directory rotation belum diuji.",
-        "Pool create-and-seed end-to-end belum: butuh queueAsset + delay, calendar root, source health.",
-        "Counterasset WETH queued on the live AssetRegistry (tx 0x94921e1e, block 142878322, operation 0x167d52c4); eta 2026-10-28T07:22:54Z, expiry 2026-11-04T07:22:54Z. Activation still pending the 48h timelock; the stock side of the pair is not queued and needs adapters + a healthy source before any createAndSeed can pass _admitted."
+        "Latest rehearsal bundle deployed on chain 46630 after owner-approved testnet-only zero-delay change: 10 contracts (SafetyController, AssetRegistry, CalendarRegistry, SessionRegistry, PoolManager, WETH fixture, PositionManager, BellHookDeployer, PUBLIC BellPoolFactory, BellRouter), plus the six-decimal mBELL rehearsal fee token. Current addresses and source deployment transactions are in evidence/deploy/testnet-46630.json and contracts/broadcast/DeployTestnet.s.sol/46630/run-latest.json.",
+        "All 12 runtime addresses (10 BELL contracts + fee token + canonical Permit2) and factory/deployer/manager/WETH/registry bindings matched between Alchemy and Pinax at the same common block; see evidence/runtime/testnet-dual-provider-status-2026-10-26.json. The currently configured SafetyController treasury is the burn address 0x...dead: treasury exits/handover cannot be rehearsed until a usable distinct testnet treasury is chosen and the suite is redeployed.",
+        "Rehearsal WETH counterasset descriptor is ACTIVE on the latest AssetRegistry (queue tx 0xdf3e6f6b..., activation tx 0x2c91a85a..., descriptorId 0x88cb2233...). Zero delay is scoped to chainId 46630 only; it does not alter mainnet chainId 4663. No stock descriptor is active, and no valid source adapters/reports, calendar root, or healthy stock session have been supplied. Thus the deployed PUBLIC factory cannot yet create a compliant SESSION_ONLY pool.",
+        "This factory profile is PUBLIC-only. TreasuryAdapter is not deployed/bound by this suite; M06-03 Treasury create/exit remains untested onchain. PoolManager ownership remains with deployer; role handover remains untested.",
+        "The UI production build and typecheck pass, but app screens still show sample pools and do not send create/swap transactions. BellHook production swap callbacks remain fail-closed (SWAP_EXECUTION_READY=false). No real swap or pool create-and-seed has been executed."
       ]
     },
     "M14-02": {
