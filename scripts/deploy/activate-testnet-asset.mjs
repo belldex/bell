@@ -25,6 +25,7 @@ import {
   stringToHex
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { TESTNET } from '../../packages/protocol/src/testnet-status.mjs';
 
 export const GOVERNANCE_MINIMUM_DELAY_SECONDS = 172800;
 export const GOVERNANCE_OPERATION_EXPIRY_SECONDS = 604800;
@@ -152,7 +153,7 @@ export async function activateAsset({
   const chainId = await publicClient.getChainId();
   if (chainId !== EXPECTED_CHAIN_ID) throw new Error(`Wrong chain: expected ${EXPECTED_CHAIN_ID}, got ${chainId}`);
 
-  const registry = await readRegistryAddress();
+  const registry = TESTNET.contracts.assetRegistry;
   const safety = await publicClient.readContract({ address: registry, abi: REGISTRY_ABI, functionName: 'safetyController' });
   const governance = await publicClient.readContract({ address: safety, abi: SAFETY_ABI, functionName: 'governance' });
 
@@ -236,13 +237,6 @@ export async function activateAsset({
   }
 
   return { ...preview, broadcast: true, txHash: hash, blockNumber: Number(receipt.blockNumber), verification };
-}
-
-async function readRegistryAddress() {
-  const status = await readFile(new URL('../../packages/protocol/src/testnet-status.mjs', import.meta.url), 'utf8');
-  const match = status.match(/assetRegistry:\s*'([0-9a-fA-Fx]+)'/);
-  if (!match) throw new Error('assetRegistry address not found in packages/protocol/src/testnet-status.mjs');
-  return match[1];
 }
 
 async function runCli() {

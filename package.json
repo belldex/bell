@@ -33,7 +33,10 @@
     "evidence:check": "node scripts/evidence/check-release.mjs",
     "check:secrets": "node scripts/tooling/check-secret-boundary.mjs",
     "tasks:sync": "node scripts/evidence/sync-task-status.mjs",
-    "build": "node scripts/tooling/check-build-prerequisites.mjs && pnpm compile:solidity && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm build:worker && pnpm exec forge build --root contracts"
+    "build": "node scripts/tooling/check-build-prerequisites.mjs && pnpm compile:solidity && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm build:worker && pnpm exec forge build --root contracts",
+    "check:testnet-addresses": "node scripts/deploy/check-testnet-addresses.mjs",
+    "deploy:activate-asset": "node scripts/deploy/activate-testnet-asset.mjs",
+    "deploy:queue-asset": "node scripts/deploy/queue-testnet-asset.mjs"
   },
   "devDependencies": {
     "@chainlink/data-streams-sdk": "2.0.0",

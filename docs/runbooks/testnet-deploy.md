@@ -82,6 +82,17 @@ sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, 
   `liquidityMode=1` + `treasuryAdapter` terisi.
 - `router.poolManager()` / `router.canonicalWeth()` menunjuk manifest, `weth.symbol()` = `WETH`
 
+Setelah deploy atau redeploy, jalankan penjaga drift alamat:
+
+```bash
+node scripts/deploy/check-testnet-addresses.mjs        # offline: manifest vs evidence vs status module
+node scripts/deploy/check-testnet-addresses.mjs --rpc  # + ukuran code on-chain
+```
+
+Tiga tempat menyimpan alamat yang sama (manifest, `testnet-46630-verification.json`, dan
+`packages/protocol/src/testnet-status.mjs` yang dipakai frontend). Tanpa penjaga ini, redeploy
+meninggalkan dua dari tiga menunjuk kontrak lama — persis yang terjadi pada redeploy 13:20.
+
 ## 4. Admission aset (dua langkah, 48 jam)
 
 Pool tidak bisa dibuat sebelum `AssetRegistry` mengenal **kedua** token: `BellPoolFactory._admitted`
