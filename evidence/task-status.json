@@ -964,9 +964,15 @@
     },
     "M14-02": {
       "title": "Selesaikan source/capacity/session evidence",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "evidence/runtime/testnet-dual-provider-status-2026-10-26.json",
+        "evidence/deploy/testnet-46630-asset-queue.json"
+      ],
+      "blockers": [
+        "Testnet dual-provider same-block agreement and WETH counterasset admission are verified. No canonical Robinhood testnet stock address, entitled signed-source sample, approved source adapter profile, healthy stock report/corporate status, or market calendar root is supplied. WETH is explicitly only the oracleless counterasset, not a substitute stock.",
+        "No funded testnet source/report workload, quota/capacity trace, or full create-and-seed session rehearsal has been conducted. Do not represent the rehearsal fixture as real market/source evidence."
+      ]
     },
     "M14-03": {
       "title": "Serahkan full-scope independent security review",
