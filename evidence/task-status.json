@@ -121,11 +121,13 @@
         "evidence/runtime/asset-candidate-dual-provider-2026-10-25.json",
         "evidence/runtime/rpc-capability-matrix-2026-10-25.json",
         "scripts/discovery/chainlink-report-probe.mjs",
+        "scripts/discovery/chainlink-credential.mjs",
+        "scripts/discovery/chainlink-credential.test.mjs",
         "evidence/runtime/chainlink-credential-verified-2026-10-25.json",
         "evidence/runtime/chainlink-testnet-report-entitlement-2026-10-26.json"
       ],
       "blockers": [
-        "Testnet Data Streams report fetch was attempted against the public AAPL V11 regular-hours test feed and returned Unauthorized. Testnet account entitlement / correct testnet credentials must be provisioned locally before sample report, stock health, or real-stock admission can be verified. No raw payload/signature was persisted."
+        "Credential A is present and previously verified for Chainlink MAINNET. Chainlink TESTNET uses a separate account database; the AAPL test-feed report request returned Unauthorized. The probe now requires a distinct CHAINLINK_TESTNET_SOURCE_CREDENTIAL for the testnet endpoint and will not silently send mainnet credentials there. Testnet entitlement/subscription and a canonical testnet stock token binding are still required before health/admission. No raw payload/signature was persisted."
       ]
     },
     "M01-04": {

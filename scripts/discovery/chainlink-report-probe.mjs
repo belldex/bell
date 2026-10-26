@@ -3,14 +3,24 @@
 // Cred dari .env: CHAINLINK_SOURCE_CREDENTIAL_A=<username>:<secret>
 import { createClient, decodeReport } from '@chainlink/data-streams-sdk';
 import { readFileSync } from 'node:fs';
+import { selectChainlinkCredential } from './chainlink-credential.mjs';
 const env = readFileSync(new URL('../../.env', import.meta.url), 'utf8');
-const line = env.split('\n').find(l => l.startsWith('CHAINLINK_SOURCE_CREDENTIAL_A='));
-const [apiKey, userSecret] = line.slice('CHAINLINK_SOURCE_CREDENTIAL_A='.length).trim().split(':');
+const envMap = Object.fromEntries(env.split(/\r?\n/).flatMap((line) => {
+  const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+  return match ? [[match[1], match[2].trim().replace(/^['"]|['"]$/g, '')]] : [];
+}));
 const feedId = process.argv[2];
 const endpoint = process.argv[3] ?? 'https://api.dataengine.chain.link';
 const wsEndpoint = endpoint.replace('https://', 'wss://').replace('api.', 'ws.');
 if (!feedId) { console.error('feedId wajib'); process.exit(1); }
-const client = createClient({ apiKey, userSecret, endpoint, wsEndpoint });
+let credentials;
+try {
+  credentials = selectChainlinkCredential(envMap, endpoint);
+} catch (e) {
+  console.error('CREDENTIAL CONFIG FAIL:', e.message);
+  process.exit(1);
+}
+const client = createClient({ apiKey: credentials.username, userSecret: credentials.secret, endpoint, wsEndpoint });
 try {
   const r = await client.getLatestReport(feedId);
   console.log('REPORT OK — feedId:', r.feedID ?? feedId);

@@ -9,6 +9,6 @@
   "probe": "getLatestReport",
   "result": "UNAUTHORIZED",
   "interpretation": "Public discovery metadata exists, but authenticated live testnet report access/entitlement was not proven. No report payload, signature, sample, or admission evidence was recorded.",
-  "credentialHandling": "Credential values intentionally excluded. CHAINLINK_SOURCE_CREDENTIAL_B is currently unset in local .env; credential A was present but testnet report request returned Unauthorized.",
+  "credentialHandling": "Credential values intentionally excluded. CHAINLINK_SOURCE_CREDENTIAL_A is set for mainnet; no separate CHAINLINK_TESTNET_SOURCE_CREDENTIAL is set locally. The testnet report request returned Unauthorized.",
   "status": "BLOCKED_SOURCE_ENTITLEMENT"
 }
