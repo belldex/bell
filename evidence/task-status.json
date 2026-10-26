@@ -757,10 +757,14 @@
         "packages/domain/test/ui-state.test.mjs",
         "apps/web/components/app/AppShell.tsx",
         "apps/web/lib/wallet.tsx",
-        "next build OK + tsc OK 2026-10-25"
+        "apps/web/components/app/TestnetBanner.tsx",
+        "apps/web/lib/use-testnet.ts",
+        "packages/protocol/src/testnet-status.mjs",
+        "packages/protocol/test/testnet-status.test.mjs",
+        "next build OK + tsc OK 2026-10-26"
       ],
       "blockers": [
-        "Build export Vercel Free dan wallet e2e live belum dibuktikan; state machine §8.5 sudah teruji penuh"
+        "Wallet E2E browser interaction has not been verified (Chrome debug port timed out during test); Vercel static export/deployment not verified. Testnet banner shows rehearsal-only status and keeps pool/swap readiness fail-closed."
       ]
     },
     "M11-02": {

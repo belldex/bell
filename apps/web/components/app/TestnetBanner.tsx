@@ -21,11 +21,17 @@ export function TestnetBanner() {
   const { isTestnet, status, loading, error, refresh, contracts } = useTestnet();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
-  const copy = (addr: string) => {
-    navigator.clipboard.writeText(addr);
-    setCopied(addr);
-    setTimeout(() => setCopied(null), 2000);
+  const copy = async (addr: string) => {
+    try {
+      await navigator.clipboard.writeText(addr);
+      setCopied(addr);
+      setCopyError(null);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setCopyError('Clipboard access is unavailable; copy the address from the explorer link instead.');
+    }
   };
 
   if (!isTestnet) {
@@ -99,6 +105,11 @@ export function TestnetBanner() {
                 </span>
               )}
             </div>
+
+            <p role="status" className="mb-3 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs leading-relaxed text-warn">
+              Testnet rehearsal only. No eligible stock descriptor/report/calendar is active yet, and BellHook swap execution remains fail-closed. Pool creation and swaps are not advertised as ready.
+            </p>
+            {copyError && <p role="alert" className="mb-3 text-xs text-warn">{copyError}</p>}
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {Object.entries(contracts).map(([name, address]) => {
