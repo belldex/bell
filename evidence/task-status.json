@@ -473,11 +473,12 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "contracts/src/TreasuryAdapter.sol",
-        "contracts/test/integration/treasury/TreasuryAdapter.t.sol"
+        "contracts/test/integration/treasury/TreasuryAdapter.t.sol",
+        "evidence/treasury-adapter-results.md"
       ],
       "blockers": [
-        "TreasuryAdapter terbatas selesai: seed factory-only one-shot dengan two-way binding hook, remove/collect treasury-only deadline-bound tanpa oracle gate, output in-kind ke recipient immutable, exact-balance checks (fee-on-transfer/tax revert), tanpa sweep/custody/arbitrary target; forge 316 passed / 0 failed.",
-        "Produksi menunggu deployment manifest tereview (factory treasury path + treasury role) dan independent audit; fixture Permit2/registries masih doubles."
+        "Adapter contract and local real-core tests implement one-shot factory-called seed, immutable hook/config binding, treasury-only remove/collect, in-kind immutable recipient and exact debit/credit guards. However the current BellPoolFactory constructor/createAndSeed path still rejects TREASURY_ONLY and never calls TreasuryAdapter; production atomic factory integration remains unimplemented.",
+        "Deployment-manifest binding for treasury/factory/recipient, production source/registry wiring, target-chain fork, independent audit, and real deployment acceptance remain unverified. Tests use local fixtures; do not mark M06-03 DONE until factory atomic path and its receipt/request binding are integrated and reviewed."
       ]
     },
     "M06-04": {
@@ -884,14 +885,18 @@
     },
     "M13-01": {
       "title": "Lengkapi contract unit/fuzz boundaries",
-      "status": "NOT_STARTED",
-      "evidence": [],
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/test/unit/treasury/TreasuryAdapterFuzz.t.sol 5 fuzz boundary tests x 100k runs (constructor trust boundaries, unseeded remove/collect fail-closed, non-factory seed, position-key determinism)"
+      ],
       "blockers": []
     },
     "M13-02": {
       "title": "Jalankan stateful/economic invariants",
-      "status": "NOT_STARTED",
-      "evidence": [],
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/test/invariant/treasury/TreasuryAdapterInvariants.t.sol stateful randomized sequence 100k runs: in-kind conservation, core principal accounting, unsweepable foreign balances, zero-success unauthorized attempts, exact treasury debit"
+      ],
       "blockers": []
     },
     "M13-03": {
