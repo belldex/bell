@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-26",
+  "buildCommit": "WORKING_TREE_AT_CREATION",
+  "note": "Release evidence index sesuai Brief §release evidence index. Semua nilai awal MISSING/NOT_RUN — bukan PASS. Field diisi hanya dengan actual artifacts.",
+  "chainId": "MISSING",
+  "artifactHashes": "MISSING",
+  "sourceManifestHash": "MISSING",
+  "planSnapshot": {
+    "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+    "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6"
+  },
+  "rpcPreflight": {
+    "status": "PARTIAL",
+    "evidence": [
+      "evidence/runtime/rpc-preflight-alchemy-partial-2026-10-25.json",
+      "evidence/runtime/rpc-preflight-mainnet-agree-2026-10-25.json",
+      "evidence/runtime/rpc-preflight-testnet-agree-2026-10-25.json",
+      "evidence/runtime/rpc-capability-matrix-2026-10-25.json",
+      "evidence/runtime/wss-newheads-live-2026-10-25.json",
+      "evidence/runtime/archive-endpoints-2026-10-25.json"
+    ]
+  },
+  "capacityTrace": "NOT_RUN",
+  "backupRestore": {
+    "status": "EXERCISED_LOCAL",
+    "evidence": ["evidence/runtime/backup-restore-drill-2026-10-25.json"]
+  },
+  "failoverDrills": "NOT_RUN",
+  "evmResults": {
+    "forgeUnit": "316 passed / 0 failed (2026-10-26, working tree)",
+    "packagesNode": "243 passed / 0 failed",
+    "runtimePortable": "node runtime-neutral + deno smoke 15/15",
+    "workersKeeperB": "vitest 6/6"
+  },
+  "auditRetest": "NOT_RUN",
+  "roles": "MISSING",
+  "costClassification": "MISSING",
+  "reviewedBy": [],
+  "sourceStatus": {
+    "metadata": "DOCUMENTED",
+    "accountAccess": "VERIFIED_ACCESS",
+    "entitlementReports": "NOT_RUN - butuh subscription Data Streams aktif",
+    "verifiedOnchain": "NOT_RUN"
+  },
+  "gateStatus": {
+    "E01_build": "NOT_RUN",
+    "E02_deployment": "NOT_RUN",
+    "E03_source_capacity": "NOT_RUN",
+    "E04_sessions_four_weekends": "NOT_RUN",
+    "E05_audit_retest": "NOT_RUN",
+    "E06_public_release": "NOT_RUN"
+  }
+}

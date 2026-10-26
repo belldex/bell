@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "planTaskCount": 80,
-  "briefSha256": "2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c",
-  "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
+  "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+  "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6",
   "tasks": {
     "M00-01": {
       "title": "Catat baseline dan batas mandat",
@@ -71,7 +71,7 @@
     },
     "M01-01": {
       "title": "Ambil katalog sumber dan verifier",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "scripts/discovery/fetch-catalog.mjs",
         "scripts/discovery/catalog.mjs",
@@ -89,7 +89,7 @@
     },
     "M01-02": {
       "title": "Validasi canonical token dan proxy binding",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "config/assets/candidates.mainnet.json",
         "packages/domain/src/source-manifest.mjs",
@@ -129,7 +129,7 @@
     },
     "M01-04": {
       "title": "Catat akses dan batas redistribusi data",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "config/sources/rights-status.json",
         "packages/domain/src/source-rights.mjs",
@@ -142,7 +142,7 @@
     },
     "M01-05": {
       "title": "Mulai trace kesesuaian source/freshness",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/freshness-trace.mjs",
         "packages/domain/test/freshness-trace.test.mjs",
@@ -470,9 +470,15 @@
     },
     "M06-03": {
       "title": "Implementasikan TreasuryAdapter terbatas",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/src/TreasuryAdapter.sol",
+        "contracts/test/integration/treasury/TreasuryAdapter.t.sol"
+      ],
+      "blockers": [
+        "TreasuryAdapter terbatas selesai: seed factory-only one-shot dengan two-way binding hook, remove/collect treasury-only deadline-bound tanpa oracle gate, output in-kind ke recipient immutable, exact-balance checks (fee-on-transfer/tax revert), tanpa sweep/custody/arbitrary target; forge 316 passed / 0 failed.",
+        "Produksi menunggu deployment manifest tereview (factory treasury path + treasury role) dan independent audit; fixture Permit2/registries masih doubles."
+      ]
     },
     "M06-04": {
       "title": "Implementasikan direct router dan settlement",
@@ -535,7 +541,7 @@
     },
     "M07-05": {
       "title": "Susun migrations, cron dan retention install",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "supabase/migrations/20261025000003_jobs_cron.sql",
         "docs/runbooks/migrations.md",
@@ -560,7 +566,7 @@
     },
     "M08-02": {
       "title": "Implementasikan katalog, policy dan transaction reads",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-reads.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -574,7 +580,7 @@
     },
     "M08-03": {
       "title": "Implementasikan executable quote",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-quote.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -588,7 +594,7 @@
     },
     "M08-04": {
       "title": "Implementasikan create preview dan intake status",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/protocol/src/api-create.mjs",
         "packages/protocol/test/api-routes.test.mjs",
@@ -612,7 +618,7 @@
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/keeper-tick.mjs",
         "packages/domain/test/keeper-tick.test.mjs",
@@ -682,7 +688,7 @@
     },
     "M10-02": {
       "title": "Implementasikan canonical event ingest",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -696,7 +702,7 @@
     },
     "M10-03": {
       "title": "Implementasikan reorg reconciliation",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -708,7 +714,7 @@
     },
     "M10-04": {
       "title": "Implementasikan receipt/finality projection",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/indexing.mjs",
         "packages/domain/test/indexing.test.mjs",
@@ -721,7 +727,7 @@
     },
     "M10-05": {
       "title": "Implementasikan lag/catch-up quota control",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/catchup.mjs",
         "packages/domain/test/catchup.test.mjs",
@@ -734,7 +740,7 @@
     },
     "M11-01": {
       "title": "Bangun shell, wallet dan chain guard",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -748,7 +754,7 @@
     },
     "M11-02": {
       "title": "Bangun pool directory dan Bell Clock",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -765,7 +771,7 @@
     },
     "M11-03": {
       "title": "Bangun swap flow lengkap",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -783,7 +789,7 @@
     },
     "M11-04": {
       "title": "Bangun Create Pool dan token intake UX",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -799,7 +805,7 @@
     },
     "M11-05": {
       "title": "Bangun LP positions dan exit UX",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ui-state.mjs",
         "packages/domain/test/ui-state.test.mjs",
@@ -815,7 +821,7 @@
     },
     "M12-01": {
       "title": "Implementasikan encrypted backup rotation",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/backup.mjs",
         "packages/domain/test/backup.test.mjs",
@@ -828,7 +834,7 @@
     },
     "M12-02": {
       "title": "Implementasikan restore dan RPO/RTO exercise",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/backup.mjs",
         "docs/runbooks/recovery.md",
@@ -840,7 +846,7 @@
     },
     "M12-03": {
       "title": "Implementasikan health metrics dan alerts",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "docs/runbooks/keeper.md",
         "docs/runbooks/indexer.md",
@@ -853,7 +859,7 @@
     },
     "M12-04": {
       "title": "Susun runbook governance dan incident",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "docs/runbooks/keeper.md",
         "docs/runbooks/recovery.md",
@@ -865,7 +871,7 @@
     },
     "M12-05": {
       "title": "Implementasikan quota/admission dashboard",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
         "packages/domain/src/ops-status.mjs",
         "packages/domain/test/ops-status.test.mjs",
@@ -911,9 +917,13 @@
     },
     "M13-05": {
       "title": "Buat release candidate dan evidence index",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "evidence/release-index.json"
+      ],
+      "blockers": [
+        "Skeleton evidence index dibuat dengan nilai awal MISSING/NOT_RUN; field diisi saat E01-E06 berjalan. RC final menunggu M13-01/02/03 dan M14."
+      ]
     },
     "M14-01": {
       "title": "Deploy candidate ke testnet dan rehearse handover",
