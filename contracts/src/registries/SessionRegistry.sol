@@ -181,7 +181,11 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
 
     function refreshHealth(bytes32 assetId) external override returns (uint256 reasons) {
         AssetDescriptor memory descriptor_ = assetRegistry.descriptor(assetId);
-        SourceWire[] memory wires = abi.decode(assetRegistry.sourceConfig(assetId), (SourceWire[]));
+        bytes memory encoded = assetRegistry.sourceConfig(assetId);
+        // An admitted oracleless non-stock descriptor has an empty config, not ABI-encoded sources.
+        // Keep its generic price health unready; SESSION_ONLY handles that explicit descriptor shape.
+        SourceWire[] memory wires = encoded.length == 0 && !descriptor_.isStock
+            ? new SourceWire[](0) : abi.decode(encoded, (SourceWire[]));
         if (!descriptor_.isStock) return _refreshNonStockQuote(assetId, wires);
         return _refreshStock(assetId, descriptor_, wires);
     }

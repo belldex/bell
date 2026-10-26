@@ -76,6 +76,25 @@ contract BellHookDeployerTest {
         require(actual.code.length != 0, "hook not deployed");
     }
 
+    function testRuntimeSizeGateDeployer() external view {
+        require(address(deployer).code.length <= 24576, "deployer exceeds EIP-170");
+        address first = deployer.creationCode0(); address second = deployer.creationCode1();
+        require(first.code.length <= 24576 && second.code.length <= 24576,"code transport exceeds EIP-170");
+        require(first.code[0] == 0 && second.code[0] == 0,"payload executable");
+    }
+
+    function testRuntimeSizeGateHook() external {
+        address hook = deployer.deploy(config, key, _validSalt());
+        require(hook.code.length <= 24576, "hook exceeds EIP-170");
+        require(address(BellHook(hook).modeEvaluator()).code.length <= 24576,"evaluator exceeds EIP-170");
+    }
+
+    function testTransportPreservesExactPinnedCreationCodeHash() external view {
+        bytes32 expected = keccak256(abi.encodePacked(type(BellHook).creationCode,
+            abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency)));
+        require(deployer.initCodeHash(config,key) == expected,"creation transport changed bytes");
+    }
+
     function testDeployerCanBindFutureFactoryAddressBeforeFactoryDeployment() external {
         address futureFactory = address(0xFACADE);
         BellHookDeployer futureDeployer = new BellHookDeployer(

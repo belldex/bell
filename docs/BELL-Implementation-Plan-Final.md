@@ -2,7 +2,7 @@
 
 **Tanggal penyusunan:** 24 Oktober 2026  
 **Dokumen pendamping:** BELL-Developer-Brief-Final.md, snapshot tersimpan ke-10  
-**SHA-256 brief acuan:** `623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e`  
+**SHA-256 brief acuan:** `2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c`
 **Cakupan rencana:** 16 milestone, 80 task, 40 mapping G, 12 mapping D dan enam release gates.  
 **Status:** rencana pelaksanaan lengkap; bukan laporan bahwa kode, deployment, benchmark atau audit sudah selesai.  
 **Pemilik produk:** project BELL. Pelaksana coding tidak otomatis menjadi pembayar modal atau pemilik wallet peluncuran token.
@@ -249,7 +249,7 @@ Pisahkan commands yang read-only, local mutation dan chain broadcast. Tidak memb
 
 M01 dan M02 dapat berjalan setelah M00; M03/M04 dan M07 dapat dikerjakan sebagai jalur berbeda. Frontend dapat memakai fixtures setelah M02, tetapi tidak diberi status selesai sebelum integrasi M11. Pengumpulan data sesi/empat weekend dimulai sedini M01 bila akses tersedia dan dilanjutkan pada candidate di M14. Data dari implementasi yang berubah material tidak otomatis membuktikan candidate baru.
 
-Tidak menetapkan tanggal mainnet fiktif. Critical path mencakup entitlement sumber, validasi heartbeat/freshness, pengukuran provider snapshot (revisi 2026-10-25: window 72 jam diganti snapshot acceptance), minimum empat weekend, audit independen dan retest. Jam tunggu tersebut tidak dapat dihapus dengan menyelesaikan checklist dokumen. Pemecahan task boleh membantu pembagian kerja manusia; plan ini tidak mengasumsikan tim atau reviewer yang belum ditunjuk telah tersedia.
+Tidak menetapkan tanggal mainnet fiktif. Critical path mencakup entitlement sumber, validasi heartbeat/freshness, snapshot acceptance provider, minimum empat weekend, audit independen dan retest. Jam tunggu tersebut tidak dapat dihapus dengan menyelesaikan checklist dokumen. Pemecahan task boleh membantu pembagian kerja manusia; plan ini tidak mengasumsikan tim atau reviewer yang belum ditunjuk telah tersedia.
 
 ## 6. Cara menggunakan task dan definition of done
 
@@ -1330,7 +1330,7 @@ Bagian ini adalah work breakdown yang dapat langsung dipindah menjadi issue/boar
 
 **Langkah kerja:**
 
-1. Jalankan snapshot pengukuran terdokumentasi dari runtime deployment target dan seluruh matrix sesi (revisi 2026-10-25: window 72 jam diganti snapshot acceptance).
+1. Jalankan snapshot acceptance terdokumentasi dari runtime deployment target dan seluruh matrix sesi.
 2. Selesaikan minimum empat weekend/holiday coverage dengan source timestamps, anchor capture, budgets dan reopen.
 3. Ukur API/keeper/indexer/DO/Free quotas terhadap candidate, termasuk fallback/catchup source-fit restrictions.
 
@@ -1685,7 +1685,7 @@ Provider quotas dapat berubah. M01/M12 menyimpan plan snapshot aktual dan memban
 
 1. Definisikan workload sebelum pengukuran: asset/pool count, phases, report sizes, logs per block, shards, API/quote load, source reads, retry scenarios dan relevant update deadlines.
 2. Ukur baseline masing-masing runtime dengan cold/warm starts, CPU/heap/wall, total network wait, RPC CU/requests, DB writes/index size, object bytes dan egress.
-3. Jalankan target admission workload dan fault scenarios dalam sesi pengukuran snapshot terdokumentasi dari runtime/region target (revisi 2026-10-25: window 72 jam diganti snapshot acceptance). Sertakan catch-up setelah outage dan source phases yang nyata.
+3. Jalankan target admission workload dan fault scenarios sebagai snapshot terdokumentasi dari runtime/region target. Sertakan catch-up setelah outage dan source phases yang nyata.
 4. Catat daily/monthly extrapolation dengan headroom serta vendor dashboard reconciliation, bukan hanya local successful requests.
 5. Cocokkan source-fit: active freshness/report/quote timestamps, capture/reopen opportunities dan eligibility rate. Capacity yang cukup tidak memperbaiki feed yang terlalu jarang update.
 6. Admission hanya bila seluruh required SLO, resource ceilings, source rights dan runtime deadlines terpenuhi. Kegagalan menolak intake/release candidate; tidak menurunkan guard.
@@ -1732,7 +1732,7 @@ Cadence stress/CI direkonsiliasi dengan budget internal 1.600 Linux minutes. Mis
 | `rpc-preflight.json` | Provider/plan snapshot, method results, historical state proof, errors, block/hash dan time window |
 | `build-manifest.json` | Compiler/EVM/optimizer/deps, bytecode/ABI hashes, constructor args dan predicted addresses |
 | `test-index.json` | Suite/command/config/seed/dataset/commit/results, skipped/blocked tests dan report paths |
-| `capacity-summary.json` | 72-hour trace identity, workload, latency/CPU/heap, quota forecast, index lag, source-fit dan failure scenarios |
+| `capacity-summary.json` | snapshot trace identity, workload, latency/CPU/heap, quota forecast, index lag, source-fit dan failure scenarios |
 | `ops-drills.json` | A/B outages, nonce crash, provider disagree, quota, calendar, pause/resume dan operator ack |
 | `backup-restore.json` | Manifest/object sizes/hashes, upload integrity, actual restore-test timestamp, missing count, RPO/RTO |
 | `audit-index.json` | Reviewer/scope/commit/findings/retest, unresolved severity dan deployed commit match |
@@ -1751,7 +1751,7 @@ Contoh bentuk record awal berikut sengaja belum lulus:
 {
   "chainId": 4663,
   "buildCommit": null,
-  "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
+  "briefSha256": "2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c",
   "artifactHashes": {},
   "sourceManifestHash": null,
   "gates": {
@@ -1779,7 +1779,7 @@ Ini contoh schema plan, bukan perubahan terhadap evidence historis yang memang a
 | Calendar dataset/provenance | Proof vectors, coverage/conflict/DST checks, governance notice/delay dan future-root activation |
 | Schema/Edge/DO runtime | Migration/RLS/runtime, nonce/reorg/failover, capacity dan backup compatibility |
 | UI/SDK encoding | ABI/codec/schema checks, quote/slippage/transaction fields dan browser E2E |
-| Quota/provider plan | Account snapshot, historical capability, 72-hour affected SLO dan workload admission |
+| Quota/provider plan | Account snapshot, historical capability, snapshot SLO dan workload admission |
 
 Tidak ada silent hotfix yang mengubah immutable deployed hook. Jika kontrak bermasalah, jalur operasionalnya pause terbatas dan migrasi sukarela ke deployment baru yang telah diretest/review; withdrawal LP tidak diambil alih admin.
 
@@ -1992,7 +1992,7 @@ Tidak perlu meminta ulang keputusan framework/provider/paid VPS/pemisahan token;
 
 Yang selesai pada penyusunan dokumen ini: membaca brief current, merinci 16 milestone/80 tasks, menetapkan repo/runtime/data/API/ops/test contracts dalam plan, dan memeriksa konsistensi rujukan/traceability dokumen. Brief mencatat 63 reference-model tests yang telah dijalankan pada pekerjaan sebelumnya.
 
-Yang tidak diklaim selesai oleh implementation plan: repository produksi, dependency lock aktual, source/RPC authenticated probes baru, compiled/deployed contracts, hosted backend, 72-hour runtime test, empat-weekend candidate observations, actual backup/restore, audit, mainnet funding/deployment atau E01–E06. Pekerjaan tersebut adalah task implementasi yang terdefinisi, bukan hasil yang boleh difabrikasi lewat dokumentasi.
+Yang tidak diklaim selesai oleh implementation plan: repository produksi, dependency lock aktual, source/RPC authenticated probes baru, compiled/deployed contracts, hosted backend, snapshot runtime acceptance, empat-weekend candidate observations, actual backup/restore, audit, mainnet funding/deployment atau E01–E06. Pekerjaan tersebut adalah task implementasi yang terdefinisi, bukan hasil yang boleh difabrikasi lewat dokumentasi.
 
 ## 16. Referensi teknis
 

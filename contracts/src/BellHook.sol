@@ -38,18 +38,19 @@ import {
 } from "./interfaces/IBellProtocol.sol";
 import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {ModePolicy} from "./libraries/ModePolicy.sol";
+import {BellModeEvaluator} from "./BellModeEvaluator.sol";
 import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {SeedAccounting} from "./libraries/SeedAccounting.sol";
-import {ClosureBudget} from "./libraries/ClosureBudget.sol";
+import {AssetPolicy} from "./libraries/AssetPolicy.sol";
 import {IMsgSender} from "../lib/v4-periphery/src/interfaces/IMsgSender.sol";
 
 /// @title BellHook
 /// @notice Immutable single-pool hook template for BELL.
 /// @dev M05-02 adds one canonical lifecycle/health evaluator shared by `getPolicy`, `refreshState` and
 /// `beforeSwap`. M05-03 extends the same evaluator with planned closure, per-asset anchors, the one-shot closure
-/// latch and the 60-second joint recovery path. Lifecycle activation (M05-04/M06) and swap pre/post enforcement
-/// plus budget commit (M05-05) are still unimplemented, so every callback that would change pool state or allow
-/// execution reverts after the PoolManager/PoolKey/factory gates.
+/// latch and the 60-second joint recovery path. M05-04/M06 implement request-bound seed capture and
+/// post-settlement activation. Swap pre/post enforcement and budget commit (M05-05) remain unimplemented;
+/// swaps therefore remain blocked even after activation.
 ///
 /// The hook is not upgradeable and has no proxy, delegatecall, owner or configuration setter. The only mutable
 /// state is the per-pool state/accounting checkpoint that the evaluator updates.
@@ -63,6 +64,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// implemented, even a synthetic LIVE/healthy evaluation must not advertise swap capability. Flip this only
     /// together with the M05-05 implementation; `getPolicy`, `refreshState` and `beforeSwap` share the gate.
     bool private constant SWAP_EXECUTION_READY = false;
+
+    BellModeEvaluator public immutable modeEvaluator;
 
     bytes4 private constant PROTOCOL_FEE_CONTROLLER_SELECTOR = bytes4(keccak256("protocolFeeController()"));
 
@@ -154,9 +157,6 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         PolicyView policy;
         ModePolicy.Decision decision;
         PoolState nextState;
-        uint64 poolPauseNonce;
-        bool poolPauseOk;
-        bytes32 dependencyHash;
     }
 
     /// @dev Per-asset reasons, session context and closure data collected by `_evaluateAsset`.
@@ -212,6 +212,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         _validateDependencies(config_);
         _requireContract(sessionRegistry_, ERR_SESSION_REGISTRY);
         _validateConfig(config_, key_);
+        // Reject malformed/unbounded dependencies before paying to construct the immutable calculator.
+        modeEvaluator = new BellModeEvaluator();
 
         _token0 = config_.token0;
         _token1 = config_.token1;
@@ -241,8 +243,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         templateCodeHash = templateCodeHash_;
         configHash = keccak256(abi.encode(block.chainid, templateCodeHash_, config_));
 
-        // Activation remains fail-closed until M05-04/M06 implement the post-settlement route. The evaluator
-        // treats any non-LIVE lifecycle as SETUP, so this initial state can never trade.
+        // Only the request-bound post-settlement activation route can leave DEPLOYED/SEEDING.
+        // The evaluator treats every non-LIVE lifecycle as SETUP, so this initial state cannot trade.
         _state.lifecycle = uint8(Lifecycle.DEPLOYED);
         _state.mode = uint8(Mode.SETUP);
     }
@@ -289,12 +291,16 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         return IHooks.beforeInitialize.selector;
     }
 
-    function _beforeAddLiquidity(address sender, PoolKey calldata key, ModifyLiquidityParams calldata params, bytes calldata)
+    function _beforeAddLiquidity(address sender, PoolKey calldata key, ModifyLiquidityParams calldata params, bytes calldata hookData)
         internal
         override
         returns (bytes4)
     {
         _requireBoundKey(key);
+        if (_state.lifecycle == uint8(Lifecycle.LIVE)) {
+            _validatePublicIncrease(sender, hookData);
+            return IHooks.beforeAddLiquidity.selector;
+        }
         if (_seed.modificationPending) revert BadSeed();
         _validateSeedModification(sender, params);
         _seed.provider = sender;
@@ -311,6 +317,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         bytes calldata
     ) internal override returns (bytes4, BalanceDelta) {
         _requireBoundKey(key);
+        if (_state.lifecycle == uint8(Lifecycle.LIVE)) {
+            // Pinned core calls afterAdd only after the matching beforeAdd succeeded in this unlock.
+            // LIVE cannot transition back to SEEDING; no state from a PUBLIC add is seed accounting.
+            return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
+        }
         if (!_seed.modificationPending || _seed.provider != sender || _seed.captured) revert BadSeed();
         _validateSeedModification(sender, params);
         uint128[2] memory principal = SeedAccounting.seedPrincipal(delta, feesAccrued);
@@ -330,30 +341,46 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     function _trustedSeedProvider(address sender) private view returns (bool) {
         if (_liquidityMode == uint8(LiquidityMode.TREASURY_ONLY)) return sender == _treasuryAdapter;
-        if (_liquidityMode != uint8(LiquidityMode.PUBLIC) || sender != _positionManager) return false;
-        bytes memory callData = abi.encodeWithSelector(IMsgSender.msgSender.selector);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address positionManager = _positionManager;
-        bool success;
-        uint256 returnSize;
-        uint256 callerWord;
-        assembly ("memory-safe") {
-            let ptr := mload(0x40)
-            mstore(0x40, add(ptr, 32))
-            success := staticcall(gasLimit, positionManager, add(callData, 32), mload(callData), ptr, 32)
-            returnSize := returndatasize()
-            callerWord := mload(ptr)
-        }
-        return success && returnSize == 32 && callerWord >> 160 == 0 && address(uint160(callerWord)) == _factory;
+        // Constructor rejects unknown liquidity modes.
+        return sender == _positionManager && _positionManagerCaller() == _factory;
     }
 
-    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata, bytes calldata)
+    /// @dev LIVE PUBLIC liquidity uses the canonical PM's protected locker context. The pinned PM owns
+    /// tokenId->PoolKey/ticks/salt derivation, ERC721 owner/approval checks and caller-funded settlement;
+    /// hookData cannot impersonate any of them. New explicit mints are legitimate PUBLIC deposits too.
+    /// Never re-enter seed accounting, read oracle policy or modify activation/caps on this path.
+    /// TREASURY_ONLY stays closed here pending M06-03's separately reviewed adapter integration.
+    function _validatePublicIncrease(address sender, bytes calldata hookData)
+        private view
+    {
+        // LIVE is reachable only through successful one-shot activation. Core invokes beforeAdd only
+        // for positive liquidity; the pinned PM validates the position and its uint128 liquidity bounds.
+        if (hookData.length != 0 || _liquidityMode != uint8(LiquidityMode.PUBLIC) || sender != _positionManager
+            || _positionManagerCaller() == address(0)) revert Unauthorized();
+    }
+
+    function _positionManagerCaller() private view returns (address initiator) {
+        bytes4 selector = IMsgSender.msgSender.selector;
+        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
+        address positionManager = _positionManager;
+        assembly ("memory-safe") {
+            // The selector and single return word fit entirely in Solidity's scratch space.
+            mstore(0, selector)
+            let success := staticcall(gasLimit, positionManager, 0, 4, 0, 32)
+            let word := mload(0)
+            if and(and(success, eq(returndatasize(), 32)), iszero(shr(160, word))) { initiator := word }
+        }
+    }
+
+    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata, bytes calldata hookData)
         internal
         view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         _requireBoundKey(key);
+        // References/policy are protocol inputs, never executable or user-substitutable hookData.
+        if (hookData.length != 0) revert ContextMismatch();
         // The exact PoolKey and onlyPoolManager gates above stay first. Then use the same canonical evaluator
         // as getPolicy/refreshState: pre-LIVE, failed dependencies and invalid/unknown states are blocked with
         // the full reason mask (the lowest set bit is the dominant reason).
@@ -364,13 +391,14 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         revert HookNotImplemented();
     }
 
-    function _afterSwap(address, PoolKey calldata key, SwapParams calldata, BalanceDelta, bytes calldata)
+    function _afterSwap(address, PoolKey calldata key, SwapParams calldata, BalanceDelta, bytes calldata hookData)
         internal
         view
         override
         returns (bytes4, int128)
     {
         _requireBoundKey(key);
+        if (hookData.length != 0) revert ContextMismatch();
         // Swap post-checks and budget commit belong to M05-05.
         revert HookNotImplemented();
     }
@@ -450,7 +478,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
         uint128[2] memory tradeCaps = [_tradeCap0, _tradeCap1];
         uint128[2] memory windowCaps = [_windowCap0, _windowCap1];
-        uint128[2] memory maximumClosure = ClosureBudget.maximumClosureCap(tradeCaps, windowCaps, _seed.principal);
+        uint128[2] memory maximumClosure = modeEvaluator.maximumClosureCap(tradeCaps, windowCaps, _seed.principal);
         if (_closureCap0 > maximumClosure[0] || _closureCap1 > maximumClosure[1]) revert BadSeed();
 
         if (block.timestamp > type(uint64).max || block.timestamp < PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS) {
@@ -532,7 +560,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         context.nowTime = block.timestamp > type(uint64).max ? type(uint64).max : uint64(block.timestamp);
         context.executionReady = SWAP_EXECUTION_READY;
 
-        ModePolicy.Decision memory decision = ModePolicy.decide(context);
+        ModePolicy.Decision memory decision = modeEvaluator.decide(context);
 
         PolicyView memory policy;
         policy.mode = decision.mode;
@@ -598,9 +626,6 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         evaluation.policy = policy;
         evaluation.decision = decision;
         evaluation.nextState = nextState;
-        evaluation.poolPauseNonce = deps.poolPauseNonce;
-        evaluation.poolPauseOk = deps.poolPauseOk;
-        evaluation.dependencyHash = deps.dependencyHash;
     }
 
     /// @dev Read every dependency once and aggregate the reasons, phase, validity and observation hash. Failed
@@ -712,7 +737,13 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
             }
         }
 
-        _evaluateAssetHealth(result, assetId, observations);
+        if (descriptorOk && AssetPolicy.oraclelessCounterasset(descriptor_, _poolClass)) {
+            // This leg has no price-health requirement. Its descriptor/fingerprint and token-pause
+            // reasons above still block; only stock observations participate in bootstrap/recovery.
+            result.legHealthy = true;
+        } else {
+            _evaluateAssetHealth(result, assetId, observations);
+        }
 
         result.observationHash = keccak256(
             abi.encode(

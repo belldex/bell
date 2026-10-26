@@ -500,6 +500,18 @@ contract BellHookTest {
         hook.beforeInitialize(address(0xBEEF), key, 1);
     }
 
+    function testSwapHookDataCannotSupplyPolicyOrReference() external {
+        BellHook hook = _deployHook(_config(), _key(), templateCodeHash);
+        PoolKey memory key = hook.poolKey();
+        bytes memory forged = abi.encode(hook.configHash(), uint128(1e18), uint128(1e18), true);
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.beforeSwap(factory, key, _swapParams(), forged);
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.afterSwap(factory, key, _swapParams(), _zeroDelta(), forged);
+    }
+
     function testCallbacksFailClosedUntilImplemented() external {
         BellHook hook = _deployHook(_config(), _key(), templateCodeHash);
         PoolKey memory key = hook.poolKey();
