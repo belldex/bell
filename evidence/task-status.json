@@ -353,7 +353,7 @@
         "contracts/test/unit/hook/BellHookLifecycle.t.sol"
       ],
       "blockers": [
-        "BellHook now exposes factory-only beginSeed/callback/activatePool transitions, but production lifecycle is not proven until the M06 factory atomically settles and verifies PUBLIC NFT or TREASURY receipt before calling activatePool.",
+        "BellHook exposes factory-only beginSeed/callback/activatePool; the PUBLIC candidate factory now exercises atomic settle/receipt/activation locally, but USDG/recipient manifests, actual Permit2, target-chain compatibility and production profile review remain blocking. TREASURY_ONLY waits for M06-03.",
         "Ordinary fault->RECOVERING joint recovery now lives in M05-03 (60s + every-stock advance + old-validity continuity); M05-02 lifecycle/health priority itself is implemented, but activation (M05-04/M06) and swap execution (M05-05) remain blocked.",
         "SessionRegistry is a fourth constructor dependency because normative PoolConfig has no sessionRegistry field; stateHash now binds its address and consumed dependency observations, but M06 deploy-manifest binding is still required.",
         "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false keeps getPolicy/refreshState/beforeSwap fail-closed with SETUP, so even a synthetic LIVE/healthy policy cannot advertise canSwap=true.",
@@ -372,7 +372,7 @@
         "contracts/src/registries/CalendarRegistry.sol"
       ],
       "blockers": [
-        "Closure/recovery logic is unit-tested with synthetic LIVE state; the M06 factory has not yet proven atomic seed settlement/receipt verification and production activatePool ordering.",
+        "Closure/recovery logic is unit-tested with synthetic LIVE state and the candidate PUBLIC factory tests atomic seed/receipt ordering, but production M06-01 dependencies/review are still blocked.",
         "M05-05 swap enforcement is not implemented; SWAP_EXECUTION_READY=false makes recovery release the latch/candidate but return HALTED + SETUP with canSwap=false until the execution path exists.",
         "No stateful invariant suite exists under contracts/test/invariant/closure/; overlap, flicker, root rollover, 96h anchor expiry and corporate/multiplier faults are covered only by unit vectors.",
         "Recovery requires a persisted fault checkpoint via refreshState; a transient view-only fault is not stored and cannot start recovery (matches the reference FSM, keeper must checkpoint).",
@@ -390,12 +390,14 @@
         "contracts/test/unit/hook/BellHook.t.sol",
         "contracts/test/unit/hook/BellHookLifecycle.t.sol",
         "contracts/src/libraries/PositionReceipt.sol",
-        "contracts/test/unit/hook/PositionReceipt.t.sol"
+        "contracts/test/unit/hook/PositionReceipt.t.sol",
+        "contracts/src/BellPoolFactory.sol",
+        "contracts/test/integration/factory/BellPoolFactory.t.sol"
       ],
       "blockers": [
-        "M06 factory atomic context, settlement, owner/liquidity/receipt verification, and requestHash wiring are not implemented; hook activation relies on the immutable factory trust boundary.",
+        "PUBLIC M06-01 candidate now binds requestHash, captures principal and verifies a real pinned PM receipt before activation in local tests; production readiness still depends on actual USDG/recipient binding, Permit2, reviewed profiles and target-chain deployment evidence.",
         "TREASURY_ONLY callback path is implemented but lacks a focused integration test against the real adapter context.",
-        "PositionReceipt now has isolated owner/pool/ticks/liquidity verification tests, but seed helper unit tests and direct hook callbacks still do not prove public PositionManager or TreasuryAdapter settlement integration."
+        "PUBLIC integration uses a synthetic Permit2 settlement double. PositionReceipt unit and real pinned-PM factory tests do not establish actual Permit2 or TreasuryAdapter integration."
       ]
     },
     "M05-05": {
@@ -441,14 +443,21 @@
         "Local tests now include real AssetRegistry and SessionRegistry oracleless SESSION_ONLY activation in both currency orders, alongside real pinned PoolManager and PositionManager. Permit2, source/verifier adapters, calendar and safety remain doubles; real Permit2 and entitled production source integration remain BLOCKED. Pinned Permit2 implementation requires Solidity 0.8.17, unlike the single 0.8.26 compilation unit.",
         "EIP-170 artifact size blocker is locally resolved (BellHook 24390 B, BellHookDeployer 2996 B, immutable evaluator 4770 B; size gates pass). Target-chain deployment/Cancun capability and fork compatibility remain unverified and BLOCKED; local bytecode size compliance is not target-chain deployment evidence.",
         "Reviewed deployment manifests and calibrated immutable profiles for all required classes/reference modes/assets are not supplied. The candidate factory binds one explicit profile per deployment and does not infer a referenceMode numeric mapping or claim full product/class coverage.",
-        "M05-05 swap enforcement is unimplemented and remains fail-closed even after LIVE activation. TREASURY_ONLY is explicitly rejected pending M06-03; PUBLIC LP add/remove/collect evidence remains M06-02 work."
+        "M05-05 swap enforcement remains fail-closed even after LIVE activation. TREASURY_ONLY is explicitly rejected pending M06-03; PUBLIC PM operations do not count as swap-policy integration."
       ]
     },
     "M06-02": {
       "title": "Integrasikan PUBLIC PositionManager",
-      "status": "NOT_STARTED",
-      "evidence": [],
-      "blockers": []
+      "status": "IN_PROGRESS",
+      "evidence": [
+        "contracts/test/integration/public-lp/PublicPositionManager.t.sol",
+        "contracts/test/integration/factory/BellPoolFactory.t.sol",
+        "evidence/public-lp-exit-tests.md"
+      ],
+      "blockers": [
+        "PUBLIC PositionManager/core operations now cover owner/operator and transferred-owner authority, add/mint/decrease/fee collection and in-kind exits under pause, stale/backend failure, CLOSED and exhausted-budget fixtures. Settlement uses a synthetic Permit2 double; actual Permit2 implementation integration remains unverified.",
+        "Robinhood target-chain fork/EVM compatibility and funded testnet public LP rehearsal remain unverified."
+      ]
     },
     "M06-03": {
       "title": "Implementasikan TreasuryAdapter terbatas",
@@ -800,7 +809,6 @@
         "packages/domain/src/backup.mjs",
         "packages/domain/test/backup.test.mjs",
         "docs/runbooks/recovery.md",
-        "packages/domain/src/backup.mjs",
         "evidence/runtime/backup-restore-drill-2026-10-25.json"
       ],
       "blockers": [
