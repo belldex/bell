@@ -8,7 +8,7 @@
   },
   "scripts": {
     "check": "pnpm test:unit && pnpm test:reference && pnpm policy:check && pnpm compile:solidity && pnpm test:contracts && pnpm abi:check && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm test:runtime:portable && pnpm test:workers && pnpm build:worker && pnpm evidence:check && pnpm check:secrets",
-    "test:unit": "node --test packages/domain/test/*.test.mjs packages/protocol/test/*.test.mjs scripts/discovery/*.test.mjs scripts/evidence/*.test.mjs scripts/tooling/*.test.mjs",
+    "test:unit": "node --test packages/domain/test/*.test.mjs packages/protocol/test/*.test.mjs scripts/discovery/*.test.mjs scripts/evidence/*.test.mjs scripts/tooling/*.test.mjs scripts/deploy/*.test.mjs",
     "test:domain": "pnpm --filter @bell/domain test",
     "test:contracts": "pnpm exec forge test --root contracts",
     "test:invariants": "node scripts/tooling/blocked-command.mjs test:invariants EVM-invariant-suite-not-implemented",
@@ -22,6 +22,8 @@
     "preflight:sources": "node scripts/tooling/blocked-command.mjs preflight:sources entitled-source-access-and-verifier-checks-not-available",
     "sources:catalog": "node scripts/discovery/preflight-catalog.mjs mainnet",
     "test:fork": "node scripts/tooling/blocked-command.mjs test:fork pinned-authenticated-fork-prerequisites-not-available",
+    "deploy:testnet": "node scripts/deploy/deploy-testnet.mjs",
+    "deploy:testnet:dry-run": "node scripts/deploy/deploy-testnet.mjs --dry-run",
     "release:dry-run": "node scripts/tooling/blocked-command.mjs release:dry-run deployable-contracts-and-release-manifest-not-implemented",
     "compile:solidity": "node scripts/tooling/compile-solidity.mjs",
     "abi:generate": "node scripts/evidence/generate-abi.mjs",

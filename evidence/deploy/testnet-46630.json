@@ -14,5 +14,7 @@
   "hookDeployer": "0xdde28b3b3e5f52042bd0696de50c1ef5e88f9c1b",
   "poolFactory": "0x193bdf3a8bfa8e866d73c5d6dfdf3db9b9ea2fd5",
   "status": "REHEARSAL",
-  "note": "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked."
+  "note": "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked.",
+  "sourceCommit": "be33f18",
+  "sourceState": "Snapshot saat deploy; jika lane kontrak berubah setelah ini, alamat ini STALE dan harus redeploy."
 }
