@@ -82,7 +82,31 @@ sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, 
   `liquidityMode=1` + `treasuryAdapter` terisi.
 - `router.poolManager()` / `router.canonicalWeth()` menunjuk manifest, `weth.symbol()` = `WETH`
 
-## 4. Belum tercakup (jangan diklaim selesai)
+## 4. Admission aset (dua langkah, 48 jam)
+
+Pool tidak bisa dibuat sebelum `AssetRegistry` mengenal **kedua** token: `BellPoolFactory._admitted`
+revert `InvalidConfiguration` bila `asset0/asset1` nol atau `descriptorIdForToken(token)` tidak cocok.
+
+```bash
+# Langkah 1 — queue (membuka timelock 48 jam, GOVERNANCE_MINIMUM_DELAY_SECONDS = 172800)
+node scripts/deploy/queue-testnet-asset.mjs --token=0x<TOKEN>          # preview (eth_call)
+node scripts/deploy/queue-testnet-asset.mjs --token=0x<TOKEN> --broadcast
+
+# Langkah 2 — setelah 48 jam, dalam jendela 7 hari (GOVERNANCE_OPERATION_EXPIRY_SECONDS = 604800)
+node scripts/deploy/activate-testnet-asset.mjs --operation-id=0x<ID> --token=0x<TOKEN> --eta=<UNIX>
+node scripts/deploy/activate-testnet-asset.mjs --operation-id=0x<ID> --token=0x<TOKEN> --eta=<UNIX> --broadcast
+```
+
+`activate-testnet-asset.mjs` mensimulasikan `activateAsset` lewat `eth_call` sebelum broadcast,
+memetakan revert menjadi `TIMELOCK` / `EXPIRED` / `ALREADY_DONE_OR_CANCELLED` / `TOKEN_CHANGED`, dan
+setelah broadcast memverifikasi `descriptorIdForToken(token)` benar-benar terikat.
+
+Sisi counterasset (WETH) cukup: `isStock=false`, `capabilityMask=0`, semua adapter nol, sourceConfig
+kosong → `AssetPolicy.oraclelessCounterasset` melewati gate health. Sisi saham **tidak** cukup:
+`_admitted` mensyaratkan `SessionRegistry.health(id)` dengan `ready`, `reasonBits == 0`, dan
+`validUntil > now`, jadi butuh adapter + source yang benar-benar melaporkan.
+
+## 5. Belum tercakup (jangan diklaim selesai)
 - Pool create-and-seed end-to-end: butuh asset admission (`queueAsset` + 48 jam delay) + calendar root
   + health source yang nyata. Untuk rehearsal cepat: deploy token fixture testnet dan admit sebagai
   SESSION_ONLY dengan source mock — dicatat eksplisit sebagai fixture, bukan source produksi.
