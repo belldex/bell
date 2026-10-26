@@ -16,6 +16,7 @@ optimizer = true
 optimizer_runs = 200
 evm_version = "cancun"
 bytecode_hash = "none"
+fs_permissions = [{ access = "read-write", path = "../evidence" }]
 
 [fuzz]
 runs = 100000
