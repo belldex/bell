@@ -450,7 +450,7 @@
         "Local tests now include real AssetRegistry and SessionRegistry oracleless SESSION_ONLY activation in both currency orders, alongside real pinned PoolManager and PositionManager. Permit2, source/verifier adapters, calendar and safety remain doubles; real Permit2 and entitled production source integration remain BLOCKED. Pinned Permit2 implementation requires Solidity 0.8.17, unlike the single 0.8.26 compilation unit.",
         "EIP-170 artifact size blocker is locally resolved (BellHook 24390 B, BellHookDeployer 2996 B, immutable evaluator 4770 B; size gates pass). Target-chain deployment/Cancun capability and fork compatibility remain unverified and BLOCKED; local bytecode size compliance is not target-chain deployment evidence.",
         "Reviewed deployment manifests and calibrated immutable profiles for all required classes/reference modes/assets are not supplied. The candidate factory binds one explicit profile per deployment and does not infer a referenceMode numeric mapping or claim full product/class coverage.",
-        "M05-05 swap enforcement remains fail-closed even after LIVE activation. TREASURY_ONLY is explicitly rejected pending M06-03; PUBLIC PM operations do not count as swap-policy integration."
+        "M05-05 swap enforcement remains fail-closed even after LIVE activation. Treasury path now exists in the candidate factory code, but the deployed testnet profile is PUBLIC-only and does not deploy/bind TreasuryAdapter. PUBLIC PositionManager tests do not count as production swap-policy integration."
       ]
     },
     "M06-02": {
@@ -478,8 +478,8 @@
         "evidence/treasury-adapter-results.md"
       ],
       "blockers": [
-        "Adapter contract and local real-core tests implement one-shot factory-called seed, immutable hook/config binding, treasury-only remove/collect, in-kind immutable recipient and exact debit/credit guards. However the current BellPoolFactory constructor/createAndSeed path still rejects TREASURY_ONLY and never calls TreasuryAdapter; production atomic factory integration remains unimplemented.",
-        "Deployment-manifest binding for treasury/factory/recipient, production source/registry wiring, target-chain fork, independent audit, and real deployment acceptance remain unverified. Tests use local fixtures; do not mark M06-03 DONE until factory atomic path and its receipt/request binding are integrated and reviewed."
+        "TreasuryAdapter has 10 pinned-core integration tests and BellPoolFactory now has a local atomic TREASURY_ONLY create-and-seed integration test; production code path is implemented. The live testnet deployment is still PUBLIC-only with treasuryAdapter=0, so no TreasuryAdapter address/treasury position has been deployed or exercised onchain.",
+        "Testnet treasury role is currently configured to the burn address, so treasury exit/handover cannot be rehearsed. USDG identity/decimals and reviewed recipient binding, target-chain Permit2/fork behavior, source/registry evidence and independent audit remain outstanding."
       ]
     },
     "M06-04": {
@@ -490,7 +490,7 @@
         "contracts/test/integration/router/BellRouter.t.sol"
       ],
       "blockers": [
-        "Direct router and pinned core settlement implemented: caller=payer, nonce, deadline, exact-in/exact-out slippage, WETH wrap/unwrap, and zero dust verified locally across 10 tests. Target Robinhood testnet rehearsal with live funded accounts and audited dependencies remains outstanding."
+        "Router is deployed and its ten pinned-core unit/integration tests pass, but the current testnet has no eligible stock/pool, so no live BellRouter.swap transaction can yet be tested. Production BellHook swap callbacks remain fail-closed; even a seeded pool will not advertise executable swaps until M05-05 is implemented."
       ]
     },
     "M06-05": {
@@ -507,7 +507,7 @@
         "contracts/script/DeployTestnet.s.sol"
       ],
       "blockers": [
-        "Deterministic request-salt mining, manifest generation tooling, and testnet deploy runner implemented. Execution against target testnet requires funded deployer key to broadcast and verify onchain."
+        "Salt mining, manifest validation and testnet runner implemented; 10-contract testnet deployment and bytecode/provider verification completed. Signed/reviewed canonical manifest, pinned fork/Cancun compatibility evidence, reproducible build-commit binding and ownership handover remain outstanding."
       ]
     },
     "M07-01": {
