@@ -9,6 +9,7 @@
     "./source-codec": "./src/source-codec.mjs",
     "./swap-codec": "./src/swap-codec.mjs",
     "./create-codec": "./src/create-codec.mjs",
+    "./lp-codec": "./src/lp-codec.mjs",
     "./api-schema": "./src/api-schema.mjs",
     "./api-reads": "./src/api-reads.mjs",
     "./api-quote": "./src/api-quote.mjs",

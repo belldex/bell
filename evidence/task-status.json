@@ -200,7 +200,8 @@
         "packages/protocol/test/create-codec.test.mjs",
         "packages/protocol/generated/abi-manifest.json",
         "scripts/evidence/abi-manifest.mjs",
-        "packages/protocol/src/lp-codec.mjs"
+        "packages/protocol/src/lp-codec.mjs",
+        "packages/protocol/test/lp-codec.test.mjs"
       ],
       "blockers": []
     },
@@ -350,7 +351,8 @@
         "contracts/src/BellHook.sol",
         "contracts/src/libraries/ModePolicy.sol",
         "contracts/test/unit/hook/BellHook.t.sol",
-        "contracts/test/unit/hook/BellHookLifecycle.t.sol"
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "BellHook exposes factory-only beginSeed/callback/activatePool; the PUBLIC candidate factory now exercises atomic settle/receipt/activation locally, but USDG/recipient manifests, actual Permit2, target-chain compatibility and production profile review remain blocking. TREASURY_ONLY waits for M06-03.",
@@ -369,7 +371,8 @@
         "contracts/test/unit/hook/BellHookLifecycle.t.sol",
         "contracts/test/unit/hook/BellHookClosure.t.sol",
         "contracts/src/registries/SessionRegistry.sol",
-        "contracts/src/registries/CalendarRegistry.sol"
+        "contracts/src/registries/CalendarRegistry.sol",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "Closure/recovery logic is unit-tested with synthetic LIVE state and the candidate PUBLIC factory tests atomic seed/receipt ordering, but production M06-01 dependencies/review are still blocked.",
@@ -392,7 +395,8 @@
         "contracts/src/libraries/PositionReceipt.sol",
         "contracts/test/unit/hook/PositionReceipt.t.sol",
         "contracts/src/BellPoolFactory.sol",
-        "contracts/test/integration/factory/BellPoolFactory.t.sol"
+        "contracts/test/integration/factory/BellPoolFactory.t.sol",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "PUBLIC M06-01 candidate now binds requestHash, captures principal and verifies a real pinned PM receipt before activation in local tests; production readiness still depends on actual USDG/recipient binding, Permit2, reviewed profiles and target-chain deployment evidence.",
@@ -411,7 +415,8 @@
         "contracts/test/integration/swaps/BellSwapEvaluator.t.sol",
         "contracts/test/integration/swaps/CoreSwapPolicy.t.sol",
         "contracts/test/integration/factory/BellPoolFactory.t.sol",
-        "evidence/swap-policy-integration.md"
+        "evidence/swap-policy-integration.md",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "Only the immutable pure computation transport and a test-only pinned-core snapshot hook are implemented. Production BellHook still has SWAP_EXECUTION_READY=false and does not pin/settle a real swap. M05-05 is not DONE and LIVE/factory activation must not advertise trading.",
@@ -435,7 +440,8 @@
         "contracts/src/BellModeEvaluator.sol",
         "contracts/src/libraries/CreationCodeChunk.sol",
         "contracts/src/libraries/AssetPolicy.sol",
-        "contracts/src/registries/SessionRegistry.sol"
+        "contracts/src/registries/SessionRegistry.sol",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "No verified protocol USDG token address/decimals or project service-recipient deployment binding is supplied. Constructor inputs are explicit manifest trust boundaries; zero fee token fails closed, not a free pilot. Local fixture tokens do not establish USDG identity.",
@@ -452,7 +458,10 @@
       "evidence": [
         "contracts/test/integration/public-lp/PublicPositionManager.t.sol",
         "contracts/test/integration/factory/BellPoolFactory.t.sol",
-        "evidence/public-lp-exit-tests.md"
+        "evidence/public-lp-exit-tests.md",
+        "packages/protocol/src/lp-codec.mjs",
+        "packages/protocol/test/lp-codec.test.mjs",
+        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
         "PUBLIC PositionManager/core operations now cover owner/operator and transferred-owner authority, add/mint/decrease/fee collection and in-kind exits under pause, stale/backend failure, CLOSED and exhausted-budget fixtures. Settlement uses a synthetic Permit2 double; actual Permit2 implementation integration remains unverified.",
@@ -476,10 +485,12 @@
       "status": "IN_PROGRESS",
       "evidence": [
         "contracts/src/BellHookDeployer.sol",
-        "contracts/test/unit/hook/BellHookDeployer.t.sol"
+        "contracts/test/unit/hook/BellHookDeployer.t.sol",
+        "scripts/tooling/mine-hook-salt.mjs",
+        "scripts/tooling/mine-hook-salt.test.mjs"
       ],
       "blockers": [
-        "CREATE2 init-code hash and exact hook-address prediction/deployment are implemented, but the salt-mining CLI and signed/reviewed deployment manifest are not implemented."
+        "Deterministic request-salt mining now mirrors BellPoolFactory's creator/chain/nonce CREATE2 namespace, but a signed/reviewed deployment manifest and target-chain fork/deploy verification are still missing."
       ]
     },
     "M07-01": {
@@ -891,10 +902,11 @@
         "packages/domain/test/deno-smoke.ts",
         "apps/web: next build + tsc OK",
         "workers/keeper-b vitest 6/6",
-        "packages node:test 237/237"
+        "packages node:test 237/237",
+        "packages/domain/test/deno-smoke.ts 15/15 Deno incl. lp-codec + create-codec byte vectors"
       ],
       "blockers": [
-        "Cross-runtime browser/DB system tests butuh M07/M11 live; Node+Deno coverage diperluas ke seluruh modul baru"
+        "Node+Deno coverage kini mencakup lp-codec/create-codec; browser/DB system tests masih butuh M07/M11 live"
       ]
     },
     "M13-05": {

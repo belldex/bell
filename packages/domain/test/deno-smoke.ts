@@ -105,3 +105,40 @@ Deno.test('Deno matches the shared SourceWire ABI encoding vector', () => {
 Deno.test('Deno matches the shared SwapRequest ABI encoding vector', () => {
   if (encodeSwapRequest(vector.swapRequest) !== vector.swapRequestEncoded) throw new Error('SwapRequest encoding vector mismatch');
 });
+
+Deno.test('Deno encodes PUBLIC LP transactions identically to the Node vector', async () => {
+  const { buildPublicLpTransaction } = await import('../../protocol/src/lp-codec.mjs');
+  const addr = (n: number) => `0x${n.toString(16).padStart(40, '0')}`;
+  const request = {
+    operation: 'increase', account: addr(10), positionManager: addr(20), recipient: addr(11),
+    tokenId: '9007199254740993', liquidity: '100000', amountMax: ['1000', '2000'],
+    currency0: addr(30), currency1: addr(40), now: '10000', deadline: '10120',
+  };
+  const tx = buildPublicLpTransaction(request);
+  const lpVector = vector.publicLpIncrease as { to: string; value: string; data: string };
+  if (tx.to !== lpVector.to || tx.value !== 0n) throw new Error('LP tx envelope mismatch');
+  if (tx.data !== lpVector.data) throw new Error('LP calldata byte mismatch');
+});
+
+Deno.test('Deno round-trips the CreateRequest ABI vector', async () => {
+  const { encodeCreateRequest, decodeCreateRequest } = await import('../../protocol/src/create-codec.mjs');
+  const addr = (n: number) => `0x${n.toString(16).padStart(40, '0')}`;
+  const request = {
+    config: {
+      token0: addr(1), token1: addr(2), asset0: `0x${'a'.repeat(64)}`, asset1: `0x${'b'.repeat(64)}`,
+      poolManager: addr(3), positionManager: addr(4), factory: addr(5), assetRegistry: addr(6),
+      calendarRegistry: addr(7), safetyController: addr(8), treasuryAdapter: addr(9),
+      poolClass: 0, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
+      tradeCap: ['1000', '2000'], windowCap: ['4000', '8000'], closureCap: ['500', '1000'],
+      policyId: `0x${'c'.repeat(64)}`,
+    },
+    salt: `0x${'d'.repeat(64)}`, nonce: '7', deadline: '1790000000', recipient: addr(10),
+    sqrtPriceX96: '79228162514264337593543950336', tickLower: -120, tickUpper: 120,
+    liquidity: '100000', amountMax: ['9007199254740993', '9007199254740994'], maxServiceFee: '490000000',
+  };
+  const roundtripped = decodeCreateRequest(encodeCreateRequest(request));
+  if (JSON.stringify(roundtripped) !== JSON.stringify(request)) throw new Error('create codec round-trip mismatch');
+  let rejected = false;
+  try { encodeCreateRequest({ ...request, liquidity: 100000 }); } catch { rejected = true; }
+  if (!rejected) throw new Error('create codec unsafe-amount rejection mismatch');
+});
