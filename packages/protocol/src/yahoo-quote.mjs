@@ -118,6 +118,9 @@ export async function fetchYahooChartQuote(symbol, {
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`);
   url.searchParams.set('interval', '1m');
   url.searchParams.set('range', '1d');
+  // Without this flag Yahoo only returns regular-session candles, so premarket/after-hours
+  // sessions would look permanently stale outside 09:30–16:00 ET even when quotes are live.
+  url.searchParams.set('includePrePost', 'true');
 
   let response;
   try {

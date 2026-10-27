@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "network": "Robinhood Chain testnet (46630), rehearsing canonical mainnet AAPL token identity",
+  "recordedAt": "2026-10-27T08:35:00Z",
+  "canonicalIdentity": {
+    "stockTokenMainnet": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+    "symbol": "AAPL",
+    "uiMultiplierLiveAtRecord": "1000566080061092436",
+    "canonicalTokenId": "0x87795462123f9c80baf6774787eabcc72d71b86a1d5119f2d0cda06f860a3e5b"
+  },
+  "reporter": {
+    "address": "0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a",
+    "keyLocation": ".env YAHOO_REPORTER_PRIVATE_KEY (separate from DEPLOYER_PRIVATE_KEY/governance)",
+    "fundedWith": "0.004 ETH testnet native",
+    "fundingTxHash": "0x7b8ede95f483c415c7162a92483e8ecd445a6baa035155d33eebd2ff4d22cd81"
+  },
+  "verifier": {
+    "contract": "YahooSourceVerifier",
+    "address": "0x20a066123c260bc6c5253f75e261c5056fde4bea",
+    "deployTxHash": "0xa173b5949fbe07be37c0402597285803dbbd4d60dc5cbe19334d5e260080c4ba",
+    "blockNumber": "143467638",
+    "codeHash": "0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a",
+    "onchainReporterVerified": true,
+    "eip712ChainIdBinding": 46630
+  },
+  "adapter": {
+    "contract": "YahooAttestedSourceAdapter",
+    "mode": "directPrice",
+    "address": "0xdcc4fa3e0fa29361616799a891cc1dd2eaf61806",
+    "deployTxHash": "0xbf7690c67932fe1eaacca3b64172a35f2441757cd41e66922db62790b9cc77bf",
+    "blockNumber": "143472694",
+    "sourceConfigHash": "0x94ed50550c72321af97318e3e9fb784a53171e24944d922d0246cd49940d1f1c",
+    "onchainFingerprint": "0x73088b875af88ad00fd483d0e27caf7a37054db6687e188728fb6b3bbc25935d",
+    "onchainBindingVerified": true
+  },
+  "firstLivePublication": {
+    "method": "publishDirect",
+    "txHash": "0x6f8a943ad31beb41eec4923be6e4b61d822d3a63c3646bcfe2af67f115250a83",
+    "blockNumber": "143492873",
+    "status": "success",
+    "underlyingUsdPriceRaw18": "343300000000000000000",
+    "adjustedPrice18": "342944023940939432439",
+    "observedAt": "1793089910",
+    "quoteAgeSeconds": 80,
+    "yahooPhase": "PRE",
+    "yahooSourceSignedByYahoo": false,
+    "attestation": "BELL reporter EIP-712 (verifier chainId 46630)",
+    "adapterReadCurrentVerified": true
+  },
+  "sourceFixes": [
+    "packages/protocol/src/yahoo-quote.mjs now sets includePrePost=true so premarket/after-hours candles are returned outside 09:30-16:00 ET (previously all such fetches failed the 120s freshness policy)",
+    "publish-yahoo-direct.mjs pins the signature domain to the verifier's deployment chainId (46630) while the canonical token identity remains mainnet 4663"
+  ],
+  "trustBoundary": {
+    "yahooSignature": false,
+    "bellReporterEip712Attestation": true,
+    "reporterSeparateFromGovernance": true
+  },
+  "nextSteps": [
+    "deploy a stream-mode adapter per session scope and submitReports to the current SessionRegistry",
+    "queue/activate the AAPL direct descriptor on the current AssetRegistry using this adapter",
+    "createAndSeed the first pool once swap enforcement M05-05 is implemented",
+    "mainnet deployment requires owner-approved funding and is NOT covered by this rehearsal"
+  ]
+}
