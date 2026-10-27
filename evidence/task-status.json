@@ -424,13 +424,16 @@
         "contracts/test/integration/swaps/CoreSwapPolicy.t.sol",
         "contracts/test/integration/factory/BellPoolFactory.t.sol",
         "evidence/swap-policy-integration.md",
+        "docs/M05-05-swap-execution-blockers.md",
         "docs/reviews/2026-10-26-peer-review-m05-m06.md"
       ],
       "blockers": [
-        "Only the immutable pure computation transport and a test-only pinned-core snapshot hook are implemented. Production BellHook still has SWAP_EXECUTION_READY=false and does not pin/settle a real swap. M05-05 is not DONE and LIVE/factory activation must not advertise trading.",
-        "Authenticated active/frozen price and corporate timer snapshots, referenceMode profile admission, source deviation/provenance binding, coherent executable PolicyView and production callback/budget wiring remain unfinished. No numeric reference-mode mapping or live price profile was invented.",
-        "Reviewed real source rights/profiles and Robinhood pinned-fork/Cancun compatibility remain unavailable. Synthetic context/core tests do not establish these dependencies or production availability.",
-        "Size-safe production snapshot integration and hot-path gas benchmarking remain required. Current helper/core fixture results are arithmetic/rollback evidence only; no callback gas-target or release gate is claimed. See swap-policy-integration.md for current runtime/initcode sizes and latest full-check evidence."
+        "MEASURED BLOCKER: BellHook runtime is 24,571 bytes against the 24,576-byte EIP-170 limit — 5 bytes of headroom. Wiring the swap glue directly into the hook (context build, prepare, settle, budget commit, two decimals reads) produces 30,128 bytes, i.e. 5,552 bytes over. Adding the logic is not possible without first freeing space; see docs/M05-05-swap-execution-blockers.md for the three refactor options and their security trade-offs.",
+        "SCOPE BLOCKER: only SESSION_ONLY can be enabled honestly. referenceMode is bound but deliberately not interpreted (BellHook.sol:1274 — no numeric enum in the pinned normative tables), and _evaluatePolicy writes referencePrice18 = [0,0]. BellModeEvaluator.prepare requires a nonzero reference pair and a price band for PRICE_GUARDED, so that class cannot be admitted yet.",
+        "The evaluator, both budgets, validateActual and the real-core integration pattern are all complete and proven against the pinned PoolManager via SnapshotFixtureHook (14 tests in CoreSwapPolicy.t.sol). The remaining work is relocating that proven pattern into production BellHook without exceeding EIP-170.",
+        "Authenticated active/frozen price and corporate timer snapshots, source deviation/provenance binding and a coherent executable PolicyView remain unfinished.",
+        "Reviewed real source rights/profiles and Robinhood pinned-fork/Cancun compatibility remain unavailable.",
+        "Size-safe production snapshot integration and hot-path gas benchmarking remain required."
       ]
     },
     "M06-01": {
