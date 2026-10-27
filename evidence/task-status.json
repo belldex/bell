@@ -910,9 +910,11 @@
     },
     "M13-02": {
       "title": "Jalankan stateful/economic invariants",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "contracts/test/invariant/treasury/TreasuryAdapterInvariants.t.sol stateful randomized sequence 100k runs: in-kind conservation, core principal accounting, unsweepable foreign balances, zero-success unauthorized attempts, exact treasury debit"
+        "contracts/test/invariant/treasury/TreasuryAdapterInvariants.t.sol stateful randomized sequence 100k runs: in-kind conservation, core principal accounting, unsweepable foreign balances, zero-success unauthorized attempts, exact treasury debit",
+        "contracts/test/invariant/closure/BellHookClosureStatefulInvariants.t.sol seeded 12-step randomized closure FSM 100k runs: single latch per episode, monotone closure nonce, episode gross bounded by caps and never refilled, canonical anchor-to-leaf binding, recovery candidate invariants, policy/state mode parity, swap fail-closed in every reachable state",
+        "pnpm check 2026-10-27: 280 node:test, 45 reference, 351 forge tests (incl. both invariant suites), Deno 15, keeper-b 6, wrangler dry-run, abi:check, evidence:check, secret boundary all green"
       ],
       "blockers": []
     },
