@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "network": "Robinhood Chain testnet (46630), rehearsing canonical mainnet AAPL token identity",
-  "recordedAt": "2026-10-27T08:35:00Z",
+  "recordedAt": "2026-10-27T09:39:42.499Z",
   "canonicalIdentity": {
     "stockTokenMainnet": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
     "symbol": "AAPL",
@@ -57,9 +57,45 @@
     "reporterSeparateFromGovernance": true
   },
   "nextSteps": [
-    "deploy a stream-mode adapter per session scope and submitReports to the current SessionRegistry",
+    "queue/activate the AAPL stock descriptor on the current registry binding the facade token address on Testnet (the direct descriptor binds canonical mainnet AAPL identity)",
     "queue/activate the AAPL direct descriptor on the current AssetRegistry using this adapter",
     "createAndSeed the first pool once swap enforcement M05-05 is implemented",
     "mainnet deployment requires owner-approved funding and is NOT covered by this rehearsal"
-  ]
+  ],
+  "streamAdapters": [
+    {
+      "scope": 1,
+      "label": "regular",
+      "feedId": "0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b",
+      "sourceConfigHash": "0xc51b2a0c411fab734dcc1b3ee3dc6afe8c08b985a9572d51377e81b6f3b73fc4",
+      "adapterAddress": "0x00a7e4845a25cbed8f15510d4b2ead9ec37c0ccd",
+      "deployTxHash": "0x11ea7fdef5c81e9daacdcc15453c018b6661b1526698a4f993bf55035107c777",
+      "blockNumber": "143520703"
+    },
+    {
+      "scope": 2,
+      "label": "extended",
+      "feedId": "0x6db5b18a4a76ac8566c730fdd2ffd64b80bd0147bfb259fc66da07e94f2df3f9",
+      "sourceConfigHash": "0xf03cff5d6f15b8939cef00a3318fcfece9474e5276343081713be392309991d2",
+      "adapterAddress": "0x71ed9d187628fbd2bbd7f7c9d8aeb80b1b12f03c",
+      "deployTxHash": "0xa398aa7293e08584d32e1fa42629704dfe6ef717c3ad87ab1b06ee33ed2d9d0d",
+      "blockNumber": "143520709"
+    },
+    {
+      "scope": 3,
+      "label": "overnight",
+      "feedId": "0xc53ab9c00f4880b51930f871ce0fcc6535320baf011fcb6d362f9b07950ed791",
+      "sourceConfigHash": "0xd986b73c63965b654fa564ff8179139dfbdeeb958ac9bb19203e904f240cbb4c",
+      "adapterAddress": "0x86da1e4a1b2a20321ad7cd9eec5b99061ba4ccf6",
+      "deployTxHash": "0xe9bd54d2e016fc288fc5edd62662b0aaed877e1cad420775abb45c48eef4f105",
+      "blockNumber": "143520718"
+    }
+  ],
+  "aaplTestnetFacade": {
+    "address": "0x64a82eb01d7c7310ef1bc5f0055f758409d45c63",
+    "deployTxHash": "0x78587752bb40442be0ecad06fca1fe4118e6e8b17432b6397d47786be0bfa4e0",
+    "symbol": "AAPL-RH-FACADE",
+    "isCanonicalToken": false,
+    "reason": "Mainnet AAPL has no Testnet deployment; the stream-mode adapter constructor requires stockToken_.code.length != 0 on the deployment chain. This facade satisfies that check without claiming canonical identity."
+  }
 }
