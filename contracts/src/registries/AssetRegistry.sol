@@ -244,7 +244,12 @@ contract AssetRegistry is IBellEvents, IBellErrors {
             } else if (wire.kind == 2) {
                 if (descriptor_.isStock || wire.phaseScope != 0 || wire.schema != 0 || wire.feedId != ZERO32 || wire.priceBasis != 3) revert BadConfig(ERR_QUOTE_SOURCE);
             } else if (wire.kind == 3) {
-                if (!descriptor_.isStock || wire.phaseScope < 1 || wire.phaseScope > 3 || wire.schema != 11 || wire.feedId == ZERO32 || wire.priceBasis != 1) {
+                // Schema 11 is the verified Chainlink EquityV11 report. Schema 12 is reserved for
+                // an explicitly configured BELL-attested real-price adapter (e.g. Yahoo quotes);
+                // the adapter code hash, expected endpoint identity and sourceConfigHash are still
+                // pinned below, so a symbol or arbitrary JSON URL cannot self-admit as a source.
+                if (!descriptor_.isStock || wire.phaseScope < 1 || wire.phaseScope > 3
+                    || (wire.schema != 11 && wire.schema != 12) || wire.feedId == ZERO32 || wire.priceBasis != 1) {
                     revert BadConfig(ERR_V11_SOURCE);
                 }
                 streamMask |= uint8(1) << wire.phaseScope;

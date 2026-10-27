@@ -33,8 +33,8 @@ test('parses AssetQueued logs and ignores foreign logs', () => {
   assert.equal(parsed.length, 1);
   assert.equal(parsed[0].operationId, operationId);
   assert.equal(parsed[0].descriptorId, descriptorId);
-  assert.equal(parsed[0].eta, 172800);
-  assert.equal(parsed[0].blockNumber, 42);
+  assert.equal(parsed[0].eta, 172800n);
+  assert.equal(parsed[0].blockNumber, 42n);
 });
 
 test('queue lifecycle: pending, ready, expired, activated', () => {

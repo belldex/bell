@@ -60,9 +60,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     int24 private constant REQUIRED_TICK_SPACING = 60;
 
-    /// @dev M05-05 owns swap reference pinning, price-path checks and budget commit. Until that enforcement is
-    /// implemented, even a synthetic LIVE/healthy evaluation must not advertise swap capability. Flip this only
-    /// together with the M05-05 implementation; `getPolicy`, `refreshState` and `beforeSwap` share the gate.
+    /// @dev Keep all swap callbacks fail-closed until M05-05's production reference collection and budget
+    /// integration has passed the real PoolManager callback suite.
     bool private constant SWAP_EXECUTION_READY = false;
 
     BellModeEvaluator public immutable modeEvaluator;

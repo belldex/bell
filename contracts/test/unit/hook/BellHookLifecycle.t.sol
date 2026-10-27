@@ -1189,9 +1189,19 @@ contract BellHookLifecycleTest {
     }
 
     function _deployHookWithSession(address sessionRegistry_) internal returns (BellHook deployed) {
+        return _deployHookConfigWithSession(_config(), sessionRegistry_);
+    }
+
+    function _deployHookConfig(PoolConfig memory config) internal returns (BellHook deployed) {
+        return _deployHookConfigWithSession(config, address(sessions));
+    }
+
+    function _deployHookConfigWithSession(PoolConfig memory config, address sessionRegistry_)
+        internal returns (BellHook deployed)
+    {
         (uint64 nonce, address predicted) = _nextValidAddress();
         vm.setNonce(address(this), nonce);
-        deployed = BellHook(this.deployHook(_config(), _key(), templateCodeHash, sessionRegistry_));
+        deployed = BellHook(this.deployHook(config, _key(), templateCodeHash, sessionRegistry_));
         require(address(deployed) == predicted, "hook address prediction");
     }
 

@@ -32,6 +32,8 @@ export interface ProtocolAbiManifest {
     ISessionRegistry: unknown[];
     ISourceAdapterIdentity: unknown[];
     ITreasuryAdapter: unknown[];
+    IYahooAttestedSourceAdapter: unknown[];
+    IYahooSourceVerifier: unknown[];
   };
 }
 

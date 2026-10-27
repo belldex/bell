@@ -24,6 +24,11 @@ interface ISessionDirectSource {
     function readCurrent() external view returns (SourceSample memory);
 }
 
+interface ISessionReporterTokenStatus {
+    function readTokenStatus(address token, uint64 nowTimestamp)
+        external view returns (uint128 multiplier18, uint128 pendingMultiplier18, uint64 effectiveAt, bool pending, bool oraclePaused, bytes32 fingerprint);
+}
+
 interface ISessionCalendar {
     function currentInterval(bytes32 assetId) external view returns (CalendarLeaf memory);
     function nextInterval(bytes32 assetId) external view returns (CalendarLeaf memory);
@@ -226,7 +231,7 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
             if (direct.validUntil < inputs.validUntil) inputs.validUntil = direct.validUntil;
         }
 
-        (bool corporateOk, uint128 multiplier, uint64 corporateUntil,, uint256 corporateReasons) = _readCorporate(descriptor_.token);
+        (bool corporateOk, uint128 multiplier, uint64 corporateUntil,, uint256 corporateReasons) = _readCorporate(descriptor_.token, descriptor_, wires);
         inputs.corporateOk = corporateOk;
         inputs.multiplier = multiplier;
         inputs.reasons |= corporateReasons;
@@ -370,14 +375,19 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
         return (false, sample, ReasonBits.PRICE_INPUT_INVALID_OR_STALE);
     }
 
-    function _readCorporate(address token)
+    function _readCorporate(address token, AssetDescriptor memory descriptor_, SourceWire[] memory wires)
         private view returns (bool healthy, uint128 multiplier, uint64 validUntil, bytes32 fingerprint, uint256 reasons)
     {
         if (block.timestamp > type(uint64).max) return (false, 0, 0, ZERO32, ReasonBits.CORPORATE_INCONSISTENT);
-        bytes memory callData = abi.encodeWithSelector(StockTokenStatusAdapter.readStatus.selector, token, uint64(block.timestamp));
+        address adapter = _stockTokenStatusAdapterForToken(descriptor_, wires);
+        bytes memory callData;
+        if (adapter == address(_stockTokenStatusAdapter)) {
+            callData = abi.encodeWithSelector(StockTokenStatusAdapter.readStatus.selector, token, uint64(block.timestamp));
+        } else {
+            callData = abi.encodeWithSelector(ISessionReporterTokenStatus.readTokenStatus.selector, token, uint64(block.timestamp));
+        }
         StockTokenStatusAdapter.Status memory status;
         bool success;
-        address adapter = address(_stockTokenStatusAdapter);
         assembly ("memory-safe") {
             status := mload(0x40)
             mstore(0x40, add(status, 192))
@@ -385,10 +395,10 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
             if iszero(eq(returndatasize(), 192)) { success := 0 }
             if success {
                 if or(
-                    or(gt(mload(status), 0xffffffffffffffffffffffffffffffffffff), gt(mload(add(status, 32)), 0xffffffffffffffffffffffffffffffffffff)),
+                    or(gt(mload(status), 0xffffffffffffffffffffffffffffffff), gt(mload(add(status, 32)), 0xffffffffffffffffffffffffffffffff)),
                     or(
-                        gt(mload(add(status, 64)), 0xffffffffffffffff),
-                        or(gt(mload(add(status, 96)), 1), gt(mload(add(status, 128)), 1))
+                        or(gt(mload(add(status, 64)), 0xffffffffffffffff), gt(mload(add(status, 96)), 1)),
+                        gt(mload(add(status, 128)), 1)
                     )
                 ) { success := 0 }
                 if iszero(mload(add(status, 160))) { success := 0 }
@@ -398,6 +408,18 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
         if (status.oraclePaused) return (false, 0, 0, ZERO32, ReasonBits.ISSUER_PAUSE);
         validUntil = status.pending ? status.effectiveAt : type(uint64).max;
         return (true, status.multiplier18, validUntil, status.fingerprint, 0);
+    }
+
+    function _stockTokenStatusAdapterForToken(AssetDescriptor memory descriptor_, SourceWire[] memory wires)
+        private view returns (address adapter)
+    {
+        for (uint256 i; i < wires.length; ++i) {
+            SourceWire memory wire = wires[i];
+            if ((wire.kind != KIND_V11 && wire.kind != KIND_SECONDARY) || wire.phaseScope != 4) continue;
+            adapter = _adapterFor(descriptor_, wire);
+            if (adapter != address(0)) return adapter;
+        }
+        return address(_stockTokenStatusAdapter);
     }
 
     function _withinCrossSourceDeviation(uint128 underlyingPrice, uint128 multiplier, uint128 directPrice) private pure returns (bool) {
@@ -579,7 +601,7 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
             bool corporateOk;
             (underlyingOk, inputs.underlying,) = _readEligibleUnderlying(assetId, _stockStreamAdapter(descriptor_, phase), wires, phase);
             (directOk, inputs.direct,) = _readStockDirect(assetId, descriptor_, wires);
-            (corporateOk, inputs.multiplier,, inputs.corporateFingerprint,) = _readCorporate(descriptor_.token);
+            (corporateOk, inputs.multiplier,, inputs.corporateFingerprint,) = _readCorporate(descriptor_.token, descriptor_, wires);
             if (!underlyingOk || !directOk || !corporateOk
                 || !_withinCrossSourceDeviation(inputs.underlying.price18, inputs.multiplier, inputs.direct.price18)) {
                 revert BadConfig(bytes32("CLOSE_CAPTURE_INPUT"));
@@ -637,8 +659,9 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
         if (!descriptor_.isStock) {
             return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, validUntil);
         }
+        SourceWire[] memory wires = abi.decode(assetRegistry.sourceConfig(assetId), (SourceWire[]));
         (bool corporateOk, uint128 multiplier, uint64 corporateUntil,, uint256 corporateReasons) =
-            _readCorporate(descriptor_.token);
+            _readCorporate(descriptor_.token, descriptor_, wires);
         if (!corporateOk || multiplier != anchor.multiplier18) {
             return (
                 anchor,

@@ -5,6 +5,8 @@ import {AssetRegistry} from "../src/registries/AssetRegistry.sol";
 import {AssetDescriptor} from "../src/types/ProtocolTypes.sol";
 import {SourceWire} from "../src/types/ProtocolTypes.sol";
 import {SourceConfigHash} from "../src/libraries/SourceConfigHash.sol";
+import {YahooSourceVerifier} from "../src/adapters/YahooSourceVerifier.sol";
+import {YahooAttestedSourceAdapter} from "../src/adapters/YahooAttestedSourceAdapter.sol";
 
 interface VmAsset {
     function warp(uint256 timestamp) external;
@@ -134,6 +136,55 @@ contract AssetRegistryTest {
         bytes32 descriptorId = registry.activateAsset(operationId);
         require(descriptorId != bytes32(0), "activated immediately");
         require(registry.descriptorIdForToken(stock.token) == descriptorId, "descriptor registered");
+    }
+
+    function testAcceptsReporterAttestedYahooSchemaForRegularStockWire() external {
+        AssetRegistry registry = _registry();
+        MockAssetToken token = new MockAssetToken();
+        MockSourceEndpoint endpoint = new MockSourceEndpoint();
+        bytes32 tokenId = keccak256(abi.encode(block.chainid, address(token)));
+        SourceWire[] memory wires = new SourceWire[](2);
+        wires[0] = _wire(1, 0, address(endpoint), bytes32(0), 0, 2, tokenId);
+        wires[1] = _wire(3, 1, address(endpoint), bytes32(uint256(0xA11CE)), 12, 1, tokenId);
+        MockSourceAdapter tokenAdapter = _adapter(wires[0]);
+        MockSourceAdapter regularAdapter = _adapter(wires[1]);
+        AssetDescriptor memory stock = AssetDescriptor({
+            id: bytes32(0), token: address(token), isStock: true, decimals: 18, capabilityMask: 0x04,
+            tokenPriceAdapter: address(tokenAdapter), regularAdapter: address(regularAdapter),
+            extendedAdapter: address(0), overnightAdapter: address(0), secondaryAdapter: address(0),
+            expectedCodeHash: address(token).codehash,
+            implementationFingerprint: bytes32(uint256(11)), evidenceHash: bytes32(uint256(12))
+        });
+
+        bytes32 operationId = registry.queueAsset(stock, abi.encode(wires));
+        require(operationId != bytes32(0), "Yahoo reporter wire not queued");
+    }
+
+    function testBindsRealYahooAttestedAdaptersToSourceWireIdentity() external {
+        AssetRegistry registry = _registry();
+        MockAssetToken token = new MockAssetToken();
+        YahooSourceVerifier verifier = new YahooSourceVerifier(address(0xA11CE));
+        bytes32 tokenId = keccak256(abi.encode(block.chainid, address(token)));
+        bytes32 feedId = keccak256("BELL_YAHOO_AAPL_USD_SCOPE_1");
+        SourceWire[] memory wires = new SourceWire[](2);
+        wires[0] = _wire(1, 0, address(verifier), bytes32(0), 0, 2, tokenId);
+        wires[1] = _wire(3, 1, address(verifier), feedId, 12, 1, tokenId);
+        YahooAttestedSourceAdapter directAdapter = new YahooAttestedSourceAdapter(
+            verifier, SourceConfigHash.hash(wires[0]), bytes32(0), 0, true, address(0)
+        );
+        YahooAttestedSourceAdapter streamAdapter = new YahooAttestedSourceAdapter(
+            verifier, SourceConfigHash.hash(wires[1]), feedId, 1, false, address(token)
+        );
+        AssetDescriptor memory stock = AssetDescriptor({
+            id: bytes32(0), token: address(token), isStock: true, decimals: 18, capabilityMask: 0x04,
+            tokenPriceAdapter: address(directAdapter), regularAdapter: address(streamAdapter),
+            extendedAdapter: address(0), overnightAdapter: address(0), secondaryAdapter: address(0),
+            expectedCodeHash: address(token).codehash,
+            implementationFingerprint: bytes32(uint256(21)), evidenceHash: bytes32(uint256(22))
+        });
+
+        bytes32 operationId = registry.queueAsset(stock, abi.encode(wires));
+        require(operationId != bytes32(0), "real Yahoo adapters not accepted by registry binding");
     }
 
     function _stockFixture() internal returns (AssetRegistry registry, AssetDescriptor memory stock, SourceWire[] memory wires) {

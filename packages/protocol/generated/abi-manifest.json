@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "0038234be4f4b67f8d54a9d149eb078c3c1634f2a8c8c76a0820eee2afc5cc4d",
+  "abiSha256": "c5717fab42d08df8d8d81443c5f1a8f0d44dfc138f796603a39e90cfb063b579",
   "interfaces": {
     "IAssetRegistry": [
       {
@@ -3269,6 +3269,613 @@
           }
         ],
         "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "IYahooAttestedSourceAdapter": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes",
+            "name": "report",
+            "type": "bytes"
+          }
+        ],
+        "name": "decodeVerified",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "directPrice",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "feedId",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "fingerprint",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "phaseScope",
+        "outputs": [
+          {
+            "internalType": "uint8",
+            "name": "",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "previewDirect",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "valid",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint64",
+            "name": "validUntil",
+            "type": "uint64"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "publishDirect",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "readCurrent",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "sourceConfigHash",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "IYahooSourceVerifier": [
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "sourceConfigHash",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          }
+        ],
+        "name": "digest",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "sourceConfigHash",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "recoverSigner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "reporter",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "sourceConfigHash",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "sample",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "verify",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       }
     ]

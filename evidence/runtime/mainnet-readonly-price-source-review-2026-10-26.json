@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-26T14:26:20Z",
+  "chainId": 4663,
+  "mainnetRpcPreflight": {
+    "status": "HEADS_AGREE_ONLY",
+    "providers": ["alchemy", "pinax"],
+    "commonBlockNumber": "98550286",
+    "commonBlockHash": "0x36ab51bfaa743a02e3ce5693c1b8f50f49e24b85b7bd5a458033502f75cd3165",
+    "mainnetBroadcastAllowed": false
+  },
+  "officialAssetPreflight": {
+    "status": "CROSS_CHECKED_NOT_ADMITTED",
+    "candidateReadsAgree": true,
+    "tokenCodePresentAndDecimalsMatch": ["AAPL", "NVDA", "TSLA"],
+    "authenticatedReportEntitlement": false,
+    "admissionGranted": false
+  },
+  "freeOnchainAggregatorFreshnessSample": {
+    "blockNumber": "98551879",
+    "blockTimestamp": 1793031980,
+    "feeds": [
+      { "symbol": "AAPL", "proxy": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0", "decimals": 8, "answerRaw": "34519279620", "updatedAt": 1793029856, "ageSeconds": 2124 },
+      { "symbol": "NVDA", "proxy": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15", "decimals": 8, "answerRaw": "21557947897", "updatedAt": 1793030376, "ageSeconds": 1604 },
+      { "symbol": "TSLA", "proxy": "0x4A1166a659A55625345e9515b32adECea5547C38", "decimals": 8, "answerRaw": "39541999999", "updatedAt": 1793026094, "ageSeconds": 5886 }
+    ],
+    "note": "Public onchain reads, not Data Streams API calls; all three exceed BELL's 120-second observation freshness at this snapshot."
+  },
+  "freeYahooChartSample": {
+    "symbol": "AAPL",
+    "priceRaw18": "344565002441406250000",
+    "observedAt": 1793032245,
+    "ageSecondsAtFetch": 0,
+    "phase": "REGULAR",
+    "sourceSignedByYahoo": false,
+    "note": "Fresh public market quote observed; not an authenticated or provider-signed report."
+  },
+  "conclusion": "Yahoo can supply free, fresh observed AAPL prices during exposed chart sessions. A dedicated BELL reporter EIP-712 signer and deployed source verifier/adapter are necessary to use that observation in SessionRegistry. This creates a centralized reporter trust boundary and does not claim Yahoo-signed data or data redistribution rights.",
+  "status": "READ_ONLY_RESEARCH_NOT_ADMITTED"
+}
