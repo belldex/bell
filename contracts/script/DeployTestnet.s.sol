@@ -7,6 +7,7 @@ import {CalendarRegistry} from "../src/registries/CalendarRegistry.sol";
 import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
 import {BellHook} from "../src/BellHook.sol";
 import {BellHookDeployer} from "../src/BellHookDeployer.sol";
+import {BellPolicyOracle} from "../src/BellPolicyOracle.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
 import {BellRouter} from "../src/BellRouter.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
@@ -93,8 +94,11 @@ contract DeployTestnet {
             IWETH9(d.weth)
         ));
         address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
+        // One shared oracle for the whole deployment: each hook receives it instead of creating its own,
+        // which keeps per-hook initcode inside the EIP-3860 limit.
+        address policyOracle = address(new BellPolicyOracle());
         d.hookDeployer = address(new BellHookDeployer(
-            futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode)
+            futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle
         ));
         PoolConfig memory profile = PoolConfig({
             token0: address(0), token1: address(0), asset0: bytes32(0), asset1: bytes32(0),

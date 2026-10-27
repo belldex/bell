@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
@@ -227,6 +228,7 @@ contract BellHookClosureStatefulInvariantsTest {
     StatefulClosureSessions private sessions;
     bytes32 private templateCodeHash;
     BellHook private hook;
+    BellPolicyOracle private oracle;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -451,7 +453,7 @@ contract BellHookClosureStatefulInvariantsTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
     }
 
     function _config() private view returns (PoolConfig memory config) {
@@ -485,6 +487,9 @@ contract BellHookClosureStatefulInvariantsTest {
     }
 
     function _deployHook() private returns (BellHook deployed) {
+        // The oracle must exist before the address is predicted, otherwise creating it inside the
+        // deployHook argument consumes the nonce that `_nextValidAddress` just pinned.
+        oracle = new BellPolicyOracle();
         (uint64 nonce, address predicted) = _nextValidAddress();
         vm.setNonce(address(this), nonce);
         deployed = BellHook(this.deployHook(_config(), _key(), templateCodeHash, address(sessions)));

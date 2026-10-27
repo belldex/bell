@@ -39,6 +39,10 @@ import {
 import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {ModePolicy} from "./libraries/ModePolicy.sol";
 import {BellModeEvaluator} from "./BellModeEvaluator.sol";
+import {BellPolicyOracle} from "./BellPolicyOracle.sol";
+import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
+import {StateLibrary} from "@uniswap/v4-core/src/libraries/StateLibrary.sol";
+import {BeforeSwapDeltaLibrary} from "@uniswap/v4-core/src/types/BeforeSwapDelta.sol";
 import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {SeedAccounting} from "./libraries/SeedAccounting.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
@@ -60,14 +64,18 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     int24 private constant REQUIRED_TICK_SPACING = 60;
 
-    /// @dev Keep all swap callbacks fail-closed until M05-05's production reference collection and budget
-    /// integration has passed the real PoolManager callback suite.
-    bool private constant SWAP_EXECUTION_READY = false;
+    /// @dev Swap enforcement is wired in `_beforeSwap`/`_afterSwap`. The policy evaluation lives in the
+    /// immutable `BellPolicyOracle` so the hook itself stays inside the EIP-170 limit.
+    bool private constant SWAP_EXECUTION_READY = true;
 
     BellModeEvaluator public immutable modeEvaluator;
 
+    /// @notice Immutable per-pool policy evaluator. STATICCALL only: it can answer, never mutate or authorize.
+    BellPolicyOracle public immutable policyOracle;
+
     bytes4 private constant PROTOCOL_FEE_CONTROLLER_SELECTOR = bytes4(keccak256("protocolFeeController()"));
 
+    bytes32 private constant ERR_POLICY_ORACLE = keccak256("POLICY_ORACLE");
     bytes32 private constant ERR_POOL_MANAGER = keccak256("POOL_MANAGER");
     bytes32 private constant ERR_POSITION_MANAGER = keccak256("POSITION_MANAGER");
     bytes32 private constant ERR_FACTORY = keccak256("FACTORY");
@@ -149,6 +157,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     SeedContext private _seed;
 
+    /// @dev The in-flight swap snapshot, bound by `_beforeSwap` and consumed by `_afterSwap`. The callback
+    /// hash is stored separately so a settled swap cannot be replayed and a stale snapshot cannot be reused.
+    IBellSwapEvaluator.Snapshot private _swapSnapshot;
+    bytes32 private _swapCallbackHash;
+
     /// @dev Internal result of the canonical evaluator. `PolicyView` is the public projection; the extra
     /// fields let `refreshState` checkpoint the pool pause nonce, closure transitions and recovery vector without
     /// a second dependency read.
@@ -204,16 +217,22 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         bytes32 closedReport;
     }
 
-    constructor(PoolConfig memory config_, PoolKey memory key_, bytes32 templateCodeHash_, address sessionRegistry_)
-        BaseHook(IPoolManager(config_.poolManager))
-    {
+    constructor(
+        PoolConfig memory config_,
+        PoolKey memory key_,
+        bytes32 templateCodeHash_,
+        address sessionRegistry_,
+        BellPolicyOracle policyOracle_
+    ) BaseHook(IPoolManager(config_.poolManager)) {
         if (templateCodeHash_ == bytes32(0)) revert BadConfig(ERR_TEMPLATE_CODE_HASH);
         _validateDependencies(config_);
         _requireContract(sessionRegistry_, ERR_SESSION_REGISTRY);
         _validateConfig(config_, key_);
         // Reject malformed/unbounded dependencies before paying to construct the immutable calculator.
         modeEvaluator = new BellModeEvaluator();
-
+        // One shared oracle per deployment keeps the hook initcode inside the EIP-3860 limit.
+        if (address(policyOracle_).code.length == 0) revert BadConfig(ERR_POLICY_ORACLE);
+        policyOracle = policyOracle_;
         _token0 = config_.token0;
         _token1 = config_.token1;
         _asset0 = config_.asset0;
@@ -371,35 +390,77 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         }
     }
 
-    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata, bytes calldata hookData)
+    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         internal
-        view
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         _requireBoundKey(key);
-        // References/policy are protocol inputs, never executable or user-substitutable hookData.
         if (hookData.length != 0) revert ContextMismatch();
-        // The exact PoolKey and onlyPoolManager gates above stay first. Then use the same canonical evaluator
-        // as getPolicy/refreshState: pre-LIVE, failed dependencies and invalid/unknown states are blocked with
-        // the full reason mask (the lowest set bit is the dominant reason).
-        PolicyEvaluation memory evaluation = _evaluatePolicy(false);
-        if (!evaluation.policy.canSwap) revert PolicyBlocked(evaluation.policy.reasonBits);
-        // The policy is healthy, but reference pinning, price-path checks and budget commit belong to M05-05.
-        // Never let a synthetic/healthy evaluation become an execution bypass in this milestone.
-        revert HookNotImplemented();
+        bytes32 callbackHash = keccak256(abi.encode(msg.sender, key, params));
+        (uint160 preSqrtPriceX96,,,) = StateLibrary.getSlot0(poolManager, key.toId());
+        _swapSnapshot = policyOracle.prepareSwap(
+            _policyInput(),
+            preSqrtPriceX96,
+            [_readDecimals(_token0), _readDecimals(_token1)],
+            callbackHash,
+            params.zeroForOne,
+            params.amountSpecified,
+            address(modeEvaluator)
+        );
+        _swapCallbackHash = callbackHash;
+        return (
+            IHooks.beforeSwap.selector,
+            BeforeSwapDeltaLibrary.ZERO_DELTA,
+            _swapSnapshot.lpFeeUnits | LPFeeLibrary.OVERRIDE_FEE_FLAG
+        );
     }
 
-    function _afterSwap(address, PoolKey calldata key, SwapParams calldata, BalanceDelta, bytes calldata hookData)
-        internal
-        view
-        override
-        returns (bytes4, int128)
-    {
+    function _afterSwap(
+        address,
+        PoolKey calldata key,
+        SwapParams calldata,
+        BalanceDelta delta,
+        bytes calldata hookData
+    ) internal override returns (bytes4, int128) {
         _requireBoundKey(key);
         if (hookData.length != 0) revert ContextMismatch();
-        // Swap post-checks and budget commit belong to M05-05.
-        revert HookNotImplemented();
+        bytes32 callbackHash = _swapCallbackHash;
+        if (callbackHash == bytes32(0)) revert ContextMismatch();
+        _settleSwap(key, callbackHash, delta);
+        return (IHooks.afterSwap.selector, 0);
+    }
+
+    /// @dev Split out so the callback frame stays shallow: the settlement arithmetic lives in the evaluator,
+    /// reached through the oracle. The hook performs both storage writes itself.
+    function _settleSwap(PoolKey calldata key, bytes32 callbackHash, BalanceDelta delta) private {
+        IBellSwapEvaluator.Snapshot memory snapshot = _swapSnapshot;
+        (uint160 postSqrtPriceX96,,,) = StateLibrary.getSlot0(poolManager, key.toId());
+        (Buckets memory nextBuckets, uint128[2] memory nextEpisode,) = policyOracle.settleSwap(
+            snapshot,
+            callbackHash,
+            uint64(block.timestamp),
+            postSqrtPriceX96,
+            delta.amount0(),
+            delta.amount1(),
+            _buckets,
+            _episodeGross[snapshot.context.closureNonce],
+            address(modeEvaluator)
+        );
+        _buckets = nextBuckets;
+        if (snapshot.context.closedLatched) {
+            _episodeGross[snapshot.context.closureNonce] = nextEpisode;
+        }
+        delete _swapSnapshot;
+        _swapCallbackHash = bytes32(0);
+    }
+
+    function _readDecimals(address token) private view returns (uint8) {
+        (bool ok, bytes memory data) = token.staticcall(abi.encodeWithSignature("decimals()"));
+        if (!ok || data.length != 32) revert BadConfig(ERR_TOKENS);
+        uint256 value = abi.decode(data, (uint256));
+        if (value > PolicyConstants.MAX_TOKEN_DECIMALS) revert BadConfig(ERR_TOKENS);
+        return uint8(value);
     }
 
     function _requireBoundKey(PoolKey calldata key) private view {
@@ -483,7 +544,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         if (block.timestamp > type(uint64).max || block.timestamp < PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS) {
             revert BadSeed();
         }
-        DependencyEvaluation memory bootstrap = _evaluateDependencies();
+        BellPolicyOracle.DependencyEvaluation memory bootstrap = policyOracle.bootstrap(_policyInput());
         if (bootstrap.reasons != 0 || !bootstrap.phaseSet || bootstrap.phase == PolicyConstants.PHASE_CLOSED
             || !bootstrap.allLegsHealthy || bootstrap.validUntil <= block.timestamp || bootstrap.stockMask == 0) {
             revert BadSeed();
@@ -532,68 +593,79 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// blocking reason, never a healthy default. `ModePolicy` owns the lifecycle/mode/closure decision so
     /// `getPolicy`, `refreshState` and `beforeSwap` cannot diverge. `checkpoint` only controls whether the view
     /// projection may expose a latch release that has not been committed yet.
+    /// @dev Single canonical evaluator, delegated to the immutable BellPolicyOracle via STATICCALL.
+    /// The hook still owns every write: the oracle only aggregates dependency reasons and the ModePolicy
+    /// decision, and this function still decides the checkpoint projection and the state hash.
     function _evaluatePolicy(bool checkpoint) private view returns (PolicyEvaluation memory evaluation) {
         PoolState memory snapshot = _state;
-        DependencyEvaluation memory deps = _evaluateDependencies();
+        BellPolicyOracle.Output memory o = _runOracle(snapshot);
 
-        ModePolicy.Context memory context;
-        context.lifecycle = snapshot.lifecycle;
-        context.previousMode = snapshot.mode;
-        context.activationCommitted = snapshot.bellStart != 0;
-        context.phase = deps.phase;
-        context.phaseSet = deps.phaseSet;
-        context.closedLatched = snapshot.closedLatched;
-        context.closureNonce = snapshot.closureNonce;
-        context.reopenCandidateAt = snapshot.reopenCandidateAt;
-        context.oldValidUntil = snapshot.oldValidUntil;
-        context.reopenBaseObservations = snapshot.reopenBaseObservations;
-        context.lastOpenObservations = snapshot.lastOpenObservations;
-        context.anyPlannedClosed = deps.anyPlannedClosed;
-        context.allLegsHealthy = deps.allLegsHealthy;
-        context.closureContextValid = deps.closureContextValid;
-        context.unexpectedClosed = deps.unexpectedClosed;
-        context.dependencyReasons = deps.reasons;
-        context.validUntil = deps.validUntil;
-        context.observations = deps.observations;
-        context.stockMask = deps.stockMask;
-        context.nowTime = block.timestamp > type(uint64).max ? type(uint64).max : uint64(block.timestamp);
-        context.executionReady = SWAP_EXECUTION_READY;
+        evaluation.policy = _projectPolicy(o, checkpoint);
+        evaluation.decision = _projectDecision(o);
+        evaluation.nextState = _projectState(snapshot, o, evaluation.decision);
+        evaluation.policy.stateHash = _stateHash(
+            _hashState(snapshot, evaluation.nextState, o, evaluation.policy, evaluation.decision, checkpoint),
+            o.dependencyHash
+        );
+        if (checkpoint) evaluation.policy.closureNonce = evaluation.nextState.closureNonce;
+    }
 
-        ModePolicy.Decision memory decision = modeEvaluator.decide(context);
+    function _runOracle(PoolState memory snapshot) private view returns (BellPolicyOracle.Output memory) {
+        return policyOracle.evaluate(
+            _policyInput(), _buckets.currentGross, _buckets.previousGross, _episodeGross[snapshot.closureNonce]
+        );
+    }
 
-        PolicyView memory policy;
-        policy.mode = decision.mode;
-        policy.canSwap = decision.canSwap;
-        policy.reasonBits = decision.reasons;
-        if (!checkpoint && (decision.releaseLatch || decision.releaseRecovery)) {
-            // The latch/candidate is still stored until the checkpoint commits the release. Do not advertise
-            // the post-checkpoint mode or execution gate before that write.
+    /// @dev View projection. A view-only latch/recovery release is reported as RECOVERING with the execution gate
+    /// closed, because the post-checkpoint mode does not exist until `refreshState` commits it.
+    function _projectPolicy(BellPolicyOracle.Output memory o, bool checkpoint)
+        private
+        pure
+        returns (PolicyView memory policy)
+    {
+        policy.mode = o.mode;
+        policy.canSwap = o.canSwap;
+        policy.reasonBits = o.reasonBits;
+        if (!checkpoint && (o.releaseLatch || o.releaseRecovery)) {
             policy.mode = uint8(Mode.RECOVERING);
             policy.canSwap = false;
-            policy.reasonBits = deps.reasons | ReasonBits.RECOVERY_PENDING;
+            policy.reasonBits = o.reasonBits | ReasonBits.RECOVERY_PENDING;
         }
-        // A pre-live pool has no actionable phase. Report the session phase only once LIVE so callers cannot
-        // mistake a SETUP view for a tradable session.
-        policy.phase =
-            snapshot.lifecycle == uint8(Lifecycle.LIVE) && deps.phaseSet ? deps.phase : PolicyConstants.PHASE_UNKNOWN;
-        policy.flags = 0;
-        policy.lpFeeUnits = 0;
-        policy.bandBps = 0;
-        policy.effectiveTradeCap = [_tradeCap0, _tradeCap1];
-        policy.effectiveWindowCap = [_windowCap0, _windowCap1];
-        policy.rollingRemaining = [
-            _rollingRemaining(_windowCap0, _buckets.currentGross[0], _buckets.previousGross[0]),
-            _rollingRemaining(_windowCap1, _buckets.currentGross[1], _buckets.previousGross[1])
-        ];
-        policy.closureRemaining =
-            [_closureRemaining(0, snapshot.closureNonce), _closureRemaining(1, snapshot.closureNonce)];
-        policy.referencePrice18 = [uint128(0), uint128(0)];
-        policy.validUntil =
-            snapshot.lifecycle == uint8(Lifecycle.LIVE) && deps.validUntil != type(uint64).max ? deps.validUntil : 0;
-        policy.closureNonce = snapshot.closureNonce;
-        policy.configHash = configHash;
+        policy.phase = o.phase;
+        policy.flags = o.flags;
+        policy.lpFeeUnits = o.lpFeeUnits;
+        policy.bandBps = o.bandBps;
+        policy.effectiveTradeCap = o.effectiveTradeCap;
+        policy.effectiveWindowCap = o.effectiveWindowCap;
+        policy.rollingRemaining = o.rollingRemaining;
+        policy.closureRemaining = o.closureRemaining;
+        policy.referencePrice18 = o.referencePrice18;
+        policy.validUntil = o.validUntil;
+        policy.closureNonce = o.closureNonce;
+        policy.configHash = o.configHash;
+    }
 
-        PoolState memory nextState = _copyState(snapshot);
+    function _projectDecision(BellPolicyOracle.Output memory o) private pure returns (ModePolicy.Decision memory decision) {
+        decision.mode = o.decisionMode;
+        decision.canSwap = o.canSwap;
+        decision.reasons = o.reasonBits;
+        decision.latch = o.latch;
+        decision.closureNonce = o.decisionClosureNonce;
+        decision.beginLatch = o.beginLatch;
+        decision.releaseLatch = o.releaseLatch;
+        decision.releaseRecovery = o.releaseRecovery;
+        decision.reopenCandidateAt = o.reopenCandidateAt;
+        decision.oldValidUntil = o.oldValidUntil;
+        decision.reopenBaseObservations = o.reopenBaseObservations;
+        decision.lastOpenObservations = o.lastOpenObservations;
+    }
+
+    function _projectState(
+        PoolState memory snapshot,
+        BellPolicyOracle.Output memory o,
+        ModePolicy.Decision memory decision
+    ) private pure returns (PoolState memory nextState) {
+        nextState = _copyState(snapshot);
         nextState.mode = decision.mode;
         nextState.closedLatched = decision.latch;
         nextState.closureNonce = decision.closureNonce;
@@ -601,569 +673,59 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         nextState.oldValidUntil = decision.oldValidUntil;
         nextState.reopenBaseObservations = decision.reopenBaseObservations;
         nextState.lastOpenObservations = decision.lastOpenObservations;
-        if (deps.poolPauseOk) nextState.pauseNonce = deps.poolPauseNonce;
+        if (o.poolPauseOk) nextState.pauseNonce = o.pauseNonce;
+    }
 
-        // Hash the evaluated view (mode + live pool pause nonce) plus the consumed dependency snapshot, not just
-        // the last persisted checkpoint, so a view before the next checkpoint is consistent with the policy it
-        // returns and dependency changes are observable.
-        PoolState memory hashState = snapshot;
+    /// @dev The hash binds the state that will be persisted after a checkpoint, or the projected pre-release
+    /// state for a view. A view-only release keeps the persisted candidate fields, matching the reference FSM.
+    function _hashState(
+        PoolState memory snapshot,
+        PoolState memory nextState,
+        BellPolicyOracle.Output memory o,
+        PolicyView memory policy,
+        ModePolicy.Decision memory decision,
+        bool checkpoint
+    ) private pure returns (PoolState memory hashState) {
         if (checkpoint) {
+            // The checkpoint persists nextState, so the hash must bind what is actually written.
             hashState = nextState;
-            policy.closureNonce = nextState.closureNonce;
-        } else if (!decision.releaseLatch && !decision.releaseRecovery) {
+            return hashState;
+        }
+        hashState = snapshot;
+        if (!decision.releaseLatch && !decision.releaseRecovery) {
             hashState.mode = policy.mode;
             hashState.reopenCandidateAt = decision.reopenCandidateAt;
             hashState.oldValidUntil = decision.oldValidUntil;
             hashState.reopenBaseObservations = decision.reopenBaseObservations;
             hashState.lastOpenObservations = decision.lastOpenObservations;
         }
-        // A view-only release still hashes the persisted pre-release state: the projected RECOVERING mode with
-        // already-cleared candidate fields is not a state that exists before `refreshState` commits it.
-        if (deps.poolPauseOk) hashState.pauseNonce = deps.poolPauseNonce;
-        policy.stateHash = _stateHash(hashState, deps.dependencyHash);
-
-        evaluation.policy = policy;
-        evaluation.decision = decision;
-        evaluation.nextState = nextState;
+        if (o.poolPauseOk) hashState.pauseNonce = o.pauseNonce;
     }
 
-    /// @dev Read every dependency once and aggregate the reasons, phase, validity and observation hash. Failed
-    /// reads contribute fixed sentinels, never uninitialized/partial returndata.
-    function _evaluateDependencies() private view returns (DependencyEvaluation memory deps) {
-        deps.validUntil = type(uint64).max;
-        deps.phase = PolicyConstants.PHASE_UNKNOWN;
-        bytes32 poolPauseObservation;
-
-        // Internal times are uint64 UTC seconds. A timestamp outside that domain is a setup failure.
-        if (block.timestamp > type(uint64).max) deps.reasons |= ReasonBits.SETUP;
-
-        {
-            (bool ok, bool paused, uint64 nonce) = _readPauseState(ModePolicy.targetId(1, address(this)));
-            if (!ok) {
-                deps.reasons |= ReasonBits.SETUP;
-            } else {
-                deps.poolPauseOk = true;
-                deps.poolPauseNonce = nonce;
-                poolPauseObservation = keccak256(abi.encode(paused, nonce));
-                if (paused) deps.reasons |= ReasonBits.MANUAL_PAUSE;
-            }
-        }
-
-        AssetEvaluation memory assetEvaluation0 = _evaluateAsset(_asset0, _token0);
-        AssetEvaluation memory assetEvaluation1 = _evaluateAsset(_asset1, _token1);
-        deps.reasons |= assetEvaluation0.reasons | assetEvaluation1.reasons;
-
-        deps.stockMask =
-            (assetEvaluation0.isStock ? uint8(1) : uint8(0)) | (assetEvaluation1.isStock ? uint8(2) : uint8(0));
-        deps.observations[0] = assetEvaluation0.observation;
-        deps.observations[1] = assetEvaluation1.observation;
-        deps.healthySince[0] = assetEvaluation0.healthySince;
-        deps.healthySince[1] = assetEvaluation1.healthySince;
-        deps.anyPlannedClosed = assetEvaluation0.plannedClosed || assetEvaluation1.plannedClosed;
-        deps.unexpectedClosed = assetEvaluation0.unexpectedClosed || assetEvaluation1.unexpectedClosed;
-        deps.allLegsHealthy = assetEvaluation0.legHealthy && assetEvaluation1.legHealthy;
-        deps.closureContextValid =
-            deps.anyPlannedClosed && assetEvaluation0.closureContextOk && assetEvaluation1.closureContextOk;
-
-        // A CLOSED stock next to a supported-active stock is a partial closure, not a phase conflict. Two
-        // different supported-active phases remain a conflict.
-        if (assetEvaluation0.isStock && assetEvaluation0.phaseSet) {
-            deps.phase = assetEvaluation0.phase;
-            deps.phaseSet = true;
-        }
-        if (assetEvaluation1.isStock && assetEvaluation1.phaseSet) {
-            if (!deps.phaseSet) {
-                deps.phase = assetEvaluation1.phase;
-                deps.phaseSet = true;
-            } else if (deps.phase != assetEvaluation1.phase) {
-                if (
-                    deps.phase == PolicyConstants.PHASE_CLOSED || assetEvaluation1.phase == PolicyConstants.PHASE_CLOSED
-                ) {
-                    deps.phase = PolicyConstants.PHASE_CLOSED;
-                } else {
-                    deps.reasons |= ReasonBits.CALENDAR_CONFLICT;
-                }
-            }
-        }
-        if (assetEvaluation0.validUntil < deps.validUntil) deps.validUntil = assetEvaluation0.validUntil;
-        if (assetEvaluation1.validUntil < deps.validUntil) deps.validUntil = assetEvaluation1.validUntil;
-
-        // A BELL pool without a stock session has no legitimate ACTIVE phase. Blocking is safer than inferring
-        // a session from a quote asset.
-        if (deps.stockMask == 0) deps.reasons |= ReasonBits.CALENDAR_MISSING;
-
-        deps.dependencyHash = keccak256(
-            abi.encode(assetEvaluation0.observationHash, assetEvaluation1.observationHash, poolPauseObservation)
-        );
-    }
-
-    /// @dev Collect pause, fingerprint, calendar, anchor and health reasons for one configured asset. Every
-    /// dependency read is a bounded staticcall and every failure becomes a normative blocking reason. A stock
-    /// leg whose current leaf is a committed CLOSED interval is evaluated through its frozen anchor instead of
-    /// the active-session freshness limits; all other live checks (pause, fingerprint, corporate, getter
-    /// integrity) still apply.
-    function _evaluateAsset(bytes32 assetId, address token) private view returns (AssetEvaluation memory result) {
-        result.validUntil = type(uint64).max;
-        AssetObservations memory observations;
-
-        (bool pauseOk, bool paused, uint64 pauseNonce) = _readPauseState(ModePolicy.targetId(2, token));
-        if (!pauseOk) {
-            _addReason(result, ReasonBits.SETUP);
-        } else {
-            observations.pauseState = keccak256(abi.encode(paused, pauseNonce));
-            if (paused) _addReason(result, ReasonBits.ASSET_PAUSE);
-        }
-
-        (bool descriptorOk, AssetDescriptor memory descriptor_) = _readDescriptor(assetId);
-        if (descriptorOk) observations.descriptor = keccak256(abi.encode(descriptor_));
-        if (!descriptorOk || descriptor_.id == bytes32(0) || descriptor_.token == address(0)) {
-            // Missing descriptor data is a setup/dependency failure, not proof that the asset is healthy.
-            _addReason(result, ReasonBits.SETUP);
-        } else if (descriptor_.id != assetId || descriptor_.token != token) {
-            _addReason(result, ReasonBits.FINGERPRINT_CHANGED);
-        } else {
-            result.isStock = descriptor_.isStock;
-            result.closureContextOk = !descriptor_.isStock;
-            if (
-                descriptor_.expectedCodeHash != token.codehash || descriptor_.implementationFingerprint == bytes32(0)
-                    || descriptor_.evidenceHash == bytes32(0)
-            ) {
-                _addReason(result, ReasonBits.FINGERPRINT_CHANGED);
-            }
-
-            if (descriptor_.isStock) {
-                _evaluateStockCalendar(result, assetId, descriptor_, observations);
-            }
-        }
-
-        if (descriptorOk && AssetPolicy.oraclelessCounterasset(descriptor_, _poolClass)) {
-            // This leg has no price-health requirement. Its descriptor/fingerprint and token-pause
-            // reasons above still block; only stock observations participate in bootstrap/recovery.
-            result.legHealthy = true;
-        } else {
-            _evaluateAssetHealth(result, assetId, observations);
-        }
-
-        result.observationHash = keccak256(
-            abi.encode(
-                assetId,
-                token,
-                observations.pauseState,
-                observations.descriptor,
-                observations.calendar,
-                observations.anchor,
-                observations.health,
-                observations.closedReport
-            )
-        );
-    }
-
-    /// @dev Calendar/anchor branch for a stock leg. A CLOSED leaf is evaluated as planned only through the
-    /// canonical leaf hash and the stored anchor; every other branch retains the M05-02 capability checks.
-    function _evaluateStockCalendar(
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        AssetDescriptor memory descriptor_,
-        AssetObservations memory observations
-    ) private view {
-        (uint8 calendarStatus, CalendarLeaf memory interval) = _readCalendar(assetId);
-        observations.calendar =
-            calendarStatus == 0 ? keccak256(abi.encode(interval)) : keccak256(abi.encode(calendarStatus));
-        if (calendarStatus == 1) {
-            _addReason(result, ReasonBits.CALENDAR_MISSING);
-            result.validUntil = 0;
-            return;
-        }
-        if (calendarStatus == 2) {
-            _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            result.validUntil = 0;
-            return;
-        }
-
-        result.phase = interval.phase;
-        result.phaseSet = true;
-        if (interval.phase == PolicyConstants.PHASE_CLOSED) {
-            observations.anchor = _evaluatePlannedClosure(result, assetId, interval);
-            return;
-        }
-        // forge-lint: disable-next-line(incorrect-shift)
-        uint8 phaseBit = uint8(1 << interval.phase);
-        if ((descriptor_.capabilityMask & phaseBit) == 0) {
-            _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            result.validUntil = 0;
-            return;
-        }
-        result.closureContextOk = true;
-        if (interval.end < result.validUntil) result.validUntil = interval.end;
-    }
-
-    /// @dev Active-session health read. A proven planned-closed stock is expected to have stale active data and
-    /// its anchor status already re-read the live corporate getters, so that leg skips this read intentionally.
-    function _evaluateAssetHealth(AssetEvaluation memory result, bytes32 assetId, AssetObservations memory observations)
-        private
-        view
-    {
-        bool skipHealth = result.isStock && result.phaseSet && result.phase == PolicyConstants.PHASE_CLOSED;
-        if (skipHealth) return;
-
-        (bool healthOk, HealthView memory health_) = _readHealth(assetId);
-        if (!healthOk) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.validUntil = 0;
-            return;
-        }
-
-        observations.health = keccak256(abi.encode(health_));
-        _addReason(result, health_.reasonBits);
-        if (ModePolicy.hasUnknownReason(health_.reasonBits)) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-        }
-        if (!health_.ready) {
-            if (health_.reasonBits == 0) _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.validUntil = 0;
-            return;
-        }
-        if (
-            health_.reasonBits != 0 || health_.healthySince == 0 || health_.validUntil <= block.timestamp
-                || health_.healthySince > block.timestamp || health_.baselineObservation == 0
-                || health_.latestObservation == 0 || health_.baselineObservation > block.timestamp
-                || health_.latestObservation > block.timestamp
-        ) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-        }
-        if (health_.validUntil < result.validUntil) result.validUntil = health_.validUntil;
-        if (result.reasons != 0) return;
-
-        result.activeHealthy = true;
-        result.legHealthy = true;
-        result.healthySince = health_.healthySince;
-        result.observation = health_.latestObservation;
-        if (result.isStock) {
-            _rejectUnexpectedClosedReport(result, assetId, health_.latestObservation, observations);
-        }
-    }
-
-    /// @dev A fresh CLOSED report while the committed calendar says supported active is an unexpected closure,
-    /// never permission to create an anchor or a new episode.
-    function _rejectUnexpectedClosedReport(
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        uint64 activeObservation,
-        AssetObservations memory observations
-    ) private view {
-        (bool sampleOk, SourceSample memory closedSample) = _readLatestSample(assetId, PolicyConstants.PHASE_CLOSED);
-        observations.closedReport = keccak256(abi.encode(sampleOk, closedSample));
-        if (!sampleOk) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.activeHealthy = false;
-            result.legHealthy = false;
-            return;
-        }
-        if (
-            closedSample.phase == PolicyConstants.PHASE_CLOSED && closedSample.observedAt != 0
-                && closedSample.observedAt <= block.timestamp
-                && block.timestamp - closedSample.observedAt < PolicyConstants.MAX_REPORT_AGE_SECONDS
-                && closedSample.observedAt >= activeObservation
-        ) {
-            result.unexpectedClosed = true;
-            result.activeHealthy = false;
-            result.legHealthy = false;
-            _addReason(result, ReasonBits.UNEXPECTED_CLOSED);
-        }
-    }
-
-    /// @dev Evaluate a CLOSED calendar leaf as a planned closure only when the stored anchor is bound to the
-    /// canonical leaf hash, is still within its 96-hour input-age limit, has not crossed the close, and the
-    /// committed neighbour is contiguous. Otherwise the leg is UNEXPECTED_CLOSED and cannot create a latch.
-    function _evaluatePlannedClosure(AssetEvaluation memory result, bytes32 assetId, CalendarLeaf memory interval)
-        private
-        view
-        returns (bytes32 anchorObservation)
-    {
-        bytes32 boundary = CalendarProof.hashLeaf(block.chainid, _calendarRegistry, interval);
-        (bool anchorOk, uint256 anchorReasons, uint64 anchorValidUntil, Anchor memory anchor) =
-            _readAnchorStatus(assetId, boundary);
-        anchorObservation = keccak256(abi.encode(anchorOk, anchorReasons, anchorValidUntil, anchor));
-
-        bool contextOk = anchorOk && anchorReasons == 0 && anchor.assetId == assetId && anchor.boundaryHash == boundary
-            && anchor.price18 != 0 && anchor.multiplier18 != 0 && anchor.sourceHash != bytes32(0)
-            && anchor.closureStart == interval.start && anchor.capturedAt < anchor.closureStart
-            && anchor.observedAt <= anchor.capturedAt && anchor.inputAt <= anchor.capturedAt
-            && anchor.inputAt <= block.timestamp && anchor.observedAt <= block.timestamp
-            && anchorValidUntil > block.timestamp;
-
-        if (contextOk) {
-            (uint8 nextStatus, CalendarLeaf memory next) = _readNextCalendar(assetId);
-            if (
-                nextStatus == 2
-                    || (nextStatus == 0
-                        && (next.assetId != assetId
-                            || next.start != interval.end
-                            || next.end <= next.start
-                            || next.phase < PolicyConstants.PHASE_PRE
-                            || next.phase > PolicyConstants.PHASE_CLOSED
-                            || next.provenanceHash == bytes32(0)))
-            ) {
-                contextOk = false;
-                _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            }
-        }
-
-        if (contextOk) {
-            result.plannedClosed = true;
-            result.closureContextOk = true;
-            result.legHealthy = true;
-            if (anchorValidUntil < result.validUntil) result.validUntil = anchorValidUntil;
-            if (interval.end < result.validUntil) result.validUntil = interval.end;
-        } else {
-            result.unexpectedClosed = true;
-            result.closureContextOk = false;
-            _addReason(result, ReasonBits.UNEXPECTED_CLOSED);
-            _addReason(result, anchorReasons == 0 ? ReasonBits.ANCHOR_MISSING_OR_EXPIRED : anchorReasons);
-            result.validUntil = 0;
-        }
-    }
-
-    function _addReason(AssetEvaluation memory result, uint256 reason) private pure {
-        result.reasons |= reason;
-    }
-
-    /// @dev Bounded `pauseState(bytes32)` read. A malformed response (non-boolean paused word, out-of-range
-    /// nonce, or paused with nonce zero) is a failed dependency read.
-    function _readPauseState(bytes32 target) private view returns (bool success, bool paused, uint64 nonce) {
-        bytes memory callData = abi.encodeWithSelector(ISafetyController.pauseState.selector, target);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        uint256 pausedWord;
-        uint256 nonceWord;
-        address controller = _safetyController;
-        assembly ("memory-safe") {
-            let ptr := mload(0x40)
-            mstore(0x40, add(ptr, 64))
-            success := staticcall(gasLimit, controller, add(callData, 32), mload(callData), ptr, 64)
-            if iszero(eq(returndatasize(), 64)) { success := 0 }
-            if success {
-                pausedWord := mload(ptr)
-                nonceWord := mload(add(ptr, 32))
-            }
-        }
-        if (!success || pausedWord > 1 || nonceWord > type(uint64).max) return (false, false, 0);
-        paused = pausedWord == 1;
-        // SafetyController increments the pause nonce before setting paused=true.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        nonce = uint64(nonceWord);
-        if (paused && nonce == 0) return (false, false, 0);
-    }
-
-    /// @dev Bounded `descriptor(bytes32)` read into a fixed 13-word buffer. Malformed ABI/range values fail the
-    /// read; well-formed identity mismatches are handled by `_evaluateAsset` as FINGERPRINT_CHANGED.
-    function _readDescriptor(bytes32 assetId) private view returns (bool success, AssetDescriptor memory descriptor_) {
-        bytes memory callData = abi.encodeWithSelector(IAssetRegistry.descriptor.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = _assetRegistry;
-        assembly ("memory-safe") {
-            descriptor_ := mload(0x40)
-            mstore(0x40, add(descriptor_, 416))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), descriptor_, 416)
-            if iszero(eq(returndatasize(), 416)) { success := 0 }
-            if success {
-                if shr(160, mload(add(descriptor_, 32))) { success := 0 }
-                if or(gt(mload(add(descriptor_, 64)), 1), gt(mload(add(descriptor_, 96)), 18)) { success := 0 }
-                if and(mload(add(descriptor_, 128)), not(0x1e)) { success := 0 }
-            }
-        }
-    }
-
-    /// @dev Bounded `health(bytes32)` read into a fixed 6-word buffer. Unknown reason bits are retained by the
-    /// caller but also force REPORT_INVALID_OR_STALE, so an unknown enum can never become healthy.
-    function _readHealth(bytes32 assetId) private view returns (bool success, HealthView memory health_) {
-        bytes memory callData = abi.encodeWithSelector(ISessionRegistry.health.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = sessionRegistry;
-        assembly ("memory-safe") {
-            health_ := mload(0x40)
-            mstore(0x40, add(health_, 192))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), health_, 192)
-            if iszero(eq(returndatasize(), 192)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(health_), 1),
-                    or(
-                        gt(mload(add(health_, 64)), 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(health_, 96)), 0xffffffffffffffff),
-                            or(
-                                gt(mload(add(health_, 128)), 0xffffffffffffffff),
-                                gt(mload(add(health_, 160)), 0xffffffffffffffff)
-                            )
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
-    }
-
-    /// @dev Bounded `currentInterval(bytes32)` read into a fixed 7-word buffer.
-    /// @return status 0 = usable leaf, 1 = missing/expired coverage, 2 = conflict/malformed identity.
-    function _readCalendar(bytes32 assetId) private view returns (uint8 status, CalendarLeaf memory interval) {
-        bytes memory callData = abi.encodeWithSelector(ICalendarRegistry.currentInterval.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = _calendarRegistry;
-        bool success;
-        assembly ("memory-safe") {
-            interval := mload(0x40)
-            mstore(0x40, add(interval, 224))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), interval, 224)
-            if iszero(eq(returndatasize(), 224)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(add(interval, 32)), 0xffffffff),
-                    or(
-                        gt(mload(add(interval, 64)), 0xffffffff),
-                        or(
-                            gt(mload(add(interval, 96)), 0xffffffffffffffff),
-                            gt(mload(add(interval, 128)), 0xffffffffffffffff)
-                        )
-                    )
-                ) { success := 0 }
-                if gt(mload(add(interval, 160)), 0xff) { success := 0 }
-            }
-        }
-        if (!success) return (1, interval);
-        // CalendarRegistry returns a zero leaf when coverage is absent/expired.
-        if (interval.assetId == bytes32(0) || interval.end <= interval.start) return (1, interval);
-        if (interval.assetId != assetId) return (2, interval);
-        if (interval.start > block.timestamp || interval.end <= block.timestamp) return (1, interval);
-        if (interval.phase < PolicyConstants.PHASE_PRE || interval.phase > PolicyConstants.PHASE_CLOSED) {
-            return (2, interval);
-        }
-        if (interval.provenanceHash == bytes32(0)) return (2, interval);
-        return (0, interval);
-    }
-
-    /// @dev Bounded `nextInterval(bytes32)` read used to prove that a CLOSED leaf is followed by a contiguous
-    /// committed interval. A zero leaf means coverage ends at the current leaf and is not itself a conflict.
-    /// @return status 0 = usable neighbour, 1 = no neighbour/coverage end, 2 = malformed or non-contiguous.
-    function _readNextCalendar(bytes32 assetId) private view returns (uint8 status, CalendarLeaf memory interval) {
-        bytes memory callData = abi.encodeWithSelector(ICalendarRegistry.nextInterval.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = _calendarRegistry;
-        bool success;
-        assembly ("memory-safe") {
-            interval := mload(0x40)
-            mstore(0x40, add(interval, 224))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), interval, 224)
-            if iszero(eq(returndatasize(), 224)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(add(interval, 32)), 0xffffffff),
-                    or(
-                        gt(mload(add(interval, 64)), 0xffffffff),
-                        or(
-                            gt(mload(add(interval, 96)), 0xffffffffffffffff),
-                            gt(mload(add(interval, 128)), 0xffffffffffffffff)
-                        )
-                    )
-                ) { success := 0 }
-                if gt(mload(add(interval, 160)), 0xff) { success := 0 }
-            }
-        }
-        if (!success) return (2, interval);
-        if (interval.assetId == bytes32(0)) return (1, interval);
-        if (
-            interval.assetId != assetId || interval.end <= interval.start || interval.phase < PolicyConstants.PHASE_PRE
-                || interval.phase > PolicyConstants.PHASE_CLOSED || interval.provenanceHash == bytes32(0)
-        ) return (2, interval);
-        return (0, interval);
-    }
-
-    /// @dev Bounded `anchorStatus(bytes32,bytes32)` read. `Anchor` is the first ABI return, so the fixed 384-byte
-    /// buffer is a valid in-memory Anchor followed by the bool/reasons/validUntil words. A malformed or
-    /// unavailable response is a failed read, never a valid zero anchor.
-    function _readAnchorStatus(bytes32 assetId, bytes32 boundaryHash)
-        private
-        view
-        returns (bool success, uint256 reasons, uint64 validUntil, Anchor memory anchor)
-    {
-        bytes memory callData = abi.encodeWithSelector(ISessionRegistry.anchorStatus.selector, assetId, boundaryHash);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = sessionRegistry;
-        uint256 validWord;
-        uint256 validUntilWord;
-        assembly ("memory-safe") {
-            anchor := mload(0x40)
-            mstore(0x40, add(anchor, 384))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), anchor, 384)
-            if iszero(eq(returndatasize(), 384)) { success := 0 }
-            if success {
-                validWord := mload(add(anchor, 288))
-                reasons := mload(add(anchor, 320))
-                validUntilWord := mload(add(anchor, 352))
-                if or(
-                    gt(validWord, 1),
-                    or(
-                        gt(validUntilWord, 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(anchor, 64)), 0xffffffffffffffffffffffffffffffff),
-                            or(
-                                gt(mload(add(anchor, 96)), 0xffffffffffffffffffffffffffffffff),
-                                or(
-                                    gt(mload(add(anchor, 128)), 0xffffffffffffffff),
-                                    or(
-                                        gt(mload(add(anchor, 160)), 0xffffffffffffffff),
-                                        or(
-                                            gt(mload(add(anchor, 192)), 0xffffffffffffffff),
-                                            gt(mload(add(anchor, 224)), 0xffffffffffffffff)
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
-        if (!success) return (false, 0, 0, anchor);
-        // The trailing words were range-checked above.
-        // forge-lint: disable-next-line(unsafe-typecast)
-        validUntil = uint64(validUntilWord);
-        success = validWord == 1;
-    }
-
-    /// @dev Bounded `latestSample(bytes32,uint8)` read used only to detect a fresh CLOSED report while the
-    /// committed calendar still says supported active. A zero sample is a valid "no report" result.
-    function _readLatestSample(bytes32 assetId, uint8 phase)
-        private
-        view
-        returns (bool success, SourceSample memory sample)
-    {
-        bytes memory callData = abi.encodeWithSelector(ISessionRegistry.latestSample.selector, assetId, phase);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        address registry = sessionRegistry;
-        assembly ("memory-safe") {
-            sample := mload(0x40)
-            mstore(0x40, add(sample, 320))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), sample, 320)
-            if iszero(eq(returndatasize(), 320)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(add(sample, 64)), 0xff),
-                    gt(mload(add(sample, 96)), 0xffffffffffffffffffffffffffffffff)
-                ) { success := 0 }
-                if or(
-                    or(
-                        gt(mload(add(sample, 128)), 0xffffffffffffffff),
-                        gt(mload(add(sample, 160)), 0xffffffffffffffff)
-                    ),
-                    or(
-                        gt(mload(add(sample, 192)), 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(sample, 224)), 0xffffffffffffffff),
-                            gt(mload(add(sample, 256)), 0xffffffffffffffff)
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
+    /// @dev Builds the immutable-input envelope the oracle needs. The hook's own state is read here so the
+    /// oracle never reads storage it does not own.
+    function _policyInput() private view returns (BellPolicyOracle.Input memory input) {
+        input.configHash = configHash;
+        input.poolId = poolId;
+        input.hook = address(this);
+        input.token0 = _token0;
+        input.token1 = _token1;
+        input.asset0 = _asset0;
+        input.asset1 = _asset1;
+        input.assetRegistry = _assetRegistry;
+        input.calendarRegistry = _calendarRegistry;
+        input.safetyController = _safetyController;
+        input.sessionRegistry = sessionRegistry;
+        input.poolClass = _poolClass;
+        input.referenceMode = _referenceMode;
+        input.executionReady = SWAP_EXECUTION_READY;
+        input.nowTime = block.timestamp > type(uint64).max ? type(uint64).max : uint64(block.timestamp);
+        input.bellStart = _state.bellStart;
+        input.corporateUntil = _state.corporateUntil;
+        input.tradeCap = [_tradeCap0, _tradeCap1];
+        input.windowCap = [_windowCap0, _windowCap1];
+        input.closureCap = [_closureCap0, _closureCap1];
+        input.state = _state;
     }
 
     function _stateHash(PoolState memory snapshot, bytes32 dependencyHash) private view returns (bytes32) {
@@ -1208,7 +770,6 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         uint128 used = _episodeGross[nonce][currency];
         return used >= cap ? 0 : cap - used;
     }
-
     // -------------------------------------------------------------------------
     // Constructor validation
     // -------------------------------------------------------------------------

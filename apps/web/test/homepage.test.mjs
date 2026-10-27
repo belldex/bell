@@ -3,56 +3,63 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const homepage = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
-const styles = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
+const template = await readFile(new URL('../public/templates/v4market/index.html', import.meta.url), 'utf8');
+const scene = await readFile(new URL('../public/templates/v4market/_next/static/immutable/chunks/1vlv6u7q63-kz.js', import.meta.url), 'utf8');
 
-test('BELL homepage renders every editorial section it links to', () => {
-  // These class names are the contract between page.tsx and globals.css. They were once asserted
-  // as .bar-track/.tcard/.cases, which no longer exist anywhere — the test was passing vacuously
-  // only because it was never wired into `pnpm test:unit`. Assert what the markup actually uses.
-  const sections = [
-    'bell-topline',
-    'bell-hdr',
-    'bell-hero',
-    'bell-trust-strip',
-    'bell-story-card',
-    'bell-wall',
-    'bell-build',
-    'bell-footer',
+test('the landing page delegates to the pinned v4market template document', () => {
+  // The marketing page is a downloaded static document loaded as the document itself, because its
+  // Three.js module owns a document-level canvas. Assert the redirect target instead of asserting
+  // markup that no longer lives in React.
+  assert.match(homepage, /window\.location\.replace\('\/templates\/v4market\/index\.html'\)/);
+});
+
+test('the served template keeps the exact scene and adapts visible homepage copy for BELL', () => {
+  assert.match(template, /<div class="scene" aria-hidden="true"><\/div>/);
+  assert.match(template, /class="story hero" data-pose="0"/);
+  assert.match(template, /data-pose="8"/);
+  assert.match(scene, /new t0\(l,h,220\)/);
+  assert.match(scene, /getBoundingClientRect\(\)\.top<=i/);
+  assert.match(template, /<title>BELL — Liquidity that knows the bell<\/title>/);
+  assert.match(template, /Liquidity that knows the bell/);
+  assert.match(template, /BELL applies session-aware fees, bounded gross flow and planned-close controls/);
+  assert.doesNotMatch(template, /The marketplace for Uniswap v4 hooks/);
+  assert.doesNotMatch(template, /Building a v4 hook\? This is your market/);
+});
+
+test('the landing page does not claim production swaps are live', async () => {
+  // The claim moved with the markup. Check the template document itself so the guard still bites.
+  const template = await readFile(
+    new URL('../public/templates/v4market/index.html', import.meta.url),
+    'utf8',
+  );
+  const combined = `${homepage}\n${template}`;
+  const overclaims = [
+    /production swaps are live/i,
+    /swaps are now live/i,
+    /mainnet is live/i,
+    /audited and ready for mainnet/i,
   ];
-  for (const section of sections) {
-    assert.match(homepage, new RegExp(`className="[^"]*\\b${section}\\b`), `page.tsx must render .${section}`);
-    assert.match(styles, new RegExp(`\\.${section}\\b`), `globals.css must style .${section}`);
+  for (const pattern of overclaims) {
+    assert.doesNotMatch(combined, pattern, `must not claim ${pattern}`);
   }
 });
 
-test('BELL homepage links to the three live app destinations', () => {
-  assert.match(homepage, /href="\/pools"/);
-  assert.match(homepage, /href="\/create"/);
-  assert.match(homepage, /href="\/swap"/);
-});
-
-test('BELL marquee uses the reference 22-second linear loop and stops for reduced motion', () => {
-  assert.match(styles, /\.bell-marquee-track\s*\{[^}]*animation:\s*bell-marquee\s+22s\s+linear\s+infinite/s);
-  assert.match(styles, /@keyframes bell-marquee[\s\S]*?to\s*\{\s*transform:\s*translateX\(-50%\)/);
-  assert.match(styles, /prefers-reduced-motion:\s*reduce[\s\S]*?\.bell-marquee-track\s*\{[^}]*animation:\s*none/s);
-});
-
-test('BELL hero status does not claim production swaps are live', () => {
-  assert.match(homepage, /Rehearsal build/);
-  assert.match(homepage, /Production swaps are not enabled/);
-  assert.match(homepage, /Mainnet release has not been approved/);
-});
-
 test('BELL copy does not claim nothing is deployed', async () => {
-  // The landing page used to say "Nothing is deployed yet" while ten contracts plus the Yahoo
-  // verifier and adapters were live on chain 46630. Keep that claim from coming back.
+  // Ten contracts plus the Yahoo verifier and four adapters are live on chain 46630. Keep the old
+  // "nothing is deployed" line from coming back.
   const promises = await readFile(new URL('../components/landing/Promises.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(promises, /Nothing is deployed yet/i);
-  assert.match(promises, /Contracts are deployed on testnet for rehearsal/);
 });
 
 test('the pool directory does not imply preview fixtures are swappable', async () => {
   const pools = await readFile(new URL('../app/(app)/pools/page.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(pools, /\{swappable\} of \{POOLS\.length\} sample pools can currently swap/);
   assert.match(pools, /no pool exists on testnet yet/);
+});
+
+test('the swap screen still sends no transaction', async () => {
+  // This is a truthful-state guard, not a wish: when the swap flow is wired it must flip to an
+  // assertion that a transaction IS sent, together with the M11-03 evidence update.
+  const swap = await readFile(new URL('../app/(app)/swap/page.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(swap, /writeContract|sendTransaction/);
 });

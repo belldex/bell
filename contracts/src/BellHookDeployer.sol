@@ -26,14 +26,19 @@ contract BellHookDeployer {
     bytes32 public immutable templateCodeHash;
     address public immutable creationCode0;
     address public immutable creationCode1;
+    /// @notice Shared per-deployment policy oracle. Passing one instance to every hook keeps each hook's
+    /// initcode inside the EIP-3860 limit instead of embedding a second contract creation.
+    address public immutable policyOracle;
 
-    constructor(address factory_, address sessionRegistry_, bytes32 templateCodeHash_) {
+    constructor(address factory_, address sessionRegistry_, bytes32 templateCodeHash_, address policyOracle_) {
         // The deployer may be deployed first against the factory's precomputed CREATE/CREATE2 address.
         if (factory_ == address(0) || sessionRegistry_ == address(0)
             || sessionRegistry_.code.length == 0 || templateCodeHash_ == bytes32(0)) revert Unauthorized();
+        if (policyOracle_ == address(0) || policyOracle_.code.length == 0) revert Unauthorized();
         factory = factory_;
         sessionRegistry = sessionRegistry_;
         templateCodeHash = templateCodeHash_;
+        policyOracle = policyOracle_;
         // Creation code exists only in this constructor, never in deployer's runtime bytecode.
         bytes memory code = type(BellHook).creationCode;
         if (keccak256(code) != templateCodeHash_) revert Unauthorized();
@@ -74,6 +79,6 @@ contract BellHookDeployer {
             extcodecopy(first, add(code, 32), 1, length0)
             extcodecopy(second, add(add(code, 32), length0), 1, length1)
         }
-        return abi.encodePacked(code, abi.encode(config, key, templateCodeHash, sessionRegistry));
+        return abi.encodePacked(code, abi.encode(config, key, templateCodeHash, sessionRegistry, policyOracle));
     }
 }

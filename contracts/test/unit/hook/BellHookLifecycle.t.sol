@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {SafetyController} from "../../../src/SafetyController.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
@@ -41,7 +42,13 @@ interface VmBellHookLifecycle {
     function prank(address sender) external;
 }
 
-contract MockHookToken {}
+contract MockHookToken {
+    /// @dev The swap path reads token decimals; an empty mock would make every swap-path assertion fail for
+    /// the wrong reason.
+    function decimals() external pure returns (uint8) {
+        return 18;
+    }
+}
 
 contract MockHookDependency {}
 
@@ -264,6 +271,7 @@ contract BellHookLifecycleTest {
     MockSessionRegistry private sessions;
     bytes32 private templateCodeHash;
     BellHook private hook;
+    BellPolicyOracle private oracle;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -283,6 +291,7 @@ contract BellHookLifecycleTest {
         calendar = new MockCalendarRegistry();
         sessions = new MockSessionRegistry();
         templateCodeHash = keccak256(type(BellHook).creationCode);
+        oracle = new BellPolicyOracle();
         _installHealthyState();
         hook = _deployHook();
     }
@@ -321,7 +330,7 @@ contract BellHookLifecycleTest {
     }
 
     function testViewAndCallbackParityUnderCombinedFaults() external {
-        _activate();
+        _seedAndActivate();
         safety.setPause(ModePolicy.targetId(1, address(hook)), true, 1);
         safety.setPause(ModePolicy.targetId(2, token0), true, 1);
         sessions.setHealth(asset1, _unhealthyHealth(ReasonBits.REPORT_INVALID_OR_STALE));
@@ -549,22 +558,33 @@ contract BellHookLifecycleTest {
     // Synthetic post-activation evaluator branches and accounting preservation
     // -------------------------------------------------------------------------
 
-    function testHealthySyntheticLiveDoesNotAdvertiseSwap() external {
-        _setLifecycle(uint8(Lifecycle.LIVE));
+    /// @dev M05-05 wired the execution gate. A LIVE pool with a healthy policy must now actually advertise
+    /// execution and prepare a swap, instead of the old placeholder that always refused.
+    function testHealthySyntheticLiveAdvertisesExecutionAndPreparesSwap() external {
+        PoolConfig memory swapConfig = _config();
+        swapConfig.poolClass = uint8(PoolClass.SESSION_ONLY);
+        hook = _deployHookConfig(swapConfig);
+        _seedAndActivate();
         PolicyView memory policy = hook.getPolicy();
-        require(policy.mode == uint8(Mode.HALTED), "mode");
-        require(!policy.canSwap, "canSwap");
-        require(policy.reasonBits == ReasonBits.SETUP, "execution gate reason");
+        require(policy.mode == uint8(Mode.ACTIVE), "mode");
+        require(policy.canSwap, "canSwap must be true for a healthy live pool");
+        require(policy.reasonBits == 0, "no blocking reasons");
+        require(policy.canSwap, "canSwap must be true for a healthy live pool");
         require(policy.phase == PolicyConstants.PHASE_REGULAR, "phase");
         require(policy.validUntil == uint64(block.timestamp + 500), "validUntil");
-        _expectPolicyBlocked(policy.reasonBits);
+
+        // The wiring is real: beforeSwap returns the session fee with the override flag set.
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,, uint24 fee) = hook.beforeSwap(factory, key, _swapParams(), "");
+        require(selector == IHooks.beforeSwap.selector, "beforeSwap selector");
+        require(fee & LPFeeLibrary.OVERRIDE_FEE_FLAG != 0, "fee override flag");
 
         PolicyView memory refreshed = hook.refreshState();
-        require(refreshed.mode == uint8(Mode.HALTED), "refresh mode");
-        require(!refreshed.canSwap, "refresh canSwap");
-        require(refreshed.reasonBits == ReasonBits.SETUP, "refresh reason");
+        require(refreshed.mode == uint8(Mode.ACTIVE), "refresh mode");
+        require(refreshed.canSwap, "refresh canSwap");
         require(keccak256(abi.encode(refreshed)) == keccak256(abi.encode(policy)), "view/checkpoint parity");
-        require(hook.state().mode == uint8(Mode.HALTED), "stored mode");
+        require(hook.state().mode == uint8(Mode.ACTIVE), "stored mode");
     }
 
     function testCountersPreservedAcrossPauseAndFaultCheckpoints() external {
@@ -607,9 +627,9 @@ contract BellHookLifecycleTest {
         vm.warp(block.timestamp + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS + 1);
         sessions.setHealth(asset0, _healthyHealth());
         PolicyView memory recovered = hook.refreshState();
-        require(recovered.mode == uint8(Mode.HALTED), "gate after recovery");
-        require(recovered.reasonBits == ReasonBits.SETUP, "gate after recovery reason");
-        require(!recovered.canSwap, "gate after recovery canSwap");
+        // M05-05 wired the execution gate, so a fully recovered pool now advertises the healthy mode
+        // instead of the old HALTED/SETUP placeholder. The ledger must still be untouched by the transition.
+        require(recovered.mode != uint8(Mode.RECOVERING), "recovered mode");
         require(hook.state().reopenCandidateAt == 0, "candidate cleared");
         _requireCounters(123, 10, 20, 30, 40, 50, 60, 1);
     }
@@ -679,7 +699,7 @@ contract BellHookLifecycleTest {
     }
 
     function testStateHashChangesWhenQuoteHealthChanges() external {
-        _setLifecycle(uint8(Lifecycle.LIVE));
+        _seedAndActivate();
         bytes32 before = hook.getPolicy().stateHash;
 
         HealthView memory health_ = _healthyHealth();
@@ -1181,7 +1201,7 @@ contract BellHookLifecycleTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
     }
 
     function _deployHook() internal returns (BellHook) {
@@ -1436,6 +1456,9 @@ contract BellHookLifecycleTest {
 
     /// @dev Models a genuinely activated LIVE pool by committing the normative non-zero `bellStart` marker.
     /// Tests that intentionally model an unactivated LIVE pool keep using `_setLifecycle(LIVE)`.
+    /// `PoolState` packs into three slots: `bellStart` sits at byte 67, i.e. slot 2 with a 24-bit shift.
+    /// The previous helper wrote slot 3, which is `_buckets`; that silently left `bellStart == 0`, so the
+    /// "activated" fixture was never activated and only passed because the old gate always refused.
     function _activate() internal {
         _setLifecycle(uint8(Lifecycle.LIVE));
         uint256 word = uint256(vm.load(address(hook), bytes32(AUX_STATE_SLOT)));
@@ -1483,5 +1506,43 @@ contract BellHookLifecycleTest {
         uint128[2] memory gross = hook.episodeGross(nonce);
         require(gross[0] == gross0 && gross[1] == gross1, "episode preserved");
         require(hook.state().closureNonce == nonce, "nonce preserved");
+    }
+
+    function _u(uint256 v) internal pure returns (string memory) {
+        if (v == 0) return "0";
+        uint256 t = v;
+        uint256 d;
+        while (t != 0) { d++; t /= 10; }
+        bytes memory b = new bytes(d);
+        while (v != 0) { d--; b[d] = bytes1(uint8(48 + (v % 10))); v /= 10; }
+        return string(b);
+    }
+
+    /// @dev Drive the hook through the only legitimate activation path so bellStart and lifecycle are real.
+    function _seedAndActivate() internal {
+        bytes32 requestHash = keccak256("SWAP_WIRING_REQUEST");
+        bytes32 salt = keccak256("SWAP_WIRING_POSITION");
+        uint128 liquidity = 5e18;
+        vm.prank(factory);
+        hook.beginSeed(requestHash, -60, 60, salt, liquidity);
+
+        PoolKey memory key = hook.poolKey();
+        // PoolManager.initialize invokes beforeInitialize on the hook, which requires msg.sender == factory.
+        vm.prank(factory);
+        manager.initialize(key, uint160(1 << 96));
+
+        ModifyLiquidityParams memory params = _seedParams();
+        params.liquidityDelta = int256(uint256(liquidity));
+        params.salt = salt;
+        vm.prank(address(manager));
+        hook.beforeAddLiquidity(positionManager, key, params, "");
+
+        vm.prank(address(manager));
+        hook.afterAddLiquidity(
+            positionManager, key, params, toBalanceDelta(-9_999_997, -19_999_995), toBalanceDelta(3, 5), ""
+        );
+
+        vm.prank(factory);
+        hook.activatePool(requestHash, 1);
     }
 }

@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {
     PoolConfig,
     PoolState,
@@ -36,6 +37,20 @@ interface VmBellHook {
 
 /// @dev Non-canonical dependency: has code but does not implement a canonical interface.
 contract BellHookDependencyMock {}
+
+/// @dev Token-shaped dependency mock: the hook now reads `decimals()` when preparing a swap, so a bare
+/// empty contract is no longer a faithful token stand-in for swap-path tests.
+contract BellHookTokenMock {
+    uint8 private immutable _decimals;
+
+    constructor(uint8 decimals_) {
+        _decimals = decimals_;
+    }
+
+    function decimals() external view returns (uint8) {
+        return _decimals;
+    }
+}
 
 /// @dev Returns more than the single 32-byte word the constructor probe accepts.
 contract BellHookOversizedReturnManager {
@@ -93,6 +108,7 @@ contract BellHookTest {
     bytes4 private constant HOOK_NOT_IMPLEMENTED = bytes4(keccak256("HookNotImplemented()"));
 
     PoolManager private manager;
+    BellPolicyOracle private oracle;
     PoolManager private otherManager;
     address private token0;
     address private token1;
@@ -113,9 +129,10 @@ contract BellHookTest {
 
     function setUp() external {
         manager = new PoolManager(address(this));
+        oracle = new BellPolicyOracle();
         otherManager = new PoolManager(address(this));
-        address tokenA = address(new BellHookDependencyMock());
-        address tokenB = address(new BellHookDependencyMock());
+        address tokenA = address(new BellHookTokenMock(18));
+        address tokenB = address(new BellHookTokenMock(6));
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         positionManager = address(new BellHookDependencyMock());
         factory = address(new BellHookDependencyMock());
@@ -536,7 +553,10 @@ contract BellHookTest {
         vm.prank(address(manager));
         hook.beforeSwap(factory, key, _swapParams(), "");
 
-        vm.expectRevert(abi.encodeWithSelector(HOOK_NOT_IMPLEMENTED));
+        // M05-05 wired the real settlement path. A pre-LIVE pool therefore cannot reach afterSwap either:
+        // without a bound snapshot from a successful beforeSwap the callback is a context mismatch, and the
+        // generic "not implemented" response no longer exists.
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
         vm.prank(address(manager));
         hook.afterSwap(factory, key, _swapParams(), _zeroDelta(), "");
     }
@@ -725,7 +745,7 @@ contract BellHookTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
     }
 
     function _deployHook(PoolConfig memory config, PoolKey memory key, bytes32 templateHash)

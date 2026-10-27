@@ -24,8 +24,10 @@ Kalau dokumen mana pun bertentangan dengan `docs/CURRENT-STATE.md`, dokumen itu 
 - Satu stack rehearsal 10-kontrak hidup di Robinhood testnet **46630**, wired dan terverifikasi
   ulang terhadap chain.
 - Jalur harga: **Yahoo Finance + reporter EIP-712 BELL**. Chainlink tidak dipakai (berbayar).
-- **Swap belum aktif.** `BellHook.SWAP_EXECUTION_READY = false`; callback revert
-  `HookNotImplemented()`. Belum ada pool, belum ada swap.
+- **Swap enforcement aktif untuk SESSION_ONLY.** `BellHook` benar-benar menyiapkan dan menyelesaikan
+  swap; evaluasi policy pindah ke `BellPolicyOracle` agar muat EIP-170. PRICE_GUARDED masih tertutup.
+- **Belum ada pool dan belum ada swap onchain**: hanya WETH counterasset yang admitted, belum ada
+  calendar root, dan sampel harga terakhir sudah kedaluwarsa.
 - **Mainnet belum disentuh.** Tidak ada transaksi di chainId 4663.
 
 ## Struktur

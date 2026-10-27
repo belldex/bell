@@ -1,0 +1,20 @@
+{
+  "name": "v4 Marketplace",
+  "short_name": "v4 Marketplace",
+  "icons": [
+    {
+      "src": "/templates/v4market/brand/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/templates/v4market/brand/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#050506",
+  "background_color": "#050506",
+  "display": "standalone",
+  "start_url": "/"
+}

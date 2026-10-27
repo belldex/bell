@@ -14,10 +14,10 @@ Trace dijalankan ulang pada 2026-10-27 17:0x lokal; head testnet saat pembacaan 
 Protokolnya lengkap secara kode dan lulus seluruh suite (351 forge, 298 node, 45+18 reference,
 15 Deno, 6 keeper-b), dan satu stack rehearsal 10-kontrak hidup di Robinhood testnet 46630 dengan
 wiring yang terverifikasi onchain. Jalur harga sekarang **Yahoo + reporter EIP-712 BELL**; Chainlink
-Data Streams sudah ditinggalkan karena berbayar. Yang belum ada: **eksekusi swap** (`BellHook` masih
-fail-closed), **deskriptor saham** (hanya WETH counterasset yang ACTIVE), **calendar root**, dan
-**quote yang masih segar**. Karena itu belum ada satu pool pun yang bisa dibuat, dan belum ada satu
-swap pun yang pernah terjadi.
+Data Streams sudah ditinggalkan karena berbayar. **Swap enforcement sudah aktif** untuk pool
+SESSION_ONLY sejak M05-05 selesai: `BellHook` benar-benar menyiapkan dan menyelesaikan swap. Yang
+belum ada: **deskriptor saham**, **calendar root**, **quote yang masih segar**, dan karena itu
+**pool pertama**. Jadi belum ada satu swap pun yang pernah terjadi di chain.
 
 ---
 
@@ -88,16 +88,22 @@ Nilai lain yang terbaca: `factory.liquidityMode = 0` (PUBLIC saja), `factory.ser
 
 ## 4. Yang **tidak** hidup, dan ini yang penting
 
-### 4.1 Tidak ada satu swap pun yang bisa jalan
+### 4.1 Swap enforcement sudah aktif untuk SESSION_ONLY
 
-`contracts/src/BellHook.sol:65` → `SWAP_EXECUTION_READY = false`.
-`_beforeSwap` (baris 374) dan `_afterSwap` (baris 393) keduanya `revert HookNotImplemented()`.
+`contracts/src/BellHook.sol` → `SWAP_EXECUTION_READY = true`. `_beforeSwap` menyiapkan snapshot dan
+mengembalikan `lpFeeUnits | OVERRIDE_FEE_FLAG`; `_afterSwap` menyelesaikan delta aktual dan menulis
+`_buckets` serta `_episodeGross` hanya saat pool CLOSED.
 
-Konsekuensinya berantai dan tidak bisa diakali: `getPolicy()` selalu `executionReady = false`,
-`canSwap = false`, jadi `BellRouter.swap` akan revert walaupun pool-nya ada. Ini **bukan** bug yang
-lupa diperbaiki; ini gate yang sengaja ditutup sampai snapshot harga/corporate, admission
-`referenceMode`, deviasi sumber, dan budget commit benar-benar terpasang dan teruji di PoolManager
-nyata.
+Ini bisa dilakukan karena evaluasi policy dipindah ke `BellPolicyOracle` (STATICCALL, tanpa tulis,
+tanpa otorisasi). Hook turun dari 24.571 byte (sisa 5 byte) ke 23.842 byte (sisa 734), sehingga glue
+swap muat. Detail: `docs/M05-05-swap-execution.md`.
+
+Batasnya jujur: hanya `SESSION_ONLY`. `PRICE_GUARDED` tetap ditolak dengan
+`PRICE_INPUT_INVALID_OR_STALE` karena belum ada pasangan referensi yang diadmit dan `referenceMode`
+belum punya pemetaan numerik.
+
+Dan tetap: **belum ada swap nyata di testnet**, karena belum ada pool. Untuk itu masih perlu
+deskriptor saham + calendar root.
 
 ### 4.2 Tidak ada deskriptor saham
 
@@ -290,12 +296,22 @@ dan memang begitu seharusnya, karena status task adalah penilaian, bukan penguku
 
 ## 8. Yang masih terbuka, diurutkan menurut apa yang membuka paling banyak sekaligus
 
-### 8.1 M05-05 — swap enforcement (membuka 5 task lain)
+### 8.1 M05-05 — swap enforcement (SELESAI untuk SESSION_ONLY)
 
-Yang kurang, spesifik: snapshot harga aktif/frozen dan corporate timer, admission profil
-`referenceMode`, binding deviasi/provenance sumber, `PolicyView` yang koheren dan executable,
-wiring budget commit di callback, plus benchmark gas hot-path dan test di PoolManager nyata.
-Sampai itu ada, `SWAP_EXECUTION_READY` tetap `false` dan itu benar.
+Sudah dikerjakan. Evaluasi policy pindah ke `BellPolicyOracle`, hook turun ke 23.842 byte, dan
+`_beforeSwap`/`_afterSwap` benar-benar menyiapkan serta menyelesaikan swap. Ada test positif yang
+membuktikannya: `testHealthySyntheticLiveAdvertisesExecutionAndPreparesSwap`.
+
+Sisa yang eksplisit di luar cakupan:
+
+- `PRICE_GUARDED` belum bisa eksekusi (tidak ada referensi yang diadmit).
+- Belum ada swap onchain karena belum ada pool.
+- Belum ada benchmark gas hot-path terhadap target rilis.
+
+### 8.1b Yang membuka paling banyak sekarang: pool pertama
+
+Karena swap sudah bisa, penghalang utama bergeser ke **tidak adanya pool**. Untuk itu perlu tiga hal
+sekaligus: deskriptor saham admitted, calendar root committed, dan sampel sumber yang masih segar.
 
 ### 8.2 M00-02 — compatibility set
 

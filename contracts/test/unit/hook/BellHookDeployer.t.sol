@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {PoolConfig, LiquidityMode, PoolClass} from "../../../src/types/ProtocolTypes.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
@@ -36,7 +37,7 @@ contract BellHookDeployerTest {
         address a = address(new HookDeployerMockDependency());
         address b = address(new HookDeployerMockDependency());
         (token0, token1) = a < b ? (a, b) : (b, a);
-        deployer = new BellHookDeployer(address(this), dependency, keccak256(type(BellHook).creationCode));
+        deployer = new BellHookDeployer(address(this), dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle()));
         config = PoolConfig({
             token0: token0,
             token1: token1,
@@ -91,14 +92,14 @@ contract BellHookDeployerTest {
 
     function testTransportPreservesExactPinnedCreationCodeHash() external view {
         bytes32 expected = keccak256(abi.encodePacked(type(BellHook).creationCode,
-            abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency)));
+            abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle())));
         require(deployer.initCodeHash(config,key) == expected,"creation transport changed bytes");
     }
 
     function testDeployerCanBindFutureFactoryAddressBeforeFactoryDeployment() external {
         address futureFactory = address(0xFACADE);
         BellHookDeployer futureDeployer = new BellHookDeployer(
-            futureFactory, dependency, keccak256(type(BellHook).creationCode)
+            futureFactory, dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle())
         );
         require(futureDeployer.factory() == futureFactory, "future factory binding");
     }

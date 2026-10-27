@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {CreateRequest, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf} from "../../../src/types/ProtocolTypes.sol";
 import {MockAssetRegistry, MockCalendarRegistry, MockSessionRegistry, MockSafetyController} from "../../unit/hook/BellHookLifecycle.t.sol";
@@ -99,6 +100,7 @@ contract TreasuryAdapterStatefulInvariantsTest {
     address internal constant STRANGER = address(0xCAFE);
 
     function setUp() external {
+        BellPolicyOracle oracle_hoisted = new BellPolicyOracle();
         vm.warp(10000);
         manager = new PoolManager(address(this));
         StatefulToken a = new StatefulToken();
@@ -126,7 +128,7 @@ contract TreasuryAdapterStatefulInvariantsTest {
         });
         _configureRegistries();
 
-        BellHookDeployer deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode));
+        BellHookDeployer deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
         PoolKey memory key = PoolKey(Currency.wrap(config.token0), Currency.wrap(config.token1), LPFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(0)));
         bytes32 initHash = deployer.initCodeHash(config, key);
         bytes32 createSalt = _mine(predictedDeployer, initHash);

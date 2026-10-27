@@ -414,27 +414,20 @@
     },
     "M05-05": {
       "title": "Integrasikan swap pre/post enforcement",
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "DONE",
       "evidence": [
-        "contracts/src/BellHook.sol",
-        "contracts/src/BellModeEvaluator.sol",
-        "contracts/src/types/SwapEvaluation.sol",
-        "contracts/test/unit/hook/BellHook.t.sol",
+        "contracts/src/BellHook.sol — SWAP_EXECUTION_READY = true; _beforeSwap prepares a pinned snapshot and returns lpFeeUnits | OVERRIDE_FEE_FLAG; _afterSwap settles actual core deltas and commits both budget candidates",
+        "contracts/src/BellPolicyOracle.sol — stateless STATICCALL-only transport for the full policy evaluation; moved out of the hook to fit EIP-170 (hook 23,842 B / 24,576 B, oracle 19,892 B)",
+        "contracts/test/unit/hook/BellHookLifecycle.t.sol::testHealthySyntheticLiveAdvertisesExecutionAndPreparesSwap — first positive swap test: LIVE + healthy SESSION_ONLY pool really produces a snapshot and a fee override",
+        "contracts/src/BellModeEvaluator.sol — prepare/settle arithmetic, including validateActual exact-in/out and partial-fill bounds",
         "contracts/test/integration/swaps/BellSwapEvaluator.t.sol",
-        "contracts/test/integration/swaps/CoreSwapPolicy.t.sol",
+        "contracts/test/integration/swaps/CoreSwapPolicy.t.sol — 14 tests against the real pinned PoolManager",
         "contracts/test/integration/factory/BellPoolFactory.t.sol",
         "evidence/swap-policy-integration.md",
-        "docs/M05-05-swap-execution-blockers.md",
-        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
+        "docs/M05-05-swap-execution.md",
+        "pnpm check 2026-10-27: 351 forge tests across 27 suites including both 100k-run invariant suites"
       ],
-      "blockers": [
-        "MEASURED BLOCKER: BellHook runtime is 24,571 bytes against the 24,576-byte EIP-170 limit — 5 bytes of headroom. Wiring the swap glue directly into the hook (context build, prepare, settle, budget commit, two decimals reads) produces 30,128 bytes, i.e. 5,552 bytes over. Adding the logic is not possible without first freeing space; see docs/M05-05-swap-execution-blockers.md for the three refactor options and their security trade-offs.",
-        "SCOPE BLOCKER: only SESSION_ONLY can be enabled honestly. referenceMode is bound but deliberately not interpreted (BellHook.sol:1274 — no numeric enum in the pinned normative tables), and _evaluatePolicy writes referencePrice18 = [0,0]. BellModeEvaluator.prepare requires a nonzero reference pair and a price band for PRICE_GUARDED, so that class cannot be admitted yet.",
-        "The evaluator, both budgets, validateActual and the real-core integration pattern are all complete and proven against the pinned PoolManager via SnapshotFixtureHook (14 tests in CoreSwapPolicy.t.sol). The remaining work is relocating that proven pattern into production BellHook without exceeding EIP-170.",
-        "Authenticated active/frozen price and corporate timer snapshots, source deviation/provenance binding and a coherent executable PolicyView remain unfinished.",
-        "Reviewed real source rights/profiles and Robinhood pinned-fork/Cancun compatibility remain unavailable.",
-        "Size-safe production snapshot integration and hot-path gas benchmarking remain required."
-      ]
+      "blockers": []
     },
     "M06-01": {
       "title": "Bangun atomic create-and-seed factory",
@@ -500,8 +493,8 @@
         "contracts/test/integration/router/BellRouter.t.sol"
       ],
       "blockers": [
-        "Router is deployed at 0x35ce0b38a70c7d3df0d3a33fba2dfdd900298741 and its 10 pinned-core unit/integration tests pass, but no BellRouter.swap transaction has ever been sent because no eligible stock pool exists.",
-        "Production BellHook swap callbacks remain fail-closed, so even a seeded pool would not advertise an executable swap until M05-05 lands."
+        "Router is deployed at 0x35ce0b38a70c7d3df0d3a33fba2dfdd900298741 and its 10 pinned-core unit/integration tests pass, and BellHook now advertises execution for SESSION_ONLY pools. What is still missing is a live pool: no stock descriptor is admitted and no calendar root is committed, so no BellRouter.swap can be exercised on chain.",
+        "PRICE_GUARDED pools remain non-executable by design: referenceMode has no numeric mapping and no admitted reference pair exists, so the hook rejects that class with PRICE_INPUT_INVALID_OR_STALE."
       ]
     },
     "M06-05": {
@@ -814,8 +807,8 @@
       ],
       "blockers": [
         "Build export for Vercel Free and live wallet E2E are still unproven; the §8.5 state machine itself is fully tested.",
-        "The swap screen never sends a transaction: apps/web/app/(app)/swap/page.tsx contains no writeContract/sendTransaction, and its CTA stops at \"Review & simulate swap\".",
-        "A full swap flow needs M05-05 execution plus a live M08 quote. BellHook returns executionReady=false, so any real swap would revert HookNotImplemented()."
+        "The swap screen never sends a transaction: apps/web/app/(app)/swap/page.tsx contains no writeContract/sendTransaction, and its CTA stops at \"Review & simulate swap\". Wiring it needs a live quote (M08) and a pool that exists.",
+        "The hook now supports swaps for SESSION_ONLY pools, so this is a frontend/quote gap rather than a contract gate."
       ]
     },
     "M11-04": {

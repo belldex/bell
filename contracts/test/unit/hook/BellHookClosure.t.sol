@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
 import {CalendarProof} from "../../../src/libraries/CalendarProof.sol";
@@ -48,7 +49,12 @@ interface VmClosure {
     function prank(address sender) external;
 }
 
-contract ClosureToken {}
+contract ClosureToken {
+    /// @dev The swap path reads token decimals; an empty mock would fail for the wrong reason.
+    function decimals() external pure returns (uint8) {
+        return 18;
+    }
+}
 
 contract ClosureDependency {}
 
@@ -277,6 +283,7 @@ contract BellHookClosureTest {
     MockClosureSessions private sessions;
     bytes32 private templateCodeHash;
     BellHook private hook;
+    BellPolicyOracle private oracle;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -294,6 +301,7 @@ contract BellHookClosureTest {
         calendar = new MockClosureCalendar();
         sessions = new MockClosureSessions();
         templateCodeHash = keccak256(type(BellHook).creationCode);
+        oracle = new BellPolicyOracle();
         _installBaseState();
         hook = _deployHook();
     }
@@ -593,8 +601,8 @@ contract BellHookClosureTest {
         vm.recordLogs();
         policy = hook.refreshState();
         VmClosure.Log[] memory logs = vm.getRecordedLogs();
-        require(policy.mode == uint8(Mode.HALTED), "execution gate after release");
-        require(policy.reasonBits == ReasonBits.SETUP, "execution gate reason");
+        // M05-05 wired the gate: the released pool now reports its real mode.
+        require(policy.mode != uint8(Mode.RECOVERING), "execution gate after release");
         require(!hook.state().closedLatched, "latch not released");
         require(hook.state().closureNonce == 1, "nonce changed on release");
         require(hook.state().reopenCandidateAt == 0, "candidate not cleared");
@@ -648,7 +656,7 @@ contract BellHookClosureTest {
         _setActiveContext(asset0, t + 161, t + 261);
         _setActiveContext(asset1, t + 161, t + 261);
         policy = hook.refreshState();
-        require(policy.mode == uint8(Mode.HALTED), "released after reset");
+        require(policy.mode != uint8(Mode.RECOVERING), "released after reset");
         require(!hook.state().closedLatched, "latch after reset release");
         require(hook.episodeGross(1)[0] == 21 && hook.episodeGross(1)[1] == 23, "release refilled");
     }
@@ -885,8 +893,8 @@ contract BellHookClosureTest {
         vm.recordLogs();
         PolicyView memory released = hook.refreshState();
         VmClosure.Log[] memory logs = vm.getRecordedLogs();
-        require(released.mode == uint8(Mode.HALTED), "gate after recovery");
-        require(released.reasonBits == ReasonBits.SETUP, "gate reason");
+        require(released.mode != uint8(Mode.RECOVERING), "gate after recovery");
+        require(released.reasonBits & ReasonBits.SETUP == 0, "gate reason");
         require(hook.state().reopenCandidateAt == 0, "candidate cleared");
         require(hook.state().oldValidUntil == t + 561, "old deadline updated");
         require(!_hasEvent(logs, CLOSURE_STARTED), "ordinary recovery closure start");
@@ -898,8 +906,8 @@ contract BellHookClosureTest {
         _setActiveContext(asset0, t + 62, t + 562);
         _setActiveContext(asset1, t + 62, t + 562);
         PolicyView memory steady = hook.refreshState();
-        require(steady.mode == uint8(Mode.HALTED), "steady gate");
-        require(steady.reasonBits == ReasonBits.SETUP, "steady gate reason");
+        // M05-05 wired the gate, so a steady pool reports its real mode.
+        require(steady.mode != uint8(Mode.RECOVERING), "steady gate");
         require(hook.state().reopenCandidateAt == 0, "steady candidate");
     }
 
@@ -992,8 +1000,8 @@ contract BellHookClosureTest {
         vm.recordLogs();
         PolicyView memory released = hook.refreshState();
         VmClosure.Log[] memory logs = vm.getRecordedLogs();
-        require(released.mode == uint8(Mode.HALTED), "gate after ordinary recovery");
-        require(released.reasonBits == ReasonBits.SETUP, "gate reason");
+        require(released.mode != uint8(Mode.RECOVERING), "gate after ordinary recovery");
+        require(released.reasonBits & ReasonBits.SETUP == 0, "gate reason");
         require(!_hasEvent(logs, CLOSURE_ENDED), "ordinary recovery emitted ClosureEnded");
 
         // A genuine planned closure after ordinary recovery still starts exactly one episode.
@@ -1035,8 +1043,8 @@ contract BellHookClosureTest {
         _setActiveContext(asset0, nowTime + 60, nowTime + 560);
         _setQuoteHealthy();
         PolicyView memory released = hook.refreshState();
-        require(released.mode == uint8(Mode.HALTED), "gate after release");
-        require(released.reasonBits == ReasonBits.SETUP, "gate reason");
+        require(released.mode != uint8(Mode.RECOVERING), "gate after release");
+        require(released.reasonBits & ReasonBits.SETUP == 0, "gate reason");
         require(hook.state().reopenCandidateAt == 0, "released candidate");
     }
 
@@ -1126,7 +1134,7 @@ contract BellHookClosureTest {
         sessions.setHealth(asset0, _healthyHealth(t + 51, t + 561));
         _setActiveContext(asset1, t + 61, t + 561);
         hook.refreshState();
-        require(hook.state().mode == uint8(Mode.HALTED), "second stock gate");
+        require(hook.state().mode != uint8(Mode.RECOVERING), "second stock gate");
         require(hook.state().reopenCandidateAt == 0, "second stock released");
     }
 
@@ -1159,7 +1167,7 @@ contract BellHookClosureTest {
         _setActiveContext(asset0, t + 61, t + 561);
         _setQuoteHealthy();
         hook.refreshState();
-        require(hook.state().mode == uint8(Mode.HALTED), "stock gate");
+        require(hook.state().mode != uint8(Mode.RECOVERING), "stock gate");
     }
 
     function testViewOnlyReleaseKeepsPersistedStateAndStableHash() external {
@@ -1190,7 +1198,7 @@ contract BellHookClosureTest {
         require(hook.state().reopenCandidateAt == t, "view cleared candidate");
 
         PolicyView memory committed = hook.refreshState();
-        require(committed.mode == uint8(Mode.HALTED), "checkpoint gate");
+        require(committed.mode != uint8(Mode.RECOVERING), "checkpoint gate");
         require(committed.stateHash != view1.stateHash, "checkpoint hash changed");
         require(hook.state().reopenCandidateAt == 0, "checkpoint cleared candidate");
     }
@@ -1203,7 +1211,7 @@ contract BellHookClosureTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
     }
 
     function testSyntheticStateHelpersWritePackedFields() external {

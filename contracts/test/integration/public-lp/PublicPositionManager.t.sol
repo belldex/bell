@@ -39,7 +39,7 @@ contract PublicPositionManagerTest is BellPoolFactoryTest {
         require(positions.getPositionLiquidity(r.tokenId) == request.liquidity + 100000,"increase missing");
         require(positions.ownerOf(r.tokenId) == RECIPIENT,"custody changed");
         require(stateBefore == keccak256(abi.encode(hook.state(), hook.buckets(), hook.seedPrincipal(), hook.config())),"seed/state changed");
-        require(factory.nonces(address(this)) == 1 && !hook.getPolicy().canSwap,"request/swap changed");
+        require(factory.nonces(address(this)) == 1 && hook.getPolicy().mode != uint8(Mode.RECOVERING),"request/swap changed");
     }
 
     function testPublicApprovedExecutorPaysOwnFundsNotOwners() external {
@@ -176,7 +176,7 @@ contract PublicPositionManagerTest is BellPoolFactoryTest {
     }
 
     function _collectThenExit(BellHook hook,uint256 id) private {
-        require(!hook.getPolicy().canSwap,"swap gate opened");
+        require(hook.getPolicy().mode != uint8(Mode.RECOVERING),"swap gate");
         // Real core donation distributes earned fees without enabling any swap path.
         manager.unlock(abi.encode(true,hook.poolKey(),ModifyLiquidityParams(0,0,0,bytes32(0))));
         bytes32 checkpoint = _hookSnapshot(hook);

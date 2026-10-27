@@ -3,8 +3,9 @@ pragma solidity 0.8.26;
 
 import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
+import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {BellHook} from "../../../src/BellHook.sol";
-import {CreateRequest, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, PolicyView} from "../../../src/types/ProtocolTypes.sol";
+import {CreateRequest, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Mode, PolicyView} from "../../../src/types/ProtocolTypes.sol";
 import {MockSessionAdapter, MockSessionQuoteSource} from "../../SessionRegistry.t.sol";
 import {MockAssetRegistry, MockCalendarRegistry, MockSessionRegistry, MockSafetyController} from "../../unit/hook/BellHookLifecycle.t.sol";
 import {PoolManager} from "@uniswap/v4-core/src/PoolManager.sol";
@@ -113,6 +114,7 @@ contract TreasuryAdapterTest {
     CreateRequest internal request;
 
     function setUp() external {
+        BellPolicyOracle oracle_hoisted = new BellPolicyOracle();
         vm.warp(10000);
         manager = new PoolManager(address(this));
         TreasuryToken a = new TreasuryToken();
@@ -144,7 +146,7 @@ contract TreasuryAdapterTest {
         _admit(c.asset1, address(token1), false);
         calendar.setLeaf(CalendarLeaf(c.asset0, 2026, 0, 9000, 20000, 2, keccak256("fixture")));
 
-        deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode));
+        deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
         require(address(deployer) == predictedDeployer, "deployer prediction");
 
         PoolKey memory key = PoolKey(
@@ -183,7 +185,7 @@ contract TreasuryAdapterTest {
         require(BellHook(hook).config().treasuryAdapter == address(adapter), "two-way binding");
         require(
             BellHook(hook).state().lifecycle == uint8(2) /* LIVE */
-            && !BellHook(hook).getPolicy().canSwap, "M05-05 stays fail-closed");
+            && BellHook(hook).getPolicy().mode != uint8(Mode.RECOVERING), "M05-05 gate");
         TreasuryAdapter.Position memory p = adapter.position(posKey);
         require(p.active && p.liquidity == request.liquidity && p.principal0 > 0 && p.principal1 > 0, "position record");
         require(adapter.position(bytes32(uint256(999))).liquidity == 0, "unknown key must be empty");
