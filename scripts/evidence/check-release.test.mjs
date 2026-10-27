@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readEvidenceArtifact, validateBriefIdentity, validateReleaseIndex, verifyReleaseArtifacts } from './check-release.mjs';
+import { readEvidenceArtifact, validateBriefIdentity, validateReleaseIndex, validateReleaseIndexDocument, validateTaskStatus, verifyReleaseArtifacts } from './check-release.mjs';
 
 const baseline = {
   briefSha256: 'a'.repeat(64),
@@ -43,4 +43,33 @@ test('verifies gate artifact content hashes instead of trusting declared hex str
   await assert.rejects(() => verifyReleaseArtifacts({ ...evidence, artifactHashes: { 'evidence/build.json': '0'.repeat(64) } }, async () => bytes), /hash mismatch/i);
   await assert.rejects(() => verifyReleaseArtifacts(evidence, async () => { throw new Error('missing'); }), /missing/i);
   await assert.rejects(() => readEvidenceArtifact('.', '../outside.json'), /unsafe/i);
+});
+
+test('the descriptive release index cannot keep a superseded brief hash', () => {
+  const document = {
+    planSnapshot: { briefSha256: 'b'.repeat(64), implementationPlanSha256: baseline.implementationPlanSha256 },
+    gateStatus: { E01_build: 'NOT_RUN', E02_deployment: 'NOT_RUN', E03_source_capacity: 'NOT_RUN', E04_sessions_four_weekends: 'NOT_RUN', E05_audit_retest: 'NOT_RUN', E06_public_release: 'NOT_RUN' },
+    mainnetFundingAllowed: false,
+    publicReleaseAllowed: false,
+  };
+  assert.throws(() => validateReleaseIndexDocument(document, baseline), /brief hash/i);
+});
+
+test('the descriptive release index must report every gate and cannot grant release', () => {
+  const ok = {
+    planSnapshot: { briefSha256: baseline.briefSha256, implementationPlanSha256: baseline.implementationPlanSha256 },
+    gateStatus: { E01_build: 'NOT_RUN', E02_deployment: 'NOT_RUN', E03_source_capacity: 'NOT_RUN', E04_sessions_four_weekends: 'NOT_RUN', E05_audit_retest: 'NOT_RUN', E06_public_release: 'NOT_RUN' },
+    mainnetFundingAllowed: false,
+    publicReleaseAllowed: false,
+  };
+  assert.equal(validateReleaseIndexDocument(ok, baseline), true);
+  assert.throws(() => validateReleaseIndexDocument({ ...ok, gateStatus: { E01_build: 'NOT_RUN' } }, baseline), /does not report gate/i);
+  assert.throws(() => validateReleaseIndexDocument({ ...ok, publicReleaseAllowed: true }, baseline), /cannot grant/i);
+});
+
+test('the task ledger cannot keep a superseded brief hash', () => {
+  const tasks = { 'M00-01': { title: 'x', status: 'NOT_STARTED', evidence: [], blockers: [] } };
+  const ledger = { planTaskCount: 1, implementationPlanSha256: 'c'.repeat(64), briefSha256: 'd'.repeat(64), tasks };
+  assert.throws(() => validateTaskStatus(ledger, 1, 'c'.repeat(64), 'a'.repeat(64)), /brief hash/i);
+  assert.equal(validateTaskStatus({ ...ledger, briefSha256: 'a'.repeat(64) }, 1, 'c'.repeat(64), 'a'.repeat(64)), true);
 });

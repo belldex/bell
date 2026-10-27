@@ -1,6 +1,6 @@
 # M06-03 TreasuryAdapter — partial local evidence
 
-Status: **IN_PROGRESS**. The adapter and local core integration are implemented, but the current `BellPoolFactory` explicitly accepts PUBLIC only and does not invoke `TreasuryAdapter.seed`; therefore the end-to-end treasury create-and-seed path is **not integrated**.
+Status: **IN_PROGRESS**. The adapter and local core integration are implemented, and `BellPoolFactory` now does call `TreasuryAdapter.seed` for `TREASURY_ONLY` profiles (`testTreasuryOnlyFactoryCanCreateAndSeedPool`). What is still missing is any onchain exercise: the deployed testnet factory is PUBLIC-only with `treasuryAdapter = 0`, so no TreasuryAdapter has ever been deployed or called on a live chain. The path is implemented, not rehearsed.
 
 ## Local behavior exercised
 
@@ -23,10 +23,11 @@ $forge = 'node_modules/.pnpm/@foundry-rs+forge-win32-amd64@1.7.1/node_modules/@f
 & $forge test --root contracts --match-contract TreasuryAdapterTest -vv
 ```
 
-Latest focused result: **10 passed, 0 failed, 0 skipped**. This verifies the adapter in a test-only factory context, not the production factory's atomic TREASURY_ONLY integration.
+Latest focused result on 2026-10-27: **10 passed, 0 failed, 0 skipped** for `TreasuryAdapterTest`, plus `testTreasuryOnlyFactoryCanCreateAndSeedPool` in `BellPoolFactoryTest` proving the factory's atomic request-bound TREASURY_ONLY path. This still does not constitute a live treasury deployment.
 
 ## Remaining acceptance
 
-- `BellPoolFactory` rejects `TREASURY_ONLY` and does not call `TreasuryAdapter.seed`; add a request-bound atomic factory path that proves hook address, `requestHash`, seed receipt, actual principal and activation ordering.
+- The factory's TREASURY_ONLY path is implemented and locally tested, but it has never run against a deployed TreasuryAdapter. Deploy one and exercise seed/exit on chain 46630.
 - Treasury/factory/recipient deployment manifest, actual source and registry dependencies, real chain/fork compatibility and independent review/audit are not supplied.
 - No treasury deployment or transaction broadcast was performed; E01–E06 remain `NOT_RUN`.
+- SafetyController treasury is the burn address `0x...dEaD`, so treasury exit and handover cannot be rehearsed at all yet.

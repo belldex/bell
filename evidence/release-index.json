@@ -1,47 +1,98 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "createdAt": "2026-10-26",
-  "buildCommit": "WORKING_TREE_AT_CREATION",
-  "note": "Release evidence index sesuai Brief §release evidence index. Semua nilai awal MISSING/NOT_RUN — bukan PASS. Field diisi hanya dengan actual artifacts.",
-  "chainId": "MISSING",
-  "artifactHashes": "MISSING",
-  "sourceManifestHash": "MISSING",
+  "updatedAt": "2026-10-27",
+  "buildCommit": null,
+  "note": "Release evidence index sesuai Brief baris 1500. Nilai MISSING/NOT_RUN berarti belum ada artifact — bukan PASS. Field diisi hanya dengan artifact nyata. File ini adalah index deskriptif; file yang divalidasi mesin adalah evidence/releases/index.json (dibaca scripts/evidence/check-release.mjs). Keduanya kini dijaga konsisten oleh pnpm evidence:check.",
+  "chainId": 46630,
+  "chainIdNote": "Rehearsal berjalan di Robinhood testnet 46630. Mainnet 4663 belum pernah menerima transaksi BELL; chainId di sini menandakan jaringan deployment saat ini, bukan jaringan rilis.",
+  "artifactHashes": {},
+  "sourceManifestHash": null,
   "planSnapshot": {
-    "briefSha256": "623326e25633d3f8ffb86a81035fdb813d7e724f9daf815684ba1a2f4a92325e",
-    "implementationPlanSha256": "0debb71f56e4107edb20a6964239ef13e360716324dc599d4d86e8869e7ddff6"
+    "briefSha256": "2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c",
+    "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
+    "verifiedAgainst": "config/release-baseline.json"
   },
   "rpcPreflight": {
     "status": "PARTIAL",
+    "note": "Kedua provider sepakat pada common block di mainnet dan testnet. Ini capability snapshot, bukan jaminan SLO produksi.",
     "evidence": [
       "evidence/runtime/rpc-preflight-alchemy-partial-2026-10-25.json",
       "evidence/runtime/rpc-preflight-mainnet-agree-2026-10-25.json",
       "evidence/runtime/rpc-preflight-testnet-agree-2026-10-25.json",
       "evidence/runtime/rpc-capability-matrix-2026-10-25.json",
       "evidence/runtime/wss-newheads-live-2026-10-25.json",
-      "evidence/runtime/archive-endpoints-2026-10-25.json"
+      "evidence/runtime/archive-endpoints-2026-10-25.json",
+      "evidence/runtime/testnet-dual-provider-status-2026-10-26.json"
     ]
   },
   "capacityTrace": "NOT_RUN",
   "backupRestore": {
     "status": "EXERCISED_LOCAL",
-    "evidence": ["evidence/runtime/backup-restore-drill-2026-10-25.json"]
+    "evidence": [
+      "evidence/runtime/backup-restore-drill-2026-10-25.json"
+    ]
   },
   "failoverDrills": "NOT_RUN",
   "evmResults": {
-    "forgeUnit": "316 passed / 0 failed (2026-10-26, working tree)",
-    "packagesNode": "243 passed / 0 failed",
-    "runtimePortable": "node runtime-neutral + deno smoke 15/15",
-    "workersKeeperB": "vitest 6/6"
+    "recordedAt": "2026-10-27",
+    "forge": "351 passed / 0 failed / 0 skipped, 27 suites (188.28s)",
+    "forgeInvariants": "2 suites at 100000 runs each: TreasuryAdapterInvariants, BellHookClosureStatefulInvariants",
+    "packagesNode": "298 passed / 0 failed",
+    "referencePython": "45 + 18 passed",
+    "runtimePortable": "node runtime-neutral pass; deno smoke 15/15",
+    "workersKeeperB": "vitest 6/6 across 3 files",
+    "workerBundle": "wrangler dry-run OK, 60.36 KiB / 13.77 KiB gzip",
+    "notCovered": [
+      "browser E2E (pnpm test:e2e is still a blocked-command scaffold)",
+      "authenticated fork integration (pnpm test:fork is still a blocked-command scaffold)",
+      "production swap invariants, because production swap enforcement does not exist yet"
+    ]
+  },
+  "onchainRehearsal": {
+    "status": "DEPLOYED_AND_WIRED_NOT_TRADABLE",
+    "chainId": 46630,
+    "manifestHash": "0x2ca2ec5aa5b2903ae0b1af2b9c8f11eb0635dc1a4b50128c7654ca8718e24a0b",
+    "verifiedAtBlock": 143532008,
+    "contracts": "10 rehearsal contracts + mBELL fee token + Yahoo verifier and 4 adapters",
+    "wiringChecks": "15 bindings matched against the manifest",
+    "activeAssets": "WETH counterasset only (descriptorId 0x88cb22337da3a28bd6a3ddb2e6225fc1a042f00bf0388b3b67c2586195096287, isStock=false)",
+    "calendarRoots": "none committed; CalendarRegistry.currentInterval(WETH) is all zeros",
+    "sessionHealth": "SessionRegistry.health(WETH) ready=false, refreshedAt=0",
+    "pools": "none created",
+    "swaps": "none executed; BellHook SWAP_EXECUTION_READY=false",
+    "evidence": [
+      "evidence/deploy/testnet-46630.json",
+      "evidence/deploy/testnet-46630-verification.json",
+      "evidence/deploy/testnet-46630-asset-queue.json",
+      "evidence/deploy/yahoo-verifier-adapter-testnet.json",
+      "docs/CURRENT-STATE.md"
+    ]
   },
   "auditRetest": "NOT_RUN",
-  "roles": "MISSING",
-  "costClassification": "MISSING",
+  "independentAudit": {
+    "status": "WAIVED_BY_OWNER",
+    "note": "Pemilik proyek memutuskan tidak memakai audit independen; diganti audit internal berbasis kode. Ini keputusan cakupan, bukan bukti keamanan. M14-03/M14-04 tidak boleh ditandai DONE atas dasar ini."
+  },
+  "roles": {
+    "status": "MISSING",
+    "note": "SafetyController.treasury masih burn address 0x...dEaD; role handover belum direhearsal."
+  },
+  "costClassification": {
+    "status": "RECORDED",
+    "source": "config/release-baseline.json",
+    "hostingDatabaseStorageCronRpcCi": "free-tier-only-no-overage",
+    "oracleEntitlementTestingGasDeploymentAudit": "separate-mainnet-requirement",
+    "developerAutomaticallyFundsProject": false
+  },
   "reviewedBy": [],
   "sourceStatus": {
     "metadata": "DOCUMENTED",
-    "accountAccess": "VERIFIED_ACCESS",
-    "entitlementReports": "NOT_RUN - butuh subscription Data Streams aktif",
-    "verifiedOnchain": "NOT_RUN"
+    "accountAccess": "RPC_ONLY",
+    "accountAccessNote": "Klaim VERIFIED_ACCESS era Chainlink sudah tidak berlaku. Yang terverifikasi sekarang hanya akses RPC read-only ke dua provider, bukan entitlement laporan sumber.",
+    "entitlementReports": "NOT_RUN",
+    "verifiedOnchain": "PARTIAL — deploy dan wiring terverifikasi; tidak ada sampel sumber yang valid saat pembacaan terakhir",
+    "rightsFile": "config/sources/rights-status.json (BLOCKED_ACCESS)"
   },
   "gateStatus": {
     "E01_build": "NOT_RUN",
@@ -50,5 +101,16 @@
     "E04_sessions_four_weekends": "NOT_RUN",
     "E05_audit_retest": "NOT_RUN",
     "E06_public_release": "NOT_RUN"
-  }
+  },
+  "gates": {
+    "E01": "NOT_RUN",
+    "E02": "NOT_RUN",
+    "E03": "NOT_RUN",
+    "E04": "NOT_RUN",
+    "E05": "NOT_RUN",
+    "E06": "NOT_RUN"
+  },
+  "evidenceByGate": {},
+  "mainnetFundingAllowed": false,
+  "publicReleaseAllowed": false
 }

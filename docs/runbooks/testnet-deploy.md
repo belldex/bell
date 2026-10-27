@@ -3,10 +3,31 @@
 Status: **REHEARSAL**, bukan mainnet. PRICE_GUARDED tetap diblokir; factory rehearsal hanya
 SESSION_ONLY. Treasury path produksi belum terintegrasi ke factory (lihat evidence/treasury-adapter-results.md).
 
+Kondisi terkini seluruh sistem: **`docs/CURRENT-STATE.md`**. Runbook ini hanya menjelaskan cara
+mengulang deploy; kalau keduanya berbeda, `docs/CURRENT-STATE.md` yang benar.
+
 ## 0. Prasyarat yang sudah diverifikasi on-chain
 - Permit2 canonical ada di testnet: `0x000000000022D473030F116dDEE9F6B43aC78BA3`
 - v4 PoolManager canonical **tidak ada** → script men-deploy PoolManager sendiri (owner = deployer)
 - RPC testnet: `RH_TESTNET_RPC_PRIMARY` (Alchemy) + `RH_TESTNET_RPC_SECONDARY` (Pinax)
+
+## 0b. State deployment saat ini (2026-10-27)
+
+Manifest `evidence/deploy/testnet-46630.json`, hash `0x2ca2ec5aa5b2903ae0b1af2b9c8f11eb0635dc1a4b50128c7654ca8718e24a0b`,
+sourceCommit `ee407db`, block `142881475`–`142881484`.
+
+Sudah hidup dan terverifikasi: 10 kontrak rehearsal + mBELL fee token 6-desimal + Yahoo verifier
+dan 4 adapter Yahoo (direct/regular/extended/overnight).
+
+Belum ada: pool, swap, calendar root, deskriptor saham. Hanya WETH counterasset yang ACTIVE.
+
+Verifikasi ulang kapan pun:
+
+```bash
+node scripts/deploy/check-testnet-addresses.mjs --rpc      # alamat + binding + ukuran kode
+node scripts/deploy/verify-testnet-deployment.mjs --check  # evidence masih cocok dengan chain?
+```
+
 
 ## 1. Isi environment
 `.env` (root repo, tidak di-commit):
@@ -68,7 +89,21 @@ Urutan deploy (satu transaksi per kontrak):
 
 Manifest ditulis otomatis ke `evidence/deploy/testnet-46630.json` (14 field alamat wajib:
 `deployer, treasury, serviceRecipient, permit2, safetyController, assetRegistry, calendarRegistry,
-sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, router`).
+sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, router`; plus
+`feeToken`, `status`, `note` — total 18 key, 16 di antaranya alamat).
+
+Jalur harga Yahoo **tidak** termasuk dalam script deploy ini dan dideploy terpisah:
+
+```bash
+node scripts/deploy/deploy-yahoo-verifier.mjs         # YahooSourceVerifier
+node scripts/deploy/deploy-yahoo-adapter-weth.mjs     # adapter direct
+node scripts/deploy/deploy-yahoo-stream-adapters.mjs  # adapter scope 1/2/3 + facade testnet
+```
+
+`deploy-yahoo-stream-adapters.mjs` juga men-deploy `AaplTestnetFacade` karena konstruktor adapter
+mode stream menuntut `stockToken.code.length != 0` di chain deployment, sedangkan AAPL Mainnet tidak
+punya kode di Testnet. Facade itu **bukan** token canonical dan dicatat sebagai
+`isCanonicalToken: false` di evidence.
 
 ## 3. Verifikasi pasca-deploy
 - `eth_getCode` semua alamat di manifest ≠ `0x`
@@ -82,16 +117,24 @@ sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, 
   `liquidityMode=1` + `treasuryAdapter` terisi.
 - `router.poolManager()` / `router.canonicalWeth()` menunjuk manifest, `weth.symbol()` = `WETH`
 
-Setelah deploy atau redeploy, jalankan penjaga drift alamat:
+Setelah deploy atau redeploy, jalankan **tiga** penjaga. Urutannya penting: verifikasi dulu, baru
+bandingkan.
 
 ```bash
-node scripts/deploy/check-testnet-addresses.mjs        # offline: manifest vs evidence vs status module
-node scripts/deploy/check-testnet-addresses.mjs --rpc  # + ukuran code on-chain
+node scripts/deploy/verify-testnet-deployment.mjs        # tulis ulang evidence dari chain + manifest
+node scripts/deploy/check-testnet-addresses.mjs          # offline: manifest vs evidence vs status module
+node scripts/deploy/check-testnet-addresses.mjs --rpc    # + ukuran code on-chain
 ```
+
+`verify-testnet-deployment.mjs` menurunkan seluruh isi `testnet-46630-verification.json` dari chain
+dan manifest: alamat, ukuran kode, hash kode, 15 binding, role, gas dari broadcast log. Jangan pernah
+mengedit file itu dengan tangan — itulah yang menyebabkan insiden drift 2026-10-27, ketika kesepuluh
+alamat di file verifikasi masih milik deployment sebelumnya dan `check-testnet-addresses.mjs` gagal
+dengan 11 error. Mode `--check` exit 1 kalau evidence basi, jadi bisa dipakai di CI.
 
 Tiga tempat menyimpan alamat yang sama (manifest, `testnet-46630-verification.json`, dan
 `packages/protocol/src/testnet-status.mjs` yang dipakai frontend). Tanpa penjaga ini, redeploy
-meninggalkan dua dari tiga menunjuk kontrak lama — persis yang terjadi pada redeploy 13:20.
+meninggalkan dua dari tiga menunjuk kontrak lama.
 
 ## 4. Admission aset (testnet zero-delay, mainnet tetap 48 jam)
 
@@ -123,10 +166,32 @@ kosong → `AssetPolicy.oraclelessCounterasset` melewati gate health. Sisi saham
 `_admitted` mensyaratkan `SessionRegistry.health(id)` dengan `ready`, `reasonBits == 0`, dan
 `validUntil > now`, jadi butuh adapter + source yang benar-benar melaporkan.
 
+### 4b. Kenapa belum ada deskriptor saham
+
+`descriptorIdForToken` saat ini mengembalikan nol untuk `AaplTestnetFacade`
+(`0x64a82eb01d7c7310ef1bc5f0055f758409d45c63`) dan untuk mBELL. Yang ACTIVE hanya WETH.
+Tiga hal yang menghalangi, dan semuanya harus beres bersamaan:
+
+1. **Token.** API resmi Robinhood mengembalikan 195 aset, semuanya hanya di chainId 4663. Tidak ada
+   AAPL/TSLA/NVDA resmi di 46630. Facade hanya memenuhi cek `stockToken.code.length` di konstruktor
+   adapter; dia bukan token canonical dan tidak boleh dipakai sebagai identitas saham.
+2. **Calendar.** `CalendarRegistry.currentInterval(WETH)` mengembalikan semua nol. Belum ada root
+   yang di-queue untuk aset mana pun. Tanpa interval, `refreshHealth` untuk saham tidak akan hijau.
+3. **Sampel sumber.** Sampel direct terakhir berumur 5500 detik saat trace 2026-10-27, sementara
+   policy menolak > 120 detik. Tiga adapter stream belum punya sampel sama sekali.
+
+Jadi queue descriptor saham sekarang hanya akan menghasilkan revert atau health yang tetap tidak
+siap. Jangan meng-queue sesuatu hanya untuk "terlihat ada progres".
+
 ## 5. Belum tercakup (jangan diklaim selesai)
 - Pool create-and-seed end-to-end: WETH counterasset aktif, tetapi perlu pasangan token saham dengan
   descriptor, adapter bindings, source report sehat dan interval calendar yang valid. Data/mock
   adapter tidak boleh dilabeli sebagai saham/source produksi; fixture rehearsal harus dinyatakan eksplisit.
-- Treasury path (TreasuryAdapter) belum dipanggil factory.
+- Swap: `BellHook.SWAP_EXECUTION_READY = false`; `_beforeSwap`/`_afterSwap` revert
+  `HookNotImplemented()`. Tidak ada satu pun swap yang pernah terjadi, dan itu disengaja sampai
+  M05-05 selesai.
+- Treasury path (TreasuryAdapter) belum dipanggil factory. Treasury SafetyController masih burn
+  address `0x...dEaD`, jadi exit/handover belum bisa direhearsal.
 - Keeper A (Supabase) dan Keeper B (Cloudflare) belum diarahkan ke alamat testnet ini.
-- PRICE_GUARDED, audit, mainnet readiness — tetap M14/M15.
+- PoolManager ownership masih di deployer.
+- PRICE_GUARDED, mainnet readiness — tetap M14/M15.

@@ -40,7 +40,7 @@ export function validateReleaseIndex(evidence, baseline) {
   return true;
 }
 
-export function validateTaskStatus(taskStatus, expectedTasks, expectedPlanHash) {
+export function validateTaskStatus(taskStatus, expectedTasks, expectedPlanHash, expectedBriefHash) {
   const expectedCount = Array.isArray(expectedTasks) ? expectedTasks.length : expectedTasks;
   if (!Number.isInteger(expectedCount) || taskStatus?.planTaskCount !== expectedCount
     || Object.keys(taskStatus.tasks ?? {}).length !== expectedCount) {
@@ -48,6 +48,12 @@ export function validateTaskStatus(taskStatus, expectedTasks, expectedPlanHash) 
   }
   if (taskStatus.implementationPlanSha256 !== expectedPlanHash) {
     throw new Error('Task status implementation-plan hash must match the baseline');
+  }
+  // The ledger also pins the brief. It drifted once (ledger kept an older brief hash after the
+  // brief was revised) and nothing caught it, so a stale ledger looked authoritative. When the
+  // caller supplies the baseline hash, require it to match.
+  if (expectedBriefHash !== undefined && taskStatus.briefSha256 !== expectedBriefHash) {
+    throw new Error('Task status brief hash must match the baseline');
   }
   if (Array.isArray(expectedTasks)) {
     for (const { id, title } of expectedTasks) {
@@ -67,6 +73,35 @@ export function validateTaskStatus(taskStatus, expectedTasks, expectedPlanHash) 
     if (task.status.startsWith('BLOCKED_') && task.blockers.length === 0) {
       throw new Error(`Blocked task ${id} must explain its blocker`);
     }
+  }
+  return true;
+}
+
+/**
+ * The Brief (line 1500) mandates a descriptive release evidence index at evidence/release-index.json
+ * with its own field names (planSnapshot / gateStatus). Nothing used to read it, so it rotted:
+ * it kept a superseded brief hash, stale test counts and a Chainlink-era VERIFIED_ACCESS claim.
+ * Validate the parts that can drift silently: the pinned hashes and the gate statuses.
+ */
+export function validateReleaseIndexDocument(document, baseline) {
+  if (document?.planSnapshot?.briefSha256 !== baseline.briefSha256) {
+    throw new Error('Release index brief hash must match the baseline');
+  }
+  if (document?.planSnapshot?.implementationPlanSha256 !== baseline.implementationPlanSha256) {
+    throw new Error('Release index implementation-plan hash must match the baseline');
+  }
+  if (!document.gateStatus || typeof document.gateStatus !== 'object') {
+    throw new Error('Release index is missing gateStatus');
+  }
+  for (const [id, status] of Object.entries(baseline.gates)) {
+    const recorded = Object.entries(document.gateStatus).find(([key]) => key === id || key.startsWith(`${id}_`));
+    if (!recorded) throw new Error(`Release index does not report gate ${id}`);
+    if (recorded[1] !== status) {
+      throw new Error(`Release index gate ${id} must match the baseline until reviewed evidence updates both`);
+    }
+  }
+  if (document.mainnetFundingAllowed === true || document.publicReleaseAllowed === true) {
+    throw new Error('Release index cannot grant mainnet funding or public release while gates are not PASS');
   }
   return true;
 }
@@ -112,6 +147,7 @@ export async function readEvidenceArtifact(projectRoot, artifactPath) {
 async function main() {
   const baseline = JSON.parse(await readFile(new URL('../../config/release-baseline.json', import.meta.url), 'utf8'));
   const evidence = JSON.parse(await readFile(new URL('../../evidence/releases/index.json', import.meta.url), 'utf8'));
+  const releaseIndexDocument = JSON.parse(await readFile(new URL('../../evidence/release-index.json', import.meta.url), 'utf8'));
   const taskStatus = JSON.parse(await readFile(new URL('../../evidence/task-status.json', import.meta.url), 'utf8'));
   const brief = await readFile(new URL('../../BELL-Developer-Brief-Final.md', import.meta.url));
   const briefCopy = await readFile(new URL('../../docs/BELL-Developer-Brief-Final.md', import.meta.url));
@@ -127,7 +163,8 @@ async function main() {
   validateBriefIdentity(baseline.implementationPlanSha256, planHash);
   validateBriefIdentity(baseline.implementationPlanSha256, planCopyHash);
   validateReleaseIndex(evidence, baseline);
-  validateTaskStatus(taskStatus, parseTaskCatalog(plan.toString('utf8')), planHash);
+  validateReleaseIndexDocument(releaseIndexDocument, baseline);
+  validateTaskStatus(taskStatus, parseTaskCatalog(plan.toString('utf8')), planHash, baseline.briefSha256);
   const projectRoot = fileURLToPath(new URL('../../', import.meta.url));
   await verifyReleaseArtifacts(evidence, (artifactPath) => readEvidenceArtifact(projectRoot, artifactPath));
   const gateSummary = Object.entries(evidence.gates).map(([id, status]) => `${id}=${status}`).join(', ');

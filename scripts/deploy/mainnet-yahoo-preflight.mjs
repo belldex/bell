@@ -11,11 +11,17 @@ const MAINNET = Object.freeze({
   NVDA: { token: '0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC', directFeed: '0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15' },
   TSLA: { token: '0x322F0929c4625eD5bAd873c95208D54E1c003b2d', directFeed: '0x4A1166a659A55625345e9515b32adECea5547C38' },
 });
+// No Mainnet Yahoo adapter has ever been deployed. These stay null on purpose: a placeholder
+// address here would let the script walk all the way into `getBytecode` and fail with a generic
+// "adapter not deployed" message after spending Mainnet RPC reads, which reads like a network
+// problem rather than "this was never deployed". Supply a real address via env when it exists.
 const ADAPTERS = Object.freeze({
-  AAPL: { direct: '0x000000000000000000000000000000000000a001', regular: '0x000000000000000000000000000000000000a002', extended: '0x000000000000000000000000000000000000a003', overnight: '0x000000000000000000000000000000000000a004' },
-  NVDA: { direct: '0x000000000000000000000000000000000000b001', regular: '0x000000000000000000000000000000000000b002', extended: '0x000000000000000000000000000000000000b003', overnight: '0x000000000000000000000000000000000000b004' },
-  TSLA: { direct: '0x000000000000000000000000000000000000c001', regular: '0x000000000000000000000000000000000000c002', extended: '0x000000000000000000000000000000000000c003', overnight: '0x000000000000000000000000000000000000c004' },
+  AAPL: { direct: null, regular: null, extended: null, overnight: null },
+  NVDA: { direct: null, regular: null, extended: null, overnight: null },
+  TSLA: { direct: null, regular: null, extended: null, overnight: null },
 });
+
+const SCOPE_KEYS = { 0: 'direct', 1: 'regular', 2: 'extended', 3: 'overnight' };
 
 function loadEnv(text) {
   const env = {};
@@ -59,7 +65,9 @@ async function main() {
   if (chainId !== 4663) throw new Error(`Wrong chain ${chainId}; expected 4663`);
   const block = await client.getBlock();
   const freshness = await checkFreshness(client, symbol, tokenInfo.directFeed, block.number);
-  const adapterAddress = ADAPTERS[symbol][phaseScope === 0 ? 'direct' : phaseScope === 1 ? 'regular' : phaseScope === 2 ? 'extended' : 'overnight'];
+  const scopeKey = SCOPE_KEYS[phaseScope];
+  if (!scopeKey) throw new Error(`--scope must be 0, 1, 2 or 3, got ${phaseScope}`);
+  const adapterAddress = env[`YAHOO_${symbol}_SCOPE_${phaseScope}_ADAPTER`] ?? ADAPTERS[symbol][scopeKey];
   const result = {
     chainId,
     mainnetBlock: { number: block.number.toString(), hash: block.hash, timestamp: Number(block.timestamp) },
@@ -74,6 +82,15 @@ async function main() {
       action: 'Set a dedicated YAHOO_REPORTER_PRIVATE_KEY, deployed YAHOO_SOURCE_VERIFIER_ADDRESS, YAHOO_REPORTER_ADDRESS and per-symbol/scope YAHOO_<SYMBOL>_SCOPE_<N>_CONFIG_HASH locally before signing.',
     };
     console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (!adapterAddress) {
+    result.freeYahoo = {
+      status: 'ADAPTER_NOT_DEPLOYED',
+      action: `No Mainnet Yahoo adapter exists for ${symbol} scope ${phaseScope}. Deploy it and pass YAHOO_${symbol}_SCOPE_${phaseScope}_ADAPTER. No placeholder address is accepted.`,
+    };
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = 2;
     return;
   }
   const signed = await preflightYahooMainnet({

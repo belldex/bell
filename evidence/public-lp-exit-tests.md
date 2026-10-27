@@ -20,10 +20,11 @@ $env:PATH = 'C:\Users\sifaq\.foundry\bin;' + $env:PATH
 pnpm test:contracts -- --match-path 'test/integration/public-lp/PublicPositionManager.t.sol' -vv
 ```
 
-Observed result in the full check: **52 passed, 0 failed, 0 skipped** in `PublicPositionManagerTest`; the factory suite adds 41 tests. Both suites exercise real pinned core/PositionManager, but share a synthetic Permit2 double and controlled registry/source/safety fixtures. CLOSED/budget exhaustion is test-only state injection; no production swap was used to consume a budget.
+Observed result in the full check on 2026-10-27: **53 passed, 0 failed, 0 skipped** in `PublicPositionManagerTest`; the factory suite adds 42 tests. Both suites exercise real pinned core/PositionManager, but share a synthetic Permit2 double and controlled registry/source/safety fixtures. CLOSED/budget exhaustion is test-only state injection; no production swap was used to consume a budget.
 
 ## Remaining acceptance
 
 - Pinned Permit2 is represented by a clearly labeled local double; compile/integration against the actual 0.8.17 Permit2 artifact remains outstanding.
 - Target Robinhood fork compatibility and funded testnet LP rehearsal remain unverified. M05-05 is not wired into production BellHook; LIVE does not grant swap permission.
 - TREASURY_ONLY is a separate M06-03 task and is not implemented by this PUBLIC lifecycle evidence.
+- No pool exists on testnet, so none of this has been exercised against a deployed pool. See `docs/CURRENT-STATE.md`.

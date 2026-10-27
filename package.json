@@ -8,7 +8,7 @@
   },
   "scripts": {
     "check": "pnpm test:unit && pnpm test:reference && pnpm policy:check && pnpm compile:solidity && pnpm test:contracts && pnpm abi:check && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm test:runtime:portable && pnpm test:workers && pnpm build:worker && pnpm evidence:check && pnpm check:secrets",
-    "test:unit": "node --test packages/domain/test/*.test.mjs packages/protocol/test/*.test.mjs scripts/discovery/*.test.mjs scripts/evidence/*.test.mjs scripts/tooling/*.test.mjs scripts/deploy/*.test.mjs",
+    "test:unit": "node --test packages/domain/test/*.test.mjs packages/protocol/test/*.test.mjs scripts/discovery/*.test.mjs scripts/evidence/*.test.mjs scripts/tooling/*.test.mjs scripts/deploy/*.test.mjs apps/web/test/*.test.mjs",
     "test:domain": "pnpm --filter @bell/domain test",
     "test:contracts": "pnpm exec forge test --root contracts",
     "test:invariants": "node scripts/tooling/blocked-command.mjs test:invariants EVM-invariant-suite-not-implemented",
@@ -38,6 +38,9 @@
     "tasks:sync": "node scripts/evidence/sync-task-status.mjs",
     "build": "node scripts/tooling/check-build-prerequisites.mjs && pnpm compile:solidity && pnpm --filter @bell/domain check && pnpm --filter @bell/protocol check && pnpm build:worker && pnpm exec forge build --root contracts",
     "check:testnet-addresses": "node scripts/deploy/check-testnet-addresses.mjs",
+    "check:testnet-addresses:rpc": "node scripts/deploy/check-testnet-addresses.mjs --rpc",
+    "verify:testnet-deployment": "node scripts/deploy/verify-testnet-deployment.mjs",
+    "verify:testnet-deployment:check": "node scripts/deploy/verify-testnet-deployment.mjs --check",
     "deploy:activate-asset": "node scripts/deploy/activate-testnet-asset.mjs",
     "deploy:queue-asset": "node scripts/deploy/queue-testnet-asset.mjs"
   },

@@ -8,6 +8,10 @@ Target: `docs/superpowers/plans/2026-10-26-router-treasury-testnet.md` + impleme
 Status verifikasi saat review ini ditulis: `forge build` bersih, 336 test forge lulus,
 4 test `deploy-manifest.test.mjs` lulus, `deploy-testnet.mjs --dry-run` lulus.
 
+> **Catatan 2026-10-27:** angka di atas adalah snapshot historis pada saat review, bukan kondisi
+> sekarang. Run terakhir: 351 forge test di 27 suite. Untuk state terkini lihat
+> `docs/CURRENT-STATE.md`.
+
 ---
 
 ## F1 — P1 (pre-audit blocker): mask permission hook tidak ditegakkan saat deploy

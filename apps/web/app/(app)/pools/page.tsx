@@ -51,8 +51,6 @@ export default function PoolsPage() {
     [q, cls, state],
   );
 
-  const swappable = POOLS.filter((p) => p.canSwap).length;
-
   return (
     <div>
       <header className="max-w-3xl">
@@ -61,7 +59,7 @@ export default function PoolsPage() {
           Every pool, its state, and its limits.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Class, session, fee, data source and remaining budgets are shown before you ever sign. {swappable} of {POOLS.length} sample pools can currently swap.
+          Class, session, fee, data source and remaining budgets are shown before you ever sign. These {POOLS.length} pools are preview fixtures, not live chain state — no pool exists on testnet yet, so none of them can actually swap.
         </p>
       </header>
 
