@@ -39,7 +39,7 @@ const GROUPS = [
   },
 ];
 
-export default function Footer() {
+export default function LandingFooter() {
   return (
     <footer className="ftr">
       <div className="ftr-inner">

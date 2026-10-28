@@ -1,1 +1,0 @@
-(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,29286,t=>{"use strict";var e=t.i(15240);t.s(["default",0,function(){return(0,e.jsx)("button",{className:"btn",style:{marginTop:20},onClick:()=>{try{localStorage.removeItem("v4market-consent-v1")}catch{}location.reload()},children:"Reset my choice"})}])}]);

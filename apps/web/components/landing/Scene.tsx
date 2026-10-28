@@ -192,7 +192,7 @@ export default function Scene() {
         powerPreference: 'high-performance',
       });
     } catch {
-      host.classList.add('scene-fallback');
+      // WebGL unavailable — the page falls back to its plain dark background.
       return;
     }
 
@@ -215,8 +215,8 @@ export default function Scene() {
         uFar: { value: 44 },
         uDim: { value: 1 },
         uTime: { value: 0 },
-        uInk: { value: new THREE.Color('#F4F6F8') },
-        uHot: { value: new THREE.Color('#FF5A1F') },
+        uInk: { value: new THREE.Color('#E8EEF7') },
+        uHot: { value: new THREE.Color('#3CE6FF') },
       },
     });
 
@@ -379,5 +379,5 @@ export default function Scene() {
     };
   }, []);
 
-  return <div ref={hostRef} className="scene" aria-hidden="true" />;
+  return <div ref={hostRef} className="pointer-events-none fixed inset-0 z-0" aria-hidden="true" />;
 }

@@ -15,7 +15,7 @@ const LINKS = [
   { href: '#safety', label: 'Safety' },
 ];
 
-export function SiteNav() {
+export default function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 

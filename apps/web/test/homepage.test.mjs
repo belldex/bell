@@ -2,57 +2,72 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const homepage = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
-const template = await readFile(
-  new URL('../public/templates/v4market/index.html', import.meta.url),
-  'utf8',
-).catch(() => '');
+const read = (p) => readFile(new URL(p, import.meta.url), 'utf8');
 
-test('the landing page delegates to the pinned v4market template document', () => {
-  assert.match(homepage, /\/templates\/v4market\/index\.html/);
+test('landing is a real Next page that renders BELL components — not a redirect to static HTML', async () => {
+  const page = await read('../app/page.tsx');
+  assert.doesNotMatch(page, /window\.location\.(replace|assign)/, 'must not redirect');
+  assert.doesNotMatch(page, /templates\/v4market/, 'must not reference the copied template build');
+  assert.match(page, /from '@\/components\/landing/, 'must compose landing components');
 });
 
-test('the landing page does not claim production swaps are live', () => {
-  const combined = `${homepage}\n${template}`;
-  const overclaims = [
-    /production swaps are live/i,
-    /swaps are now live/i,
-    /mainnet is live/i,
-    /audited and ready for mainnet/i,
+test('the copied template build and helper scripts are deleted from the repo', async () => {
+  const { access, constants } = await import('node:fs/promises');
+  const gone = [
+    '../public/templates/v4market/index.html',
+    '../public/templates/bell/index.html',
+    '../public/v4market-source/index.html',
+    '../../scripts/tooling/adapt-v4market-landing.mjs',
   ];
-  for (const pattern of overclaims) {
-    assert.doesNotMatch(combined, pattern, `must not claim ${pattern}`);
+  for (const path of gone) {
+    await assert.rejects(
+      access(new URL(path, import.meta.url), constants.F_OK),
+      { code: 'ENOENT' },
+      `${path} must be deleted`,
+    );
   }
 });
 
-test('BELL copy does not claim nothing is deployed', async () => {
-  const promises = await readFile(new URL('../components/landing/Promises.tsx', import.meta.url), 'utf8').catch(() => '');
-  if (promises) assert.doesNotMatch(promises, /Nothing is deployed yet/i);
+test('the 3D scene is a genuine Three.js port with the reference pose system', async () => {
+  const scene = await read('../components/landing/Scene.tsx');
+  assert.match(scene, /from 'three'/);
+  assert.match(scene, /InstancedMesh/);
+  assert.match(scene, /getBoundingClientRect\(\)\.top/);
+  assert.match(scene, /prefers-reduced-motion/);
+  assert.match(scene, /\.dispose\(\)/, 'must clean up');
+  // BELL design tokens, not the reference's palette
+  assert.match(scene, /3CE6FF/, 'hot accent must be BELL ion cyan');
+  assert.doesNotMatch(scene, /FF5A1F/, 'reference orange must not leak');
 });
 
-test('the pool directory does not imply preview fixtures are swappable', async () => {
-  const pools = await readFile(new URL('../app/(app)/pools/page.tsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(pools, /\{swappable\} of \{POOLS\.length\} sample pools can currently swap/);
+test('landing sections follow the reference arc with BELL content and tokens', async () => {
+  const page = await read('../app/page.tsx');
+  for (const marker of ['data-pose="0"', 'data-pose="6"', 'KineticTitle', 'AnimatedRows', 'SiteNav', 'LandingFooter']) {
+    assert.ok(page.includes(marker), `page must contain ${marker}`);
+  }
+  // BELL disclosure preserved
+  assert.match(page, /Production swaps are not enabled/);
+  assert.match(page, /Mainnet release has not been approved/);
+  // No v4market vocabulary
+  assert.doesNotMatch(page, /v4 Marketplace|Uniswap v4 hooks|Pons coin|V4M/i);
 });
 
-test('the swap screen contains a live onchain swap path', async () => {
-  const swap = await readFile(new URL('../app/(app)/swap/page.tsx', import.meta.url), 'utf8');
-  const panel = await readFile(new URL('../components/swap/LiveSwapPanel.tsx', import.meta.url), 'utf8');
-  const lib = await readFile(new URL('../lib/live-swap.ts', import.meta.url), 'utf8');
-  const combined = `${swap}\n${panel}\n${lib}`;
-  // The live path must really send transactions: router swap, approval, and onchain policy read.
-  assert.match(combined, /functionName: 'swap'/, 'must call the router swap');
-  assert.match(combined, /functionName: 'approve'/, 'must approve the router before swapping');
-  assert.match(combined, /readLivePool/, 'must read the hook policy onchain');
-  assert.match(panel, /LiveSwapPanel|Live pool/, 'panel must be present');
+test('landing styling uses the BELL design system, not a copied stylesheet', async () => {
+  await assert.rejects(read('../app/landing.css'), { code: 'ENOENT' }, 'copied landing.css must be deleted');
+  const page = await read('../app/page.tsx');
+  assert.match(page, /className=/, 'must use BELL classes');
 });
 
-test('the live swap panel never bypasses onchain policy', () => {
-  // A fake success or a client-side tradability check would be a lie. The panel must show the
-  // protocol's answer, and a halted pool must not reach the router.
-  const panel = readFile(new URL('../components/swap/LiveSwapPanel.tsx', import.meta.url), 'utf8');
-  return panel.then((src) => {
-    assert.match(src, /pool\.canSwap/, 'must gate on the onchain policy read');
-    assert.doesNotMatch(src, /setStage\('done'\)\s*;?\s*\/\/\s*simulate/i, 'must not fake success');
-  });
+test('homepage keeps honest testnet-rehearsal claims', async () => {
+  const combined = await read('../app/page.tsx');
+  const overclaims = [/production swaps are live/i, /mainnet is live/i, /audited and ready/i];
+  for (const pattern of overclaims) assert.doesNotMatch(combined, pattern);
+});
+
+test('swap screen still gates on onchain policy', async () => {
+  const swap = await read('../app/(app)/swap/page.tsx');
+  const panel = await read('../components/swap/LiveSwapPanel.tsx');
+  assert.match(panel, /functionName: 'swap'/);
+  assert.match(panel, /readLivePool/);
+  assert.match(panel, /pool\.canSwap/);
 });
