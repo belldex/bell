@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveSessionRegistry } from './keeper-price-config.mjs';
+import { resolveSessionRegistry, shouldContinueAfterTickError } from './keeper-price-config.mjs';
 
 test('uses the current deployment manifest when no registry override is set', () => {
   assert.equal(
@@ -14,4 +14,9 @@ test('allows an explicit session registry override', () => {
     resolveSessionRegistry({ BELL_SESSION_REGISTRY: '0x1111111111111111111111111111111111111111' }, { sessionRegistry: '0x2222222222222222222222222222222222222222' }),
     '0x1111111111111111111111111111111111111111',
   );
+});
+
+test('only stale Yahoo source errors are retried by the loop', () => {
+  assert.equal(shouldContinueAfterTickError({ code: 'STALE_SOURCE' }), true);
+  assert.equal(shouldContinueAfterTickError(new Error('insufficient funds')), false);
 });

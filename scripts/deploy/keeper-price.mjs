@@ -25,7 +25,7 @@ import { createPublicClient, createWalletClient, http, keccak256, parseAbi, pars
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import { fetchYahooChartQuote } from '../../packages/protocol/src/yahoo-quote.mjs';
-import { resolveSessionRegistry } from './keeper-price-config.mjs';
+import { resolveSessionRegistry, shouldContinueAfterTickError } from './keeper-price-config.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
 import SessionArtifact from '../../contracts/out/SessionRegistry.sol/SessionRegistry.json' with { type: 'json' };
 
@@ -281,11 +281,12 @@ if (loop) {
     try {
       await tick();
     } catch (error) {
-      if (error?.code === 'STALE_SOURCE') {
+      if (shouldContinueAfterTickError(error)) {
         // Expected outside market hours. Do not mark anything fresh, do not pretend it worked.
         console.warn(`[${new Date().toISOString()}] source unavailable: ${String(error.message).slice(0, 160)}`);
       } else {
         console.error('tick failed:', String(error).slice(0, 300));
+        throw error;
       }
     }
     await new Promise((r) => setTimeout(r, intervalSeconds * 1000));

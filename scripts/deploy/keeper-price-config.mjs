@@ -4,3 +4,7 @@ export function resolveSessionRegistry(env, manifest) {
   if (!address) throw new Error('SessionRegistry is missing from both BELL_SESSION_REGISTRY and deployment manifest');
   return address;
 }
+
+export function shouldContinueAfterTickError(error) {
+  return error?.code === 'STALE_SOURCE';
+}
