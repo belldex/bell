@@ -19,16 +19,16 @@ Kalau dokumen mana pun bertentangan dengan `docs/CURRENT-STATE.md`, dokumen itu 
 
 ## Status singkat
 
+- **End-to-end sudah jalan di Robinhood Testnet (46630).** Pool pertama live, swap pertama berhasil
+  onchain: 5 token0 → 3 token1, budget commit `[5, 3]`, rolling cap turun `[100,100] → [95,97]`.
 - Protokol lengkap secara kode dan seluruh suite hijau: 351 forge test (27 suite, termasuk 2 suite
-  invariant 100k run), 298 node:test, 45+18 reference Python, 15 Deno, 6 keeper-b.
-- Satu stack rehearsal 10-kontrak hidup di Robinhood testnet **46630**, wired dan terverifikasi
-  ulang terhadap chain.
+  invariant 100k run), 297 node:test, 45+18 reference Python, 15 Deno, 6 keeper-b.
 - Jalur harga: **Yahoo Finance + reporter EIP-712 BELL**. Chainlink tidak dipakai (berbayar).
-- **Swap enforcement aktif untuk SESSION_ONLY.** `BellHook` benar-benar menyiapkan dan menyelesaikan
-  swap; evaluasi policy pindah ke `BellPolicyOracle` agar muat EIP-170. PRICE_GUARDED masih tertutup.
-- **Belum ada pool dan belum ada swap onchain**: hanya WETH counterasset yang admitted, belum ada
-  calendar root, dan sampel harga terakhir sudah kedaluwarsa.
+- **Swap enforcement aktif untuk SESSION_ONLY.** `BellHook` menyiapkan dan menyelesaikan swap;
+  evaluasi policy pindah ke `BellPolicyOracle` agar muat EIP-170.
+- **PRICE_GUARDED masih tertutup** (belum ada referensi yang diadmit).
 - **Mainnet belum disentuh.** Tidak ada transaksi di chainId 4663.
+- Frontend belum mengirim transaksi; keeper harga masih no-op.
 
 ## Struktur
 

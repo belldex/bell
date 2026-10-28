@@ -20,6 +20,7 @@ test('the served template keeps the exact scene and adapts visible homepage copy
   assert.match(scene, /new t0\(l,h,220\)/);
   assert.match(scene, /getBoundingClientRect\(\)\.top<=i/);
   assert.match(template, /<title>BELL — Liquidity that knows the bell<\/title>/);
+  assert.ok(template.includes(String.raw`\"words\":[\"Liquidity\",\"that knows\",\"the\",\"bell\"]`));
   assert.match(template, /Liquidity that knows the bell/);
   assert.match(template, /BELL applies session-aware fees, bounded gross flow and planned-close controls/);
   assert.doesNotMatch(template, /The marketplace for Uniswap v4 hooks/);

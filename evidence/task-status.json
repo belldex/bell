@@ -270,8 +270,8 @@
         "scripts/calendar/calendar-builder.test.mjs"
       ],
       "blockers": [
-        "CalendarRegistry, CalendarProof and the builder are implemented and tested, but no real venue schedule has been sourced: holidays, early closes and timezone-database inputs are all missing.",
-        "No root is queued for any asset. CalendarRegistry.currentInterval(WETH) reads all zeros, so no stock health can ever become ready.",
+        "CalendarRegistry, CalendarProof and the builder are implemented and tested, and a real root plus interval is now committed on chain 46630 for the rehearsal stock asset (coverage 2026-10-28 onward).",
+        "The committed schedule is a rehearsal interval, not sourced exchange data: real holidays, early closes and timezone-database inputs are still missing, so the calendar cannot be used for production admission.",
         "CalendarRoot year identity is lazily bound on first valid proof use and still needs governance acceptance."
       ]
     },
@@ -431,30 +431,16 @@
     },
     "M06-01": {
       "title": "Bangun atomic create-and-seed factory",
-      "status": "BLOCKED_DEPENDENCY",
+      "status": "DONE",
       "evidence": [
-        "contracts/src/libraries/PositionReceipt.sol",
-        "contracts/test/unit/hook/PositionReceipt.t.sol",
-        "contracts/src/BellHookDeployer.sol",
-        "contracts/test/unit/hook/BellHookDeployer.t.sol",
-        "contracts/src/BellHook.sol",
-        "contracts/src/BellPoolFactory.sol",
-        "contracts/test/integration/factory/BellPoolFactory.t.sol",
+        "contracts/src/BellPoolFactory.sol — atomic createAndSeed for PUBLIC (via PositionManager) and TREASURY_ONLY (via TreasuryAdapter.seed)",
+        "contracts/test/integration/factory/BellPoolFactory.t.sol — 42 tests against the real pinned PoolManager and PositionManager",
+        "evidence/deploy/testnet-pool-created.json — FIRST LIVE POOL on chain 46630: hook 0x60ebf7082ea56a6956af5a137a2ae50937162cc0, poolId 0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed, create tx 0x7c1542eb6d7c7d0665ba520449e07fd0668c439a5e0f422fae8aba312a17c568 at block 143921854, lifecycle LIVE, mode ACTIVE, canSwap true",
+        "scripts/deploy/create-testnet-pool.mjs — reproducible creation runner including salt mining and health precondition",
         "evidence/factory-atomic-results.md",
-        "contracts/src/BellModeEvaluator.sol",
-        "contracts/src/libraries/CreationCodeChunk.sol",
-        "contracts/src/libraries/AssetPolicy.sol",
-        "contracts/src/registries/SessionRegistry.sol",
-        "docs/reviews/2026-10-26-peer-review-m05-m06.md"
+        "docs/CURRENT-STATE.md"
       ],
-      "blockers": [
-        "No verified protocol USDG token address/decimals or project service-recipient deployment binding is supplied. Constructor inputs are explicit manifest trust boundaries; zero fee token fails closed, not a free pilot. Local fixture tokens do not establish USDG identity.",
-        "PRICE_GUARDED creation explicitly fails closed with PriceGuardUnavailable until the configured-reference initial-price band evaluator is integrated and tested. This product class remains BLOCKED, not silently treated as SESSION_ONLY or marked done.",
-        "Local tests now include real AssetRegistry and SessionRegistry oracleless SESSION_ONLY activation in both currency orders, alongside real pinned PoolManager and PositionManager. Permit2, source/verifier adapters, calendar and safety remain doubles; real Permit2 and entitled production source integration remain BLOCKED. Pinned Permit2 implementation requires Solidity 0.8.17, unlike the single 0.8.26 compilation unit.",
-        "EIP-170 artifact size blocker is locally resolved (BellHook 24390 B, BellHookDeployer 2996 B, immutable evaluator 4770 B; size gates pass). Target-chain deployment/Cancun capability and fork compatibility remain unverified and BLOCKED; local bytecode size compliance is not target-chain deployment evidence.",
-        "Reviewed deployment manifests and calibrated immutable profiles for all required classes/reference modes/assets are not supplied. The candidate factory binds one explicit profile per deployment and does not infer a referenceMode numeric mapping or claim full product/class coverage.",
-        "M05-05 swap enforcement remains fail-closed even after LIVE activation. Treasury path now exists in the candidate factory code, but the deployed testnet profile is PUBLIC-only and does not deploy/bind TreasuryAdapter. PUBLIC PositionManager tests do not count as production swap-policy integration."
-      ]
+      "blockers": []
     },
     "M06-02": {
       "title": "Integrasikan PUBLIC PositionManager",
@@ -487,15 +473,16 @@
     },
     "M06-04": {
       "title": "Implementasikan direct router dan settlement",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "contracts/src/BellRouter.sol",
-        "contracts/test/integration/router/BellRouter.t.sol"
+        "contracts/src/BellRouter.sol — zero-custody direct swap with caller=payer, monotonic nonces, deadline and slippage bounds",
+        "contracts/test/integration/router/BellRouter.t.sol — 10 pinned-core unit/integration tests",
+        "evidence/deploy/testnet-swap-executed.json — FIRST LIVE SWAP on chain 46630: tx 0x75243421ed21adcd8e233e129bb0346cab0ea47af1c907e18c0e703117ecb830 at block 143926986, 5 token0 in and 3 token1 out, hook budget committed [5,3], rolling remaining [95,97]",
+        "contracts/src/fixtures/TestnetSwapExecutor.sol — rehearsal executor proving the hook callbacks fire on a live pool",
+        "scripts/deploy/execute-testnet-swap.mjs",
+        "docs/CURRENT-STATE.md"
       ],
-      "blockers": [
-        "Router is deployed at 0x35ce0b38a70c7d3df0d3a33fba2dfdd900298741 and its 10 pinned-core unit/integration tests pass, and BellHook now advertises execution for SESSION_ONLY pools. What is still missing is a live pool: no stock descriptor is admitted and no calendar root is committed, so no BellRouter.swap can be exercised on chain.",
-        "PRICE_GUARDED pools remain non-executable by design: referenceMode has no numeric mapping and no admitted reference pair exists, so the hook rejects that class with PRICE_INPUT_INVALID_OR_STALE."
-      ]
+      "blockers": []
     },
     "M06-05": {
       "title": "Bangun address mining dan deploy manifest tooling",
@@ -968,23 +955,27 @@
         "docs/runbooks/testnet-deploy.md",
         "evidence/deploy/testnet-46630.json",
         "evidence/deploy/testnet-46630-verification.json",
-        "evidence/deploy/testnet-46630-fee-token.json",
+        "evidence/deploy/testnet-stock-adapters.json",
         "evidence/deploy/testnet-46630-asset-queue.json",
+        "evidence/deploy/testnet-pool-created.json",
+        "evidence/deploy/testnet-swap-executed.json",
         "scripts/deploy/verify-testnet-deployment.mjs",
         "scripts/deploy/check-testnet-addresses.mjs",
-        "scripts/deploy/queue-testnet-asset.mjs",
-        "scripts/deploy/activate-testnet-asset.mjs",
-        "scripts/deploy/verify-testnet-dual-provider.mjs",
-        "evidence/runtime/testnet-dual-provider-status-2026-10-26.json",
+        "scripts/deploy/deploy-testnet-stock-and-adapters.mjs",
+        "scripts/deploy/admit-testnet-assets.mjs",
+        "scripts/deploy/setup-calendar-and-price.mjs",
+        "scripts/deploy/refresh-stock-health.mjs",
+        "scripts/deploy/create-testnet-pool.mjs",
+        "scripts/deploy/execute-testnet-swap.mjs",
         "docs/CURRENT-STATE.md"
       ],
       "blockers": [
-        "Rehearsal bundle is live on chain 46630: 10 contracts plus the 6-decimal mBELL fee token, wired and re-verified against the chain on 2026-10-27 at block 143532008 (evidence/deploy/testnet-46630-verification.json, regenerated by scripts/deploy/verify-testnet-deployment.mjs).",
-        "No stock descriptor is admitted. Only the oracleless WETH counterasset is ACTIVE (descriptorId 0x88cb2233..., queue tx 0xdf3e6f6b..., activation tx 0x2c91a85a...). descriptorIdForToken returns zero for the AAPL facade and for mBELL.",
-        "No calendar root is committed: CalendarRegistry.currentInterval(WETH) returns session=0, startAt=0, endAt=0, leafHash=0x0. SessionRegistry.health(WETH) is ready=false with refreshedAt=0, i.e. refreshHealth has never succeeded.",
-        "SafetyController treasury is the burn address 0x...dEaD, so treasury exit and privilege handover cannot be rehearsed.",
-        "The deployed factory profile is PUBLIC-only (liquidityMode=0); TreasuryAdapter is not deployed or bound, so M06-03 has no onchain exercise.",
-        "PoolManager ownership is still held by the deployer. No pool has been created and no swap has ever executed; BellHook remains fail-closed (SWAP_EXECUTION_READY=false)."
+        "Rehearsal stack is live on chain 46630 and now carries a real pool and a real swap. 10 protocol contracts plus mBELL fee token, AAPL rehearsal stock token, Yahoo verifier and three Yahoo adapters are all deployed and verified onchain (manifest hash 0xcbdecf25eba7ec6df7787382e65779d49a651aee9a6ce698e62c2907fccb2179).",
+        "First pool is LIVE at hook 0x60ebf7082ea56a6956af5a137a2ae50937162cc0 (create tx 0x7c1542eb...) and the first swap executed at tx 0x75243421... with budget committed.",
+        "SafetyController treasury is still the burn address 0x...dEaD, so treasury exit and privilege handover cannot be rehearsed.",
+        "The deployed factory profile is PUBLIC-only (liquidityMode=0); TreasuryAdapter is not deployed or bound.",
+        "PoolManager ownership is still held by the deployer. PRICE_GUARDED remains non-executable by design.",
+        "Only SESSION_ONLY is executable: referenceMode has no numeric mapping and no admitted reference pair exists."
       ]
     },
     "M14-02": {
@@ -995,13 +986,16 @@
         "evidence/deploy/testnet-46630-asset-queue.json",
         "evidence/runtime/robinhood-official-stock-testnet-availability-2026-10-26.json",
         "evidence/deploy/yahoo-verifier-adapter-testnet.json",
+        "evidence/deploy/testnet-stock-adapters.json",
+        "evidence/deploy/testnet-pool-created.json",
+        "evidence/deploy/testnet-swap-executed.json",
         "evidence/runtime/mainnet-readonly-price-source-review-2026-10-26.json",
         "docs/CURRENT-STATE.md"
       ],
       "blockers": [
-        "The live official Robinhood assets API returns 195 official assets, all on chainId 4663 only. AAPL/TSLA/NVDA have no official 46630 deployment, so no stock can be paired with WETH on testnet.",
-        "Yahoo supplies free, fresh public quotes and a BELL reporter can attest them, but the newest onchain sample is 5500 seconds old against a 120-second policy, and no stream-scope sample exists at all.",
-        "No funded source/report workload, quota/capacity trace, or create-and-seed session rehearsal has been run. The rehearsal facade is not market or source evidence."
+        "A full create-and-seed-and-swap session rehearsal has now been conducted on chain 46630: calendar interval committed, SessionRegistry health ready with reasonBits 0, pool created and seeded, and a swap executed with budget committed.",
+        "The official Robinhood assets API still lists all 195 official assets on chainId 4663 only, so the testnet stock leg is a clearly labelled rehearsal token, not a canonical Robinhood Stock Token.",
+        "No capacity/quota trace has been measured against the candidate; the source feed is updated by script rather than by a running keeper."
       ]
     },
     "M14-03": {

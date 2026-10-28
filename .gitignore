@@ -19,3 +19,6 @@ evidence/private/
 # local artifacts
 *.tsbuildinfo
 .tmp-*
+
+# agent scratch workspace
+.superpowers/
