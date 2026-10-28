@@ -1,22 +1,22 @@
 {
-  "swapTx": "0x9c846c76baaad6cc481fa005b26120c03ebbba591c0ec3bf0b6854e81c7bfad4",
-  "blockNumber": 143938848,
-  "hook": "0x60ebf7082ea56a6956af5a137a2ae50937162cc0",
-  "poolId": "0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed",
+  "swapTx": "0xca40693cfc804ac169f56de4c65af1cbdff9601cd295f330310afdac92851c40",
+  "blockNumber": 144051118,
+  "hook": "0x549f0C6657d9E39a034f7524E501D218B2c6acc0",
+  "poolId": "0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea",
   "zeroForOne": true,
-  "spent": "9",
-  "received": "7",
+  "spent": "5",
+  "received": "3",
   "grossBefore": [
-    "7",
-    "5"
+    "0",
+    "0"
   ],
   "grossAfter": [
-    "9",
-    "7"
+    "5",
+    "3"
   ],
   "remaining": [
-    "84,88",
+    "95,97",
     "0,0"
   ],
-  "at": "2026-10-28T02:54:59.660Z"
+  "at": "2026-10-28T06:59:27.045Z"
 }

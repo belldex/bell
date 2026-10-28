@@ -2,7 +2,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, keccak256, parseAbi, parseEther, stringToHex, maxUint256 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { TESTNET } from '../../packages/protocol/src/testnet-status.mjs';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
 import SessionArtifact from '../../contracts/out/SessionRegistry.sol/SessionRegistry.json' with { type: 'json' };
@@ -29,6 +28,7 @@ if (!rpcUrl || !deployerPk || !reporterPk) throw new Error('Missing keys in .env
 const poolCreated = JSON.parse(readFileSync('evidence/deploy/testnet-pool-created.json', 'utf8'));
 const stockAdapters = JSON.parse(readFileSync('evidence/deploy/testnet-stock-adapters.json', 'utf8'));
 const assetQueue = JSON.parse(readFileSync('evidence/deploy/testnet-46630-asset-queue.json', 'utf8'));
+const manifest = JSON.parse(readFileSync('evidence/deploy/testnet-46630.json', 'utf8'));
 
 const { hook: hookAddress, poolId, token0, token1 } = poolCreated;
 const { directAdapter, regularWireHash, directWireHash, regularWire } = stockAdapters;
@@ -41,7 +41,7 @@ const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
 const chainId = await publicClient.getChainId();
 const verifier = env.YAHOO_SOURCE_VERIFIER_ADDRESS || '0x20a066123c260bc6c5253f75e261c5056fde4bea';
 const sessionRegistry = TESTNET.contracts.sessionRegistry;
-const poolManager = TESTNET.contracts.poolManager;
+const poolManager = manifest.poolManager;
 
 console.log('=== Onchain Swap Execution Runner ===');
 console.log('Hook:         ', hookAddress);

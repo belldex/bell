@@ -1,17 +1,18 @@
-# BELL — kondisi aktual (trace 2026-10-28, pembaruan keeper + frontend)
+# BELL — kondisi aktual (trace 2026-10-28, deployment ulang + pool swap terverifikasi)
 
 Satu sumber kebenaran. Semua klaim punya transaksi atau state onchain.
 
-**BELL sekarang benar-benar beroperasi di testnet: pool hidup terus, swap sudah 3x, frontend punya
-jalur kirim transaksi nyata.**
+**Deployment baru di Robinhood testnet sudah membuat pool SESSION_ONLY, memulihkan health lewat
+keeper rehearsal, mengeksekusi swap, dan lulus acceptance 82/82.** Swap lama pada deployment
+sebelumnya tetap tercatat terpisah; jangan campurkan bukti antar-deployment.
 
 ---
 
 ## 1. Ringkasan
 
-- **Keeper harga aktif.** `scripts/deploy/keeper-price.mjs --loop` menjaga health dan hook state.
-  Terbukti: `canSwap` `false → true` dalam 2 tick, lalu stabil `true` 45+ menit tanpa campur tangan.
-- **Tiga swap live onchain**, semua dengan budget commit yang tercatat (tabel di bawah).
+- **Keeper rehearsal**: Yahoo saat pemeriksaan stale; loop offline yang diberi label rehearsal memulihkan health dan pool.
+- **Satu swap live di deployment terbaru**, dengan budget commit tercatat (tabel di bawah).
+- **Acceptance deployment terbaru lulus 82/82** pada block 144051163; ini pemeriksaan satu snapshot, bukan klaim pool terus sehat.
 - **Frontend punya jalur swap nyata** (`LiveSwapPanel`): baca policy onchain, approve, kirim ke
   `BellRouter`, tampilkan hasilnya. Muncul hanya jika `NEXT_PUBLIC_BELL_LIVE_HOOK` diisi.
 - 355 forge test, 298 node:test, semua gate hijau.
@@ -23,14 +24,18 @@ handover (alamat masih burn address), dan keeper belum dipasang di Supabase cron
 
 ## 2. Tiga swap live
 
-| # | Tx | Block | Spent | Received | Gross sebelum | Gross sesudah |
+| Pool/deployment | Tx | Block | Spent | Received | Gross sebelum | Gross sesudah |
 |---|---|---|---|---|---|---|
-| 1 | `0x75243421…` | 143926986 | 5 | 3 | `[0, 0]` | `[5, 3]` |
-| 2 | `0x1692a6e8…` | 143938679 | 7 | 5 | `[5, 3]` | `[7, 5]` |
-| 3 | `0x9c846c76…` | 143938848 | 9 | 7 | `[7, 5]` | `[9, 7]`, prev `[7, 5]` |
+| Latest pool `0xc2b56af3…` / hook `0x549f0C66…` | `0xca40693c…` | 144051118 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Previous pool `0x01ca38d9…` / hook `0x60ebf708…` | `0x75243421…`, `0x1692a6e8…`, `0x9c846c76…` | 143926986–143938848 | 5, 7, 9 | 3, 5, 7 | tracked separately | rolling window rotated |
 
-Swap ketiga membuktikan **rolling window benar-benar berotasi**: `previousGross` sekarang berisi
-`[7, 5]`, bukan nol. Semua swap dikonfirmasi lewat `eth_getTransactionReceipt` dengan `status: success`.
+Swap deployment terbaru dikonfirmasi receipt sukses dan gross `[5,3]`. Bukti pool terdahulu membuktikan
+rotasi rolling window pada deployment lama; itu bukan bukti rotasi untuk pool terbaru.
+
+Terbaru (blok 144051909): price health bisa stale lagi setelah keeper berhenti. Acceptance sukses
+pada blok 144051163 adalah snapshot valid saat keeper berjalan, bukan garansi status setelahnya.
+Untuk mengulang check sekarang, jalankan keeper rehearsal beberapa tick sampai `canSwap=true`, lalu
+jalankan acceptance tanpa jeda panjang.
 
 ---
 
@@ -56,16 +61,14 @@ Perilaku penting:
 - Setiap tick menulis `evidence/runtime/keeper-price-last.json` supaya monitor cukup membaca satu
   file kecil, bukan membaca chain.
 
-Log nyata dari sesi ini:
+Deployment terbaru: Yahoo quote tidak tersedia (stale), jadi quote offline rehearsal digunakan; ini bukan harga live Yahoo.
+Health sudah ready dan policy `canSwap=true` pada acceptance snapshot setelah recovery 60 detik.
 
 ```
-02:51:59  canSwap=false
-02:52:32  canSwap=false   (recovery 60 detik masih berjalan)
-02:52:59  canSwap=true    <- pool hidup
-02:53:37  canSwap=true
-02:54:10  canSwap=true
-02:54:42  canSwap=true
-... stabil lebih dari 45 menit
+06:58:30  canSwap=false   (recovery pending)
+06:58:48  canSwap=true
+06:59:05  canSwap=true
+06:59:23  canSwap=true
 ```
 
 ---
@@ -97,23 +100,25 @@ Guard test baru (`apps/web/test/homepage.test.mjs`) memastikan:
 
 | Kontrak | Alamat |
 |---|---|
-| SafetyController | `0x47ac35f7edbc35b7e03c7c069e45a8f8113b7ee5` |
-| AssetRegistry | `0x4d477a439b127fcac45bbbbd535ba9b0d0345488` |
-| CalendarRegistry | `0xc59abadcb3c46d20a9638d986d5bfb5f59247cbd` |
-| SessionRegistry | `0xc54eb072f6322c0b7d869123bf226564cf302fdf` |
-| PoolManager | `0x4ddb8673ad90d4d3508c61531a981bc1f22a850b` |
-| PositionManager | `0xd7b88b6769b0a1aab9a63089bf6a01fa3dc6e254` |
-| BellHookDeployer | `0xbc985ec03935363d755506eed26fbd13c6a3c577` |
-| BellPoolFactory | `0xbf77c974a61d0ee270a468ffcf49dfcb3fb3a86c` |
-| WETH fixture | `0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9` |
-| BellRouter | `0xf5427ca12727aa85e2659df939d16ef0862944c7` |
+| SafetyController | `0xcc73fc8265630a7b7873028f77584037273d70c2` |
+| AssetRegistry | `0x3b71543bd71b9d4c9678216d338611236a37b380` |
+| CalendarRegistry | `0x0c7a4044f2caf793b2062920c12baf8b33641e9c` |
+| SessionRegistry | `0x1de6199618ddb2b5fdb869113e4b906628db168e` |
+| PoolManager | `0xc353daf2a37aca96ea468239d973a76020dea059` |
+| PositionManager | `0x9116ff2aa7a41b60b478ae3ecd8b9b0466a97874` |
+| BellHookDeployer | `0xff8734ef77284d61e11a27146e939bc0bd8bf10a` |
+| BellPoolFactory | `0x4b22251105e65d76366d27099ac7c5097b63faf5` |
+| WETH fixture | `0x45b4bf15c1cb91442a62620441dbc0b6486dfebe` |
+| BellRouter | `0x1b91eadba66747430188672bd7bce0cc3eef6c85` |
 | mBELL fee token | `0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150` |
 | AAPL rehearsal stock | `0x1d35a37f74a910ee181e6898034975ed384ff833` |
 | Yahoo verifier | `0x20a066123c260bc6c5253f75e261c5056fde4bea` |
-| Direct adapter | `0xfcbc049c4406d446112735b0bf2a9153500e6d2e` |
-| Regular adapter | `0xba9b5142f282dde204805d66fddb5d6256080926` |
-| Extended adapter | `0xe2380390ee342ad42dc463d6518f1e67cc5a52c3` |
-| **Hook pool pertama** | `0x60ebf7082ea56a6956af5a137a2ae50937162cc0` |
+| Direct adapter | `0x8fb74c552f6e4fb5c9d2d943b446ff8e36c125f0` |
+| Regular adapter | `0xc8f49f566a7a7aa16516e0ba1dc953a1b80bf1c6` |
+| Extended adapter | `0x412bba02dda6160bca4ebe60abd0fee3cc3d9c4a` |
+| **Latest pool hook** | `0x549f0c6657d9e39a034f7524e501d218b2c6acc0` |
+| **Latest pool ID** | `0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea` |
+| **Latest rehearsal stock** | `0xb82815f01a3c9034fbf06d05a99f0beb862d705a` |
 
 ---
 

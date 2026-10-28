@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
-import { createPublicClient, createWalletClient, http, keccak256, parseAbi, parseEther, stringToHex, maxUint256 } from 'viem';
+import { createPublicClient, createWalletClient, http, keccak256, parseAbi, parseEther, stringToHex, maxUint256, decodeEventLog } from 'viem';
+import FactoryArtifact from '../../contracts/out/BellPoolFactory.sol/BellPoolFactory.json' with { type: 'json' };
 import { privateKeyToAccount } from 'viem/accounts';
-import { TESTNET } from '../../packages/protocol/src/testnet-status.mjs';
 import { mineHookSalt } from '../../scripts/tooling/mine-hook-salt.mjs';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
@@ -19,6 +19,12 @@ function loadEnv(text) {
   return env;
 }
 
+
+// Read the CURRENT deploy manifest so this script can never act on a superseded deployment.
+const _manifestRaw = readFileSync(new URL('../../evidence/deploy/testnet-46630.json', import.meta.url), 'utf8');
+const _manifest = JSON.parse(_manifestRaw);
+const MANIFEST = Object.fromEntries(Object.entries(_manifest).map(([k, v]) => [k, String(v).toLowerCase()]));
+
 const env = loadEnv(readFileSync('.env', 'utf8'));
 const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
 const deployerPk = env.DEPLOYER_PRIVATE_KEY;
@@ -32,11 +38,11 @@ const assetQueue = JSON.parse(readFileSync('evidence/deploy/testnet-46630-asset-
 const { stockToken, directAdapter, regularWireHash, directWireHash, regularWire } = stockAdapters;
 const stockAssetId = assetQueue.stock.descriptorId;
 const wethAssetId = assetQueue.weth.descriptorId;
-const wethAddress = TESTNET.contracts.weth;
-const factoryAddress = TESTNET.contracts.poolFactory;
-const hookDeployerAddress = TESTNET.contracts.hookDeployer;
-const feeTokenAddress = TESTNET.contracts.feeToken;
-const sessionRegistry = TESTNET.contracts.sessionRegistry;
+const wethAddress = MANIFEST.weth;
+const factoryAddress = MANIFEST.poolFactory;
+const hookDeployerAddress = MANIFEST.hookDeployer;
+const feeTokenAddress = MANIFEST.feeToken;
+const sessionRegistry = MANIFEST.sessionRegistry;
 const verifier = env.YAHOO_SOURCE_VERIFIER_ADDRESS || '0x20a066123c260bc6c5253f75e261c5056fde4bea';
 
 const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `0x${deployerPk}`);
@@ -152,6 +158,38 @@ while (true) {
   await new Promise((r) => setTimeout(r, 3000));
 }
 
+// 3b. Approve both pool tokens and the fee token to the factory.
+console.log('Approving pool tokens to factory...');
+const FACTORY_ERC20_ABI = parseAbi([
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function balanceOf(address) view returns (uint256)',
+]);
+const factorySpender = MANIFEST.poolFactory;
+await walletClient.writeContract({
+  address: MANIFEST.weth, abi: FACTORY_ERC20_ABI, functionName: 'approve',
+  args: [factorySpender, 10n ** 24n],
+});
+await walletClient.writeContract({
+  address: stockToken, abi: FACTORY_ERC20_ABI, functionName: 'approve',
+  args: [factorySpender, 10n ** 24n],
+});
+await walletClient.writeContract({
+  address: MANIFEST.feeToken, abi: FACTORY_ERC20_ABI, functionName: 'approve',
+  args: [factorySpender, 10n ** 24n],
+});
+console.log('Approvals confirmed.');
+
+// 3c. Fund the wallet with WETH if short, so the factory can pull the quote-leg principal.
+const wethBal = await publicClient.readContract({
+  address: MANIFEST.weth, abi: FACTORY_ERC20_ABI, functionName: 'balanceOf', args: [account.address],
+});
+const minimumWethForSeed = 2n * 10n ** 15n;
+if (wethBal < minimumWethForSeed) {
+  const needed = minimumWethForSeed - wethBal;
+  console.log(`Wrapping ${needed} wei into WETH to cover the seed amount...`);
+  await walletClient.sendTransaction({ to: MANIFEST.weth, value: needed });
+}
+
 // 4. Create and Seed Pool
 console.log('\n=== Step 3: Pool Creation & Seeding ===');
 const [token0, token1] = stockToken.toLowerCase() < wethAddress.toLowerCase()
@@ -166,12 +204,12 @@ const config = {
   token1,
   asset0,
   asset1,
-  poolManager: TESTNET.contracts.poolManager,
-  positionManager: TESTNET.contracts.positionManager,
+  poolManager: MANIFEST.poolManager,
+  positionManager: MANIFEST.positionManager,
   factory: factoryAddress,
-  assetRegistry: TESTNET.contracts.assetRegistry,
-  calendarRegistry: TESTNET.contracts.calendarRegistry,
-  safetyController: TESTNET.contracts.safetyController,
+  assetRegistry: MANIFEST.assetRegistry,
+  calendarRegistry: MANIFEST.calendarRegistry,
+  safetyController: MANIFEST.safetyController,
   treasuryAdapter: '0x0000000000000000000000000000000000000000',
   poolClass: 1, // SESSION_ONLY
   liquidityMode: 0, // PUBLIC
@@ -240,7 +278,7 @@ const request = {
   tickLower: -6000,
   tickUpper: 6000,
   liquidity: 1000000000000000n,
-  amountMax: [parseEther('1000'), parseEther('0.0004')],
+  amountMax: [2n * 10n ** 15n, 100n * 10n ** 18n],
   maxServiceFee: 49000000n,
 };
 
@@ -257,15 +295,19 @@ console.log('createAndSeed mined in block', receipt.blockNumber.toString(), 'sta
 
 if (receipt.status !== 'success') throw new Error('createAndSeed reverted onchain');
 
-const predicted = await publicClient.readContract({
-  address: factoryAddress,
-  abi: FACTORY_ABI,
-  functionName: 'predict',
-  args: [request],
-});
-
-const hookAddress = predicted[0];
-const poolId = predicted[1];
+// Use the emitted PoolCreated event as the authoritative result. Some testnet RPC backends returned
+// inconsistent CREATE2 predictions in a post-transaction eth_call; the mined receipt is canonical.
+const createdLog = receipt.logs
+  .map((log) => {
+    try { return decodeEventLog({ abi: FactoryArtifact.abi, data: log.data, topics: log.topics }); }
+    catch { return null; }
+  })
+  .find((event) => event?.eventName === 'PoolCreated');
+if (!createdLog) throw new Error('PoolCreated event missing from successful createAndSeed receipt');
+const hookAddress = createdLog.args.hook;
+const poolId = createdLog.args.poolId;
+const actualCode = await publicClient.getBytecode({ address: hookAddress });
+if (!actualCode || actualCode === '0x') throw new Error(`PoolCreated hook ${hookAddress} has no runtime code`);
 
 const HOOK_ABI = parseAbi([
   'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] effectiveTradeCap, uint128[2] effectiveWindowCap, uint128[2] rollingRemaining, uint128[2] closureRemaining, uint128[2] referencePrice18, uint64 validUntil, uint64 closureNonce, bytes32 configHash, bytes32 stateHash))',
@@ -304,9 +346,12 @@ const poolEvidence = {
   token1,
   asset0,
   asset1,
+  lifecycle: hookState.lifecycle,
   canSwap: hookPolicy.canSwap,
   mode: hookPolicy.mode,
+  reasonBits: hookPolicy.reasonBits.toString(),
   lpFeeUnits: hookPolicy.lpFeeUnits,
+  poolStatusObservedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
 };
 

@@ -25,6 +25,7 @@ import { createPublicClient, createWalletClient, http, keccak256, parseAbi, pars
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import { fetchYahooChartQuote } from '../../packages/protocol/src/yahoo-quote.mjs';
+import { resolveSessionRegistry } from './keeper-price-config.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
 import SessionArtifact from '../../contracts/out/SessionRegistry.sol/SessionRegistry.json' with { type: 'json' };
 
@@ -51,11 +52,9 @@ function flag(name) {
 const env = loadEnv(readFileSync('.env', 'utf8'));
 const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
 const reporterPk = env.YAHOO_REPORTER_PRIVATE_KEY;
-const verifier = env.YAHOO_SOURCE_VERIFIER_ADDRESS;
 
 if (!rpcUrl) throw new Error('RH_TESTNET_RPC_PRIMARY is required');
 if (!reporterPk) throw new Error('YAHOO_REPORTER_PRIVATE_KEY is required');
-if (!verifier) throw new Error('YAHOO_SOURCE_VERIFIER_ADDRESS is required');
 
 const broadcast = flag('broadcast');
 const loop = flag('loop');
@@ -70,8 +69,10 @@ const assetQueuePath = 'evidence/deploy/testnet-46630-asset-queue.json';
 
 const stockAdapters = JSON.parse(readFileSync(stockAdaptersPath, 'utf8'));
 const assetQueue = JSON.parse(readFileSync(assetQueuePath, 'utf8'));
+const deploymentManifest = JSON.parse(readFileSync('evidence/deploy/testnet-46630.json', 'utf8'));
 const stockAssetId = assetQueue.stock.descriptorId;
-const sessionRegistry = env.BELL_SESSION_REGISTRY || '0xc54eb072f6322c0b7d869123bf226564cf302fdf';
+const sessionRegistry = resolveSessionRegistry(env, deploymentManifest);
+const verifier = env.YAHOO_SOURCE_VERIFIER_ADDRESS || stockAdapters.verifier || '0x20a066123c260bc6c5253f75e261c5056fde4bea';
 
 const account = privateKeyToAccount(reporterPk.startsWith('0x') ? reporterPk : `0x${reporterPk}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });

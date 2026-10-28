@@ -2,64 +2,64 @@
   "chainId": 46630,
   "verifiedAt": "2026-10-28",
   "status": "REHEARSAL_DEPLOYED",
-  "sourceCommit": "dbd1f78",
-  "manifestHash": "0xcbdecf25eba7ec6df7787382e65779d49a651aee9a6ce698e62c2907fccb2179",
+  "sourceCommit": "a99f1cd",
+  "manifestHash": "0xd96762653bb5b3e302cddd151dcd4b229b2ea40061da0896805b21320fb96a10",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "blocks": {
-    "first": 143913059,
-    "last": 143913063,
-    "verifiedAtBlock": 143913531
+    "first": 143984913,
+    "last": 143984938,
+    "verifiedAtBlock": 144051909
   },
   "contracts": {
     "safetyController": {
-      "address": "0x47ac35f7edbc35b7e03c7c069e45a8f8113b7ee5",
+      "address": "0xcc73fc8265630a7b7873028f77584037273d70c2",
       "codeBytes": 5059,
-      "codeHash": "0x137e3f9bcdff71d0f6e87027fe09d8eee4f283c09dd0f6899c7da1e6a3a12ffb"
+      "codeHash": "0x0a60167c4e5b1fc0c9e79e48ec049ca0d0605ae05de7d32423c00f06c91c1746"
     },
     "assetRegistry": {
-      "address": "0x4d477a439b127fcac45bbbbd535ba9b0d0345488",
+      "address": "0x3b71543bd71b9d4c9678216d338611236a37b380",
       "codeBytes": 12275,
-      "codeHash": "0xf0acb1186dd10364f4472f405c7029ab44d357cf711440d0d17e2dd012b47203"
+      "codeHash": "0xcc8e24f1866366ed36924ee5c4cc114a3532f3b37399d0c880a603cc0c200ceb"
     },
     "calendarRegistry": {
-      "address": "0xc59abadcb3c46d20a9638d986d5bfb5f59247cbd",
+      "address": "0x0c7a4044f2caf793b2062920c12baf8b33641e9c",
       "codeBytes": 10475,
-      "codeHash": "0xb4ba21c1f0c600d560c175edb28eeaa21d5a16f7b5f150a3e0c835d0558edbcd"
+      "codeHash": "0x6cb8106ccbc8a3183e335fe0302973abe172af018f0d7814897022b408f8f0f0"
     },
     "sessionRegistry": {
-      "address": "0xc54eb072f6322c0b7d869123bf226564cf302fdf",
+      "address": "0x1de6199618ddb2b5fdb869113e4b906628db168e",
       "codeBytes": 18515,
-      "codeHash": "0x99e40a2f1056500d31e7a2809dab7cec49149829e2b12f059281eb5ee8649e7c"
+      "codeHash": "0x5948c159609cc624f9a00dbbb65d0c1ad11d4ad1fd61753500e7512c0778b554"
     },
     "poolManager": {
-      "address": "0x4ddb8673ad90d4d3508c61531a981bc1f22a850b",
+      "address": "0xc353daf2a37aca96ea468239d973a76020dea059",
       "codeBytes": 19725,
-      "codeHash": "0x1fe28743e709e67f69563b07ed8fcd4bf3d7938c51beff8e9ab72989aff5ea86"
+      "codeHash": "0x8d6560364ca3a2871d407fcc15ef9deec399700ed782d845124f449bd5820391"
     },
     "positionManager": {
-      "address": "0xd7b88b6769b0a1aab9a63089bf6a01fa3dc6e254",
+      "address": "0x9116ff2aa7a41b60b478ae3ecd8b9b0466a97874",
       "codeBytes": 20664,
-      "codeHash": "0x79f6d6a748491a3c7c32d982e4ec2affd218d1d59c3e6b86516f0e56d3e64563"
+      "codeHash": "0x3043d9e10bc5f4ebfe8284bde99df36a7715cc010cfb044478395553c0de082d"
     },
     "hookDeployer": {
-      "address": "0xbc985ec03935363d755506eed26fbd13c6a3c577",
+      "address": "0xff8734ef77284d61e11a27146e939bc0bd8bf10a",
       "codeBytes": 3116,
-      "codeHash": "0x3edd25c675e31f6f871e4a7d301548f03c56404fdcdd606a87f23c247ce151af"
+      "codeHash": "0xdf388e19d501cd3c5882ee1db38dc607cb3d292ef973a66fb12b937395e9b0e1"
     },
     "poolFactory": {
-      "address": "0xbf77c974a61d0ee270a468ffcf49dfcb3fb3a86c",
+      "address": "0x4b22251105e65d76366d27099ac7c5097b63faf5",
       "codeBytes": 16877,
-      "codeHash": "0xc1097a92b4f933395842a440b26675a3c122f01c28e60573d2726ed91c1a262e"
+      "codeHash": "0x39cae784d87d9cbe86d16cb721dc82c1ffb3915f4dc33bfb45ff13e8add769b4"
     },
     "weth": {
-      "address": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
+      "address": "0x45b4bf15c1cb91442a62620441dbc0b6486dfebe",
       "codeBytes": 3254,
-      "codeHash": "0x14b4dae8224eb77b5f644415f46d76930add79193a463e1c3d3258c188826c3b"
+      "codeHash": "0x3776736b4426fa7cb8f4863d06a95a213ca6376f33c344fa5abcdde0d6b07e96"
     },
     "router": {
-      "address": "0xf5427ca12727aa85e2659df939d16ef0862944c7",
+      "address": "0x1b91eadba66747430188672bd7bce0cc3eef6c85",
       "codeBytes": 7502,
-      "codeHash": "0x98e25dcac02862a946a2ca346c6daaeaf6f5c61c6dbc36b734102ef3dc1e5777"
+      "codeHash": "0x66e9e46c82a28ddb0488c3a6e24582ca14237a5cc9cd283d6bfc7ac36fdb448b"
     },
     "feeToken": {
       "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
@@ -70,40 +70,40 @@
     }
   },
   "wiringChecks": {
-    "router.poolManager": "0x4DDb8673ad90D4d3508C61531a981BC1F22A850B",
-    "router.canonicalWeth": "0x7bb4d894A9498C46aBdB20E0aDC6A08506d62FB9",
-    "positionManager.poolManager": "0x4DDb8673ad90D4d3508C61531a981BC1F22A850B",
-    "positionManager.WETH9": "0x7bb4d894A9498C46aBdB20E0aDC6A08506d62FB9",
+    "router.poolManager": "0xC353daf2A37Aca96EA468239D973A76020DEa059",
+    "router.canonicalWeth": "0x45b4bF15C1CB91442a62620441Dbc0b6486DFEbe",
+    "positionManager.poolManager": "0xC353daf2A37Aca96EA468239D973A76020DEa059",
+    "positionManager.WETH9": "0x45b4bF15C1CB91442a62620441Dbc0b6486DFEbe",
     "positionManager.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "poolFactory.hookDeployer": "0xBC985ec03935363D755506EEd26FBD13C6a3C577",
-    "poolFactory.positionManager": "0xD7b88b6769b0A1AAb9a63089bF6a01Fa3dC6e254",
+    "poolFactory.hookDeployer": "0xFf8734Ef77284D61E11a27146E939bc0bD8BF10A",
+    "poolFactory.positionManager": "0x9116FF2aa7a41b60b478Ae3ECD8b9b0466a97874",
     "poolFactory.serviceToken": "0xe683F39FbAf9CeD50C0ac2FD56c2032c58d82150",
-    "hookDeployer.factory": "0xbf77C974A61d0eE270A468FFcF49DfCB3fb3A86c",
-    "hookDeployer.sessionRegistry": "0xc54Eb072f6322C0B7d869123BF226564cf302Fdf",
-    "sessionRegistry.assetRegistry": "0x4D477A439b127FcAc45Bbbbd535BA9b0d0345488",
-    "sessionRegistry.calendarRegistry": "0xc59abaDCB3c46D20A9638d986D5bFB5F59247cbD",
-    "assetRegistry.safetyController": "0x47ac35F7Edbc35B7e03C7C069E45A8f8113B7Ee5",
-    "calendarRegistry.safetyController": "0x47ac35F7Edbc35B7e03C7C069E45A8f8113B7Ee5",
+    "hookDeployer.factory": "0x4b22251105E65d76366d27099AC7C5097b63faF5",
+    "hookDeployer.sessionRegistry": "0x1de6199618dDb2b5fdB869113e4b906628Db168E",
+    "sessionRegistry.assetRegistry": "0x3B71543bd71b9d4C9678216d338611236A37B380",
+    "sessionRegistry.calendarRegistry": "0x0C7A4044f2Caf793b2062920c12bAF8B33641e9c",
+    "assetRegistry.safetyController": "0xCC73FC8265630a7B7873028F77584037273d70c2",
+    "calendarRegistry.safetyController": "0xCC73FC8265630a7B7873028F77584037273d70c2",
     "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
     "safetyController.roles": {
       "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
-      "guardian": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
-      "treasury": "0x000000000000000000000000000000000000dEaD",
+      "guardian": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+      "treasury": "0xF6e272FBF862AE055949C61BC41E6395dfE20841",
       "distinct": true
     },
     "factory.liquidityMode": 0,
     "factory.serviceFee": "49000000",
     "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
-    "factory.profileHash": "0x401050237680d23af7337e7f3e2bc1467da54d448bd1cfda3288f1630230412c",
+    "factory.profileHash": "0x31e28865260c42d68dea48a7ae58d8e34fc729efc1e4d292d3bd52f8a992e35d",
     "hookDeployer.templateCodeHash": "0xe0138cf1826731ebf568f697c3bdda48cdf4ec9bd0c052b98d7ca01901ba3a0a",
     "weth.symbol": "WETH",
     "weth.decimals": 18
   },
   "gas": {
     "txCount": 11,
-    "used": "40478228",
+    "used": "40478432",
     "priceWei": "10000000",
-    "costEth": "0.00040478228"
+    "costEth": "0.00040478432"
   },
   "notCovered": [
     "PRICE_GUARDED pool class remains blocked",

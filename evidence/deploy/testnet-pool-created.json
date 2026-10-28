@@ -1,15 +1,24 @@
 {
-  "hook": "0x60ebf7082ea56a6956af5a137a2ae50937162cc0",
-  "poolId": "0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed",
-  "createTx": "0x7c1542eb6d7c7d0665ba520449e07fd0668c439a5e0f422fae8aba312a17c568",
-  "blockNumber": 143921854,
-  "token0": "0x1d35a37f74a910ee181e6898034975ed384ff833",
-  "token1": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
-  "asset0": "0x8da62b9a19256c027402874af4987f26ea80461e14db85bf01e98d4a674d9085",
-  "asset1": "0xba64280c15ce1e5dae666e1c68ab7925f666fc3e2ca2a41a30a5ec090b05c66f",
+  "hook": "0x549f0C6657d9E39a034f7524E501D218B2c6acc0",
+  "poolId": "0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea",
+  "createTx": "0x5ffe62366cdf46fe7d9b07e5242a5c94e1bd81061ed11d00a6776b9ce70c17b7",
+  "blockNumber": 144043685,
+  "transactionIndex": 1,
+  "token0": "0x45b4bF15C1CB91442a62620441Dbc0b6486DFEbe",
+  "token1": "0xb82815f01a3c9034FBf06d05a99F0beB862d705a",
+  "asset0": "0xa66725342d4aa3ce04be7db30fc3ecce709d236b5d2923d43753c0b9e3d85fcd",
+  "asset1": "0xb9fa8d36b6103222d5993f68cdbda5bdcc5ea5a797489045ff81a1e7a2ece043",
+  "stockToken": "0xb82815f01a3c9034fbf06d05a99f0beb862d705a",
+  "stockAssetId": "0xb9fa8d36b6103222d5993f68cdbda5bdcc5ea5a797489045ff81a1e7a2ece043",
+  "wethAssetId": "0xa66725342d4aa3ce04be7db30fc3ecce709d236b5d2923d43753c0b9e3d85fcd",
   "lifecycle": 2,
-  "mode": 1,
-  "canSwap": true,
   "phase": 2,
-  "createdAt": "2026-10-28T02:18:00Z"
+  "policyObservedAt": "2026-10-28T07:15:16.300Z",
+  "policySnapshot": {
+    "mode": 0,
+    "canSwap": false,
+    "reasonBits": "256"
+  },
+  "codeBytes": 23842,
+  "verifiedAt": "2026-10-28T07:15:16.301Z"
 }
