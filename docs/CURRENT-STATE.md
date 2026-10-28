@@ -1,16 +1,17 @@
-# BELL — kondisi aktual (trace 2026-10-28, deployment ulang + pool swap terverifikasi)
+# BELL — kondisi aktual (trace 2026-10-28, deployment ulang + Yahoo phase diagnosis)
 
 Satu sumber kebenaran. Semua klaim punya transaksi atau state onchain.
 
-**Deployment baru di Robinhood testnet sudah membuat pool SESSION_ONLY, memulihkan health lewat
-keeper rehearsal, mengeksekusi swap, dan lulus acceptance 82/82.** Swap lama pada deployment
-sebelumnya tetap tercatat terpisah; jangan campurkan bukti antar-deployment.
+**Deployment baru sudah membuat pool SESSION_ONLY, mengeksekusi satu swap, dan pernah lulus
+acceptance 82/82 saat keeper rehearsal berjalan.** Itu bukti rehearsal, bukan Yahoo-live.
+Swap deployment sebelumnya dicatat terpisah.
 
 ---
 
 ## 1. Ringkasan
 
-- **Keeper rehearsal**: Yahoo saat pemeriksaan stale; loop offline yang diberi label rehearsal memulihkan health dan pool.
+- **Yahoo-live belum lulus.** Onchain calendar untuk pool adalah REGULAR; Yahoo terakhir memberi PRE.
+  Keeper menolak fase yang tak cocok dan berhenti pada error transaksi.
 - **Satu swap live di deployment terbaru**, dengan budget commit tercatat (tabel di bawah).
 - **Acceptance deployment terbaru lulus 82/82** pada block 144051163; ini pemeriksaan satu snapshot, bukan klaim pool terus sehat.
 - **Frontend punya jalur swap nyata** (`LiveSwapPanel`): baca policy onchain, approve, kirim ke
@@ -32,10 +33,9 @@ handover (alamat masih burn address), dan keeper belum dipasang di Supabase cron
 Swap deployment terbaru dikonfirmasi receipt sukses dan gross `[5,3]`. Bukti pool terdahulu membuktikan
 rotasi rolling window pada deployment lama; itu bukan bukti rotasi untuk pool terbaru.
 
-Terbaru (blok 144051909): price health bisa stale lagi setelah keeper berhenti. Acceptance sukses
-pada blok 144051163 adalah snapshot valid saat keeper berjalan, bukan garansi status setelahnya.
-Untuk mengulang check sekarang, jalankan keeper rehearsal beberapa tick sampai `canSwap=true`, lalu
-jalankan acceptance tanpa jeda panjang.
+Terbaru: health onchain expired (`reasonBits=256`) dan policy `canSwap=false`, karena belum ada quote
+REGULAR yang cocok dengan calendar interval. PRE quote tak boleh diberi label ulang menjadi REGULAR.
+Acceptance block 144051163 adalah snapshot rehearsal, bukan Yahoo-live.
 
 ---
 
@@ -61,8 +61,8 @@ Perilaku penting:
 - Setiap tick menulis `evidence/runtime/keeper-price-last.json` supaya monitor cukup membaca satu
   file kecil, bukan membaca chain.
 
-Deployment terbaru: Yahoo quote tidak tersedia (stale), jadi quote offline rehearsal digunakan; ini bukan harga live Yahoo.
-Health sudah ready dan policy `canSwap=true` pada acceptance snapshot setelah recovery 60 detik.
+Keeper rehearsal pernah menjaga pool hingga `canSwap=true`. Pada pemeriksaan Yahoo-live 28 Oct,
+Yahoo mengembalikan PRE ketika interval pool committed sebagai REGULAR; keeper menolak mismatch.
 
 ```
 06:58:30  canSwap=false   (recovery pending)

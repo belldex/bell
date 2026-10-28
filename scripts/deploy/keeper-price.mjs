@@ -25,7 +25,7 @@ import { createPublicClient, createWalletClient, http, keccak256, parseAbi, pars
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import { fetchYahooChartQuote } from '../../packages/protocol/src/yahoo-quote.mjs';
-import { resolveSessionRegistry, shouldContinueAfterTickError } from './keeper-price-config.mjs';
+import { price18FromYahooQuote, reportValidUntil, resolveSessionRegistry, shouldContinueAfterTickError, yahooRegularPhaseReady, yahooSessionPhase } from './keeper-price-config.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
 import SessionArtifact from '../../contracts/out/SessionRegistry.sol/SessionRegistry.json' with { type: 'json' };
 
@@ -100,16 +100,21 @@ function liveHooks() {
 async function resolvePrice() {
   if (offline) {
     const p = parseEther(offlinePrice);
-    return { price18: p, phase: 0, observedAt: 0n, source: 'offline-rehearsal' };
+    return { price18: p, observedAt: 0n, phase: 2, validUntil: BigInt(Math.floor(Date.now() / 1000) + MAX_REPORT_AGE_SECONDS - 1), source: 'offline-rehearsal' };
   }
   let quote;
   try {
     quote = await fetchYahooChartQuote(arg('symbol', 'AAPL'));
+    if (!yahooRegularPhaseReady(quote)) {
+      const err = new Error(`STALE_SOURCE: Yahoo phase ${quote.phase} does not match the committed REGULAR calendar interval`);
+      err.code = 'STALE_SOURCE';
+      throw err;
+    }
   } catch (error) {
     // A closed market is an expected state, not a crash. Report it and let the caller decide.
     const message = String(error?.message ?? error);
     if (/stale/i.test(message)) {
-      const err = new Error(`MARKET_CLOSED_OR_STALE: ${message}`);
+      const err = new Error(`STALE_SOURCE: ${message}`);
       err.code = 'STALE_SOURCE';
       throw err;
     }
@@ -122,9 +127,10 @@ async function resolvePrice() {
     throw err;
   }
   return {
-    price18: BigInt(quote.price18),
-    phase: 0,
+    price18: price18FromYahooQuote(quote),
     observedAt: BigInt(quote.observedAt),
+    phase: yahooSessionPhase(quote.phase),
+    validUntil: BigInt(reportValidUntil(Math.floor(Date.now() / 1000), Number(quote.observedAt))),
     source: `yahoo-${quote.phase ?? 'REGULAR'}`,
   };
 }
@@ -136,6 +142,7 @@ async function tick() {
   const price = await resolvePrice();
 
   const observedAt = price.observedAt === 0n ? BigInt(now) : price.observedAt;
+  const validUntil = price.validUntil;
   const reportHash = keccak256(stringToHex(`bell-keeper-${now}-${price.price18}`));
 
   const record = {
@@ -159,7 +166,7 @@ async function tick() {
     inputAt: BigInt(now),
     validFrom: observedAt,
     expiresAt: BigInt(now + 300),
-    validUntil: BigInt(now + MAX_REPORT_AGE_SECONDS - 1),
+    validUntil,
     reportHash,
   };
   const signedDirect = await signYahooSourceSample(sampleDirect, {
@@ -192,9 +199,14 @@ async function tick() {
     inputAt: BigInt(now),
     validFrom: observedAt,
     expiresAt: BigInt(now + 300),
-    validUntil: BigInt(now + MAX_REPORT_AGE_SECONDS - 1),
+    validUntil,
     reportHash: keccak256(stringToHex(`bell-keeper-stream-${now}-${price.price18}`)),
   };
+  if (price.phase !== 2) {
+    const error = new Error(`STALE_SOURCE: Yahoo phase ${price.phase} does not match the committed REGULAR calendar interval`);
+    error.code = 'STALE_SOURCE';
+    throw error;
+  }
   const signedStream = await signYahooSourceSample(sampleStream, {
     sourceConfigHash: stockAdapters.regularWireHash,
     chainId,
