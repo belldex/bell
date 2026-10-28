@@ -1,0 +1,20 @@
+{
+  "swapTx": "0x75243421ed21adcd8e233e129bb0346cab0ea47af1c907e18c0e703117ecb830",
+  "blockNumber": 143926986,
+  "hookAddress": "0x60ebf7082ea56a6956af5a137a2ae50937162cc0",
+  "poolId": "0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed",
+  "executorAddress": "0x7aaac503f38ab25a4a311b408d8820c7db2e8111",
+  "token0": "0x1d35a37f74a910ee181e6898034975ed384ff833",
+  "token1": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
+  "spentToken0": "5",
+  "receivedToken1": "3",
+  "currentGross": [
+    "5",
+    "3"
+  ],
+  "remainingCap": [
+    "95",
+    "97"
+  ],
+  "executedAt": "2026-10-28T02:29:23.878Z"
+}
