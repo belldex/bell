@@ -15,7 +15,7 @@ export default function KineticTitle({ words }: { words: string[] }) {
     const host = ref.current;
     if (!host) return;
 
-    const nodes = Array.from(host.querySelectorAll<HTMLElement>('.w'));
+    const nodes = Array.from(host.querySelectorAll<HTMLElement>('span'));
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       nodes.forEach((n) => {
         n.style.opacity = '1';
@@ -67,9 +67,12 @@ export default function KineticTitle({ words }: { words: string[] }) {
   }, []);
 
   return (
-    <h1 className="h1" ref={ref}>
+    <h1
+      ref={ref}
+      className="relative flex flex-wrap justify-center gap-x-[0.35em] gap-y-1.5 text-[56px] font-bold leading-[56px] tracking-[-0.04em] text-ink [text-shadow:0_0_24px_rgba(0,0,0,0.55)] md:text-[94px] md:leading-[94px]"
+    >
       {words.map((word, i) => (
-        <span className="w" key={`${word}-${i}`}>
+        <span className="inline-block will-change-transform" key={`${word}-${i}`}>
           {word}
         </span>
       ))}

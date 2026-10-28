@@ -2,9 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 
+const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
 /**
- * Adds the `in` class once the element scrolls past the lower third of the
- * viewport, which is what the reference CSS transitions on.
+ * Reference reveal: starts translated 50px down at opacity 0, then fades and
+ * slides up over 0.9s once the element's parent scrolls past the viewport
+ * midpoint. Honors prefers-reduced-motion by showing immediately.
  */
 export default function Reveal({
   children,
@@ -21,10 +24,23 @@ export default function Reveal({
     const el = ref.current;
     if (!el) return;
 
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+      return;
+    }
+
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(50px)';
+    el.style.transition = `opacity 0.9s ${EASE}, transform 0.9s ${EASE}`;
+
     const target = el.parentElement ?? el;
     const check = () => {
       if (target.getBoundingClientRect().top < 0.5 * window.innerHeight + 25) {
         el.classList.add('in');
+        el.style.opacity = '1';
+        el.style.transform = 'none';
         window.removeEventListener('scroll', check);
       }
     };
