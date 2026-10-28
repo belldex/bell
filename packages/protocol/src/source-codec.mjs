@@ -42,7 +42,7 @@ function validateWires(wires) {
 
     if ((wire.kind === 1 && (wire.phaseScope !== 0 || wire.schema !== 0 || wire.feedId.toLowerCase() !== ZERO32 || wire.priceBasis !== 2))
       || (wire.kind === 2 && (wire.phaseScope !== 0 || wire.schema !== 0 || wire.feedId.toLowerCase() !== ZERO32 || wire.priceBasis !== 3))
-      || (wire.kind === 3 && (wire.phaseScope < 1 || wire.phaseScope > 3 || wire.schema !== 11 || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 1))
+      || (wire.kind === 3 && (wire.phaseScope < 1 || wire.phaseScope > 3 || (wire.schema !== 11 && wire.schema !== 12) || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 1))
       || (wire.kind === 4 && (wire.phaseScope !== 4 || wire.schema === 0 || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 4))) {
       throw new Error('SourceWire kind, phase scope, schema, feed ID, and price basis are inconsistent');
     }

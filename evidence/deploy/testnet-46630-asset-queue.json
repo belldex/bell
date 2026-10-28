@@ -1,31 +1,18 @@
 {
-  "schemaVersion": 1,
+  "weth": {
+    "token": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
+    "descriptorId": "0xba64280c15ce1e5dae666e1c68ab7925f666fc3e2ca2a41a30a5ec090b05c66f",
+    "isStock": false
+  },
+  "stock": {
+    "token": "0x1d35a37f74a910ee181e6898034975ed384ff833",
+    "descriptorId": "0x8da62b9a19256c027402874af4987f26ea80461e14db85bf01e98d4a674d9085",
+    "isStock": true,
+    "directAdapter": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
+    "regularAdapter": "0xba9b5142f282dde204805d66fddb5d6256080926",
+    "extendedAdapter": "0xe2380390ee342ad42dc463d6518f1e67cc5a52c3"
+  },
+  "registryAddress": "0x4d477a439b127fcac45bbbbd535ba9b0d0345488",
   "chainId": 46630,
-  "recordedAt": "2026-10-26",
-  "sourceCommit": "f37d597",
-  "assetRegistry": "0x3432c77f580fe822edef62381441de15a5ba3a0c",
-  "safetyController": "0xcb4a1d33ec49c47e93216481702dc55815de3181",
-  "governance": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
-  "token": "0x254e506ee8a9f1f8128d36106f240c5d41b9d8be",
-  "tokenLabel": "REHEARSAL_WETH_FIXTURE",
-  "tokenRole": "COUNTERASSET (isStock=false, capabilityMask=0, no adapters, empty sourceConfig)",
-  "tokenDecimals": 18,
-  "operationId": "0xde628510a905281a75190305f45126874659f5c7da5a3b0d72e2ac4c79a26c72",
-  "descriptorId": "0x88cb22337da3a28bd6a3ddb2e6225fc1a042f00bf0388b3b67c2586195096287",
-  "queuedTx": "0xdf3e6f6bbb7b1e1cc38b6e9166842329c407994ec14f796a9e5a2f3ba124866c",
-  "queuedBlock": 142928900,
-  "activationTx": "0x2c91a85a4d023cb70d4d1d688d21f0f4bc8e803dda208af805f01f942a6e758a",
-  "activationBlock": 142929063,
-  "gasUsedQueue": 331924,
-  "gasUsedActivation": 207318,
-  "activationStatus": "ACTIVE",
-  "testnetTimelockSeconds": 0,
-  "timelockOverrideScope": "block.chainid == 46630 only; mainnet chain 4663 retains policy governance delay",
-  "notes": [
-    "The 48h configuration was explicitly overridden for the Robinhood testnet by owner request; testnet registries were redeployed before this queue and activation.",
-    "WETH is a rehearsal counterasset only, not an admitted stock or price source.",
-    "The public SESSION_ONLY factory still requires exactly one stock descriptor and SessionRegistry.health() ready with reasonBits == 0 before createAndSeed.",
-    "The active WETH descriptor is append-only on this AssetRegistry. Duplicate queue attempts revert because the token is already admitted.",
-    "This is testnet acceptance evidence only; it does not establish USDG identity, source rights, mainnet behavior or independent audit."
-  ]
+  "admittedAt": "2026-10-28T02:03:29.113Z"
 }
