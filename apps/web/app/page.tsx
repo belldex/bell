@@ -37,9 +37,9 @@ export default function LandingPage() {
           data-pose="0"
           className="relative flex min-h-[200vh] justify-center overflow-x-clip"
         >
-          <div className="flex h-screen w-full max-w-[1034px] flex-col items-center px-6 pt-[301px] text-center max-md:pt-[212px]">
+          <div className="relative z-10 flex h-screen w-full max-w-[1034px] flex-col items-center px-6 pt-[301px] text-center [text-shadow:0_0_24px_rgba(0,0,0,0.55)] max-md:pt-[212px]">
             <KineticTitle words={['Liquidity', 'that knows', 'the', 'bell']} />
-            <p className="mt-[49px] max-w-[620px] bg-black/70 px-4 py-2.5 text-2xl leading-[1.3] text-ink max-md:mt-10 max-md:text-xl">
+            <p className="mt-[49px] max-w-[620px] bg-bg-0/90 px-4 py-2.5 text-2xl leading-[1.3] text-ink ring-1 ring-line/70 backdrop-blur-sm max-md:mt-10 max-md:text-xl">
               BELL applies session-aware fees, bounded gross flow and planned-close controls to
               tokenized-stock pools.
             </p>

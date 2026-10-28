@@ -55,7 +55,7 @@ test('nav and footer mirror the reference layout with BELL wording', async () =>
   assert.match(nav, /gap-20 whitespace-nowrap/, 'ticker bar-track present');
   assert.match(nav, /h-\[58px\]/, 'ticker bar 58px tall');
   assert.match(nav, /font-mono/, 'nav uses mono type');
-  assert.match(nav, /h-\[633px\]/, 'dropdown slab present');
+  assert.match(nav, /h-\[575px\]/, 'dropdown slab present');
 
   const footer = await read('../components/landing/Footer.tsx');
   assert.match(footer, /grid-cols-4/, 'footer 4-column groups');
@@ -279,6 +279,23 @@ test('AppShell exposes a working mobile menu, closes it on route navigation, and
   assert.match(shell, /setMobileOpen\(false\)/);
   assert.match(shell, /Escape/);
   assert.match(shell, /\/privacy|\/terms|\/cookies/);
+});
+
+test('landing desktop dropdown remains on a visible hit-testable layer when activated', async () => {
+  const nav = await read('../components/landing/SiteNav.tsx');
+  assert.match(nav, /onClick=\{\(\) => setOpen\(open === index \? null : index\)\}/);
+  assert.doesNotMatch(nav, /onMouseLeave=\{\(\) => setOpen\(null\)\}/, 'pointer movement into menu must not close it');
+  assert.match(nav, /z-40/, 'dropdown must be above fixed scene/content');
+  assert.doesNotMatch(nav, /z-\[-1\]/, 'negative stacking layer hides menu behind scene');
+  assert.match(nav, /backgroundColor:\s*'var\(--color-surface\)'/, 'open slab needs an explicit opaque BELL surface');
+  assert.match(nav, /aria-expanded=\{open === index\}/, 'menu state is exposed accessibly');
+});
+
+test('landing content has readable scrim and stays above the animated scene', async () => {
+  const page = await read('../app/page.tsx');
+  assert.match(page, /from-bg-0\/|bg-bg-0\/|bg-black\//, 'hero content needs a readable contrast surface over 3D');
+  assert.match(page, /relative z-10/, 'copy must stack above scene');
+  assert.match(page, /text-shadow:0_0_24px/, 'large title needs contrast against the block scene');
 });
 
 test('position preview cards have working info disclosures but no fake write controls', async () => {

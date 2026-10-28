@@ -67,8 +67,19 @@ export default function SiteNav() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(null);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-50" onMouseLeave={() => setOpen(null)}>
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
       <div className="pointer-events-auto flex h-[58px] items-center justify-center overflow-hidden bg-muted font-mono text-xs text-ink max-md:h-[54px] max-md:animate-none max-md:justify-start">
         <div className="flex gap-20 whitespace-nowrap max-md:pl-5">
           <span>
@@ -88,32 +99,26 @@ export default function SiteNav() {
 
       {/* Dropdown slab */}
       <div
-        className={`pointer-events-auto fixed inset-x-0 top-0 z-[-1] h-[633px] bg-slab transition-[top] duration-300 ${
-          open !== null ? '!top-0' : ''
+        aria-hidden={open === null}
+        className={`pointer-events-auto fixed inset-x-0 z-40 h-[575px] border-b border-line bg-slab transition-[transform,opacity] duration-300 ${
+          open !== null ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
         }`}
+        style={{ top: 58, backgroundColor: 'var(--color-surface)' }}
       >
-        <div className="relative h-full">
-          {MENUS.map((menu, index) => (
-            <div
-              key={menu.label}
-              className={`absolute top-[245px] hidden w-[495px] flex-col gap-[60px] ${open === index ? 'flex' : ''}`}
-              style={{ left: `calc(100% - 40px - 495px)` }}
-            >
-              {menu.items.map((item) => (
-                <div key={item.label}>
-                  <Link className="ulink-ref inline-block border-b border-current pb-0.5 font-mono text-xs" href={item.href}>
-                    {item.label}
-                  </Link>
-                  {item.text ? <p className="mt-2 max-w-[340px] font-mono text-xs leading-[18px] text-muted">{item.text}</p> : null}
-                </div>
-              ))}
+        <div className="mx-auto grid h-full max-w-[1440px] grid-cols-2 gap-8 px-10 pb-12 pt-[170px] lg:grid-cols-4">
+          {(open === null ? [] : [MENUS[open]]).flatMap((menu) => menu.items).map((item) => (
+            <div key={item.label} className="min-w-0">
+              <Link className="inline-block border-b border-current pb-1 font-mono text-xs text-ink hover:text-ion" href={item.href} onClick={() => setOpen(null)}>
+                {item.label} <Chevron />
+              </Link>
+              {item.text ? <p className="mt-3 max-w-[260px] font-mono text-xs leading-[18px] text-muted">{item.text}</p> : null}
             </div>
           ))}
         </div>
       </div>
 
       {/* Brand row */}
-      <div className="pointer-events-auto relative z-[2] flex items-center justify-between px-10 pt-10 max-md:px-[30px] max-md:pt-5">
+      <div className="pointer-events-auto relative z-[60] mx-auto flex max-w-[1440px] items-center justify-between px-10 pt-10 max-md:px-[30px] max-md:pt-5">
         <Link href="/" className="inline-flex items-center gap-2.5" aria-label="BELL home">
           {/* Pixel-style BELL mark, pure SVG — no template asset */}
           <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
@@ -123,11 +128,11 @@ export default function SiteNav() {
           <span className="font-mono text-xs text-muted">BOURSE-EVENT LIQUIDITY LAYER</span>
         </Link>
 
-        <ul className="hidden items-center gap-[60px] md:flex">
+        <ul className="hidden items-center gap-6 lg:gap-[60px] md:flex">
           {MENUS.map((menu, index) => (
             <li key={menu.label} onMouseEnter={() => setOpen(index)}>
               <button
-                className="inline-flex items-center gap-1.5 font-mono text-xs text-ink transition-colors hover:text-ion"
+                className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.06em] text-ink transition-colors hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion xl:text-xs xl:tracking-[0.08em]"
                 aria-expanded={open === index}
                 onClick={() => setOpen(open === index ? null : index)}
               >
