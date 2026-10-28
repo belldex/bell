@@ -1,0 +1,277 @@
+﻿Deployer:       0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399
+Factory:        0x4b22251105e65d76366d27099ac7c5097b63faf5
+StockToken:     0x7ba139967d17daa4b8d814c9a834a1f00c5b0187
+WETH:           0x45b4bf15c1cb91442a62620441dbc0b6486dfebe
+
+=== Step 1: Establishing Health Baseline ===
+[Quote T0] Block 144010774 Time 1793165441: {
+  ready: true,
+  reasonBits: '0',
+  healthySince: '1793165430',
+  validUntil: '1793165501'
+}
+
+Waiting 30 seconds before renewing quote...
+
+=== Step 2: Renewing Quote (Extending validUntil) ===
+[Quote T30] Block 144011045 Time 1793165474: {
+  ready: true,
+  reasonBits: '0',
+  healthySince: '1793165430',
+  validUntil: '1793165534'
+}
+
+Waiting until chain time reaches 1793165495 (65s healthy, validUntil is 1793165534)...
+Ready! Chain time: 1793165495 >= 1793165495. Remaining validity: 39s
+Approving pool tokens to factory...
+Approvals confirmed.
+Wrapping 0.001 ETH into WETH...
+node : file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/node_modules/vi
+em/_esm/utils/errors/getTransactionError.js:11
+At line:1 char:1
++ node scripts/deploy/create-testnet-pool.mjs > pool8.log 2>&1; Write-O ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (file:///D:/Proj...tionError.js:11:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    return new TransactionExecutionError(cause, {
+           ^
+
+TransactionExecutionError: The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of
+the account.
+
+This error could arise when the account does not have enough funds to:
+ - pay for the total gas fee,
+ - pay for the value to send.
+
+The cost of the transaction is calculated as `gas * gas fee + value`, where:
+ - `gas` is the amount of gas needed for transaction to execute,
+ - `gas fee` is the gas fee,
+ - `value` is the amount of ether to send to the recipient.
+
+Request Arguments:
+  from:   0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399
+  to:     0x45b4bf15c1cb91442a62620441dbc0b6486dfebe
+  value:  0.001 ETH
+
+Details: insufficient funds for transfer
+Version: viem@2.57.11
+    at getTransactionError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@
+4.6.5/node_modules/viem/_esm/utils/errors/getTransactionError.js:11:12)
+    at sendTransaction (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.
+5/node_modules/viem/_esm/actions/wallet/sendTransaction.js:244:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:187:3 {
+  cause: InsufficientFundsError: The total cost (gas * gas fee + value) of executing this transaction exceeds the
+balance of the account.
+
+  This error could arise when the account does not have enough funds to:
+   - pay for the total gas fee,
+   - pay for the value to send.
+
+  The cost of the transaction is calculated as `gas * gas fee + value`, where:
+   - `gas` is the amount of gas needed for transaction to execute,
+   - `gas fee` is the gas fee,
+   - `value` is the amount of ether to send to the recipient.
+
+  Details: insufficient funds for transfer
+  Version: viem@2.57.11
+      at getNodeError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5
+/node_modules/viem/_esm/utils/errors/getNodeError.js:43:16)
+      at file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/node_modules/
+viem/_esm/utils/errors/getTransactionError.js:6:23
+      at getTransactionError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zo
+d@4.6.5/node_modules/viem/_esm/utils/errors/getTransactionError.js:10:7)
+      at sendTransaction (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.
+6.5/node_modules/viem/_esm/actions/wallet/sendTransaction.js:244:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:187:3 {
+    details: 'insufficient funds for transfer',
+    docsPath: undefined,
+    metaMessages: [
+      'This error could arise when the account does not have enough funds to:',
+      ' - pay for the total gas fee,',
+      ' - pay for the value to send.',
+      ' ',
+      'The cost of the transaction is calculated as `gas * gas fee + value`, where:',
+      ' - `gas` is the amount of gas needed for transaction to execute,',
+      ' - `gas fee` is the gas fee,',
+      ' - `value` is the amount of ether to send to the recipient.'
+    ],
+    shortMessage: 'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the
+account.',
+    version: '2.57.11',
+    [cause]: EstimateGasExecutionError: The total cost (gas * gas fee + value) of executing this transaction exceeds
+the balance of the account.
+
+    This error could arise when the account does not have enough funds to:
+     - pay for the total gas fee,
+     - pay for the value to send.
+
+    The cost of the transaction is calculated as `gas * gas fee + value`, where:
+     - `gas` is the amount of gas needed for transaction to execute,
+     - `gas fee` is the gas fee,
+     - `value` is the amount of ether to send to the recipient.
+
+    Estimate Gas Arguments:
+      from:                  0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399
+      to:                    0x45b4bf15c1cb91442a62620441dbc0b6486dfebe
+      value:                 0.001 ETH
+      maxFeePerGas:          0.012 gwei
+      maxPriorityFeePerGas:  0 gwei
+      nonce:                 509
+
+    Details: insufficient funds for transfer
+    Version: viem@2.57.11
+        at getEstimateGasError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_
+zod@4.6.5/node_modules/viem/_esm/utils/errors/getEstimateGasError.js:11:12)
+        at estimateGas (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.
+5/node_modules/viem/_esm/actions/public/estimateGas.js:114:15)
+        ... 3 lines matching cause stack trace ...
+        at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:187:3 {
+      cause: InsufficientFundsError: The total cost (gas * gas fee + value) of executing this transaction exceeds the
+balance of the account.
+
+      This error could arise when the account does not have enough funds to:
+       - pay for the total gas fee,
+       - pay for the value to send.
+
+      The cost of the transaction is calculated as `gas * gas fee + value`, where:
+       - `gas` is the amount of gas needed for transaction to execute,
+       - `gas fee` is the gas fee,
+       - `value` is the amount of ether to send to the recipient.
+
+      Details: insufficient funds for transfer
+      Version: viem@2.57.11
+          at getNodeError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4
+.6.5/node_modules/viem/_esm/utils/errors/getNodeError.js:43:16)
+          at file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/node_modu
+les/viem/_esm/utils/errors/getEstimateGasError.js:6:23
+          at getEstimateGasError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.
+2_zod@4.6.5/node_modules/viem/_esm/utils/errors/getEstimateGasError.js:10:7)
+          at estimateGas (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.
+6.5/node_modules/viem/_esm/actions/public/estimateGas.js:114:15)
+          at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+          at async prepareTransactionRequest (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typ
+escript@7.0.2_zod@4.6.5/node_modules/viem/_esm/actions/wallet/prepareTransactionRequest.js:374:23)
+          at async sendTransaction (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.
+0.2_zod@4.6.5/node_modules/viem/_esm/actions/wallet/sendTransaction.js:190:29)
+          at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:187:3 {
+        details: 'insufficient funds for transfer',
+        docsPath: undefined,
+        metaMessages: [
+          'This error could arise when the account does not have enough funds to:',
+          ' - pay for the total gas fee,',
+          ' - pay for the value to send.',
+          ' ',
+          'The cost of the transaction is calculated as `gas * gas fee + value`, where:',
+          ' - `gas` is the amount of gas needed for transaction to execute,',
+          ' - `gas fee` is the gas fee,',
+          ' - `value` is the amount of ether to send to the recipient.'
+        ],
+        shortMessage: 'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the
+account.',
+        version: '2.57.11',
+        [cause]: InvalidInputRpcError: Missing or invalid parameters.
+        Double check you have provided the correct parameters.
+
+        URL: https://robinhood-testnet.g.alchemy.com/v2/[REDACTED]
+        Request body: {"method":"eth_estimateGas","params":[{"from":"0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399","maxFe
+ePerGas":"0xb71b00","maxPriorityFeePerGas":"0x0","nonce":"0x1fd","to":"0x45b4bf15c1cb91442a62620441dbc0b6486dfebe","val
+ue":"0x38d7ea4c68000"}]}
+
+        Details: insufficient funds for transfer
+        Version: viem@2.57.11
+            at withRetry.delay.count.count (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_types
+cript@7.0.2_zod@4.6.5/node_modules/viem/_esm/utils/buildRequest.js:56:31)
+            at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+            at async attemptRetry (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0
+.2_zod@4.6.5/node_modules/viem/_esm/utils/promise/withRetry.js:27:30) {
+          details: 'insufficient funds for transfer',
+          docsPath: undefined,
+          metaMessages: [
+            'URL: https://robinhood-testnet.g.alchemy.com/v2/[REDACTED]',
+            'Request body: {"method":"eth_estimateGas","params":[{"from":"0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399","
+maxFeePerGas":"0xb71b00","maxPriorityFeePerGas":"0x0","nonce":"0x1fd","to":"0x45b4bf15c1cb91442a62620441dbc0b6486dfebe"
+,"value":"0x38d7ea4c68000"}]}'
+          ],
+          shortMessage: 'Missing or invalid parameters.\n' +
+            'Double check you have provided the correct parameters.',
+          version: '2.57.11',
+          code: -32000,
+          [cause]: RpcRequestError: RPC Request failed.
+
+          URL: https://robinhood-testnet.g.alchemy.com/v2/[REDACTED]
+          Request body: {"method":"eth_estimateGas","params":[{"from":"0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399","max
+FeePerGas":"0xb71b00","maxPriorityFeePerGas":"0x0","nonce":"0x1fd","to":"0x45b4bf15c1cb91442a62620441dbc0b6486dfebe","v
+alue":"0x38d7ea4c68000"}]}
+
+          Details: insufficient funds for transfer
+          Version: viem@2.57.11
+              at request (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.
+6.5/node_modules/viem/_esm/clients/transports/http.js:73:27)
+              at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+              at async withRetry.delay.count.count (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.
+11_typescript@7.0.2_zod@4.6.5/node_modules/viem/_esm/utils/buildRequest.js:30:24)
+              at async attemptRetry (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7
+.0.2_zod@4.6.5/node_modules/viem/_esm/utils/promise/withRetry.js:27:30) {
+            details: 'insufficient funds for transfer',
+            docsPath: undefined,
+            metaMessages: [Array],
+            shortMessage: 'RPC Request failed.',
+            version: '2.57.11',
+            code: -32000,
+            data: undefined,
+            url: 'https://robinhood-testnet.g.alchemy.com/v2/[REDACTED]',
+            [cause]: [Object]
+          }
+        }
+      },
+      details: 'insufficient funds for transfer',
+      docsPath: undefined,
+      metaMessages: [
+        'This error could arise when the account does not have enough funds to:',
+        ' - pay for the total gas fee,',
+        ' - pay for the value to send.',
+        ' ',
+        'The cost of the transaction is calculated as `gas * gas fee + value`, where:',
+        ' - `gas` is the amount of gas needed for transaction to execute,',
+        ' - `gas fee` is the gas fee,',
+        ' - `value` is the amount of ether to send to the recipient.',
+        ' ',
+        'Estimate Gas Arguments:',
+        '  from:                  0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399\n' +
+          '  to:                    0x45b4bf15c1cb91442a62620441dbc0b6486dfebe\n' +
+          '  value:                 0.001 ETH\n' +
+          '  maxFeePerGas:          0.012 gwei\n' +
+          '  maxPriorityFeePerGas:  0 gwei\n' +
+          '  nonce:                 509'
+      ],
+      shortMessage: 'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the
+account.',
+      version: '2.57.11'
+    }
+  },
+  details: 'insufficient funds for transfer',
+  docsPath: undefined,
+  metaMessages: [
+    'This error could arise when the account does not have enough funds to:',
+    ' - pay for the total gas fee,',
+    ' - pay for the value to send.',
+    ' ',
+    'The cost of the transaction is calculated as `gas * gas fee + value`, where:',
+    ' - `gas` is the amount of gas needed for transaction to execute,',
+    ' - `gas fee` is the gas fee,',
+    ' - `value` is the amount of ether to send to the recipient.',
+    ' ',
+    'Request Arguments:',
+    '  from:   0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399\n' +
+      '  to:     0x45b4bf15c1cb91442a62620441dbc0b6486dfebe\n' +
+      '  value:  0.001 ETH'
+  ],
+  shortMessage: 'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the
+account.',
+  version: '2.57.11'
+}
+
+Node.js v24.15.0

@@ -25,7 +25,7 @@ import { createPublicClient, createWalletClient, http, keccak256, parseAbi, pars
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '../../packages/protocol/src/yahoo-attestation.mjs';
 import { fetchYahooChartQuote } from '../../packages/protocol/src/yahoo-quote.mjs';
-import { price18FromYahooQuote, reportValidUntil, resolveSessionRegistry, shouldContinueAfterTickError, yahooRegularPhaseReady, yahooSessionPhase } from './keeper-price-config.mjs';
+import { price18FromYahooQuote, reportValidUntil, resolveSessionRegistry, shouldContinueAfterTickError, transactionGas, yahooSessionPhase, yahooWireForCalendarPhase } from './keeper-price-config.mjs';
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
 import SessionArtifact from '../../contracts/out/SessionRegistry.sol/SessionRegistry.json' with { type: 'json' };
 
@@ -62,6 +62,7 @@ const intervalSeconds = Number(arg('interval', '30'));
 const offline = flag('offline');
 const offlinePrice = arg('price', '250');
 const ledgerPath = arg('ledger', 'evidence/runtime/keeper-price-ticks.jsonl');
+const gas = transactionGas(arg('gas'));
 
 const poolEvidencePath = 'evidence/deploy/testnet-pool-created.json';
 const stockAdaptersPath = 'evidence/deploy/testnet-stock-adapters.json';
@@ -105,11 +106,20 @@ async function resolvePrice() {
   let quote;
   try {
     quote = await fetchYahooChartQuote(arg('symbol', 'AAPL'));
-    if (!yahooRegularPhaseReady(quote)) {
-      const err = new Error(`STALE_SOURCE: Yahoo phase ${quote.phase} does not match the committed REGULAR calendar interval`);
+    const interval = await publicClient.readContract({
+      address: deploymentManifest.calendarRegistry,
+      abi: parseAbi(['function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))']),
+      functionName: 'currentInterval',
+      args: [stockAssetId],
+    });
+    const wire = yahooWireForCalendarPhase(stockAdapters, Number(interval.phase));
+    const expectedPhase = interval.phase === 1 ? 'PRE' : interval.phase === 2 ? 'REGULAR' : interval.phase === 3 ? 'POST' : null;
+    if (!wire || quote.phase !== expectedPhase) {
+      const err = new Error(`STALE_SOURCE: Yahoo phase ${quote.phase} does not match active calendar phase ${interval.phase}`);
       err.code = 'STALE_SOURCE';
       throw err;
     }
+    quote = { ...quote, streamWire: wire };
   } catch (error) {
     // A closed market is an expected state, not a crash. Report it and let the caller decide.
     const message = String(error?.message ?? error);
@@ -130,6 +140,7 @@ async function resolvePrice() {
     price18: price18FromYahooQuote(quote),
     observedAt: BigInt(quote.observedAt),
     phase: yahooSessionPhase(quote.phase),
+    streamWire: quote.streamWire,
     validUntil: BigInt(reportValidUntil(Math.floor(Date.now() / 1000), Number(quote.observedAt))),
     source: `yahoo-${quote.phase ?? 'REGULAR'}`,
   };
@@ -182,6 +193,7 @@ async function tick() {
       abi: YahooAdapterArtifact.abi,
       functionName: 'publishDirect',
       args: [sampleDirect, signedDirect.signature],
+      ...(gas ? { gas } : {}),
     });
     const rc = await publicClient.waitForTransactionReceipt({ hash: tx });
     record.steps.push({ step: 'publishDirect', tx, status: rc.status });
@@ -192,8 +204,8 @@ async function tick() {
   // 2. Stream report
   const sampleStream = {
     descriptorId: ZERO32,
-    feedId: stockAdapters.regularWire.feedId,
-    phase: 2,
+    feedId: price.streamWire.wire.feedId,
+    phase: price.phase,
     price18: price.price18,
     observedAt,
     inputAt: BigInt(now),
@@ -202,13 +214,8 @@ async function tick() {
     validUntil,
     reportHash: keccak256(stringToHex(`bell-keeper-stream-${now}-${price.price18}`)),
   };
-  if (price.phase !== 2) {
-    const error = new Error(`STALE_SOURCE: Yahoo phase ${price.phase} does not match the committed REGULAR calendar interval`);
-    error.code = 'STALE_SOURCE';
-    throw error;
-  }
   const signedStream = await signYahooSourceSample(sampleStream, {
-    sourceConfigHash: stockAdapters.regularWireHash,
+    sourceConfigHash: price.streamWire.wireHash,
     chainId,
     verifier,
     privateKey: reporterPk,
@@ -220,6 +227,7 @@ async function tick() {
       abi: SessionArtifact.abi,
       functionName: 'submitReports',
       args: [stockAssetId, [signedStream.report]],
+      ...(gas ? { gas } : {}),
     });
     const rc = await publicClient.waitForTransactionReceipt({ hash: tx });
     record.steps.push({ step: 'submitReports', tx, status: rc.status });
@@ -229,6 +237,7 @@ async function tick() {
       abi: SessionArtifact.abi,
       functionName: 'refreshHealth',
       args: [stockAssetId],
+      ...(gas ? { gas } : {}),
     });
     const rc2 = await publicClient.waitForTransactionReceipt({ hash: tx2 });
     record.steps.push({ step: 'refreshHealth', tx: tx2, status: rc2.status });
@@ -254,7 +263,7 @@ async function tick() {
   for (const hook of record.hooks) {
     try {
       if (broadcast) {
-        const tx = await walletClient.writeContract({ address: hook, abi: HOOK_ABI, functionName: 'refreshState' });
+        const tx = await walletClient.writeContract({ address: hook, abi: HOOK_ABI, functionName: 'refreshState', ...(gas ? { gas } : {}) });
         const rc = await publicClient.waitForTransactionReceipt({ hash: tx });
         record.steps.push({ step: 'hook.refreshState', hook, tx, status: rc.status });
       }

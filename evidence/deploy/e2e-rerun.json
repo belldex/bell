@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-28T04:43:09.608Z",
+  "results": [
+    {
+      "stage": "stock token + Yahoo adapters",
+      "ok": true,
+      "tail": "FeedId: 0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b\nWireHash: 0x87d6c5d6c71695d6771fa484fcd1403021a47f58aa6e226ad55a5e5b9cac5156\nRegular adapter deployed at: 0x0f4dd49ec4c91e6b438e3b5a46c4194baa3c4fea\n\nDeploying Extended Stream Adapter (scope 2)...\nExtended adapter deployed at: 0x68b60affb820666c45defd4d6428016e911aff45\n\nSuccessfully saved evidence/deploy/testnet-stock-adapters.json"
+    },
+    {
+      "stage": "asset admission",
+      "ok": true,
+      "tail": "Queueing asset for 0xf1eee05a455f4c7e50020f2edea0961a4cd4d451...\nQueue TX: 0x5f47f6ba3272b393e5f01443028cedf348ee1dd46fb9b4728a3e40da2118491c block: 143987986\nOperation ID: 0x2f58ba27bc43266d243f10668b3a801abf2137e3784a86fc01293121a5483590\nActivating asset with opId 0x2f58ba27bc43266d243f10668b3a801abf2137e3784a86fc01293121a5483590...\nActivate TX: 0xdc8000568a7a93e96e927d0b62044a88f6ee2093abcd9be23eee2a42e657cde1 block: 143987990\nActive Descriptor ID for 0xf1eee05a455f4c7e50020f2edea0961a4cd4d451: 0x87a3a7ca8279c6b5dfb1a57fde271d32fbe199f1c1277eadd78334b51ca357d7\n\nSaved admission evidence to evidence/deploy/testnet-46630-asset-queue.json"
+    },
+    {
+      "stage": "calendar + price + health",
+      "ok": true,
+      "tail": "  reasonBits: '0',\n  healthySince: '1793162520',\n  validUntil: '1793162577',\n  latestObservation: '1793162517'\n}\nHealth is ready with reasonBits 0.\n\n>>> SUCCESS! Stock Asset is HEALTHY and READY for pool creation! <<<"
+    },
+    {
+      "stage": "pool create + seed",
+      "ok": false,
+      "error": "  [Object],\r\n            [Object],\r\n            [Object],\r\n            [Object]\r\n          ]\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      name: 'predict',\r\n      type: 'function',\r\n      stateMutability: 'view',\r\n      inputs: [\r\n        {\r\n          type: 'tuple',\r\n          name: 'request',\r\n          components: [\r\n            [Object], [Object],\r\n            [Object], [Object],\r\n            [Object], [Object],\r\n            [Object], [Object],\r\n            [Object], [Object],\r\n            [Object]\r\n          ]\r\n        }\r\n      ],\r\n      outputs: [\r\n        { type: 'address', name: 'hook' },\r\n        { type: 'bytes32', name: 'poolId' },\r\n        { type: 'bytes32', name: 'requestHash' }\r\n      ]\r\n    }\r\n  ],\r\n  args: [\r\n    {\r\n      config: {\r\n        token0: '0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9',\r\n        token1: '0xf1eee05a455f4c7e50020f2edea0961a4cd4d451',\r\n        asset0: '0xba64280c15ce1e5dae666e1c68ab7925f666fc3e2ca2a41a30a5ec090b05c66f',\r\n        asset1: '0x87a3a7ca8279c6b5dfb1a57fde271d32fbe199f1c1277eadd78334b51ca357d7',\r\n        poolManager: '0x4ddb8673ad90d4d3508c61531a981bc1f22a850b',\r\n        positionManager: '0xd7b88b6769b0a1aab9a63089bf6a01fa3dc6e254',\r\n        factory: '0xbf77c974a61d0ee270a468ffcf49dfcb3fb3a86c',\r\n        assetRegistry: '0x4d477a439b127fcac45bbbbd535ba9b0d0345488',\r\n        calendarRegistry: '0xc59abadcb3c46d20a9638d986d5bfb5f59247cbd',\r\n        safetyController: '0x47ac35f7edbc35b7e03c7c069e45a8f8113b7ee5',\r\n        treasuryAdapter: '0x0000000000000000000000000000000000000000',\r\n        poolClass: 1,\r\n        liquidityMode: 0,\r\n        referenceMode: 0,\r\n        tickSpacing: 60,\r\n        tradeCap: [ 10n, 10n ],\r\n        windowCap: [ 100n, 100n ],\r\n        closureCap: [ 1n, 1n ],\r\n        policyId: '0x6143bcf29a706718a0a3309cc166cc4b5e201616a86a3faa7356446cdec6aaa6'\r\n      },\r\n      salt: '0xe6169a0ec84dd56ba9af0a117ee7eec55c7560cd227c26e34706f4963745172e',\r\n      nonce: 1n,\r\n      deadline: 1793163789n,\r\n      recipient: '0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399',\r\n      sqrtPriceX96: 79228162514264337593543950336n,\r\n      tickLower: -6000,\r\n      tickUpper: 6000,\r\n      liquidity: 1000000000000000n,\r\n      amountMax: [ 1000000000000000000000n, 400000000000000n ],\r\n      maxServiceFee: 49000000n\r\n    }\r\n  ],\r\n  contractAddress: '0xbf77c974a61d0ee270a468ffcf49dfcb3fb3a86c',\r\n  formattedArgs: undefined,\r\n  functionName: 'createAndSeed',\r\n  sender: '0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399'\r\n}\r\n\r\nNode.js v24.15.0\r\n"
+    }
+  ]
+}

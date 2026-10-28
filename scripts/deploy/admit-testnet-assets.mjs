@@ -2,7 +2,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, keccak256, stringToHex, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { TESTNET } from '../../packages/protocol/src/testnet-status.mjs';
 import { encodeSourceWires } from '../../packages/protocol/src/source-codec.mjs';
 
 function loadEnv(text) {
@@ -13,6 +12,12 @@ function loadEnv(text) {
   }
   return env;
 }
+
+
+// Read the CURRENT deploy manifest so this script can never act on a superseded deployment.
+const _manifestRaw = readFileSync(new URL('../../evidence/deploy/testnet-46630.json', import.meta.url), 'utf8');
+const _manifest = JSON.parse(_manifestRaw);
+const MANIFEST = Object.fromEntries(Object.entries(_manifest).map(([k, v]) => [k, String(v).toLowerCase()]));
 
 const env = loadEnv(readFileSync('.env', 'utf8'));
 const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
@@ -26,8 +31,8 @@ const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
 const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
 
-const registryAddress = TESTNET.contracts.assetRegistry;
-const wethAddress = TESTNET.contracts.weth;
+const registryAddress = MANIFEST.assetRegistry;
+const wethAddress = MANIFEST.weth;
 
 console.log('Registry Address:', registryAddress);
 console.log('WETH Address:    ', wethAddress);

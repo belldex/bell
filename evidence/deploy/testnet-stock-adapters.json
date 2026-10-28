@@ -1,8 +1,8 @@
 {
-  "stockToken": "0x1d35a37f74a910ee181e6898034975ed384ff833",
-  "directAdapter": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
-  "regularAdapter": "0xba9b5142f282dde204805d66fddb5d6256080926",
-  "extendedAdapter": "0xe2380390ee342ad42dc463d6518f1e67cc5a52c3",
+  "stockToken": "0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a",
+  "directAdapter": "0xd143e33b40630fe3997da47849ed55712124d2e4",
+  "regularAdapter": "0x8d9216e8e2b7cb24b213f271ac175f66d9eb2d97",
+  "extendedAdapter": "0x23c1f6c5f919be1c4eaa7c7064063b88b34a64c9",
   "directWire": {
     "kind": 1,
     "phaseScope": 0,
@@ -14,7 +14,7 @@
     "heartbeatSec": 120,
     "expectedCodeHash": "0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a",
     "expectedImplementation": "0x20a066123c260bc6c5253f75e261c5056fde4bea",
-    "canonicalTokenId": "0xb4bebcb3d84a5728267bb48ac930bcef810ce574bb3cac1f359fe608789ac741"
+    "canonicalTokenId": "0xcb8971c38e0ea50c4c9672a0d6507367dad8fc6a13150a02425df0dabdd8111b"
   },
   "regularWire": {
     "kind": 3,
@@ -27,7 +27,7 @@
     "heartbeatSec": 120,
     "expectedCodeHash": "0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a",
     "expectedImplementation": "0x20a066123c260bc6c5253f75e261c5056fde4bea",
-    "canonicalTokenId": "0xb4bebcb3d84a5728267bb48ac930bcef810ce574bb3cac1f359fe608789ac741"
+    "canonicalTokenId": "0xcb8971c38e0ea50c4c9672a0d6507367dad8fc6a13150a02425df0dabdd8111b"
   },
   "extendedWire": {
     "kind": 3,
@@ -40,10 +40,10 @@
     "heartbeatSec": 120,
     "expectedCodeHash": "0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a",
     "expectedImplementation": "0x20a066123c260bc6c5253f75e261c5056fde4bea",
-    "canonicalTokenId": "0xb4bebcb3d84a5728267bb48ac930bcef810ce574bb3cac1f359fe608789ac741"
+    "canonicalTokenId": "0xcb8971c38e0ea50c4c9672a0d6507367dad8fc6a13150a02425df0dabdd8111b"
   },
-  "directWireHash": "0xd49cf8257d12ba562bfe4321959cbe808caee37e43646f4a7fb3271110073041",
-  "regularWireHash": "0xe91ebc96a011b8d19e994694c2727ec421c1a2505709450981e04602d57ba4df",
-  "extendedWireHash": "0xb0bf8086e9c5bf641686d8b1eeeaaae57b4dcde553e94c554104c3c7fd839161",
-  "deployBlock": 143914069
+  "directWireHash": "0x424557ea2d615b055053eeb0746921c274125feb859636ee9073732649e0edb5",
+  "regularWireHash": "0x8ac5520411efb267d87ec83bfe569f6740ec9bebbea60ade8640a6d620238bda",
+  "extendedWireHash": "0x2bd0f1bb18dd85b68a969a4d07b2a52bc76408b0ec09715c6fa2caff62ee2a3b",
+  "deployBlock": 143987971
 }

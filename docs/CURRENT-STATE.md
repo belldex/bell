@@ -1,19 +1,19 @@
-# BELL — kondisi aktual (trace 2026-10-28, deployment ulang + Yahoo phase diagnosis)
+# BELL — kondisi aktual (trace 2026-10-28, PRE rehearsal on Robinhood testnet)
 
 Satu sumber kebenaran. Semua klaim punya transaksi atau state onchain.
 
-**Deployment baru sudah membuat pool SESSION_ONLY, mengeksekusi satu swap, dan pernah lulus
-acceptance 82/82 saat keeper rehearsal berjalan.** Itu bukti rehearsal, bukan Yahoo-live.
-Swap deployment sebelumnya dicatat terpisah.
+**Pool rehearsal PRE terbaru dibuat, menerima satu swap, dan lulus acceptance 82/82 pada block
+144183010.** Harga berasal dari Yahoo PRE melalui extended adapter; asset/token adalah fixture
+rehearsal, bukan token Robinhood resmi. Ini snapshot testnet, bukan klaim kesehatan berkelanjutan.
+Deployment sebelumnya dicatat terpisah.
 
 ---
 
 ## 1. Ringkasan
 
-- **Yahoo-live belum lulus.** Onchain calendar untuk pool adalah REGULAR; Yahoo terakhir memberi PRE.
-  Keeper menolak fase yang tak cocok dan berhenti pada error transaksi.
-- **Satu swap live di deployment terbaru**, dengan budget commit tercatat (tabel di bawah).
-- **Acceptance deployment terbaru lulus 82/82** pada block 144051163; ini pemeriksaan satu snapshot, bukan klaim pool terus sehat.
+- **Yahoo PRE rehearsal terverifikasi** melalui direct + extended reports yang cocok dengan fase calendar PRE.
+- **Satu swap testnet pada pool PRE terbaru**, dengan budget commit tercatat (tabel di bawah).
+- **Acceptance fase PRE lulus 82/82** pada block 144183010; ini pemeriksaan satu snapshot, bukan klaim pool terus sehat.
 - **Frontend punya jalur swap nyata** (`LiveSwapPanel`): baca policy onchain, approve, kirim ke
   `BellRouter`, tampilkan hasilnya. Muncul hanya jika `NEXT_PUBLIC_BELL_LIVE_HOOK` diisi.
 - 355 forge test, 298 node:test, semua gate hijau.
@@ -23,19 +23,21 @@ handover (alamat masih burn address), dan keeper belum dipasang di Supabase cron
 
 ---
 
-## 2. Tiga swap live
+## 2. Swap testnet
 
 | Pool/deployment | Tx | Block | Spent | Received | Gross sebelum | Gross sesudah |
 |---|---|---|---|---|---|---|
-| Latest pool `0xc2b56af3…` / hook `0x549f0C66…` | `0xca40693c…` | 144051118 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Latest PRE rehearsal pool `0xa18cd3ff…` / hook `0xcE7f7306…` | `0x62b6060e…` | 144182744 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Previous REGULAR rehearsal pool `0xc2b56af3…` / hook `0x549f0C66…` | `0xca40693c…` | 144051118 | 5 | 3 | `[0, 0]` | `[5, 3]` |
 | Previous pool `0x01ca38d9…` / hook `0x60ebf708…` | `0x75243421…`, `0x1692a6e8…`, `0x9c846c76…` | 143926986–143938848 | 5, 7, 9 | 3, 5, 7 | tracked separately | rolling window rotated |
 
 Swap deployment terbaru dikonfirmasi receipt sukses dan gross `[5,3]`. Bukti pool terdahulu membuktikan
 rotasi rolling window pada deployment lama; itu bukan bukti rotasi untuk pool terbaru.
 
-Terbaru: health onchain expired (`reasonBits=256`) dan policy `canSwap=false`, karena belum ada quote
-REGULAR yang cocok dengan calendar interval. PRE quote tak boleh diberi label ulang menjadi REGULAR.
-Acceptance block 144051163 adalah snapshot rehearsal, bukan Yahoo-live.
+Swap pool PRE terbaru dikirim saat policy onchain `canSwap=true`, `reasonBits=0`; tx sukses dan
+gross berubah dari `[0,0]` menjadi `[5,3]`. Acceptance PRE lulus sesudahnya. Health/policy bersifat
+time-sensitive dan dapat kedaluwarsa setelah keeper berhenti; jangan menyimpulkan pool tetap dapat
+ditradingkan dari snapshot tersebut. Pool lama tetap REGULAR-only; PRE tidak pernah dilabel ulang.
 
 ---
 
@@ -61,8 +63,10 @@ Perilaku penting:
 - Setiap tick menulis `evidence/runtime/keeper-price-last.json` supaya monitor cukup membaca satu
   file kecil, bukan membaca chain.
 
-Keeper rehearsal pernah menjaga pool hingga `canSwap=true`. Pada pemeriksaan Yahoo-live 28 Oct,
-Yahoo mengembalikan PRE ketika interval pool committed sebagai REGULAR; keeper menolak mismatch.
+Keeper memilih wire dari fase calendar onchain: REGULAR memakai regular adapter, PRE/POST memakai
+extended adapter, dan overnight memakai overnight adapter. Yahoo PRE diterima hanya saat calendar
+fase PRE; phase mismatch dan quote basi tetap ditolak. Gunakan `--gas=900000` jika RPC menolak
+estimasi gas report dengan batas allowance.
 
 ```
 06:58:30  canSwap=false   (recovery pending)
@@ -111,14 +115,17 @@ Guard test baru (`apps/web/test/homepage.test.mjs`) memastikan:
 | WETH fixture | `0x45b4bf15c1cb91442a62620441dbc0b6486dfebe` |
 | BellRouter | `0x1b91eadba66747430188672bd7bce0cc3eef6c85` |
 | mBELL fee token | `0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150` |
-| AAPL rehearsal stock | `0x1d35a37f74a910ee181e6898034975ed384ff833` |
+| AAPL rehearsal stock (previous pool) | `0xb82815f01a3c9034fbf06d05a99f0beb862d705a` |
+| AAPL rehearsal stock (latest PRE pool) | `0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a` |
 | Yahoo verifier | `0x20a066123c260bc6c5253f75e261c5056fde4bea` |
 | Direct adapter | `0x8fb74c552f6e4fb5c9d2d943b446ff8e36c125f0` |
 | Regular adapter | `0xc8f49f566a7a7aa16516e0ba1dc953a1b80bf1c6` |
 | Extended adapter | `0x412bba02dda6160bca4ebe60abd0fee3cc3d9c4a` |
-| **Latest pool hook** | `0x549f0c6657d9e39a034f7524e501d218b2c6acc0` |
-| **Latest pool ID** | `0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea` |
-| **Latest rehearsal stock** | `0xb82815f01a3c9034fbf06d05a99f0beb862d705a` |
+| **Latest PRE rehearsal pool hook** | `0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0` |
+| **Latest PRE rehearsal pool ID** | `0xa18cd3ffdd044195a3985ade3a3330c40de6bd0353373a4c5ac6e74dfae7a82c` |
+| Previous REGULAR rehearsal pool hook | `0x549f0c6657d9e39a034f7524e501d218b2c6acc0` |
+| Previous REGULAR rehearsal pool ID | `0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea` |
+| **Latest rehearsal stock** | `0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a` |
 
 ---
 

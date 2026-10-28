@@ -27,7 +27,8 @@ const account = privateKeyToAccount(env.DEPLOYER_PRIVATE_KEY.startsWith('0x') ? 
 const publicClient = createPublicClient({ transport: http(env.RH_TESTNET_RPC_PRIMARY) });
 const walletClient = createWalletClient({ account, transport: http(env.RH_TESTNET_RPC_PRIMARY) });
 
-const pool = JSON.parse(readFileSync('evidence/deploy/testnet-pool-created.json', 'utf8'));
+const poolEvidencePath = 'evidence/deploy/testnet-pool-created.json';
+const pool = JSON.parse(readFileSync(poolEvidencePath, 'utf8'));
 const manifest = JSON.parse(readFileSync('evidence/deploy/testnet-46630.json', 'utf8'));
 const previousSwapEvidence = JSON.parse(readFileSync('evidence/deploy/testnet-swap-keeper.json', 'utf8'));
 const samePool = previousSwapEvidence.poolId?.toLowerCase() === pool.poolId.toLowerCase();
@@ -165,3 +166,11 @@ writeFileSync('evidence/deploy/testnet-swap-keeper.json', JSON.stringify({
   at: new Date().toISOString(),
 }, null, 2) + '\n');
 console.log('\nSaved evidence/deploy/testnet-swap-keeper.json');
+
+const poolEvidence = JSON.parse(readFileSync(poolEvidencePath, 'utf8'));
+poolEvidence.swapTx = swapTx;
+poolEvidence.swapBlockNumber = Number(rc.blockNumber);
+poolEvidence.swapSpent = (beforeIn - afterIn).toString();
+poolEvidence.swapReceived = (afterOut - beforeOut).toString();
+poolEvidence.swapObservedAt = new Date().toISOString();
+writeFileSync(poolEvidencePath, `${JSON.stringify(poolEvidence, null, 2)}\n`);

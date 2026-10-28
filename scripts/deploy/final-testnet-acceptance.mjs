@@ -28,6 +28,7 @@ const c = createPublicClient({ transport: http(env.RH_TESTNET_RPC_PRIMARY) });
 const stockAdapters = JSON.parse(readFileSync('evidence/deploy/testnet-stock-adapters.json', 'utf8'));
 const assetQueue = JSON.parse(readFileSync('evidence/deploy/testnet-46630-asset-queue.json', 'utf8'));
 const pool = JSON.parse(readFileSync('evidence/deploy/testnet-pool-created.json', 'utf8'));
+const expectedCalendarPhase = Number(process.env.BELL_EXPECTED_CALENDAR_PHASE || 2);
 
 const failures = [];
 const checks = [];
@@ -128,7 +129,7 @@ const interval = await c.readContract({
 });
 check('calendar.assetMatches', String(interval.assetId) === assetQueue.stock.descriptorId, interval.assetId);
 check('calendar.activeNow', Number(interval.start) <= now && now < Number(interval.end), `${interval.start}..${interval.end} vs ${now}`);
-check('calendar.phaseIsRegular', Number(interval.phase) === 2, String(interval.phase));
+check('calendar.phaseMatchesExpected', Number(interval.phase) === expectedCalendarPhase, `${interval.phase} (expected ${expectedCalendarPhase})`);
 
 // 5. session health for the stock asset
 const SESSION_ABI = parseAbi([
@@ -146,11 +147,11 @@ check('health.hasObservation', Number(health.latestObservation) > 0, health.late
 // a report must exist and be internally valid
 const sample = await c.readContract({
   address: CONTRACTS.sessionRegistry, abi: SESSION_ABI, functionName: 'latestSample',
-  args: [assetQueue.stock.descriptorId, 2],
+  args: [assetQueue.stock.descriptorId, Number(interval.phase)],
 });
 check('report.exists', sample.reportHash !== Z, 'reportHash');
 check('report.priceNonZero', sample.price18 > 0n, sample.price18.toString());
-check('report.phaseRegular', Number(sample.phase) === 2, String(sample.phase));
+check('report.phaseMatchesCalendar', Number(sample.phase) === Number(interval.phase), `${sample.phase} (calendar ${interval.phase})`);
 check('report.freshness', now - Number(sample.observedAt) < 3600, `${now - Number(sample.observedAt)}s old (a live keeper keeps it under 120s)`);
 
 // 6. the live pool hook

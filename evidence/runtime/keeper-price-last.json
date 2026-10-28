@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-10-28T12:53:49.859Z",
+  "block": 144195276,
+  "chainTime": 1793192030,
+  "price18": "346200000000000000000",
+  "source": "yahoo-PRE",
+  "broadcast": true,
+  "hooks": [
+    "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0"
+  ],
+  "steps": [
+    {
+      "step": "publishDirect",
+      "tx": "0x4000ee6206f984d835e8020340f3320482b68a9ba0b0ca53e49a169212a75b53",
+      "status": "reverted"
+    },
+    {
+      "step": "submitReports",
+      "tx": "0xff4411b4026606bba0fadc27e323223ae314fcb4d09616f4bf1e70bdc0ab71f7",
+      "status": "reverted"
+    },
+    {
+      "step": "refreshHealth",
+      "tx": "0x4cb142693c17bb0ba2ff522fd7cc1aabd9185a7982b5253e7792c248a8557aab",
+      "status": "success"
+    },
+    {
+      "step": "hook.refreshState",
+      "hook": "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0",
+      "tx": "0xbeb8639f8c64fd69b7485555f7c29c6cdbc401c92c911fa31e83329a763e5f3b",
+      "status": "success"
+    },
+    {
+      "step": "hook.getPolicy",
+      "hook": "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0",
+      "mode": 1,
+      "canSwap": true,
+      "reasonBits": "0"
+    }
+  ],
+  "health": {
+    "ready": true,
+    "reasonBits": "0",
+    "validUntil": "1793192088"
+  },
+  "finishedAt": "2026-10-28T12:53:54.314Z"
+}

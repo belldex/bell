@@ -1,18 +1,18 @@
 {
   "weth": {
-    "token": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
-    "descriptorId": "0xba64280c15ce1e5dae666e1c68ab7925f666fc3e2ca2a41a30a5ec090b05c66f",
+    "token": "0x45b4bf15c1cb91442a62620441dbc0b6486dfebe",
+    "descriptorId": "0xa66725342d4aa3ce04be7db30fc3ecce709d236b5d2923d43753c0b9e3d85fcd",
     "isStock": false
   },
   "stock": {
-    "token": "0x1d35a37f74a910ee181e6898034975ed384ff833",
-    "descriptorId": "0x8da62b9a19256c027402874af4987f26ea80461e14db85bf01e98d4a674d9085",
+    "token": "0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a",
+    "descriptorId": "0x0fab895e22443e45401720f1ca780915bbc2323e025edb18bc4e2e9a5dc33bd3",
     "isStock": true,
-    "directAdapter": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
-    "regularAdapter": "0xba9b5142f282dde204805d66fddb5d6256080926",
-    "extendedAdapter": "0xe2380390ee342ad42dc463d6518f1e67cc5a52c3"
+    "directAdapter": "0xd143e33b40630fe3997da47849ed55712124d2e4",
+    "regularAdapter": "0x8d9216e8e2b7cb24b213f271ac175f66d9eb2d97",
+    "extendedAdapter": "0x23c1f6c5f919be1c4eaa7c7064063b88b34a64c9"
   },
-  "registryAddress": "0x4d477a439b127fcac45bbbbd535ba9b0d0345488",
+  "registryAddress": "0x3b71543bd71b9d4c9678216d338611236a37b380",
   "chainId": 46630,
-  "admittedAt": "2026-10-28T02:03:29.113Z"
+  "admittedAt": "2026-10-28T09:06:32.272Z"
 }

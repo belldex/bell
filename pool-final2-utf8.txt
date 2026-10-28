@@ -1,0 +1,172 @@
+﻿Deployer:       0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399
+Factory:        0x4b22251105e65d76366d27099ac7c5097b63faf5
+StockToken:     0xb82815f01a3c9034fbf06d05a99f0beb862d705a
+WETH:           0x45b4bf15c1cb91442a62620441dbc0b6486dfebe
+
+=== Step 1: Establishing Health Baseline ===
+[Quote T0] Block 144043163 Time 1793169688: {
+  ready: true,
+  reasonBits: '0',
+  healthySince: '1793169687',
+  validUntil: '1793169748'
+}
+
+Waiting 30 seconds before renewing quote...
+
+=== Step 2: Renewing Quote (Extending validUntil) ===
+[Quote T30] Block 144043413 Time 1793169720: {
+  ready: true,
+  reasonBits: '0',
+  healthySince: '1793169687',
+  validUntil: '1793169780'
+}
+
+Waiting until chain time reaches 1793169752 (65s healthy, validUntil is 1793169780)...
+Ready! Chain time: 1793169754 >= 1793169752. Remaining validity: 26s
+Approving pool tokens to factory...
+Approvals confirmed.
+
+=== Step 3: Pool Creation & Seeding ===
+Mining hook salt for deployer nonce 0 ...
+Mined hook: 0x549f0c6657d9e39a034f7524e501d218b2c6acc0 salt: 0x24392b2a5abf1a728af265337226295924f4d68a2636be5abf10a52ba94525df
+Broadcasting createAndSeed...
+TX sent: 0x5ffe62366cdf46fe7d9b07e5242a5c94e1bd81061ed11d00a6776b9ce70c17b7
+createAndSeed mined in block 144043685 status: success
+node : file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/node_modules/vi
+em/_esm/utils/errors/getContractError.js:34
+At line:1 char:223
++ ...  $_.Line }; node scripts/deploy/create-testnet-pool.mjs > pool-final2 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (file:///D:/Proj...ractError.js:34:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+    return new ContractFunctionExecutionError(cause, {
+           ^
+
+ContractFunctionExecutionError: The contract function "getPolicy" returned no data ("0x").
+
+This could be due to any of the following:
+  - The contract does not have the function "getPolicy",
+  - The parameters passed to the contract function may be invalid, or
+  - The address is not a contract.
+
+Contract Call:
+  address:   0xD56dB42346f6D3cde008d44E70D695fA6bcDd382
+  function:  getPolicy()
+
+Docs: https://viem.sh/docs/contract/readContract
+Version: viem@2.57.11
+    at getContractError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6
+.5/node_modules/viem/_esm/utils/errors/getContractError.js:34:12)
+    at readContract (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/n
+ode_modules/viem/_esm/actions/public/readContract.js:58:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:312:20 {
+  cause: ContractFunctionZeroDataError: The contract function "getPolicy" returned no data ("0x").
+
+  This could be due to any of the following:
+    - The contract does not have the function "getPolicy",
+    - The parameters passed to the contract function may be invalid, or
+    - The address is not a contract.
+
+  Version: viem@2.57.11
+      at file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5/node_modules/
+viem/_esm/utils/errors/getContractError.js:16:20
+      at getContractError (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4
+.6.5/node_modules/viem/_esm/utils/errors/getContractError.js:33:7)
+      at readContract (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6.5
+/node_modules/viem/_esm/actions/public/readContract.js:58:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:312:20 {
+    details: undefined,
+    docsPath: undefined,
+    metaMessages: [
+      'This could be due to any of the following:',
+      '  - The contract does not have the function "getPolicy",',
+      '  - The parameters passed to the contract function may be invalid, or',
+      '  - The address is not a contract.'
+    ],
+    shortMessage: 'The contract function "getPolicy" returned no data ("0x").',
+    version: '2.57.11',
+    [cause]: AbiDecodingZeroDataError: Cannot decode zero data ("0x") with ABI parameters.
+
+    Version: viem@2.57.11
+        at decodeAbiParameters (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_
+zod@4.6.5/node_modules/viem/_esm/utils/abi/decodeAbiParameters.js:14:15)
+        at decodeFunctionResult (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2
+_zod@4.6.5/node_modules/viem/_esm/utils/abi/decodeFunctionResult.js:18:20)
+        at readContract (file:///D:/Project/wealthypeople/BELL/node_modules/.pnpm/viem@2.57.11_typescript@7.0.2_zod@4.6
+.5/node_modules/viem/_esm/actions/public/readContract.js:50:16)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async file:///D:/Project/wealthypeople/BELL/scripts/deploy/create-testnet-pool.mjs:312:20 {
+      details: undefined,
+      docsPath: undefined,
+      metaMessages: undefined,
+      shortMessage: 'Cannot decode zero data ("0x") with ABI parameters.',
+      version: '2.57.11'
+    }
+  },
+  details: undefined,
+  docsPath: '/docs/contract/readContract',
+  metaMessages: [
+    'This could be due to any of the following:',
+    '  - The contract does not have the function "getPolicy",',
+    '  - The parameters passed to the contract function may be invalid, or',
+    '  - The address is not a contract.',
+    ' ',
+    'Contract Call:',
+    '  address:   0xD56dB42346f6D3cde008d44E70D695fA6bcDd382\n' +
+      '  function:  getPolicy()'
+  ],
+  shortMessage: 'The contract function "getPolicy" returned no data ("0x").',
+  version: '2.57.11',
+  abi: [
+    {
+      name: 'getPolicy',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [
+        {
+          type: 'tuple',
+          components: [
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object]
+          ]
+        }
+      ]
+    },
+    {
+      name: 'state',
+      type: 'function',
+      stateMutability: 'view',
+      inputs: [],
+      outputs: [
+        {
+          type: 'tuple',
+          components: [
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object], [Object],
+            [Object]
+          ]
+        }
+      ]
+    }
+  ],
+  args: undefined,
+  contractAddress: '0xD56dB42346f6D3cde008d44E70D695fA6bcDd382',
+  formattedArgs: undefined,
+  functionName: 'getPolicy',
+  sender: undefined
+}
+
+Node.js v24.15.0
