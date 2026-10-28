@@ -1,0 +1,15 @@
+{
+  "hook": "0x60ebf7082ea56a6956af5a137a2ae50937162cc0",
+  "poolId": "0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed",
+  "createTx": "0x7c1542eb6d7c7d0665ba520449e07fd0668c439a5e0f422fae8aba312a17c568",
+  "blockNumber": 143921854,
+  "token0": "0x1d35a37f74a910ee181e6898034975ed384ff833",
+  "token1": "0x7bb4d894a9498c46abdb20e0adc6a08506d62fb9",
+  "asset0": "0x8da62b9a19256c027402874af4987f26ea80461e14db85bf01e98d4a674d9085",
+  "asset1": "0xba64280c15ce1e5dae666e1c68ab7925f666fc3e2ca2a41a30a5ec090b05c66f",
+  "lifecycle": 2,
+  "mode": 1,
+  "canSwap": true,
+  "phase": 2,
+  "createdAt": "2026-10-28T02:18:00Z"
+}
