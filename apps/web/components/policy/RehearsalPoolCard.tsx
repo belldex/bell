@@ -9,9 +9,9 @@ import { readLivePool, type LivePoolState } from '@/lib/live-swap';
 import { TESTNET } from '@bell/protocol/testnet-status';
 
 // Public testnet evidence: evidence/deploy/testnet-pool-created.json
-const REHEARSAL_HOOK = '0x549f0C6657d9E39a034f7524E501D218B2c6acc0' as Address;
-const POOL_ID = '0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea';
-const CREATE_BLOCK = 144043685;
+const REHEARSAL_HOOK = '0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0' as Address;
+const POOL_ID = '0xd32bb2cef93c6d9a612f362cfccc20c2549e4bf73887e6bf8cd0fb778413b82b';
+const CREATE_BLOCK = 144308842;
 
 export function RehearsalPoolCard() {
   const wallet = useWallet();

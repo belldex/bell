@@ -40,7 +40,7 @@ const chain = {
 
 /** Public address of the deployed rehearsal hook; reads are onchain, actions remain policy-gated. */
 const LIVE_HOOK = (
-  process.env.NEXT_PUBLIC_BELL_LIVE_HOOK ?? '0x549f0C6657d9E39a034f7524E501D218B2c6acc0'
+  process.env.NEXT_PUBLIC_BELL_LIVE_HOOK ?? '0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0'
 ) as Address | '';
 
 type Stage = 'idle' | 'reading' | 'approving' | 'swapping' | 'done' | 'failed';

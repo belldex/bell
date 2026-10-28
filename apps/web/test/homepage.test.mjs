@@ -269,13 +269,13 @@ test('swap fixture controls never lead into a fake submit timeline', async () =>
 
 test('deployed rehearsal hook is read onchain with explicit evidence address, never inferred from fixtures', async () => {
   const panel = await read('../components/swap/LiveSwapPanel.tsx');
-  assert.match(panel, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
+  assert.match(panel, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0/i);
   assert.match(panel, /readLivePool\(/);
   assert.match(panel, /wallet\.chainId === TESTNET\.chainId/);
   assert.match(panel, /Connect wallet to read the live policy/);
   assert.doesNotMatch(panel, /http\(\)/, 'must not create a public client without an RPC URL');
   assert.match(panel, /if \(!current\.canSwap/, 'must re-check policy immediately before transaction');
-  assert.match(panel, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0|deployed rehearsal hook/i);
+  assert.match(panel, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0|deployed rehearsal hook/i);
 });
 
 test('pool directory exposes the deployed rehearsal policy separately from fixture cards', async () => {
@@ -283,9 +283,9 @@ test('pool directory exposes the deployed rehearsal policy separately from fixtu
   assert.match(pools, /RehearsalPoolCard/);
   const liveCard = await read('../components/policy/RehearsalPoolCard.tsx');
   assert.match(liveCard, /readLivePool/);
-  assert.match(liveCard, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
-  assert.match(liveCard, /0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea/i);
-  assert.match(liveCard, /144043685/);
+  assert.match(liveCard, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0/i);
+  assert.match(liveCard, /0xd32bb2cef93c6d9a612f362cfccc20c2549e4bf73887e6bf8cd0fb778413b82b/i);
+  assert.match(liveCard, /144308842/);
   assert.match(liveCard, /wallet\.chainId|wallet\.status/);
   assert.match(liveCard, /reasonBits/);
   assert.match(liveCard, /Preview fixture/);

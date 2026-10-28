@@ -22,3 +22,7 @@ evidence/private/
 
 # agent scratch workspace
 .superpowers/
+
+# vercel
+.vercel
+.env*.local
