@@ -10,6 +10,7 @@ import { POOLS, getPool, type CurrencyBudget, type PoolPolicy } from '@/lib/fixt
 import { cn, formatRaw, remaining } from '@/lib/format';
 import { effectiveLimits, feePercent, type MarketPhase } from '@/lib/policy';
 import { useWallet } from '@/lib/wallet';
+import { LiveSwapPanel } from '@/components/swap/LiveSwapPanel';
 
 /** Preview pricing only: 1 stock = price counter units. Not a market quote. */
 const RATE: Record<string, { stock: string; price: number }> = {
@@ -283,6 +284,7 @@ function SwapInner() {
           <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Quote expired. Re-quote to continue — your minimum amounts are never changed silently.' : stale ? 'Inputs changed — requoting…' : `Valid for ${Math.ceil(left)} s · transaction deadline ${deadline} s after signing`}</p>
         </div>
       </aside>
+      <LiveSwapPanel />
     </div>
   );
 }

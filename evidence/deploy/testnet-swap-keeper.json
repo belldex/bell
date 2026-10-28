@@ -1,0 +1,22 @@
+{
+  "swapTx": "0x9c846c76baaad6cc481fa005b26120c03ebbba591c0ec3bf0b6854e81c7bfad4",
+  "blockNumber": 143938848,
+  "hook": "0x60ebf7082ea56a6956af5a137a2ae50937162cc0",
+  "poolId": "0x01ca38d9ebfc30a7387a07f4b41d9b947ed3b520f78bb28690c17f82ddcdeaed",
+  "zeroForOne": true,
+  "spent": "9",
+  "received": "7",
+  "grossBefore": [
+    "7",
+    "5"
+  ],
+  "grossAfter": [
+    "9",
+    "7"
+  ],
+  "remaining": [
+    "84,88",
+    "0,0"
+  ],
+  "at": "2026-10-28T02:54:59.660Z"
+}
