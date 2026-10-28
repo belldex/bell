@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ArrowLeftRight, Droplets, Layers, PlusCircle, WifiOff } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Droplets, Layers, Menu, PlusCircle, ShieldCheck, WifiOff, X } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
@@ -14,10 +14,11 @@ import { cn } from '@/lib/format';
 import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/policy';
 
 const NAV = [
-  { href: '/pools', label: 'Pools', icon: Droplets },
+  { href: '/pools', label: 'Pool preview', icon: Droplets },
   { href: '/swap', label: 'Swap', icon: ArrowLeftRight },
-  { href: '/create', label: 'Create', icon: PlusCircle },
+  { href: '/create', label: 'Create preview', icon: PlusCircle },
   { href: '/positions', label: 'Positions', icon: Layers },
+  { href: '/protocol', label: 'Protocol', icon: ShieldCheck },
 ] as const;
 
 function CalendarChip() {
@@ -49,35 +50,57 @@ function ChainGuard() {
   );
 }
 
+function PhaseTicker() {
+  return (
+    <div className="overflow-hidden border-b border-line bg-muted text-ink">
+      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-6 px-4 font-mono text-[11px] uppercase tracking-[0.12em] max-md:justify-start">
+        <span className="text-ion">BELL · Robinhood Chain</span>
+        <span>Testnet rehearsal</span>
+        <span className="hidden sm:inline">Sample pools are previews · writes require wallet + live policy</span>
+        <Link href="/protocol" className="hidden border-b border-current pb-px hover:text-ion md:inline">Policy</Link>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => setMobileOpen(false), [path]);
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, []);
   return (
     <WalletProvider>
       <SmoothScroll enabled={false}>
-        <div className="relative min-h-dvh bg-bg-0 pb-24 md:pb-0">
-          <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_12%,transparent),transparent_70%)]" aria-hidden="true" />
-          <div className="pointer-events-none fixed inset-0 -z-0 opacity-[0.35] [background-image:linear-gradient(var(--color-line)_1px,transparent_1px),linear-gradient(90deg,var(--color-line)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(70%_60%_at_50%_0%,#000,transparent)]" aria-hidden="true" />
+        <div className="relative min-h-dvh overflow-x-clip bg-bg-0 pb-24 md:pb-0">
+          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_10%,transparent),transparent_70%)]" aria-hidden="true" />
 
+          <PhaseTicker />
           <TestnetBanner />
           <ChainGuard />
 
-          <header className="sticky top-0 z-40 border-b border-line/80 bg-bg-0/85 backdrop-blur-xl">
-            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-              <div className="flex items-center gap-8">
+          <header className="sticky top-0 z-40 border-b border-line/80 bg-bg-0/90 backdrop-blur-xl">
+            <div className="mx-auto flex min-h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+              <div className="flex items-center gap-6 lg:gap-10">
                 <Link href="/" aria-label="BELL home" className="rounded-full"><Logo /></Link>
-                <nav aria-label="App" className="hidden items-center gap-1 md:flex">
-                  {NAV.map(({ href, label }) => {
-                    const active = path === href || path === `${href}/` || (href === '/pools' && path.startsWith('/pool'));
+                <nav aria-label="App" className="hidden items-center gap-6 lg:flex lg:gap-8">
+                   {NAV.map(({ href, label }) => {
+                    const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
                     return (
                       <Link
                         key={href}
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                          'rounded-full px-4 py-1.5 text-sm font-medium transition-all',
-                          active
-                            ? 'bg-ion/10 text-ion border border-ion/30'
-                            : 'text-muted hover:bg-white/5 hover:text-ink'
+                           'min-h-11 px-1 py-1.5 font-mono text-[10px] uppercase tracking-[0.06em] whitespace-nowrap transition-all xl:text-xs xl:tracking-[0.08em]',
+                           active
+                             ? 'border-b border-ion text-ion'
+                             : 'text-muted hover:text-ink'
                         )}
                       >
                         {label}
@@ -89,26 +112,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-3">
                 <CalendarChip />
                 <WalletButton />
+                <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label={mobileOpen ? 'Close app navigation' : 'Open app navigation'} aria-expanded={mobileOpen} aria-controls="mobile-app-navigation" onClick={() => setMobileOpen((open) => !open)}>
+                  {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
+                </button>
               </div>
             </div>
+            {mobileOpen ? <nav id="mobile-app-navigation" aria-label="App mobile" className="border-t border-line bg-slab px-4 py-3 lg:hidden">
+              {NAV.map(({ href, label, icon: Icon }) => {
+                const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
+                return <Link key={href} href={href} aria-current={active ? 'page' : undefined} onClick={() => setMobileOpen(false)} className={cn('flex min-h-12 items-center gap-3 border-b border-line px-3 font-mono text-xs uppercase tracking-[0.08em]', active ? 'text-ion' : 'text-muted hover:text-ink')}><Icon className="h-4 w-4" aria-hidden="true" />{label}</Link>;
+              })}
+            </nav> : null}
           </header>
 
-          <main id="main" className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+          <main id="main" className="relative z-10 mx-auto min-h-[calc(100vh-260px)] max-w-[1440px] px-4 py-10 sm:px-6 sm:py-12 lg:px-10">{children}</main>
 
-          <footer className="relative z-10 mx-auto max-w-6xl px-4 pb-10 sm:px-6">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-6 text-xs text-dim">
-              <span className="inline-flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" aria-hidden="true" /> Indexed through: <span className="num">n/a (preview)</span></span>
+          <footer className="relative z-10 mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 lg:px-10">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-6 font-mono text-[11px] text-dim">
+              <span className="inline-flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" aria-hidden="true" /> Indexer: <span className="num">not connected</span></span>
               <span>Quotes expire in ≤ 30 s · transaction deadline ≤ 120 s</span>
               <span className="sm:ml-auto">Fees and caps are not a guarantee of fills or of returns.</span>
             </div>
           </footer>
 
           {/* mobile bottom nav */}
-          <nav aria-label="App (mobile)" className="glass fixed inset-x-3 bottom-3 z-50 flex items-center justify-around rounded-full px-2 py-1.5 md:hidden">
+          <nav aria-label="App (mobile)" className="glass fixed inset-x-3 bottom-3 z-50 flex items-center justify-around rounded-none border border-line bg-slab/95 px-2 py-1.5 backdrop-blur-xl lg:hidden">
             {NAV.map(({ href, label, icon: Icon }) => {
-              const active = path === href || path === `${href}/` || (href === '/pools' && path.startsWith('/pool'));
+              const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].includes(path));
               return (
-                <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={cn('flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-full px-3 text-[0.65rem]', active ? 'bg-ion/15 text-ion' : 'text-muted')}>
+                <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={cn('flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-none px-3 font-mono text-[9px] uppercase tracking-tight', active ? 'bg-ion/15 text-ion' : 'text-muted')}>
                   <Icon className="h-5 w-5" aria-hidden="true" />
                   {label}
                 </Link>

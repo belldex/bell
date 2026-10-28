@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { parseUnits } from 'viem';
-import { AlertTriangle, ArrowDownUp, Check, ChevronDown, Info, Loader2, RefreshCw, Timer, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, ChevronDown, Info, RefreshCw, Timer } from 'lucide-react';
 import { Button, ClassBadge, PhaseBadge } from '@/components/ui/primitives';
 import { BudgetBar } from '@/components/policy/BudgetBar';
 import { POOLS, getPool, type CurrencyBudget, type PoolPolicy } from '@/lib/fixtures';
@@ -23,7 +23,6 @@ const RATE: Record<string, { stock: string; price: number }> = {
 };
 
 const QUOTE_TTL = 30;
-type Stage = 'idle' | 'approving' | 'submitting' | 'provisional' | 'confirmed' | 'cancelled' | 'failed';
 
 function fmt(n: number): string {
   if (!isFinite(n)) return '—';
@@ -55,7 +54,7 @@ function SwapInner() {
   const params = useSearchParams();
   const wallet = useWallet();
   const swappable = POOLS.filter((p) => p.canSwap);
-  const initial = getPool(params.get('pool')) ?? swappable[0];
+  const initial = getPool(params.get('pool')) ?? getPool('weth-tsla') ?? swappable[0];
   const [poolId, setPoolId] = useState(initial.id);
   const pool = getPool(poolId) as PoolPolicy;
 
@@ -63,11 +62,8 @@ function SwapInner() {
   const [mode, setMode] = useState<'in' | 'out'>('in');
   const [amount, setAmount] = useState('100');
   const [slip, setSlip] = useState(0.5);
-  const [deadline, setDeadline] = useState(60);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [stage, setStage] = useState<Stage>('idle');
-  const timers = useRef<number[]>([]);
 
   const rate = RATE[pool.id];
   const inB: CurrencyBudget = pool.budgets[flip ? 1 : 0];
@@ -76,7 +72,7 @@ function SwapInner() {
   const px = sellsStock ? rate.price : 1 / rate.price; // out per 1 in (pre-fee)
   const phase = (pool.poolPhase === 'HALTED' ? null : pool.poolPhase) as MarketPhase | null;
 
-  const key = `${pool.id}|${flip}|${mode}|${amount}|${slip}|${deadline}`;
+  const key = `${pool.id}|${flip}|${mode}|${amount}|${slip}`;
 
   const compute = useCallback((): Quote => {
     const a = parseFloat(amount);
@@ -128,7 +124,6 @@ function SwapInner() {
 
   // invalidate quote on any change in inputs/state; auto-quote after typing
   useEffect(() => {
-    setStage('idle');
     const id = window.setTimeout(() => setQuote(compute()), 250);
     return () => window.clearTimeout(id);
   }, [compute]);
@@ -137,61 +132,54 @@ function SwapInner() {
     const id = window.setInterval(() => setNow(Date.now()), 500);
     return () => window.clearInterval(id);
   }, []);
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
   const age = quote ? (now - quote.stamp) / 1000 : 0;
   const expired = !!quote && age >= QUOTE_TTL;
   const stale = !!quote && quote.key !== key;
   const left = Math.max(0, QUOTE_TTL - age);
 
-  const busy = stage === 'approving' || stage === 'submitting';
-  const run = () => {
-    if (!quote || !quote.canExecute || expired || stale) return;
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
-    setStage('approving');
-    const q = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
-    q(() => setStage('submitting'), 1200);
-    q(() => setStage('provisional'), 2600);
-    q(() => setStage('confirmed'), 5200);
-  };
-  const cancel = () => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    setStage('cancelled');
-  };
-
   const cta = (() => {
-    if (wallet.wrongChain) return { label: 'Switch network', action: () => wallet.switchChain(4663), disabled: false };
+    if (wallet.wrongChain) return { label: 'Switch network', action: () => wallet.switchChain(46630), disabled: false };
     if (!quote || stale) return { label: 'Fetching quote…', action: undefined, disabled: true };
     if (expired) return { label: 'Quote expired — re-quote', action: () => setQuote(compute()), disabled: false };
     if (!quote.canExecute) return { label: quote.reasons[0] ?? 'Cannot execute', action: undefined, disabled: true };
-    return { label: wallet.status === 'connected' ? 'Review & simulate swap' : 'Simulate swap (no wallet)', action: run, disabled: false };
+    return { label: 'No executable fixture quote — open live policy panel below', action: undefined, disabled: true };
   })();
 
   const lim = phase ? effectiveLimits(phase, BigInt(inB.perTrade), BigInt(inB.rolling)) : null;
 
-  return (
-    <div className="grid items-start gap-8 lg:grid-cols-2">
-      {/* Form */}
-      <section aria-labelledby="swap-title" className="glass rounded-2xl border border-line bg-surface/75 p-6 sm:p-7">
+    return (
+      <div className="mx-auto max-w-[1440px]">
+      <header className="mb-8 max-w-[760px] border-b border-line pb-6">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap · Policy preview</p>
+        <h1 id="swap-title" className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Review the policy before you sign.</h1>
+        <p className="mt-4 max-w-[620px] text-sm leading-relaxed text-muted">Fixture quotes are for UI review only. They are not live prices or executable quotes. A separate panel below reads the deployed testnet hook policy.</p>
+      </header>
+      <div className="mb-6 flex flex-wrap items-center gap-2 border border-warn/30 bg-warn/5 px-4 py-3 font-mono text-[11px] text-warn">
+        <span className="font-semibold uppercase tracking-[0.1em]">Preview only</span>
+        <span className="text-muted">These fixture amounts and quotes do not reach the router.</span>
+      </div>
+      <div className="grid items-start gap-8 lg:grid-cols-2">
+      {/* Preview form — never submits; the live policy panel is a separate onchain reader. */}
+      <section aria-label="Preview swap inputs" className="glass rounded-none border border-line bg-surface/75 p-6 sm:p-7">
         <div className="flex items-center justify-between">
-          <h1 id="swap-title" className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">Swap</h1>
-          <span className="rounded-full border border-warn/40 bg-warn/10 px-2.5 py-1 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-warn">Preview · no tx sent</span>
+          <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-dim">Preview inputs</h2>
+          <span className="rounded-none border border-warn/40 bg-warn/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-warn">Fixture · no tx sent</span>
         </div>
 
         <div className="mt-5">
-          <label htmlFor="pool-select" className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">Pool</label>
+          <label htmlFor="pool-select" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Pool fixture</label>
           <div className="relative mt-2">
-            <select id="pool-select" value={poolId} onChange={(e) => setPoolId(e.target.value)} className="h-12 w-full appearance-none rounded-2xl border border-line bg-bg-1 px-4 pr-10 text-ink outline-none transition-colors focus:border-ion/60">
+            <select id="pool-select" value={poolId} onChange={(e) => setPoolId(e.target.value)} className="h-12 w-full appearance-none rounded-none border border-line bg-bg-1 px-4 pr-10 text-ink outline-none transition-colors focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
               {swappable.map((p) => <option key={p.id} value={p.id}>{p.pair.join(' / ')} · {p.poolClass === 'PRICE_GUARDED' ? 'Price guarded' : 'Session only'}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-dim" aria-hidden="true" />
           </div>
         </div>
 
-        <div className="mt-4 inline-flex rounded-full border border-line bg-bg-1/70 p-1" role="radiogroup" aria-label="Amount type">
+        <div className="mt-4 inline-flex rounded-none border border-line bg-bg-1/70 p-1" role="radiogroup" aria-label="Amount type">
           {(['in', 'out'] as const).map((m) => (
-            <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)} className={cn('min-h-9 rounded-full px-4 text-sm', mode === m ? 'bg-white/10 text-ink' : 'text-muted hover:text-ink')}>
+            <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)} className={cn('min-h-10 rounded-none px-4 font-mono text-[11px] uppercase tracking-[0.08em]', mode === m ? 'bg-ion/15 text-ion' : 'text-muted hover:text-ink')}>
               {m === 'in' ? 'Exact input' : 'Exact output'}
             </button>
           ))}
@@ -214,33 +202,23 @@ function SwapInner() {
               ))}
             </div>
           </fieldset>
-          <fieldset>
-            <legend className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">Tx deadline (max 120 s)</legend>
-            <div className="mt-2 flex gap-1.5">
-              {[30, 60, 120].map((s) => (
-                <button key={s} type="button" aria-pressed={deadline === s} onClick={() => setDeadline(s)} className={cn('num min-h-10 flex-1 rounded-xl border text-sm', deadline === s ? 'border-ion/60 bg-ion/10 text-ion' : 'border-line text-muted hover:text-ink')}>{s}s</button>
-              ))}
-            </div>
-          </fieldset>
+          <p className="flex items-center border border-line px-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted">Preview only · tx deadline not applicable</p>
         </div>
 
         {quote && !quote.canExecute && quote.reasons[0] !== 'Enter an amount' && (
-          <ul role="alert" className="mt-5 space-y-1.5 rounded-2xl border border-down/30 bg-down/10 p-4 text-sm text-down">
+          <ul role="alert" className="mt-5 space-y-1.5 rounded-none border border-down/30 bg-down/10 p-4 text-sm text-down">
             {quote.reasons.map((r) => <li key={r} className="flex items-start gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{r}</li>)}
           </ul>
         )}
 
-        <Button size="lg" className="mt-5 w-full" disabled={cta.disabled || busy} onClick={cta.action} aria-busy={busy}>
-          {busy && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
-          {busy ? (stage === 'approving' ? 'Waiting for approval…' : 'Submitting…') : cta.label}
+        <Button size="lg" className="mt-5 w-full" disabled={cta.disabled} onClick={cta.action}>
+          {cta.label}
         </Button>
-
-        <TxTimeline stage={stage} onCancel={cancel} />
       </section>
 
       {/* Disclosure + quote */}
-      <aside className="space-y-5" aria-label="Quote and disclosures">
-        <div className="glass rounded-2xl border border-line bg-surface/75 p-6 sm:p-7">
+      <aside className="space-y-5" aria-label="Fixture quote and disclosures">
+          <div className="glass rounded-none border border-line bg-surface/75 p-6 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-dim">Before you sign</h2>
             <div className="flex items-center gap-2">
@@ -271,20 +249,21 @@ function SwapInner() {
           )}
         </div>
 
-        <div className="glass rounded-2xl border border-line bg-surface/75 p-5 sm:p-6">
+          <div className="glass rounded-none border border-line bg-surface/75 p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-dim"><Timer className="h-4 w-4 text-ion" aria-hidden="true" /> Quote validity</h2>
-            <button type="button" onClick={() => setQuote(compute())} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-3.5 text-sm text-muted hover:border-ion/50 hover:text-ink">
+            <h2 className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-dim"><Timer className="h-4 w-4 text-ion" aria-hidden="true" /> Preview refresh age</h2>
+            <button type="button" onClick={() => setQuote(compute())} className="inline-flex min-h-10 items-center gap-2 rounded-none border border-line px-3.5 font-mono text-[11px] uppercase text-muted hover:border-ion/50 hover:text-ink">
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> Re-quote
             </button>
           </div>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
             <div className={cn('h-full rounded-full transition-[width] duration-500', expired ? 'bg-down' : 'bg-ion')} style={{ width: `${(left / QUOTE_TTL) * 100}%` }} />
           </div>
-          <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Quote expired. Re-quote to continue — your minimum amounts are never changed silently.' : stale ? 'Inputs changed — requoting…' : `Valid for ${Math.ceil(left)} s · transaction deadline ${deadline} s after signing`}</p>
+          <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Fixture preview expired. Refresh to recalculate.' : stale ? 'Inputs changed — recalculating preview…' : `Fixture calculation refreshed ${Math.ceil(left)} s ago · not an executable quote`}</p>
         </div>
       </aside>
       <LiveSwapPanel />
+      </div>
     </div>
   );
 }
@@ -302,8 +281,8 @@ function Row({ label, value, sub }: { label: string; value: React.ReactNode; sub
 function TokenRow({ label, symbol, value, editable, onChange }: { label: string; symbol: string; value: string; editable: boolean; onChange: (v: string) => void }) {
   const id = `amt-${label.replace(/\W/g, '')}`;
   return (
-    <div className={cn('rounded-2xl border bg-bg-1 p-4 transition-colors', editable ? 'border-line-strong focus-within:border-ion/60' : 'border-line')}>
-      <label htmlFor={id} className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">{label}</label>
+    <div className={cn('rounded-none border bg-bg-1 p-4 transition-colors', editable ? 'border-line-strong focus-within:border-ion/60' : 'border-line')}>
+      <label htmlFor={id} className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">{label}</label>
       <div className="mt-1.5 flex items-center justify-between gap-3">
         <input
           id={id}
@@ -315,51 +294,8 @@ function TokenRow({ label, symbol, value, editable, onChange }: { label: string;
           placeholder="0.0"
           className="num w-full min-w-0 bg-transparent text-3xl text-ink outline-none placeholder:text-dim"
         />
-        <span className="rounded-full border border-line bg-bg-0 px-3.5 py-2 text-sm font-medium text-ink">{symbol}</span>
+        <span className="rounded-none border border-line bg-bg-0 px-3.5 py-2 font-mono text-xs text-ink">{symbol}</span>
       </div>
-    </div>
-  );
-}
-
-function TxTimeline({ stage, onCancel }: { stage: Stage; onCancel: () => void }) {
-  if (stage === 'idle') return null;
-  const steps: Array<{ id: Stage[]; label: string; sub: string }> = [
-    { id: ['approving'], label: 'Wallet approval', sub: 'Minimum approval for this request only' },
-    { id: ['submitting'], label: 'Submitted', sub: 'Waiting for inclusion (cancel only before broadcast)' },
-    { id: ['provisional'], label: 'Provisional receipt', sub: 'Included in a block — not final' },
-    { id: ['confirmed'], label: 'Confirmed, not finalized', sub: 'Finality needs the finalized tag from two providers' },
-  ];
-  const order: Stage[] = ['approving', 'submitting', 'provisional', 'confirmed'];
-  const cur = order.indexOf(stage);
-  return (
-    <div className="mt-5 rounded-2xl border border-line bg-bg-1/70 p-4" role="status" aria-live="polite">
-      {stage === 'cancelled' ? (
-        <p className="flex items-center gap-2 text-sm text-muted"><X className="h-4 w-4" aria-hidden="true" /> Cancelled before broadcast. Nothing was sent.</p>
-      ) : (
-        <>
-          <ol className="space-y-3">
-            {steps.map((s, i) => {
-              const done = cur > i || stage === 'confirmed';
-              const active = cur === i && stage !== 'confirmed';
-              return (
-                <li key={s.label} className="flex items-start gap-3">
-                  <span className={cn('mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[0.6rem]', done ? 'border-ion bg-ion text-bg-0' : active ? 'border-ion text-ion' : 'border-line text-dim')}>
-                    {done ? <Check className="h-3 w-3" aria-hidden="true" /> : active ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : i + 1}
-                  </span>
-                  <div>
-                    <p className={cn('text-sm', done || active ? 'text-ink' : 'text-dim')}>{s.label}</p>
-                    <p className="text-xs text-dim">{s.sub}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-          {(stage === 'approving' || stage === 'submitting') && (
-            <button type="button" onClick={onCancel} className="mt-4 min-h-10 rounded-full border border-line px-4 text-sm text-muted hover:border-down/50 hover:text-down">Cancel</button>
-          )}
-          {stage === 'confirmed' && <p className="mt-4 text-xs text-dim">Preview simulation finished. With live contracts this links to the chain-specific explorer and revert reasons.</p>}
-        </>
-      )}
     </div>
   );
 }

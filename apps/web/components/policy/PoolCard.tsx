@@ -15,10 +15,14 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
   return (
     <Link
       href={`/pool/?id=${pool.id}`}
-      className="glass glass-hover group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface/75 p-5 sm:p-6 transition-all duration-200 hover:border-ion/40"
+      className="glass glass-hover group relative flex flex-col overflow-hidden rounded-none border border-line bg-surface/75 p-5 sm:p-6 transition-all duration-200 hover:border-ion/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion"
       aria-label={`${pool.pair.join(' / ')} pool, ${pool.poolClass === 'PRICE_GUARDED' ? 'price guarded' : 'session only'}`}
     >
       <div className="absolute inset-x-0 top-0 hairline-top opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+      <div className="mb-4 flex items-center justify-between border-b border-line/70 pb-3">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-warn">Preview fixture · not onchain</span>
+        <span className="font-mono text-[10px] text-dim">Chain 46630</span>
+      </div>
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -34,30 +38,31 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
         </span>
       </div>
 
-      <dl className="mt-6 grid grid-cols-3 gap-3">
+      <dl className="mt-6 grid grid-cols-3 gap-px border border-line bg-line">
         <div>
-          <dt className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">LP fee</dt>
-          <dd className="num mt-1 text-xl text-ink">{feePercent(pool.effectiveFeeUnits)}</dd>
+          <div className="bg-bg-0 p-3"><dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">LP fee</dt>
+          <dd className="num mt-1 text-xl text-ink">{feePercent(pool.effectiveFeeUnits)}</dd></div>
         </div>
         <div>
-          <dt className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">Source</dt>
+          <div className="bg-bg-0 p-3"><dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Source</dt>
           <dd className="mt-1 flex items-center gap-1.5 text-sm text-ink">
             {frozen ? <><Snowflake className="h-3.5 w-3.5 text-phase-closed" aria-hidden="true" /> Frozen</> : pool.legs[0].source === 'LIVE' ? <><Radio className="h-3.5 w-3.5 text-ion" aria-hidden="true" /> Live</> : 'None'}
-          </dd>
+          </dd></div>
         </div>
         <div>
-          <dt className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">Value</dt>
+          <div className="bg-bg-0 p-3"><dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Value</dt>
           <dd className="num mt-1 truncate text-sm text-ink">
             {pool.referenceValuationUsd ? <>${pool.referenceValuationUsd}</> : <span className="text-dim" title="No independent price reference for this pool class or state">n/a</span>}
           </dd>
           {pool.referenceValuationLabel && <p className="text-[0.62rem] uppercase tracking-wider text-dim">{pool.referenceValuationLabel}</p>}
+          </div>
         </div>
       </dl>
 
       <div className="mt-6">
         <BudgetBar label={`${budget.label} · ${stock.symbol}`} symbol={stock.symbol} decimals={stock.decimals} used={stock[budget.usedField]} total={stock[budget.field]} tone={closed ? 'closed' : 'ion'} />
       </div>
-      <p className="mt-4 text-xs text-dim">{pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'} · {a.symbol}/{b.symbol} · hook per pool</p>
+      <p className="mt-4 text-xs text-dim">{pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'} · {a.symbol}/{b.symbol} · {pool.canSwap ? 'fixture state only' : 'fixture halt state'}</p>
     </Link>
   );
 }

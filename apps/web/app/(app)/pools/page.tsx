@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { PoolCard } from '@/components/policy/PoolCard';
+import { RehearsalPoolCard } from '@/components/policy/RehearsalPoolCard';
 import { POOLS } from '@/lib/fixtures';
 import { cn } from '@/lib/format';
 
@@ -11,7 +12,7 @@ type StateFilter = 'ALL' | 'OPEN' | 'CLOSED' | 'HALTED';
 
 function Segmented<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: Array<{ v: T; l: string }> }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl border border-line bg-surface/70 p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-none border border-line bg-surface/70 p-1">
       {options.map((o) => (
         <button
           key={o.v}
@@ -20,7 +21,7 @@ function Segmented<T extends string>({ label, value, onChange, options }: { labe
           aria-checked={value === o.v}
           onClick={() => onChange(o.v)}
           className={cn(
-            'min-h-8 rounded-lg px-3 text-xs font-medium transition-all',
+            'min-h-10 rounded-none px-3 font-mono text-[11px] uppercase tracking-[0.08em] transition-all',
             value === o.v
               ? 'bg-ion/15 text-ion shadow-[0_0_12px_-3px_var(--color-ion)]'
               : 'text-muted hover:text-ink'
@@ -53,21 +54,23 @@ export default function PoolsPage() {
 
   return (
     <div>
-      <header className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.22em] text-ion font-medium">Pool directory</p>
-        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+      <header className="max-w-3xl border-b border-line pb-7">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Pool directory · Testnet</p>
+        <h1 className="mt-3 max-w-[720px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
           Every pool, its state, and its limits.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Class, session, fee, data source and remaining budgets are shown before you ever sign. These {POOLS.length} pools are preview fixtures, not live chain state — no pool exists on testnet yet, so none of them can actually swap.
+          Class, session, fee, source and budgets are shown before you sign. The {POOLS.length} cards below are preview fixtures; the deployed testnet protocol status is shown above, but fixture rows are not pool records and are never executable.
         </p>
       </header>
 
-      <div className="mt-8 flex flex-wrap items-center gap-3">
-        <label className="glass flex h-10 min-w-[14rem] flex-1 items-center gap-2.5 rounded-xl border border-line bg-surface/70 px-3.5 sm:max-w-xs">
+      <RehearsalPoolCard />
+
+      <div className="mt-8 flex flex-wrap items-center gap-3 border-b border-line pb-6">
+        <label className="glass flex h-11 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-xs">
           <Search className="h-4 w-4 text-dim" aria-hidden="true" />
           <span className="sr-only">Search pairs</span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim" />
+           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="w-full bg-transparent font-mono text-xs text-ink outline-none placeholder:text-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion" />
         </label>
         <SlidersHorizontal className="hidden h-4 w-4 text-dim sm:block" aria-hidden="true" />
         <Segmented<ClassFilter> label="Class" value={cls} onChange={setCls} options={[{ v: 'ALL', l: 'All' }, { v: 'PRICE_GUARDED', l: 'Price guarded' }, { v: 'SESSION_ONLY', l: 'Session only' }]} />
@@ -75,11 +78,11 @@ export default function PoolsPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="glass mt-10 rounded-3xl p-10 text-center text-muted" role="status">No pools match these filters.</div>
+        <div className="glass mt-10 rounded-none border border-line p-10 text-center font-mono text-xs uppercase tracking-[0.08em] text-muted" role="status">No fixture pools match these filters.</div>
       ) : (
-        <ul className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 xl:grid-cols-3">
           {list.map((p) => (
-            <li key={p.id}><PoolCard pool={p} /></li>
+            <li key={p.id} className="bg-bg-0"><PoolCard pool={p} /></li>
           ))}
         </ul>
       )}

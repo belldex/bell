@@ -1,32 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { ArrowUpRight, Check, ChevronDown, CircleHelp, Coins, LifeBuoy, Minus, Plus, ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, ChevronDown, CircleHelp, Coins, LifeBuoy, Minus, Plus, ShieldAlert } from 'lucide-react';
 import { Button, ClassBadge, HaltBadge, PhaseBadge } from '@/components/ui/primitives';
 import { POSITIONS, getPool, type PositionPreview } from '@/lib/fixtures';
 import { cn } from '@/lib/format';
 import { useWallet } from '@/lib/wallet';
 
-const split = (s: string) => { const [n, sym] = s.split(' '); return { n: parseFloat(n.replace(/,/g, '')), sym }; };
-const show = (n: number, sym: string) => `${n.toLocaleString('en-US', { maximumFractionDigits: n >= 100 ? 2 : 5 })} ${sym}`;
-
 function PositionCard({ p }: { p: PositionPreview }) {
   const pool = getPool(p.poolId)!;
   const [mode, setMode] = useState<'none' | 'remove' | 'add'>('none');
   const [pct, setPct] = useState(50);
-  const [collected, setCollected] = useState(false);
-  const [removed, setRemoved] = useState<number | null>(null);
-  const a = split(p.amounts[0]);
-  const b = split(p.amounts[1]);
-  const fa = split(p.feesAccrued[0]);
-  const fb = split(p.feesAccrued[1]);
 
   return (
-    <article className="glass rounded-2xl border border-line bg-surface/75 p-6 sm:p-7">
+    <article className="glass rounded-none border border-line bg-surface/75 p-6 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="num text-xs text-dim">Position {p.id}</p>
+          <p className="font-mono text-xs text-dim">Position fixture {p.id}</p>
           <Link href={`/pool/?id=${pool.id}`} className="mt-1 inline-flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-ink hover:text-ion sm:text-3xl transition-colors">
             {pool.pair[0]} <span className="text-dim font-normal">/</span> {pool.pair[1]} <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
           </Link>
@@ -42,51 +33,42 @@ function PositionCard({ p }: { p: PositionPreview }) {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-line bg-bg-1/70 p-4">
+        <div className="rounded-none border border-line bg-bg-1/70 p-4">
           <p className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">Principal (in-kind)</p>
           <p className="num mt-2 text-lg text-ink">{p.amounts[0]}</p>
           <p className="num text-lg text-ink">{p.amounts[1]}</p>
         </div>
-        <div className="rounded-2xl border border-line bg-bg-1/70 p-4">
-          <p className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">Accrued fees</p>
-          <p className="num mt-2 text-lg text-ink">{collected ? '0 ' + fa.sym : p.feesAccrued[0]}</p>
-          <p className="num text-lg text-ink">{collected ? '0 ' + fb.sym : p.feesAccrued[1]}</p>
+        <div className="rounded-none border border-line bg-bg-1/70 p-4">
+            <p className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">Sample accrued fees</p>
+            <p className="num mt-2 text-lg text-ink">{p.feesAccrued[0]}</p>
+            <p className="num text-lg text-ink">{p.feesAccrued[1]}</p>
         </div>
       </div>
 
       {p.note && (
-        <p className="mt-4 flex items-start gap-2 rounded-xl border border-ion/25 bg-ion/[0.06] px-4 py-3 text-sm text-ink/90"><LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" />{p.note}</p>
+        <p className="mt-4 flex items-start gap-2 rounded-none border border-ion/25 bg-ion/[0.06] px-4 py-3 text-sm text-ink/90"><LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" />{p.note}</p>
       )}
 
-      <p className="mt-4 text-xs text-dim">Measured PnL appears once the indexer is connected. {pool.poolClass === 'SESSION_ONLY' ? 'Shown in raw token units only — there is no USD NAV for this class.' : 'Valuation uses the pool reference and is labelled frozen when the stock is closed.'}</p>
+      <p className="mt-4 text-xs text-dim">Sample position only — no position NFT has been read from this wallet. {pool.poolClass === 'SESSION_ONLY' ? 'Shown in raw token units only — there is no USD NAV for this class.' : 'Valuation uses the pool reference and is labelled frozen when the stock is closed.'}</p>
 
       <div className="mt-5 flex flex-wrap gap-2.5">
-        <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')} aria-expanded={mode === 'add'}><Plus className="h-4 w-4" aria-hidden="true" /> Add</Button>
-        <Button variant="outline" size="sm" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')} aria-expanded={mode === 'remove'}><Minus className="h-4 w-4" aria-hidden="true" /> Remove</Button>
-        <Button size="sm" onClick={() => setCollected(true)} disabled={collected}><Coins className="h-4 w-4" aria-hidden="true" /> {collected ? 'Collected' : 'Collect fees'}</Button>
-        <span className="ml-auto self-center text-xs text-dim">Remove & collect are never blocked by BELL guards</span>
+        <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')} aria-expanded={mode === 'add'} title="Show why add is unavailable"><Plus className="h-4 w-4" aria-hidden="true" /> Add info</Button>
+        <Button variant="outline" size="sm" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')} aria-expanded={mode === 'remove'} title="Show exit path status"><Minus className="h-4 w-4" aria-hidden="true" /> Exit info</Button>
+        <Button size="sm" disabled title="No live position NFT loaded"><Coins className="h-4 w-4" aria-hidden="true" /> Collect unavailable</Button>
+        <span className="ml-auto self-center text-xs text-dim">Preview values only · no transactions sent</span>
       </div>
 
       {mode === 'remove' && (
-        <div className="mt-5 rounded-2xl border border-line bg-bg-1/70 p-5">
-          <p className="text-sm text-ink">Remove liquidity</p>
-          <div className="mt-3 flex gap-2" role="radiogroup" aria-label="Percentage to remove">
-            {[25, 50, 75, 100].map((v) => (
-              <button key={v} type="button" role="radio" aria-checked={pct === v} onClick={() => setPct(v)} className={cn('num min-h-10 flex-1 rounded-xl border text-sm', pct === v ? 'border-ion/60 bg-ion/10 text-ion' : 'border-line text-muted hover:text-ink')}>{v}%</button>
-            ))}
-          </div>
-          <p className="num mt-4 text-sm text-muted">You receive in-kind ≈ <span className="text-ink">{show(a.n * pct / 100, a.sym)}</span> + <span className="text-ink">{show(b.n * pct / 100, b.sym)}</span></p>
-          <p className="mt-1 text-xs text-dim">No swap happens. No oracle, calendar or budget check applies to removal.</p>
-          <div className="mt-4 flex items-center gap-3">
-            <Button size="sm" onClick={() => setRemoved(pct)}>Simulate remove</Button>
-            {removed !== null && <span className="flex items-center gap-1.5 text-sm text-ion" role="status"><Check className="h-4 w-4" aria-hidden="true" /> Simulated {removed}% in-kind exit (preview)</span>}
-          </div>
+        <div className="mt-5 rounded-none border border-line bg-bg-1/70 p-5">
+          <p className="text-sm font-medium text-ink">In-kind exit</p>
+          <p className="mt-2 text-sm text-muted">The live PositionManager reader and remove transaction are not connected. This sample card cannot estimate or submit an exit for your wallet.</p>
+          <p className="mt-2 text-xs text-dim">No swap happens for a real in-kind exit; protocol guards do not gate PositionManager removal.</p>
         </div>
       )}
 
       {mode === 'add' && (
-        <div className="mt-5 rounded-2xl border border-line bg-bg-1/70 p-5 text-sm text-muted">
-          <p className="flex items-start gap-2"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warn" aria-hidden="true" />Adding liquidity does <span className="text-ink">not</span> raise this pool’s caps or refill any budget. {pool.poolClass === 'SESSION_ONLY' ? 'Session controls only; no independent price protection for the counterasset.' : 'Your position is protected only inside the pool’s reference band.'}</p>
+        <div className="mt-5 rounded-none border border-line bg-bg-1/70 p-5 text-sm text-muted">
+          <p className="flex items-start gap-2"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warn" aria-hidden="true" />Add liquidity is unavailable for preview fixtures. A live PositionManager add flow has not been wired here.</p>
         </div>
       )}
     </article>
@@ -96,28 +78,39 @@ function PositionCard({ p }: { p: PositionPreview }) {
 export default function PositionsPage() {
   const wallet = useWallet();
   const [guide, setGuide] = useState(false);
+  const [positions, setPositions] = useState(POSITIONS);
+
+  useEffect(() => {
+    // No PositionManager indexer/read-by-owner path is configured yet. Keep sample
+    // cards distinct and never infer ownership from fixtures, even when connected.
+    setPositions(POSITIONS);
+  }, [wallet.account, wallet.chainId]);
 
   return (
     <div>
       <header className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.22em] text-ion font-medium">Your liquidity</p>
-        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · preview</p>
+        <h1 className="mt-3 max-w-[760px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
           Positions you own. Exits nobody gates.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Positions are noncustodial PositionManager NFTs in your wallet. Closed markets, paused swaps or spent budgets never block removing or collecting in-kind.
+          Position data comes from your wallet when the live PositionManager reader is available.
+          Until then, fixture cards are examples and add/remove/collect actions stay disabled.
         </p>
       </header>
 
-      {wallet.status !== 'connected' && (
-        <p className="mt-6 flex items-center gap-2 rounded-2xl border border-line bg-bg-1/70 px-4 py-3 text-sm text-muted"><CircleHelp className="h-4 w-4 text-ion" aria-hidden="true" /> Showing sample positions. Connect a wallet to load yours once contracts are live.</p>
-      )}
+        <p className="mt-6 flex items-center gap-2 rounded-none border border-warn/30 bg-warn/5 px-4 py-3 font-mono text-xs text-warn">
+        <CircleHelp className="h-4 w-4 shrink-0" aria-hidden="true" />
+        {wallet.status === 'connected'
+          ? 'No PositionManager indexer is connected yet. Cards below are fixtures, not positions from your wallet.'
+          : 'Showing sample positions only. Connect a wallet to prepare for live position reads; fixture cards are never executable.'}
+      </p>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        {POSITIONS.map((p) => <PositionCard key={p.id} p={p} />)}
+      <div className="mt-8 grid gap-px border border-line bg-line md:grid-cols-2">
+        {positions.map((p) => <PositionCard key={p.id} p={p} />)}
       </div>
 
-      <section className="glass mt-8 rounded-2xl border border-line bg-surface/75 p-6 sm:p-7" aria-labelledby="exit-guide">
+      <section className="glass mt-8 rounded-none border border-line bg-surface/75 p-6 sm:p-7" aria-labelledby="exit-guide">
         <button type="button" onClick={() => setGuide((v) => !v)} aria-expanded={guide} aria-controls="exit-body" className="flex w-full items-center justify-between gap-4 text-left">
           <span id="exit-guide" className="flex items-center gap-3 font-display text-xl font-bold text-ink"><LifeBuoy className="h-5 w-5 text-ion" aria-hidden="true" /> Exit without this website</span>
           <ChevronDown className={cn('h-5 w-5 text-dim transition-transform', guide && 'rotate-180')} aria-hidden="true" />

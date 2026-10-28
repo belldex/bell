@@ -12,8 +12,8 @@ import { effectiveLimits, feePercent, PHASE_META, sessionDivisors, type MarketPh
 
 function Card({ title, icon: Icon, children, className }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn('glass rounded-3xl p-5 sm:p-6', className)}>
-      <h2 className="flex items-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-dim">
+    <section className={cn('glass rounded-none border border-line bg-surface/70 p-5 sm:p-6', className)}>
+      <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
         <Icon className="h-4 w-4 text-ion" aria-hidden="true" /> {title}
       </h2>
       <div className="mt-4">{children}</div>
@@ -23,7 +23,7 @@ function Card({ title, icon: Icon, children, className }: { title: string; icon:
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div>
+    <div className="space-y-2">
       <dt className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">{label}</dt>
       <dd className="num mt-1 text-lg text-ink">{value}</dd>
       {sub && <p className="text-[0.7rem] text-dim">{sub}</p>}
@@ -41,25 +41,23 @@ function Detail({ pool }: { pool: PoolPolicy }) {
     <div>
       <Link href="/pools" className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> All pools</Link>
 
-      <header className="mt-5 flex flex-wrap items-end justify-between gap-6">
+      <header className="mt-5 flex flex-wrap items-end justify-between gap-6 border-b border-line pb-6">
         <div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
             <ClassBadge poolClass={pool.poolClass} />
             {pool.canSwap ? <PhaseBadge phase={pool.poolPhase} /> : <HaltBadge />}
-            <span className="rounded-md border border-line px-2 py-1 text-[0.68rem] uppercase tracking-[0.1em] text-dim">{pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'}</span>
+            <span className="rounded-none border border-line px-2 py-1 text-[0.68rem] uppercase tracking-[0.1em] text-dim">Preview fixture · {pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'}</span>
           </div>
-          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">{pool.pair[0]}<span className="text-dim font-normal"> / </span>{pool.pair[1]}</h1>
+          <h1 className="mt-4 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">{pool.pair[0]}<span className="text-dim font-normal"> / </span>{pool.pair[1]}</h1>
         </div>
-        <div className="flex gap-2.5">
-          <ButtonLink href={`/swap/?pool=${pool.id}`} className={cn(!pool.canSwap && 'pointer-events-none opacity-45')} aria-disabled={!pool.canSwap} tabIndex={pool.canSwap ? 0 : -1}>
-            <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
-          </ButtonLink>
-          <ButtonLink href="/positions" variant="outline">Add / exit liquidity</ButtonLink>
+        <div className="flex flex-wrap gap-2.5">
+          <span className="inline-flex min-h-10 items-center border border-line px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">Fixture · no executable swap</span>
+          <Link href="/pools" className="inline-flex min-h-10 items-center border border-line px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted hover:border-ion/50 hover:text-ion">Back to pool directory</Link>
         </div>
       </header>
 
       {!pool.canSwap && (
-        <div role="alert" className="mt-6 rounded-2xl border border-down/30 bg-down/10 p-4 text-sm">
+        <div role="alert" className="mt-6 rounded-none border border-down/30 bg-down/10 p-4 text-sm">
           <p className="flex items-center gap-2 font-medium text-down"><AlertOctagon className="h-4 w-4" aria-hidden="true" /> Swaps are halted for this pool</p>
           <ul className="mt-2 list-disc space-y-1 pl-6 text-ink/80">{pool.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
           <p className="mt-2 text-muted">Liquidity providers can still remove and collect in-kind. That path never depends on BELL guards.</p>
@@ -147,12 +145,12 @@ function Detail({ pool }: { pool: PoolPolicy }) {
 
         <Card title="Pool identity" icon={Hash} className="lg:col-span-3">
           <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Hook / PoolId" value={<span className="text-sm text-dim">Assigned at deployment</span>} />
-            <Stat label="Config hash" value={<span className="text-sm text-dim">Assigned at deployment</span>} />
-            <Stat label="Observed block" value={<span className="text-sm text-dim">n/a — preview</span>} />
-            <Stat label="Indexed through" value={<span className="text-sm text-dim">n/a — preview</span>} />
+            <Stat label="Hook / PoolId" value={<span className="text-sm text-dim">Not discovered for this fixture</span>} />
+            <Stat label="Config hash" value={<span className="text-sm text-dim">Not available</span>} />
+            <Stat label="Observed block" value={<span className="text-sm text-dim">Fixture only</span>} />
+            <Stat label="Indexed through" value={<span className="text-sm text-dim">No indexer connected</span>} />
           </dl>
-          <p className="mt-4 flex items-start gap-2 text-xs text-dim"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" /> No addresses or hashes are invented. After deployment these come from the policy endpoint and are verified against onchain state.</p>
+          <p className="mt-4 flex items-start gap-2 text-xs text-dim"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" /> This page is rendering a sample policy fixture, not a discovered deployed pool. No address, hash, or indexer block is inferred from fixture data.</p>
         </Card>
       </div>
     </div>
@@ -164,7 +162,7 @@ function PoolPageInner() {
   const pool = getPool(id);
   if (!pool) {
     return (
-      <div className="glass mx-auto max-w-lg rounded-3xl p-10 text-center">
+        <div className="mx-auto max-w-lg border border-line bg-surface/70 p-10 text-center">
         <h1 className="font-display text-4xl text-ink">Pool not found</h1>
         <p className="mt-3 text-muted">No sample pool matches “{id ?? ''}”.</p>
         <div className="mt-6 flex justify-center"><ButtonLink href="/pools">Back to pools</ButtonLink></div>
@@ -176,7 +174,7 @@ function PoolPageInner() {
 
 export default function PoolPage() {
   return (
-    <Suspense fallback={<div className="glass h-64 animate-pulse rounded-3xl" aria-busy="true" />}>
+      <Suspense fallback={<div className="h-64 animate-pulse border border-line bg-surface/60" aria-busy="true" />}>
       <PoolPageInner />
     </Suspense>
   );

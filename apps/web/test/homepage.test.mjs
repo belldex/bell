@@ -115,3 +115,195 @@ test('swap screen still gates on onchain policy', async () => {
   assert.match(panel, /readLivePool/);
   assert.match(panel, /pool\.canSwap/);
 });
+
+test('all app routes use the reference-like shared shell and real BELL navigation', async () => {
+  const shell = await read('../components/app/AppShell.tsx');
+  for (const path of ['/pools', '/swap', '/create', '/positions', '/protocol']) {
+    assert.ok(shell.includes(`href: '${path}'`), `navigation must contain ${path}`);
+  }
+  assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
+  assert.match(shell, /WalletButton/);
+  assert.match(shell, /TestnetBanner/);
+  assert.doesNotMatch(shell, /templates\/v4market/);
+});
+
+test('preview UI never claims fake creation or position actions succeeded', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.doesNotMatch(create, /setTimeout\(\(\) => setDone\('ok'\)/);
+  assert.doesNotMatch(create, /Simulated create \(preview\)/);
+  assert.doesNotMatch(positions, /onClick=\{\(\) => setCollected\(true\)\}/);
+  assert.doesNotMatch(positions, /Simulate remove/);
+  assert.match(create, /Preview|unavailable/i);
+  assert.match(positions, /Preview only|not connected|not available/i);
+});
+
+test('pool directory distinguishes preview fixtures from live chain state', async () => {
+  const pools = await read('../app/(app)/pools/page.tsx');
+  assert.match(pools, /preview fixtures/i);
+  assert.doesNotMatch(pools, /no pool exists on testnet yet/i);
+  assert.match(pools, /testnet|onchain/i);
+});
+
+test('create wizard cannot claim a pool was created by a timer', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  assert.doesNotMatch(create, /window\.setTimeout\(\(\) => setDone\('ok'\)/);
+  assert.doesNotMatch(create, /Simulated create \(preview\)/);
+  assert.match(create, /Preview only|No live factory|not enabled|no live factory flow/i);
+});
+
+test('positions do not pretend sample NFTs can add, remove, or collect', async () => {
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.doesNotMatch(positions, /onClick=\{\(\) => setCollected\(true\)\}/);
+  assert.doesNotMatch(positions, /Simulate remove/);
+  assert.match(positions, /Preview only|sample position/i);
+});
+
+test('five app routes retain route-specific behavior while sharing the app shell', async () => {
+  const shell = await read('../components/app/AppShell.tsx');
+  for (const route of ['/pools', '/swap', '/create', '/positions']) {
+    assert.ok(shell.includes(`href: '${route}'`), `app navigation has ${route}`);
+  }
+  assert.match(shell, /WalletButton/);
+  assert.match(shell, /TestnetBanner/);
+  assert.match(shell, /aria-current/);
+});
+
+test('navigation destinations all resolve to implemented BELL pages', async () => {
+  const routes = [
+    '../app/(app)/pools/page.tsx',
+    '../app/(app)/pool/page.tsx',
+    '../app/(app)/create/page.tsx',
+    '../app/(app)/swap/page.tsx',
+    '../app/(app)/positions/page.tsx',
+  ];
+  for (const route of routes) assert.ok((await read(route)).length > 0, `${route} exists`);
+  const appShell = await read('../components/app/AppShell.tsx');
+  const landingNav = await read('../components/landing/SiteNav.tsx');
+  assert.doesNotMatch(`${appShell}\n${landingNav}`, /templates\/v4market/);
+});
+
+test('all five app pages share the reference mono labels, hard-edged panels, and BELL palette', async () => {
+  const pages = [
+    '../app/(app)/pools/page.tsx',
+    '../app/(app)/pool/page.tsx',
+    '../app/(app)/create/page.tsx',
+    '../app/(app)/swap/page.tsx',
+    '../app/(app)/positions/page.tsx',
+  ];
+  for (const route of pages) {
+    const source = await read(route);
+    assert.match(source, /font-mono/, `${route} needs reference mono labels`);
+    assert.match(source, /rounded-none|rounded-xl|rounded-2xl/, `${route} needs structured panels`);
+    assert.match(source, /text-ion|bg-ion/, `${route} must retain BELL accent`);
+  }
+});
+
+test('protocol and legal links land on implemented pages', async () => {
+  for (const path of ['protocol', 'privacy', 'terms', 'cookies']) {
+    const page = await read(`../app/(app)/${path}/page.tsx`);
+    assert.match(page, /export default/);
+  }
+});
+
+test('pool cards and position fixtures are visibly preview-only', async () => {
+  const card = await read('../components/policy/PoolCard.tsx');
+  assert.match(card, /Preview fixture · not onchain/);
+  const detail = await read('../app/(app)/pool/page.tsx');
+  assert.match(detail, /sample policy fixture/);
+  assert.match(detail, /Fixture only/);
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.match(positions, /Sample position only/);
+  assert.match(positions, /no position NFT has been read/);
+});
+
+test('swap fixture controls never lead into a fake submit timeline', async () => {
+  const swap = await read('../app/(app)/swap/page.tsx');
+  assert.doesNotMatch(swap, /setStage\('(provisional|confirmed)'/);
+  assert.match(swap, /No executable fixture quote/);
+  assert.match(swap, /Preview only/);
+});
+
+test('deployed rehearsal hook is read onchain with explicit evidence address, never inferred from fixtures', async () => {
+  const panel = await read('../components/swap/LiveSwapPanel.tsx');
+  assert.match(panel, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
+  assert.match(panel, /readLivePool\(/);
+  assert.match(panel, /wallet\.chainId === TESTNET\.chainId/);
+  assert.match(panel, /Connect wallet to read the live policy/);
+  assert.doesNotMatch(panel, /http\(\)/, 'must not create a public client without an RPC URL');
+  assert.match(panel, /if \(!current\.canSwap/, 'must re-check policy immediately before transaction');
+  assert.match(panel, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0|deployed rehearsal hook/i);
+});
+
+test('pool directory exposes the deployed rehearsal policy separately from fixture cards', async () => {
+  const pools = await read('../app/(app)/pools/page.tsx');
+  assert.match(pools, /RehearsalPoolCard/);
+  const liveCard = await read('../components/policy/RehearsalPoolCard.tsx');
+  assert.match(liveCard, /readLivePool/);
+  assert.match(liveCard, /0x549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
+  assert.match(liveCard, /0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea/i);
+  assert.match(liveCard, /144043685/);
+  assert.match(liveCard, /wallet\.chainId|wallet\.status/);
+  assert.match(liveCard, /reasonBits/);
+  assert.match(liveCard, /Preview fixture/);
+});
+
+test('fixture pool details do not borrow the deployed WETH/AAPL hook identity', async () => {
+  const detail = await read('../app/(app)/pool/page.tsx');
+  assert.doesNotMatch(detail, /549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
+  assert.match(detail, /fixture.*not executable|Preview fixture/i);
+});
+
+test('mobile app navigation has 44px targets and all routes, while current route semantics remain', async () => {
+  const shell = await read('../components/app/AppShell.tsx');
+  assert.match(shell, /min-h-12/);
+  assert.match(shell, /aria-label="App \(mobile\)"/);
+  assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
+  assert.match(shell, /href: '\/protocol'/);
+});
+
+test('app routes share a consistent reference-width content rail and body contrast tokens', async () => {
+  const shell = await read('../components/app/AppShell.tsx');
+  assert.match(shell, /max-w-\[1440px\]/, 'header, main, footer share 1440px rail');
+  assert.doesNotMatch(shell, /max-w-6xl/, 'avoid narrower mismatched footer/content rail');
+  for (const path of ['../app/(app)/pools/page.tsx', '../app/(app)/pool/page.tsx', '../app/(app)/create/page.tsx', '../app/(app)/swap/page.tsx', '../app/(app)/positions/page.tsx']) {
+    const page = await read(path);
+    assert.match(page, /text-muted|text-ink/, `${path} uses semantic readable text colors`);
+  }
+});
+
+test('AppShell exposes a working mobile menu, closes it on route navigation, and returns focusable routes', async () => {
+  const shell = await read('../components/app/AppShell.tsx');
+  assert.match(shell, /mobileOpen/);
+  assert.match(shell, /aria-expanded/);
+  assert.match(shell, /setMobileOpen\(false\)/);
+  assert.match(shell, /Escape/);
+  assert.match(shell, /\/privacy|\/terms|\/cookies/);
+});
+
+test('position preview cards have working info disclosures but no fake write controls', async () => {
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.match(positions, /setMode\(mode === 'remove'/);
+  assert.match(positions, /setMode\(mode === 'add'/);
+  assert.match(positions, /No live position NFT loaded/);
+  assert.doesNotMatch(positions, /setCollected\(|setRemoved\(/);
+});
+
+test('create wizard remains navigable through all five preview steps and final action is explicitly unavailable', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  assert.match(create, /const STEPS = \['Pair', 'Mode', 'Seed & price', 'Caps', 'Review'\]/);
+  assert.match(create, /setStep\(\(s\) => s \+ 1\)/);
+  assert.match(create, /setStep\(\(s\) => Math\.max\(0, s - 1\)\)/);
+  assert.match(create, /Create unavailable — no live factory flow/);
+  assert.doesNotMatch(create, /setTimeout/);
+});
+
+test('swap preview controls recalculate locally and all selections are keyboard/touch accessible', async () => {
+  const swap = await read('../app/(app)/swap/page.tsx');
+  assert.match(swap, /setFlip\(/);
+  assert.match(swap, /setMode\(/);
+  assert.match(swap, /setSlip\(/);
+  assert.match(swap, /setQuote\(compute\(\)\)/);
+  assert.match(swap, /min-h-10/);
+  assert.doesNotMatch(swap, /setStage\('(provisional|confirmed)'/);
+});

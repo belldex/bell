@@ -37,7 +37,7 @@ function Field({ label, hint, error, children }: { label: string; hint?: string;
     </div>
   );
 }
-const inputCls = 'num h-11 w-full rounded-xl border border-line bg-surface px-4 text-ink text-sm outline-none transition-colors placeholder:text-dim focus:border-ion/60';
+const inputCls = 'num h-11 w-full rounded-none border border-line bg-surface px-4 text-ink text-sm outline-none transition-colors placeholder:text-dim focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion';
 
 export default function CreatePage() {
   const wallet = useWallet();
@@ -53,7 +53,6 @@ export default function CreatePage() {
   const [ackPrice, setAckPrice] = useState(false);
   const [caps, setCaps] = useState({ tS: '1', wS: '4', cS: '1', tC: '250', wC: '1000', cC: '200' });
   const [ackAll, setAckAll] = useState({ klass: false, caps: false, seed: false });
-  const [done, setDone] = useState<'idle' | 'running' | 'ok'>('idle');
   const [phaseNow, setPhaseNow] = useState<string>('—');
 
   useEffect(() => { setPhaseNow(phaseAtWeekMinute(nowWeekMinuteET())); }, []);
@@ -105,7 +104,6 @@ export default function CreatePage() {
   ];
 
   const recipient = wallet.account ?? '— connect wallet —';
-  const create = () => { setDone('running'); window.setTimeout(() => setDone('ok'), 2400); };
 
   const request = [
     ['chainId', wallet.chainId ? String(wallet.chainId) : '4663 / 46630'],
@@ -130,26 +128,26 @@ export default function CreatePage() {
 
   return (
     <div className="w-full">
-      <header className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.22em] text-ion font-medium">Create pool</p>
-        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-          One transaction. Everything locked.
+      <header className="max-w-[760px]">
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create preview</p>
+        <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
+          Configure the pool. Review before deploy.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Fee, deploy, initialize and seed happen atomically. Class, caps and sources cannot be changed afterwards — a different configuration is a different pool.
+          This wizard checks pair, class, reference mode, seed ratio and immutable raw-unit caps. The frontend does not currently submit a factory transaction; every value below is configuration preview only.
         </p>
       </header>
 
       <ol className="mt-8 flex items-center gap-2 overflow-x-auto scroll-hide" aria-label="Progress">
         {STEPS.map((s, i) => (
-          <li key={s} className="flex items-center gap-2">
+            <li key={s} className="flex items-center gap-2">
             <button
               type="button"
               disabled={i > step}
               onClick={() => setStep(i)}
               aria-current={i === step ? 'step' : undefined}
               className={cn(
-                'inline-flex min-h-9 items-center gap-2 rounded-xl border px-3.5 text-xs font-medium transition-all whitespace-nowrap',
+                'inline-flex min-h-10 items-center gap-2 rounded-none border px-3.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-all whitespace-nowrap',
                 i === step
                   ? 'border-ion/60 bg-ion/15 text-ion shadow-[0_0_12px_-3px_var(--color-ion)]'
                   : i < step
@@ -165,7 +163,7 @@ export default function CreatePage() {
         ))}
       </ol>
 
-      <div className="glass mt-6 rounded-2xl border border-line bg-surface/75 p-6 sm:p-8">
+      <div className="glass mt-6 rounded-none border border-line bg-surface/75 p-6 sm:p-8">
         {step === 0 && (
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Canonical Stock Token" hint="Only reviewed canonical Robinhood Stock Tokens can anchor a pool.">
@@ -191,7 +189,7 @@ export default function CreatePage() {
                 </div>
                 <Field label="Symbol (display)"><input value={customSym} onChange={(e) => setCustomSym(e.target.value.toUpperCase().slice(0, 10))} className={inputCls} /></Field>
                 <Field label="Decimals (verified at intake)"><input value={customDec} inputMode="numeric" onChange={(e) => setCustomDec(e.target.value.replace(/\D/g, '').slice(0, 2))} className={inputCls} /></Field>
-                <div className="sm:col-span-2 rounded-2xl border border-line bg-bg-1/70 p-4">
+                <div className="sm:col-span-2 rounded-none border border-line bg-bg-1/70 p-4">
                   <p className="flex items-center gap-2 text-sm font-medium text-ink"><CircleDashed className="h-4 w-4 text-warn" aria-hidden="true" /> Intake required before deployment</p>
                   <ul className="mt-3 grid gap-2 text-sm text-muted sm:grid-cols-2">
                     {['Nonzero code & stable decimals 0–18', 'Actual debit/credit equals nominal on official route', 'No fee-on-transfer, rebase or reflect behavior', 'Proxy / admin / blacklist capabilities disclosed', 'Approval semantics (zero-first if needed)', 'Position can be redeemed in-kind'].map((t) => (
@@ -212,7 +210,7 @@ export default function CreatePage() {
               <span className="text-sm text-muted">Locked at deployment. It never changes through an admin toggle.</span>
             </div>
             {poolClass === 'SESSION_ONLY' ? (
-              <p className="rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm font-medium text-warn">Session controls only; no independent price protection for the counterasset.</p>
+              <p className="rounded-none border border-warn/30 bg-warn/5 p-4 text-sm font-medium text-warn">Session controls only; no independent price protection for the counterasset.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 <ModeCard active={!secondary} onClick={() => setSecondary(false)} icon={ShieldCheck} title="FROZEN_CLOSE (default)" body="Closed stock uses its captured close anchor; the counterasset stays live. No extra dependency." />
@@ -221,7 +219,7 @@ export default function CreatePage() {
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               <ModeCard active icon={Coins} title="PUBLIC liquidity" body="Noncustodial positions via PositionManager. The position NFT is minted to you." />
-              <div className="rounded-2xl border border-line p-4 opacity-55" aria-disabled="true">
+              <div className="rounded-none border border-line p-4 opacity-55" aria-disabled="true">
                 <p className="flex items-center gap-2 text-sm font-medium text-ink"><Lock className="h-4 w-4" aria-hidden="true" /> TREASURY_ONLY</p>
                 <p className="mt-1.5 text-sm text-muted">Reserved for project-owned pilot pools. Not available to creators.</p>
               </div>
@@ -233,7 +231,7 @@ export default function CreatePage() {
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label={`Seed ${stock.symbol}`}><input className={inputCls} inputMode="decimal" value={seedStock} onChange={(e) => setSeedStock(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
             <Field label={`Seed ${counterTok.symbol}`}><input className={inputCls} inputMode="decimal" value={seedCounter} onChange={(e) => setSeedCounter(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
-            <div className="sm:col-span-2 grid gap-4 rounded-2xl border border-line bg-bg-1/70 p-5 sm:grid-cols-3">
+            <div className="sm:col-span-2 grid gap-4 rounded-none border border-line bg-bg-1/70 p-5 sm:grid-cols-3">
               <Metric label="Initial price" value={implied ? `${implied.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${counterTok.symbol}` : '—'} sub={`per 1 ${stock.symbol}`} />
               <Metric label="Initial tick" value={implied ? String(tick) : '—'} sub="full range · spacing 60" />
               {poolClass === 'PRICE_GUARDED' ? (
@@ -243,7 +241,7 @@ export default function CreatePage() {
               )}
             </div>
             {poolClass === 'SESSION_ONLY' && (
-              <label className="sm:col-span-2 flex cursor-pointer items-start gap-3 rounded-2xl border border-warn/30 bg-warn/5 p-4 text-sm text-warn">
+              <label className="sm:col-span-2 flex cursor-pointer items-start gap-3 rounded-none border border-warn/30 bg-warn/5 p-4 text-sm text-warn">
                 <input type="checkbox" checked={ackPrice} onChange={(e) => setAckPrice(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#3ce6ff]" />
                 I understand the initial price is my own decision. It is not validated by any oracle.
               </label>
@@ -289,12 +287,11 @@ export default function CreatePage() {
             </div>
             {marketUnhealthy && <p role="alert" className="mt-4 text-sm text-warn">Creation blocked: stock market is closed (scheduled phase {phaseNow}). Price-guarded pools bootstrap only on healthy active data.</p>}
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button size="lg" disabled={!stepOk[4] || done !== 'idle'} onClick={create} aria-busy={done === 'running'}>
-                {done === 'ok' ? <><Check className="h-5 w-5" aria-hidden="true" /> Simulated</> : done === 'running' ? 'Simulating…' : <><Sparkles className="h-5 w-5" aria-hidden="true" /> Simulate create (preview)</>}
+              <Button size="lg" disabled aria-disabled="true">
+                <Lock className="h-4 w-4" aria-hidden="true" /> Create unavailable — no live factory flow
               </Button>
-              <span className="text-xs text-dim">No transaction is sent. Needs live factory + preview endpoint.</span>
+              <span className="text-xs text-dim">This is a configuration preview. It sends no transaction and does not create a pool.</span>
             </div>
-            {done === 'ok' && <p className="mt-4 flex items-center gap-2 text-sm text-ion" role="status"><FileCheck2 className="h-4 w-4" aria-hidden="true" /> Request encoding matched the preview. With live contracts you would receive the position NFT at {wallet.account ? wallet.account.slice(0, 8) + '…' : 'your wallet'}.</p>}
           </div>
         )}
 
@@ -310,7 +307,7 @@ export default function CreatePage() {
 function ModeCard({ active, onClick, icon: Icon, title, body }: { active: boolean; onClick?: () => void; icon: React.ComponentType<{ className?: string }>; title: string; body: string }) {
   const Tag = onClick ? 'button' : 'div';
   return (
-    <Tag type={onClick ? 'button' : undefined} onClick={onClick} aria-pressed={onClick ? active : undefined} className={cn('rounded-2xl border p-4 text-left transition-colors', active ? 'border-ion/50 bg-ion/[0.07]' : 'border-line hover:border-line-strong')}>
+    <Tag type={onClick ? 'button' : undefined} onClick={onClick} aria-pressed={onClick ? active : undefined} className={cn('rounded-none border p-4 text-left transition-colors', active ? 'border-ion/50 bg-ion/[0.07]' : 'border-line hover:border-line-strong')}>
       <p className="flex items-center gap-2 text-sm font-medium text-ink"><Icon className={cn('h-4 w-4', active ? 'text-ion' : 'text-dim')} aria-hidden="true" /> {title}</p>
       <p className="mt-1.5 text-sm text-muted">{body}</p>
     </Tag>
