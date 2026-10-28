@@ -1,72 +1,81 @@
-# BELL — kondisi aktual (trace 2026-10-28, PRE rehearsal on Robinhood testnet)
+# BELL — Current State (trace 2026-10-28, REGULAR rehearsal on Robinhood testnet)
 
-Satu sumber kebenaran. Semua klaim punya transaksi atau state onchain.
+Single source of truth. Every claim is backed by a transaction or on-chain state.
 
-**Pool rehearsal PRE terbaru dibuat, menerima satu swap, dan lulus acceptance 82/82 pada block
-144183010.** Harga berasal dari Yahoo PRE melalui extended adapter; asset/token adalah fixture
-rehearsal, bukan token Robinhood resmi. Ini snapshot testnet, bukan klaim kesehatan berkelanjutan.
-Deployment sebelumnya dicatat terpisah.
+**The latest REGULAR rehearsal pool was created, received one swap, and passed acceptance 82/82.** The
+price came from a fresh Yahoo REGULAR quote through the regular adapter; the asset/token is a rehearsal
+fixture, not an official Robinhood token. This is a testnet snapshot, not a claim of ongoing health.
+Earlier deployments are documented separately.
+
+The calendar leaf is now built for whichever session Yahoo and chain time actually agree on, so the
+rehearsal no longer depends on being run before 13:30 UTC. Every calendar root, interval, report, and
+health write is simulated before broadcast and read back from chain afterwards.
 
 ---
 
 ## 1. Ringkasan
 
-- **Yahoo PRE rehearsal terverifikasi** melalui direct + extended reports yang cocok dengan fase calendar PRE.
-- **Satu swap testnet pada pool PRE terbaru**, dengan budget commit tercatat (tabel di bawah).
-- **Acceptance fase PRE lulus 82/82** pada block 144183010; ini pemeriksaan satu snapshot, bukan klaim pool terus sehat.
-- **Frontend punya jalur swap nyata** (`LiveSwapPanel`): baca policy onchain, approve, kirim ke
-  `BellRouter`, tampilkan hasilnya. Muncul hanya jika `NEXT_PUBLIC_BELL_LIVE_HOOK` diisi.
-- 355 forge test, 298 node:test, semua gate hijau.
+- **Yahoo REGULAR rehearsal verified** through direct and regular-phase reports matching the active REGULAR calendar leaf.
+- **One testnet swap on the latest REGULAR pool**, with its committed budget recorded (see table below).
+- **REGULAR phase acceptance passed 82/82**; this checks one snapshot and does not claim ongoing pool health.
+- **The frontend has a live swap path** (`LiveSwapPanel`): reads on-chain policy, approves, submits to
+  `BellRouter`, and displays the result. It appears only when `NEXT_PUBLIC_BELL_LIVE_HOOK` is set.
+- 355 forge tests, 298 node:test tests, and all gates passing.
 
-Yang masih tertutup: Mainnet (butuh dana), PRICE_GUARDED (butuh referensi yang diadmit), treasury
-handover (alamat masih burn address), dan keeper belum dipasang di Supabase cron.
+Still blocked: Mainnet (funding required), PRICE_GUARDED (an admitted reference is required), treasury
+handover (the address is still a burn address), and the keeper is not yet installed in Supabase cron.
 
 ---
 
 ## 2. Swap testnet
 
-| Pool/deployment | Tx | Block | Spent | Received | Gross sebelum | Gross sesudah |
+| Pool/deployment | Tx | Block | Spent | Received | Gross before | Gross after |
 |---|---|---|---|---|---|---|
-| Latest PRE rehearsal pool `0xa18cd3ff…` / hook `0xcE7f7306…` | `0x62b6060e…` | 144182744 | 5 | 3 | `[0, 0]` | `[5, 3]` |
-| Previous REGULAR rehearsal pool `0xc2b56af3…` / hook `0x549f0C66…` | `0xca40693c…` | 144051118 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Latest REGULAR rehearsal pool `0xd32bb2ce…` / hook `0x42708E40…` | `0xf9161400…` | 144311749 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Earlier PRE rehearsal pool `0xa18cd3ff…` / hook `0xcE7f7306…` | `0x62b6060e…` | 144182744 | 5 | 3 | `[0, 0]` | `[5, 3]` |
+| Earlier REGULAR rehearsal pool `0xc2b56af3…` / hook `0x549f0C66…` | `0xca40693c…` | 144051118 | 5 | 3 | `[0, 0]` | `[5, 3]` |
 | Previous pool `0x01ca38d9…` / hook `0x60ebf708…` | `0x75243421…`, `0x1692a6e8…`, `0x9c846c76…` | 143926986–143938848 | 5, 7, 9 | 3, 5, 7 | tracked separately | rolling window rotated |
 
-Swap deployment terbaru dikonfirmasi receipt sukses dan gross `[5,3]`. Bukti pool terdahulu membuktikan
-rotasi rolling window pada deployment lama; itu bukan bukti rotasi untuk pool terbaru.
+The latest deployment's swap was confirmed by a successful receipt and gross `[5,3]`. Earlier pool evidence
+proves rolling-window rotation on the old deployment; it does not prove rotation for the latest pool.
 
-Swap pool PRE terbaru dikirim saat policy onchain `canSwap=true`, `reasonBits=0`; tx sukses dan
-gross berubah dari `[0,0]` menjadi `[5,3]`. Acceptance PRE lulus sesudahnya. Health/policy bersifat
-time-sensitive dan dapat kedaluwarsa setelah keeper berhenti; jangan menyimpulkan pool tetap dapat
-ditradingkan dari snapshot tersebut. Pool lama tetap REGULAR-only; PRE tidak pernah dilabel ulang.
+The latest swap was submitted while on-chain policy reported `canSwap=true`, `reasonBits=0`; the transaction
+succeeded and gross changed from `[0,0]` to `[5,3]`. REGULAR acceptance passed afterward. Health/policy is
+time-sensitive and may expire after the keeper stops; do not infer that the pool remains tradable from this
+snapshot. No Yahoo phase was ever relabeled to fit a calendar.
+
+Note: while the pool is in guarded mode the effective per-trade cap is one fifth of the configured cap, so a
+5-unit rehearsal swap only fits after the pool returns to ACTIVE. The earlier `TradeCapExceeded` revert was
+that guard, not a budget or allowance bug.
 
 ---
 
-## 3. Keeper harga
+## 3. Price keeper
 
 ```bash
-# mode rehearsal offline (tanpa Yahoo)
-node scripts/deploy/keeper-price.mjs --offline --price=250
+# Yahoo rehearsal, single tick (dry run)
+node scripts/deploy/keeper-price.mjs
 
-# mode broadcast satu tick
-node scripts/deploy/keeper-price.mjs --offline --price=250 --broadcast
+# Yahoo rehearsal, broadcast one tick; --gas avoids RPC estimation limits
+node scripts/deploy/keeper-price.mjs --broadcast --gas=900000
 
-# mode jalan terus
-node scripts/deploy/keeper-price.mjs --offline --price=250 --broadcast --loop --interval=30
+# Continuous mode
+node scripts/deploy/keeper-price.mjs --broadcast --gas=900000 --loop --interval=30
 ```
 
-Tanpa `--broadcast`, keeper hanya mencetak apa yang akan dilakukan — tidak ada transaksi.
+Without `--broadcast`, the keeper only prints what it would do—no transaction is sent.
 
 Perilaku penting:
-- **Market Yahoo tutup itu kondisi normal**, bukan crash. Dilaporkan sebagai `STALE_SOURCE`, tidak
-  ada yang ditandai fresh, tidak ada yang dianggap sehat.
-- `--offline` menjaga pool tetap hidup untuk rehearsal ketika market tutup.
-- Setiap tick menulis `evidence/runtime/keeper-price-last.json` supaya monitor cukup membaca satu
-  file kecil, bukan membaca chain.
+- **A closed Yahoo market is normal**, not a crash. It is reported as `STALE_SOURCE`; nothing is marked fresh
+  or considered healthy.
+- `--offline` keeps the pool alive for rehearsal while the market is closed.
+- Each tick writes `evidence/runtime/keeper-price-last.json`, so monitoring can read one small file instead
+  of querying the chain.
 
-Keeper memilih wire dari fase calendar onchain: REGULAR memakai regular adapter, PRE/POST memakai
-extended adapter, dan overnight memakai overnight adapter. Yahoo PRE diterima hanya saat calendar
-fase PRE; phase mismatch dan quote basi tetap ditolak. Gunakan `--gas=900000` jika RPC menolak
-estimasi gas report dengan batas allowance.
+The keeper selects a wire from the on-chain calendar phase: REGULAR uses the regular adapter, PRE/POST use
+the extended adapter, and overnight uses the overnight adapter. Yahoo PRE is accepted only during calendar
+phase PRE; phase mismatches and stale quotes are still rejected. Use `--gas=900000` if the RPC rejects the
+report gas estimate under the allowance limit.
 
 ```
 06:58:30  canSwap=false   (recovery pending)
@@ -81,28 +90,28 @@ estimasi gas report dengan batas allowance.
 
 `apps/web/components/swap/LiveSwapPanel.tsx` + `apps/web/lib/live-swap.ts`.
 
-Yang dilakukan:
-1. `readLivePool(hook)` → baca `poolKey`, `configHash`, `getPolicy()` langsung dari chain.
-2. Jika `canSwap === false`, tampilkan "not currently tradable" dan **tidak membangun transaksi**.
-   Keputusan ada di kontrak, bukan di UI.
-3. Approve terpisah dan terlihat.
-4. `buildSwapRequest` menerapkan slippage ke `limitAmount` (exact-input melindungi output floor).
-5. Kirim ke `BellRouter.swap`, tunggu receipt, cek status onchain.
-6. Revert dipetakan ke pesan yang bisa ditindaklanjuti: `PolicyBlocked`, `SlippageExceeded`,
-   `DeadlineExpired`, penolakan wallet, dana kurang.
+What it does:
+1. `readLivePool(hook)` → reads `poolKey`, `configHash`, and `getPolicy()` directly from the chain.
+2. If `canSwap === false`, displays "not currently tradable" and **does not build a transaction**.
+   The contract makes this decision, not the UI.
+3. Approval is a separate, visible step.
+4. `buildSwapRequest` applies slippage to `limitAmount` (exact-input protects the output floor).
+5. Submits to `BellRouter.swap`, waits for the receipt, and checks on-chain status.
+6. Maps reverts to actionable messages: `PolicyBlocked`, `SlippageExceeded`, `DeadlineExpired`, wallet
+   rejection, and insufficient funds.
 
-Panel muncul hanya jika `NEXT_PUBLIC_BELL_LIVE_HOOK` diisi, jadi mode preview tidak berubah.
+The panel appears only when `NEXT_PUBLIC_BELL_LIVE_HOOK` is set, leaving preview mode unchanged.
 
-Guard test baru (`apps/web/test/homepage.test.mjs`) memastikan:
-- `functionName: 'swap'` dan `functionName: 'approve'` benar-benar ada di jalur live;
-- `readLivePool` dipanggil (policy dibaca onchain, bukan dari fixture);
-- panel gate pada `pool.canSwap`, bukan mengarang sukses.
+New guard tests (`apps/web/test/homepage.test.mjs`) ensure:
+- `functionName: 'swap'` and `functionName: 'approve'` are present in the live path;
+- `readLivePool` is called (policy is read on-chain, not from a fixture);
+- the panel gates on `pool.canSwap` rather than fabricating success.
 
 ---
 
-## 5. Alamat kontrak (chain 46630)
+## 5. Contract addresses (chain 46630)
 
-| Kontrak | Alamat |
+| Contract | Address |
 |---|---|
 | SafetyController | `0xcc73fc8265630a7b7873028f77584037273d70c2` |
 | AssetRegistry | `0x3b71543bd71b9d4c9678216d338611236a37b380` |
@@ -115,21 +124,22 @@ Guard test baru (`apps/web/test/homepage.test.mjs`) memastikan:
 | WETH fixture | `0x45b4bf15c1cb91442a62620441dbc0b6486dfebe` |
 | BellRouter | `0x1b91eadba66747430188672bd7bce0cc3eef6c85` |
 | mBELL fee token | `0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150` |
-| AAPL rehearsal stock (previous pool) | `0xb82815f01a3c9034fbf06d05a99f0beb862d705a` |
-| AAPL rehearsal stock (latest PRE pool) | `0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a` |
+| AAPL rehearsal stock (previous pools) | `0xb82815f01a3c9034fbf06d05a99f0beb862d705a` / `0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a` |
 | Yahoo verifier | `0x20a066123c260bc6c5253f75e261c5056fde4bea` |
-| Direct adapter | `0x8fb74c552f6e4fb5c9d2d943b446ff8e36c125f0` |
-| Regular adapter | `0xc8f49f566a7a7aa16516e0ba1dc953a1b80bf1c6` |
-| Extended adapter | `0x412bba02dda6160bca4ebe60abd0fee3cc3d9c4a` |
-| **Latest PRE rehearsal pool hook** | `0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0` |
-| **Latest PRE rehearsal pool ID** | `0xa18cd3ffdd044195a3985ade3a3330c40de6bd0353373a4c5ac6e74dfae7a82c` |
+| Direct adapter (latest stock) | `0x9bd2473aa35eff6bd4db9bea9518b970f2375def` |
+| Regular adapter (latest stock) | `0x4dc7ecdf11e7457116471153bc8b247dd62e7c0c` |
+| Extended adapter (latest stock) | `0x93b1d074fa3bf7d5c7f2c255e7d962df8868e9c3` |
+| **Latest REGULAR rehearsal pool hook** | `0x42708e4001b85fcbd5e6d5e5c9fe197cfd44acc0` |
+| **Latest REGULAR rehearsal pool ID** | `0xd32bb2cef93c6d9a612f362cfccc20c2549e4bf73887e6bf8cd0fb778413b82b` |
+| Earlier PRE rehearsal pool hook | `0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0` |
+| Earlier PRE rehearsal pool ID | `0xa18cd3ffdd044195a3985ade3a3330c40de6bd0353373a4c5ac6e74dfae7a82c` |
 | Previous REGULAR rehearsal pool hook | `0x549f0c6657d9e39a034f7524e501d218b2c6acc0` |
 | Previous REGULAR rehearsal pool ID | `0xc2b56af343d2bcf1d9729517223fed8b6c2ec16f748e25a2d281c21c49e2e0ea` |
-| **Latest rehearsal stock** | `0x3c2470c719522a44ade6a9c1f4fdf653e1d3295a` |
+| **Latest rehearsal stock** | `0x71711fbe3c0861975eea42f4fc4f0f96454c0f23` |
 
 ---
 
-## 6. Cara menjalankan ulang seluruh alur
+## 6. How to rerun the full flow
 
 ```bash
 # deploy stack
@@ -138,14 +148,17 @@ node scripts/deploy/deploy-testnet-stock-and-adapters.mjs
 node scripts/deploy/admit-testnet-assets.mjs
 node scripts/deploy/setup-calendar-and-price.mjs
 
-# buat pool
+# create the pool
 node scripts/deploy/create-testnet-pool.mjs
 
-# nyalakan keeper (biarkan jalan)
-node scripts/deploy/keeper-price.mjs --offline --price=250 --broadcast --loop --interval=30
+# start the keeper (leave it running); use --gas=900000 if the RPC rejects report gas estimation
+node scripts/deploy/keeper-price.mjs --broadcast --gas=900000 --loop --interval=30
 
-# swap kapan saja selama keeper jalan
+# swap at any time while on-chain policy reports canSwap=true
 node scripts/deploy/swap-live-pool.mjs --amount=-5
+
+# phase-aware acceptance (1 = PRE, 2 = REGULAR, 3 = POST)
+BELL_EXPECTED_CALENDAR_PHASE=2 node scripts/deploy/final-testnet-acceptance.mjs
 ```
 
 ---
@@ -153,17 +166,17 @@ node scripts/deploy/swap-live-pool.mjs --amount=-5
 ## 7. Test
 
 355 forge test (28 suite, 2 invariant 100k run), 298 node:test, 45+18 reference, 15 Deno,
-6 keeper-b, compile 169 source, `abi:check`, `evidence:check`, `check:secrets` — semua hijau.
+6 keeper-b tests, compilation of 169 source files, `abi:check`, `evidence:check`, and `check:secrets` — all passing.
 Web: typecheck bersih, build 7 route, test web 6/6.
 
 ---
 
-## 8. Yang tersisa, jujur
+## 8. Remaining work
 
 | Hal | Kenapa |
 |---|---|
-| Mainnet | Butuh ETH asli dan keputusan pendanaan |
-| PRICE_GUARDED | Butuh pasangan referensi yang diadmit + pemetaan `referenceMode` |
-| Treasury handover | Treasury masih `0x…dEaD`, butuh alamat pengganti |
-| Keeper di Supabase cron | Sekarang proses lokal; belum dipasang ke pg_cron |
-| Data hak Yahoo | Masih `NOT_VERIFIED` di `config/sources/rights-status.json` |
+| Mainnet | Requires real ETH and a funding decision |
+| PRICE_GUARDED | Requires an admitted reference pair and `referenceMode` mapping |
+| Treasury handover | Treasury is still `0x…dEaD`; a replacement address is required |
+| Keeper in Supabase cron | Currently runs locally; not yet installed in pg_cron |
+| Yahoo data rights | Still `NOT_VERIFIED` in `config/sources/rights-status.json` |

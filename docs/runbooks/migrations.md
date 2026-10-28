@@ -1,22 +1,22 @@
-# Runbook: Migrations, Cron dan Retention (M07-05)
+# Runbook: Migrations, Cron, and Retention (M07-05)
 
 ## Prinsip
 - Migrasi bersifat expand/contract: tambah dulu, verifikasi worker berjalan, baru contract.
-- Downgrade tidak boleh merusak data canonical (chain_events, source_samples, calendar_*).
-- Semua cron ter-install idempoten lewat tabel `scheduled_jobs`; re-run migration tidak membuat duplikat jadwal.
+- Downgrades must not damage canonical data (chain_events, source_samples, calendar_*).
+- All cron jobs are installed idempotently through the `scheduled_jobs` table; rerunning a migration does not create duplicate schedules.
 
 ## Install
-1. Jalankan `supabase/migrations/20261025000000_derived_state.sql` (schema).
-2. Jalankan `20261025000001_rls.sql` (RLS + public views; revoke dulu, grant view terakhir).
-3. Jalankan `20261025000002_leases_and_jobs.sql` (leases + fencing, SECURITY DEFINER dengan search_path eksplisit).
-4. Jalankan `20261025000003_jobs_cron.sql` (jadwal cron A 30 dtk, indexer 60 dtk, maintenance 3600 dtk).
+1. Run `supabase/migrations/20261025000000_derived_state.sql` (schema).
+2. Run `20261025000001_rls.sql` (RLS + public views; revoke first, grant the view last).
+3. Run `20261025000002_leases_and_jobs.sql` (leases + fencing, SECURITY DEFINER with an explicit search_path).
+4. Run `20261025000003_jobs_cron.sql` (cron schedules: A every 30 sec, indexer every 60 sec, maintenance every 3600 sec).
 
 ## Cron
-| Job | Interval | Catatan |
+| Job | Interval | Notes |
 |---|---|---|
-| keeper-a-tick | 30 detik | auth token di env backend/Vault, bukan SQL plaintext |
-| indexer-tick | 60 detik | planner 24 calls/menit terkunci di kode (M10-05) |
-| maintenance | 3600 detik | `prune_cron_history()`: sukses 2 hari, gagal 7 hari |
+| keeper-a-tick | 30 seconds | Auth token in backend env/Vault, not plaintext SQL |
+| indexer-tick | 60 seconds | Planner is locked to 24 calls/minute in code (M10-05) |
+| maintenance | 3600 seconds | `prune_cron_history()`: successes 2 days, failures 7 days |
 
 ## Rehearsal (BLOCKED offline)
-Staging rehearsal butuh instance Postgres/Supabase live. Evidence `migration-cron-rehearsal` tetap terbuka sampai dijalankan; jangan klaim kompatibel tanpa itu.
+Staging rehearsal requires a live Postgres/Supabase instance. Evidence `migration-cron-rehearsal` remains open until it is run; do not claim compatibility without it.

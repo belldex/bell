@@ -155,11 +155,15 @@ test('swap screen still gates on onchain policy', async () => {
   assert.match(panel, /pool\.canSwap/);
 });
 
-test('all app routes use the reference-like shared shell and real BELL navigation', async () => {
+test('all app routes use a Bloomberg-style left sidebar with working BELL navigation', async () => {
   const shell = await read('../components/app/AppShell.tsx');
   for (const path of ['/pools', '/swap', '/create', '/positions', '/protocol']) {
     assert.ok(shell.includes(`href: '${path}'`), `navigation must contain ${path}`);
   }
+  assert.match(shell, /fixed[^\n]*left-0[^\n]*w-\[280px\]/);
+  assert.match(shell, /Terminal clock/);
+  assert.match(shell, /mobileOpen/);
+  assert.doesNotMatch(shell, /App \(mobile\)/, 'mobile uses the sidebar drawer, not bottom nav');
   assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
   assert.match(shell, /WalletButton/);
   assert.match(shell, /TestnetBanner/);
@@ -296,7 +300,7 @@ test('fixture pool details do not borrow the deployed WETH/AAPL hook identity', 
 test('mobile app navigation has 44px targets and all routes, while current route semantics remain', async () => {
   const shell = await read('../components/app/AppShell.tsx');
   assert.match(shell, /min-h-12/);
-  assert.match(shell, /aria-label="App \(mobile\)"/);
+  assert.match(shell, /aria-label="Terminal app navigation"/);
   assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
   assert.match(shell, /href: '\/protocol'/);
 });

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ArrowLeftRight, Droplets, Layers, Menu, PlusCircle, ShieldCheck, WifiOff, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, Clock3, Droplets, Layers, Menu, PlusCircle, ShieldCheck, WifiOff, X } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
@@ -12,6 +12,7 @@ import { WalletProvider, useWallet } from '@/lib/wallet';
 import { SmoothScroll } from '@/lib/motion';
 import { cn } from '@/lib/format';
 import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/policy';
+
 
 const NAV = [
   { href: '/pools', label: 'Pool preview', icon: Droplets },
@@ -63,6 +64,17 @@ function PhaseTicker() {
   );
 }
 
+function TerminalClock() {
+  const [now, setNow] = useState('');
+  useEffect(() => {
+    const fmt = () => setNow(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()));
+    fmt();
+    const id = window.setInterval(fmt, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <div className="flex items-center justify-between border-y border-line/70 py-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted"><span className="flex items-center gap-2"><Clock3 className="h-3.5 w-3.5 text-ion" /> New York</span><span className="num text-ink">{now || '—'} ET</span></div>;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -77,76 +89,61 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <WalletProvider>
       <SmoothScroll enabled={false}>
-        <div className="relative min-h-dvh overflow-x-clip bg-bg-0 pb-24 md:pb-0">
-          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_10%,transparent),transparent_70%)]" aria-hidden="true" />
+        <div className="relative min-h-dvh overflow-x-clip bg-bg-0">
+          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_5%,transparent),transparent_70%)]" aria-hidden="true" />
 
           <PhaseTicker />
           <TestnetBanner />
           <ChainGuard />
 
-          <header className="sticky top-0 z-40 border-b border-line/80 bg-bg-0/90 backdrop-blur-xl">
-            <div className="mx-auto flex min-h-[76px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
-              <div className="flex items-center gap-6 lg:gap-10">
-                <Link href="/" aria-label="BELL home" className="rounded-full"><Logo /></Link>
-                <nav aria-label="App" className="hidden items-center gap-6 lg:flex lg:gap-8">
-                   {NAV.map(({ href, label }) => {
-                    const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
-                    return (
-                      <Link
-                        key={href}
-                        href={href}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn(
-                           'min-h-11 px-1 py-1.5 font-mono text-[10px] uppercase tracking-[0.06em] whitespace-nowrap transition-all xl:text-xs xl:tracking-[0.08em]',
-                           active
-                             ? 'border-b border-ion text-ion'
-                             : 'text-muted hover:text-ink'
-                        )}
-                      >
-                        {label}
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </div>
-              <div className="flex items-center gap-3">
-                <CalendarChip />
-                <WalletButton />
-                <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label={mobileOpen ? 'Close app navigation' : 'Open app navigation'} aria-expanded={mobileOpen} aria-controls="mobile-app-navigation" onClick={() => setMobileOpen((open) => !open)}>
-                  {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
-                </button>
-              </div>
+          <aside className={cn('fixed bottom-0 left-0 top-[38px] z-40 flex w-[280px] flex-col border-r border-line bg-[#080b10] px-5 py-6 transition-transform duration-300 max-lg:w-[260px]', mobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full')} aria-label="Terminal sidebar">
+            <div className="flex items-center justify-between">
+              <Link href="/" aria-label="BELL home" className="rounded-none"><Logo /></Link>
+              <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X className="h-5 w-5" aria-hidden="true" /></button>
             </div>
-            {mobileOpen ? <nav id="mobile-app-navigation" aria-label="App mobile" className="border-t border-line bg-slab px-4 py-3 lg:hidden">
+            <div className="mt-7"><TerminalClock /></div>
+            <div className="mb-2 mt-8 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Terminal clock · Workspace</div>
+            <nav aria-label="Terminal app navigation" className="flex flex-col gap-1">
               {NAV.map(({ href, label, icon: Icon }) => {
                 const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
-                return <Link key={href} href={href} aria-current={active ? 'page' : undefined} onClick={() => setMobileOpen(false)} className={cn('flex min-h-12 items-center gap-3 border-b border-line px-3 font-mono text-xs uppercase tracking-[0.08em]', active ? 'text-ion' : 'text-muted hover:text-ink')}><Icon className="h-4 w-4" aria-hidden="true" />{label}</Link>;
+                return <Link key={href} href={href} aria-current={active ? 'page' : undefined} onClick={() => setMobileOpen(false)} className={cn('flex min-h-12 items-center gap-3 border-l-2 px-3 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-200', active ? 'border-ion bg-ion/10 text-ion' : 'border-transparent text-muted hover:border-line-strong hover:bg-white/[0.03] hover:text-ink')}><Icon className="h-4 w-4" aria-hidden="true" />{label}</Link>;
               })}
-            </nav> : null}
+            </nav>
+            <div className="mt-6 border-t border-line pt-5">
+              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Policy tools</p>
+              <Link href="/protocol" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-3 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted transition-colors hover:text-ion"><ShieldCheck className="h-4 w-4" /> Protocol reference</Link>
+              <Link href="/positions" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-3 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted transition-colors hover:text-ion"><Layers className="h-4 w-4" /> Exit policy</Link>
+            </div>
+            <div className="mt-auto space-y-3 border-t border-line pt-5">
+              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-dim"><span>Market clock</span><CalendarChip /></div>
+              <div className="font-mono text-[10px] leading-5 text-muted">Robinhood Chain<br /><span className="text-ion">Testnet rehearsal · 46630</span></div>
+              <WalletButton />
+            </div>
+          </aside>
+
+          {mobileOpen ? <button aria-label="Close sidebar overlay" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
+
+          <header className="sticky top-0 z-20 ml-0 border-b border-line/80 bg-bg-0/95 lg:ml-[280px]">
+            <div className="flex min-h-[62px] items-center justify-between gap-4 px-4 sm:px-6">
+              <div className="flex items-center gap-3">
+                <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label={mobileOpen ? 'Close sidebar' : 'Open sidebar'} aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>
+                  {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
+                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-dim">{path === '/' ? 'Overview' : path.replaceAll('/', ' / ').replaceAll('-', ' ').trim()}</span>
+              </div>
+              <div className="flex items-center gap-3"><CalendarChip /><WalletButton /></div>
+            </div>
           </header>
 
-          <main id="main" className="relative z-10 mx-auto min-h-[calc(100vh-260px)] max-w-[1440px] px-4 py-10 sm:px-6 sm:py-12 lg:px-10">{children}</main>
+          <main id="main" className="app-page relative z-10 ml-0 min-h-[calc(100vh-150px)] px-4 py-8 sm:px-6 sm:py-10 lg:ml-[280px] lg:px-10 xl:px-12">{children}</main>
 
-          <footer className="relative z-10 mx-auto max-w-[1440px] px-4 pb-10 sm:px-6 lg:px-10">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-6 font-mono text-[11px] text-dim">
+          <footer className="relative z-10 ml-0 px-4 pb-10 sm:px-6 lg:ml-[280px] lg:px-10 xl:px-12">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-5 font-mono text-[10px] uppercase tracking-[0.06em] text-dim">
               <span className="inline-flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" aria-hidden="true" /> Indexer: <span className="num">not connected</span></span>
-              <span>Quotes expire in ≤ 30 s · transaction deadline ≤ 120 s</span>
-              <span className="sm:ml-auto">Fees and caps are not a guarantee of fills or of returns.</span>
+              <span>Fixture data ≠ live pool state</span>
+              <span className="lg:ml-auto">Fees and caps are not a guarantee of fills or returns.</span>
             </div>
           </footer>
-
-          {/* mobile bottom nav */}
-          <nav aria-label="App (mobile)" className="glass fixed inset-x-3 bottom-3 z-50 flex items-center justify-around rounded-none border border-line bg-slab/95 px-2 py-1.5 backdrop-blur-xl lg:hidden">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].includes(path));
-              return (
-                <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={cn('flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-none px-3 font-mono text-[9px] uppercase tracking-tight', active ? 'bg-ion/15 text-ion' : 'text-muted')}>
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
         </div>
       </SmoothScroll>
     </WalletProvider>

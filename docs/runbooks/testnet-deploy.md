@@ -1,98 +1,98 @@
-# Runbook — deploy rehearsal ke Robinhood testnet (chainId 46630)
+# Runbook — Deploy the Rehearsal to Robinhood Testnet (chainId 46630)
 
-Status: **REHEARSAL**, bukan mainnet. PRICE_GUARDED tetap diblokir; factory rehearsal hanya
-SESSION_ONLY. Treasury path produksi belum terintegrasi ke factory (lihat evidence/treasury-adapter-results.md).
+Status: **REHEARSAL**, not mainnet. PRICE_GUARDED remains blocked; the rehearsal factory supports
+SESSION_ONLY only. The production treasury path is not integrated into the factory (see evidence/treasury-adapter-results.md).
 
-Kondisi terkini seluruh sistem: **`docs/CURRENT-STATE.md`**. Runbook ini hanya menjelaskan cara
-mengulang deploy; kalau keduanya berbeda, `docs/CURRENT-STATE.md` yang benar.
+Current system state: **`docs/CURRENT-STATE.md`**. This runbook only explains how to rerun the deployment;
+if the two documents differ, `docs/CURRENT-STATE.md` is authoritative.
 
-## 0. Prasyarat yang sudah diverifikasi on-chain
+## 0. On-chain-verified prerequisites
 - Permit2 canonical ada di testnet: `0x000000000022D473030F116dDEE9F6B43aC78BA3`
-- v4 PoolManager canonical **tidak ada** → script men-deploy PoolManager sendiri (owner = deployer)
+- The canonical v4 PoolManager **does not exist** → the script deploys its own PoolManager (owner = deployer)
 - RPC testnet: `RH_TESTNET_RPC_PRIMARY` (Alchemy) + `RH_TESTNET_RPC_SECONDARY` (Pinax)
 
-## 0b. State deployment saat ini (2026-10-27)
+## 0b. Current deployment state (2026-10-27)
 
 Manifest `evidence/deploy/testnet-46630.json`, hash `0x2ca2ec5aa5b2903ae0b1af2b9c8f11eb0635dc1a4b50128c7654ca8718e24a0b`,
 sourceCommit `ee407db`, block `142881475`–`142881484`.
 
-Sudah hidup dan terverifikasi: 10 kontrak rehearsal + mBELL fee token 6-desimal + Yahoo verifier
-dan 4 adapter Yahoo (direct/regular/extended/overnight).
+Deployed and verified: 10 rehearsal contracts + 6-decimal mBELL fee token + Yahoo verifier
+and 4 Yahoo adapters (direct/regular/extended/overnight).
 
-Belum ada: pool, swap, calendar root, deskriptor saham. Hanya WETH counterasset yang ACTIVE.
+Not yet present: pool, swap, calendar root, stock descriptor. Only the WETH counterasset is ACTIVE.
 
 Verifikasi ulang kapan pun:
 
 ```bash
-node scripts/deploy/check-testnet-addresses.mjs --rpc      # alamat + binding + ukuran kode
-node scripts/deploy/verify-testnet-deployment.mjs --check  # evidence masih cocok dengan chain?
+node scripts/deploy/check-testnet-addresses.mjs --rpc      # addresses + bindings + code sizes
+node scripts/deploy/verify-testnet-deployment.mjs --check  # does evidence still match the chain?
 ```
 
 
 ## 1. Isi environment
-`.env` (root repo, tidak di-commit):
+`.env` (repo root, not committed):
 ```
-DEPLOYER_PRIVATE_KEY=            # wallet deployer testnet, 64-hex (0x opsional)
+DEPLOYER_PRIVATE_KEY=            # testnet deployer wallet, 64 hex characters (0x optional)
 TESTNET_TREASURY_ADDRESS=        # governance + guardian + treasury SafetyController
 TESTNET_SERVICE_RECIPIENT=       # penerima service fee (nonzero)
 TESTNET_FEE_TOKEN_ADDRESS=       # kosong = FeeTokenNotBound (fail-closed)
 TESTNET_POOL_CLASS=1             # SESSION_ONLY
 ```
-Pastikan wallet deployer punya ETH testnet (faucet) — kebutuhan ±0.02 ETH untuk seluruh fase.
+Ensure the deployer wallet has testnet ETH (faucet)—about 0.02 ETH is required for all phases.
 
-## 1b. (Opsional) Token fee rehearsal
-Factory butuh token fee untuk createAndSeed; tanpa itu setiap create revert FeeTokenNotBound.
-Untuk rehearsal, deploy mock 6-desimal sekali lalu isi alamatnya:
+## 1b. (Optional) Rehearsal fee token
+The factory requires a fee token for createAndSeed; without one, every create reverts with FeeTokenNotBound.
+For rehearsal, deploy a 6-decimal mock once and fill in its address:
 
     cd contracts
     set -a; source ../.env; set +a
     forge script script/DeployFeeToken.s.sol --rpc-url "$RH_TESTNET_RPC_PRIMARY" --broadcast -vv
-    # salin address dari evidence/deploy/testnet-46630-fee-token.json ke TESTNET_FEE_TOKEN_ADDRESS
+    # copy the address from evidence/deploy/testnet-46630-fee-token.json into TESTNET_FEE_TOKEN_ADDRESS
 
-Ini fixture (bukan USDG) dan hanya membuktikan jalur fee/desimal; identitas USDG tetap MISSING.
+This is a fixture (not USDG) and only proves the fee/decimal path; the USDG identity remains MISSING.
 
 ## 2. Deploy
 
-Ada **dua entrypoint** untuk deployment yang sama. Pilih satu, jangan keduanya — keduanya
-memanggil script Foundry yang sama dan menulis manifest yang sama.
+There are **two entry points** for the same deployment. Choose one, not both—both call the same
+Foundry script and write the same manifest.
 
-**A. Langsung Foundry** (paling transparan, dipakai saat rehearsal pertama):
+**A. Direct Foundry** (most transparent, used for the first rehearsal):
 ```bash
 cd contracts
 set -a; source ../.env; set +a
 forge script script/DeployTestnet.s.sol --rpc-url "$RH_TESTNET_RPC_PRIMARY" --broadcast -vv
 ```
 
-**B. Runner Node** (opsional; memvalidasi manifest dengan skema kanonik + mencetak hash):
+**B. Node runner** (optional; validates the manifest against the canonical schema + prints the hash):
 ```bash
 set -a; source .env; set +a
 node scripts/deploy/deploy-testnet.mjs --dry-run   # cek urutan tanpa broadcast
 node scripts/deploy/deploy-testnet.mjs             # broadcast + validasi manifest
 ```
-Runner Node memanggil binary `forge` dari `PATH`. Bila Foundry hanya ada di `~/.foundry/bin`,
-tambahkan ke `PATH` lebih dulu (`export PATH="$HOME/.foundry/bin:$PATH"`).
+The Node runner calls the `forge` binary from `PATH`. If Foundry is only in `~/.foundry/bin`,
+add it to `PATH` first (`export PATH="$HOME/.foundry/bin:$PATH"`).
 
-Script gagal-closed bila: chainId ≠ 46630, treasury/guardian/recipient kosong, tiga role tidak
-saling berbeda, poolClass ≠ 1, atau prediksi alamat factory tidak cocok.
+The script fails closed if: chainId ≠ 46630, treasury/guardian/recipient is empty, the three roles
+are not distinct, poolClass ≠ 1, or the predicted factory address does not match.
 
-Urutan deploy (satu transaksi per kontrak):
-1. `SafetyController(governance, guardian, treasury)` — tiga alamat **wajib** berbeda
+Deployment order (one transaction per contract):
+1. `SafetyController(governance, guardian, treasury)` — all three addresses **must** be distinct
 2. `AssetRegistry(safety)`
 3. `CalendarRegistry(safety)`
 4. `SessionRegistry(assets, calendar)`
 5. `PoolManager(deployer)`
-6. `WETH` fixture — hanya bila `TESTNET_WETH_ADDRESS` kosong (tidak ada WETH9 kanonik di chain ini)
+6. `WETH` fixture — only if `TESTNET_WETH_ADDRESS` is empty (there is no canonical WETH9 on this chain)
 7. `PositionManager(manager, permit2, 100000, descriptor=0, weth9=WETH)`
 8. `BellHookDeployer(futureFactory, sessionRegistry, keccak256(BellHook.creationCode))`
 9. `BellPoolFactory(profile, hookDeployer, feeToken, recipient)`
 10. `BellRouter(poolManager, WETH)`
 
-Manifest ditulis otomatis ke `evidence/deploy/testnet-46630.json` (14 field alamat wajib:
+The manifest is written automatically to `evidence/deploy/testnet-46630.json` (14 required address fields:
 `deployer, treasury, serviceRecipient, permit2, safetyController, assetRegistry, calendarRegistry,
 sessionRegistry, poolManager, positionManager, hookDeployer, poolFactory, weth, router`; plus
-`feeToken`, `status`, `note` — total 18 key, 16 di antaranya alamat).
+`feeToken`, `status`, `note` — 18 keys total, 16 of them addresses).
 
-Jalur harga Yahoo **tidak** termasuk dalam script deploy ini dan dideploy terpisah:
+The Yahoo price path is **not** included in this deployment script and is deployed separately:
 
 ```bash
 node scripts/deploy/deploy-yahoo-verifier.mjs         # YahooSourceVerifier
@@ -100,98 +100,98 @@ node scripts/deploy/deploy-yahoo-adapter-weth.mjs     # adapter direct
 node scripts/deploy/deploy-yahoo-stream-adapters.mjs  # adapter scope 1/2/3 + facade testnet
 ```
 
-`deploy-yahoo-stream-adapters.mjs` juga men-deploy `AaplTestnetFacade` karena konstruktor adapter
-mode stream menuntut `stockToken.code.length != 0` di chain deployment, sedangkan AAPL Mainnet tidak
-punya kode di Testnet. Facade itu **bukan** token canonical dan dicatat sebagai
+`deploy-yahoo-stream-adapters.mjs` also deploys `AaplTestnetFacade` because the stream-mode adapter
+constructor requires `stockToken.code.length != 0` on the deployment chain, while AAPL Mainnet has no
+code on Testnet. The facade is **not** a canonical token and is recorded as
 `isCanonicalToken: false` di evidence.
 
 ## 3. Verifikasi pasca-deploy
-- `eth_getCode` semua alamat di manifest ≠ `0x`
-- `factory.hookDeployer()` dan `factory.profileHash()` sesuai manifest
+- `eth_getCode` for every address in the manifest ≠ `0x`
+- `factory.hookDeployer()` and `factory.profileHash()` match the manifest
 - `deployer.getNonce()` bertambah tepat 10
-- `SessionRegistry.assetRegistry()`/`calendarRegistry()` menunjuk alamat manifest
+- `SessionRegistry.assetRegistry()`/`calendarRegistry()` point to the manifest addresses
 - `BellRouter.poolManager()` = manifest `poolManager`, `BellRouter.canonicalWeth()` = manifest `weth`
-- `PoolManager.owner()` = deployer (handover ownership saat rehearsal selesai)
-- `factory.liquidityMode()` = `0` (PUBLIC) untuk rehearsal ini. Profile immutable, jadi factory ini
-  **tidak bisa** membuat pool TREASURY_ONLY; jalur treasury butuh deployment factory kedua dengan
+- `PoolManager.owner()` = deployer (ownership handover when the rehearsal is complete)
+- `factory.liquidityMode()` = `0` (PUBLIC) for this rehearsal. The profile is immutable, so this factory
+  **cannot** create a TREASURY_ONLY pool; the treasury path requires a second factory deployment with
   `liquidityMode=1` + `treasuryAdapter` terisi.
-- `router.poolManager()` / `router.canonicalWeth()` menunjuk manifest, `weth.symbol()` = `WETH`
+- `router.poolManager()` / `router.canonicalWeth()` point to the manifest; `weth.symbol()` = `WETH`
 
-Setelah deploy atau redeploy, jalankan **tiga** penjaga. Urutannya penting: verifikasi dulu, baru
+After deploying or redeploying, run **three** guards. The order matters: verify first, then
 bandingkan.
 
 ```bash
-node scripts/deploy/verify-testnet-deployment.mjs        # tulis ulang evidence dari chain + manifest
+node scripts/deploy/verify-testnet-deployment.mjs        # regenerate evidence from chain + manifest
 node scripts/deploy/check-testnet-addresses.mjs          # offline: manifest vs evidence vs status module
 node scripts/deploy/check-testnet-addresses.mjs --rpc    # + ukuran code on-chain
 ```
 
-`verify-testnet-deployment.mjs` menurunkan seluruh isi `testnet-46630-verification.json` dari chain
-dan manifest: alamat, ukuran kode, hash kode, 15 binding, role, gas dari broadcast log. Jangan pernah
-mengedit file itu dengan tangan — itulah yang menyebabkan insiden drift 2026-10-27, ketika kesepuluh
-alamat di file verifikasi masih milik deployment sebelumnya dan `check-testnet-addresses.mjs` gagal
-dengan 11 error. Mode `--check` exit 1 kalau evidence basi, jadi bisa dipakai di CI.
+`verify-testnet-deployment.mjs` derives the entire contents of `testnet-46630-verification.json` from the chain
+and manifest: addresses, code sizes, code hashes, 15 bindings, roles, and gas from the broadcast log. Never
+edit this file by hand—that caused the 2026-10-27 drift incident, when all ten addresses in the verification
+file still belonged to the previous deployment and `check-testnet-addresses.mjs` failed with 11 errors.
+`--check` exits 1 when evidence is stale, so it can be used in CI.
 
-Tiga tempat menyimpan alamat yang sama (manifest, `testnet-46630-verification.json`, dan
-`packages/protocol/src/testnet-status.mjs` yang dipakai frontend). Tanpa penjaga ini, redeploy
-meninggalkan dua dari tiga menunjuk kontrak lama.
+Three places store the same addresses (the manifest, `testnet-46630-verification.json`, and
+`packages/protocol/src/testnet-status.mjs`, used by the frontend). Without these guards, a redeploy
+would leave two of the three pointing at old contracts.
 
 ## 4. Admission aset (testnet zero-delay, mainnet tetap 48 jam)
 
-Pool tidak bisa dibuat sebelum `AssetRegistry` mengenal **kedua** token: `BellPoolFactory._admitted`
-revert `InvalidConfiguration` bila `asset0/asset1` nol atau `descriptorIdForToken(token)` tidak cocok.
+A pool cannot be created until `AssetRegistry` recognizes **both** tokens: `BellPoolFactory._admitted`
+reverts with `InvalidConfiguration` if `asset0/asset1` is zero or `descriptorIdForToken(token)` does not match.
 
 ```bash
-# Langkah 1 — queue. Pada chainId 46630, governance ETA testnet diset 0 detik sesuai keputusan owner.
+# Step 1 — queue. On chainId 46630, the testnet governance ETA is set to 0 seconds by owner decision.
 node scripts/deploy/queue-testnet-asset.mjs --token=0x<TOKEN>          # preview (eth_call)
 node scripts/deploy/queue-testnet-asset.mjs --token=0x<TOKEN> --broadcast
 
-# Langkah 2 — activate segera setelah queue, tetap dalam jendela operasi 7 hari.
+# Step 2 — activate immediately after queueing, within the 7-day operation window.
 node scripts/deploy/activate-testnet-asset.mjs --operation-id=0x<ID> --token=0x<TOKEN> --eta=<UNIX>
 node scripts/deploy/activate-testnet-asset.mjs --operation-id=0x<ID> --token=0x<TOKEN> --eta=<UNIX> --broadcast
 ```
 
 Override zero-delay terbatas di kontrak pada `block.chainid == 46630`; chainId 4663 tetap memakai
 `GOVERNANCE_MINIMUM_DELAY_SECONDS = 172800`. Jangan deploy/testnet override build ke mainnet.
-WETH rehearsal counterasset sudah aktif di deployment saat ini (`descriptorId` di
-`evidence/deploy/testnet-46630-asset-queue.json`); queue tool mendeteksi descriptor aktif dan tidak
-mengirim transaksi duplikat.
+The WETH rehearsal counterasset is already active in the current deployment (`descriptorId` in
+`evidence/deploy/testnet-46630-asset-queue.json`); the queue tool detects the active descriptor and does not
+send a duplicate transaction.
 
-`activate-testnet-asset.mjs` mensimulasikan `activateAsset` lewat `eth_call` sebelum broadcast,
-memetakan revert menjadi `TIMELOCK` / `EXPIRED` / `ALREADY_DONE_OR_CANCELLED` / `TOKEN_CHANGED`, dan
-setelah broadcast memverifikasi `descriptorIdForToken(token)` benar-benar terikat.
+`activate-testnet-asset.mjs` simulates `activateAsset` through `eth_call` before broadcast,
+maps reverts to `TIMELOCK` / `EXPIRED` / `ALREADY_DONE_OR_CANCELLED` / `TOKEN_CHANGED`, and after
+broadcast verifies that `descriptorIdForToken(token)` is actually bound.
 
-Sisi counterasset (WETH) cukup: `isStock=false`, `capabilityMask=0`, semua adapter nol, sourceConfig
-kosong → `AssetPolicy.oraclelessCounterasset` melewati gate health. Sisi saham **tidak** cukup:
-`_admitted` mensyaratkan `SessionRegistry.health(id)` dengan `ready`, `reasonBits == 0`, dan
-`validUntil > now`, jadi butuh adapter + source yang benar-benar melaporkan.
+The counterasset side (WETH) is straightforward: `isStock=false`, `capabilityMask=0`, all adapters zero,
+empty sourceConfig → `AssetPolicy.oraclelessCounterasset` passes the health gate. The stock side is **not**:
+`_admitted` requires `SessionRegistry.health(id)` with `ready`, `reasonBits == 0`, and
+`validUntil > now`, so it requires an adapter + source that actually reports.
 
-### 4b. Kenapa belum ada deskriptor saham
+### 4b. Why there is no stock descriptor yet
 
-`descriptorIdForToken` saat ini mengembalikan nol untuk `AaplTestnetFacade`
-(`0x64a82eb01d7c7310ef1bc5f0055f758409d45c63`) dan untuk mBELL. Yang ACTIVE hanya WETH.
-Tiga hal yang menghalangi, dan semuanya harus beres bersamaan:
+`descriptorIdForToken` currently returns zero for `AaplTestnetFacade`
+(`0x64a82eb01d7c7310ef1bc5f0055f758409d45c63`) and for mBELL. Only WETH is ACTIVE.
+Three blockers must all be resolved:
 
-1. **Token.** API resmi Robinhood mengembalikan 195 aset, semuanya hanya di chainId 4663. Tidak ada
-   AAPL/TSLA/NVDA resmi di 46630. Facade hanya memenuhi cek `stockToken.code.length` di konstruktor
-   adapter; dia bukan token canonical dan tidak boleh dipakai sebagai identitas saham.
-2. **Calendar.** `CalendarRegistry.currentInterval(WETH)` mengembalikan semua nol. Belum ada root
-   yang di-queue untuk aset mana pun. Tanpa interval, `refreshHealth` untuk saham tidak akan hijau.
-3. **Sampel sumber.** Sampel direct terakhir berumur 5500 detik saat trace 2026-10-27, sementara
-   policy menolak > 120 detik. Tiga adapter stream belum punya sampel sama sekali.
+1. **Token.** Robinhood's official API returns 195 assets, all on chainId 4663 only. There are no official
+   AAPL/TSLA/NVDA tokens on 46630. The facade only satisfies the adapter constructor's `stockToken.code.length`
+   check; it is not canonical and must not be used as a stock identity.
+2. **Calendar.** `CalendarRegistry.currentInterval(WETH)` returns all zeros. No root has been queued
+   for any asset. Without an interval, `refreshHealth` for a stock will not pass.
+3. **Source sample.** The last direct sample was 5500 seconds old at the 2026-10-27 trace, while the
+   policy rejects samples older than 120 seconds. None of the three stream adapters has a sample yet.
 
-Jadi queue descriptor saham sekarang hanya akan menghasilkan revert atau health yang tetap tidak
-siap. Jangan meng-queue sesuatu hanya untuk "terlihat ada progres".
+Queueing a stock descriptor now would only cause a revert or leave health unready.
+Do not queue something just to "look like progress".
 
-## 5. Belum tercakup (jangan diklaim selesai)
-- Pool create-and-seed end-to-end: WETH counterasset aktif, tetapi perlu pasangan token saham dengan
-  descriptor, adapter bindings, source report sehat dan interval calendar yang valid. Data/mock
-  adapter tidak boleh dilabeli sebagai saham/source produksi; fixture rehearsal harus dinyatakan eksplisit.
+## 5. Not yet covered (do not claim as complete)
+- End-to-end pool create-and-seed: the WETH counterasset is active, but this requires a stock-token pair with
+  a descriptor, adapter bindings, a healthy source report, and a valid calendar interval. Data/mock
+  adapters must not be labeled as production stock/source; rehearsal fixtures must be explicitly identified.
 - Swap: `BellHook.SWAP_EXECUTION_READY = false`; `_beforeSwap`/`_afterSwap` revert
-  `HookNotImplemented()`. Tidak ada satu pun swap yang pernah terjadi, dan itu disengaja sampai
+  `HookNotImplemented()`. No swaps have occurred; this is intentional until
   M05-05 selesai.
-- Treasury path (TreasuryAdapter) belum dipanggil factory. Treasury SafetyController masih burn
-  address `0x...dEaD`, jadi exit/handover belum bisa direhearsal.
-- Keeper A (Supabase) dan Keeper B (Cloudflare) belum diarahkan ke alamat testnet ini.
-- PoolManager ownership masih di deployer.
-- PRICE_GUARDED, mainnet readiness — tetap M14/M15.
+- The factory has not called the treasury path (TreasuryAdapter). SafetyController's treasury is still the burn
+  address `0x...dEaD`, so exit/handover cannot yet be rehearsed.
+- Keeper A (Supabase) and Keeper B (Cloudflare) are not pointed at this testnet address yet.
+- PoolManager ownership is still with the deployer.
+- PRICE_GUARDED and mainnet readiness remain M14/M15.

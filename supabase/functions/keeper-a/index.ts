@@ -23,7 +23,7 @@ async function rpc(fn: string, args: Record<string, unknown>) {
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const startedAt = Date.now();
-  // 1. authenticate the cron caller (brief: invocation auth, bukan origin string)
+  // 1. Authenticate the cron caller (brief: invocation auth, not an origin string).
   const provided = req.headers.get("x-cron-secret");
   if (!CRON_SECRET || !provided || provided !== CRON_SECRET) {
     return new Response(JSON.stringify({ status: "UNAUTHORIZED" }), { status: 401, headers: { "content-type": "application/json" } });
@@ -31,7 +31,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const ownerToken = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, "0")).join("");
   const headers = { "content-type": "application/json" };
   try {
-    // 2. fenced lease 25 detik
+    // 2. Acquire a fenced 25-second lease.
     const lease = await rpc("acquire_job_lease", {
       p_chain_id: 4663,
       p_job_kind: "keeper-a-tick",
@@ -42,10 +42,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ status: "LEASE_HELD", detail: lease.detail ?? null, checkedAt: new Date().toISOString() }), { headers });
     }
     const fence = lease.result?.[0]?.fence ?? null;
-    // 3. due work: laporan oracle butuh entitlement (M01) - belum ada, no-op jujur.
-    //    No-op TIDAK menandai apa pun fresh dan TIDAK menyiapkan transaksi.
+    // 3. Due work: oracle reports require entitlement (M01), which is not available yet; remain an honest no-op.
+    //    The no-op does NOT mark anything fresh or prepare a transaction.
     const dueWork: Array<unknown> = [];
-    // 4. release lease segera (tick tanpa pekerjaan tidak boleh memegang kunci)
+    // 4. Release the lease immediately (a tick with no work must not hold the lock).
     await rpc("release_job_lease", {
       p_chain_id: 4663,
       p_job_kind: "keeper-a-tick",

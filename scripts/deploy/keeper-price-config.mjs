@@ -62,3 +62,11 @@ export function yahooWireForCalendarPhase(adapters, phase) {
   if (scope === 3) return { wire: adapters.overnightWire, wireHash: adapters.overnightWireHash };
   return null;
 }
+
+export function activeSessionCalendar(quote, now, maxAgeSeconds = 45, intervalSeconds = 1800) {
+  const phase = yahooSessionPhase(quote?.phase);
+  if (!phase || !Number.isSafeInteger(now) || !isNewYahooQuote(quote, quote.phase, 0, maxAgeSeconds)
+    || quote.observedAt > now || !Number.isSafeInteger(intervalSeconds) || intervalSeconds <= 0) return null;
+  const start = now + 180;
+  return { phase, start, end: start + intervalSeconds, quoteObservedAt: quote.observedAt };
+}

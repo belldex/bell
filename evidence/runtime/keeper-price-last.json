@@ -1,38 +1,38 @@
 {
-  "startedAt": "2026-10-28T12:53:49.859Z",
-  "block": 144195276,
-  "chainTime": 1793192030,
-  "price18": "346200000000000000000",
-  "source": "yahoo-PRE",
+  "startedAt": "2026-10-28T17:54:34.306Z",
+  "block": 144312992,
+  "chainTime": 1793210075,
+  "price18": "345394989013671900000",
+  "source": "yahoo-REGULAR",
   "broadcast": true,
   "hooks": [
-    "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0"
+    "0x42708e4001b85fcbd5e6d5e5c9fe197cfd44acc0"
   ],
   "steps": [
     {
       "step": "publishDirect",
-      "tx": "0x4000ee6206f984d835e8020340f3320482b68a9ba0b0ca53e49a169212a75b53",
-      "status": "reverted"
+      "tx": "0xaa5c197713de25f6144f7e8acd93d996b231f9f44bc967a08807678cf6494f48",
+      "status": "success"
     },
     {
       "step": "submitReports",
-      "tx": "0xff4411b4026606bba0fadc27e323223ae314fcb4d09616f4bf1e70bdc0ab71f7",
-      "status": "reverted"
+      "tx": "0xb136a9682665f198b2c1809dff77166a6a533c615bfd4c77099320461e30cd6c",
+      "status": "success"
     },
     {
       "step": "refreshHealth",
-      "tx": "0x4cb142693c17bb0ba2ff522fd7cc1aabd9185a7982b5253e7792c248a8557aab",
+      "tx": "0x71bf7151e66b078abbf7180ace0c0e08f91bddee6e266d7a5e6e2ff57930e174",
       "status": "success"
     },
     {
       "step": "hook.refreshState",
-      "hook": "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0",
-      "tx": "0xbeb8639f8c64fd69b7485555f7c29c6cdbc401c92c911fa31e83329a763e5f3b",
+      "hook": "0x42708e4001b85fcbd5e6d5e5c9fe197cfd44acc0",
+      "tx": "0x01a0bf874f4465123c88f5c36e217f4b8dec66f6709793721d4c9c832efa182d",
       "status": "success"
     },
     {
       "step": "hook.getPolicy",
-      "hook": "0xce7f73065907ea42ea8d0f0b389fa0d4b82dacc0",
+      "hook": "0x42708e4001b85fcbd5e6d5e5c9fe197cfd44acc0",
       "mode": 1,
       "canSwap": true,
       "reasonBits": "0"
@@ -41,7 +41,7 @@
   "health": {
     "ready": true,
     "reasonBits": "0",
-    "validUntil": "1793192088"
+    "validUntil": "1793210135"
   },
-  "finishedAt": "2026-10-28T12:53:54.314Z"
+  "finishedAt": "2026-10-28T17:54:37.568Z"
 }

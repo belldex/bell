@@ -1,6 +1,6 @@
 // Chainlink Data Streams report probe (M01-03).
 // Pemakaian: node scripts/discovery/chainlink-report-probe.mjs <feedId> [endpoint]
-// Cred dari .env: CHAINLINK_SOURCE_CREDENTIAL_A=<username>:<secret>
+// Credential from .env: CHAINLINK_SOURCE_CREDENTIAL_A=<username>:<secret>
 import { createClient, decodeReport } from '@chainlink/data-streams-sdk';
 import { readFileSync } from 'node:fs';
 import { selectChainlinkCredential } from './chainlink-credential.mjs';
@@ -12,7 +12,7 @@ const envMap = Object.fromEntries(env.split(/\r?\n/).flatMap((line) => {
 const feedId = process.argv[2];
 const endpoint = process.argv[3] ?? 'https://api.dataengine.chain.link';
 const wsEndpoint = endpoint.replace('https://', 'wss://').replace('api.', 'ws.');
-if (!feedId) { console.error('feedId wajib'); process.exit(1); }
+if (!feedId) { console.error('feedId is required'); process.exit(1); }
 let credentials;
 try {
   credentials = selectChainlinkCredential(envMap, endpoint);

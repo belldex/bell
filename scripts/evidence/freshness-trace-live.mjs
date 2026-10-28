@@ -1,4 +1,4 @@
-// Freshness trace live (M01-05): profil staleness dari chain_blocks kanonik.
+// Live freshness trace (M01-05): staleness profile from canonical chain_blocks.
 import { readFileSync, writeFileSync } from 'node:fs';
 const env = readFileSync(new URL('../../.env', import.meta.url), 'utf8');
 const ref = env.match(/SUPABASE_PROJECT_REF=(.*)/)[1].trim();
@@ -13,7 +13,7 @@ const trace = {
   capturedAt: new Date().toISOString(), source: 'chain_blocks canonical (indexer-tick cron 59s)',
   samples: rows.length, headBlock: rows[0]?.block_number ?? null,
   observedAgeSeconds: { p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), max: sorted[sorted.length - 1] ?? null },
-  guard: 'freshness source live (Data Streams) menunggu entitlement; trace ini mengukur freshness ingest infra, bukan harga'
+  guard: 'Live source freshness (Data Streams) awaits entitlement; this trace measures infrastructure ingest freshness, not prices'
 };
 console.log(JSON.stringify(trace, null, 2));
 writeFileSync(new URL('../../evidence/runtime/freshness-trace-live-2026-10-25.json', import.meta.url), JSON.stringify(trace, null, 2));

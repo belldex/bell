@@ -32,7 +32,7 @@ export function createPreview({ chainId, request, registry, observedBlockNumber,
             ...(!baseKnown ? [request.baseAsset] : []),
             ...(!quoteKnown ? [request.quoteAsset] : []),
           ],
-          message: 'Token belum terdaftar sebagai canonical descriptor. Preview resmi butuh intake dan review governance, bukan klaim deploy sekarang.',
+          message: 'Token is not registered as a canonical descriptor. An official preview requires intake and governance review; it does not imply an immediate deployment.',
         },
         preview: null,
       },
@@ -50,8 +50,8 @@ export function createPreview({ chainId, request, registry, observedBlockNumber,
       status: 'NOT_ADMITTED',
       extra: {
         reason: request.class === 'PRICE_GUARDED'
-          ? 'kedua aset membutuhkan sumber harga independen yang disetujui'
-          : 'aset stock canonical dibutuhkan untuk SESSION_ONLY',
+          ? 'Both assets require approved independent price sources.'
+          : 'A canonical stock asset is required for SESSION_ONLY.',
         preview: null,
       },
     });
@@ -70,8 +70,8 @@ export function createPreview({ chainId, request, registry, observedBlockNumber,
         capsRaw: request.capsRaw,
         disclosures: [
           request.class === 'SESSION_ONLY'
-            ? 'SESSION_ONLY tidak menjamin harga wajar counterasset.'
-            : 'PRICE_GUARDED menampilkan band terhadap reference dengan provenance.',
+            ? 'SESSION_ONLY does not guarantee a fair price for the counterasset.'
+            : 'PRICE_GUARDED displays a band against a reference with provenance.',
         ],
       },
     },

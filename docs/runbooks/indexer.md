@@ -1,22 +1,22 @@
-# Runbook: Indexer, Reorg dan Finality (M10, M12-03)
+# Runbook: Indexer, Reorg, and Finality (M10, M12-03)
 
-## Anggaran (M10-05)
-- Planner terkunci: <= 24 calls/menit, chunk <= 10 blok (Alchemy), max 2 filter shards.
-- `measureHeadroom` membuktikan muat/tidaknya head rate; TIDAK ada kenaikan limit diam-diam.
-- Backlog: `catchupPlan` memprediksi clearing; keeper reserve dilindungi dari backfill.
-- INDEX_LAGGING saat lag > 120 detik; admission gagal, bukan fallback berbayar.
+## Budget (M10-05)
+- Planner is locked: <= 24 calls/minute, chunks <= 10 blocks (Alchemy), max 2 filter shards.
+- `measureHeadroom` determines whether the head rate fits; limits are NEVER increased silently.
+- Backlog: `catchupPlan` predicts clearing; keeper reserve is protected from backfill.
+- INDEX_LAGGING when lag > 120 seconds; admission fails instead of using a paid fallback.
 
 ## Reorg (M10-03)
-1. Bandingkan checkpoint dengan dua provider; cari LCA (`findCommonAncestor`).
-2. Tandai orphan events di atas LCA, rollback proyeksi dalam satu transaksi.
-3. Replay range canonical bounded (`planReplay`, maxRange per batch).
-4. Provider disagreement yang tidak selesai MENGHENTIKAN signing yang butuh agreement.
+1. Compare the checkpoint across two providers; find the LCA (`findCommonAncestor`).
+2. Mark orphan events above the LCA and roll back projections in one transaction.
+3. Replay a bounded canonical range (`planReplay`, maxRange per batch).
+4. Unresolved provider disagreement STOPS signing that requires agreement.
 
 ## Finality (M10-04)
-- Satu receipt atau hitungan blok lokal tidak pernah menghasilkan FINALIZED.
-- Tanpa finalized tag yang disepakati dua provider: CONFIRMED_UNFINALIZED.
-- Side effect yang butuh finality ditahan (`requiresFinality`).
+- A single receipt or local block count never produces FINALIZED.
+- Without a finalized tag agreed upon by two providers: CONFIRMED_UNFINALIZED.
+- Side effects requiring finality are held (`requiresFinality`).
 
 ## Health/alerts (M12-03)
-- Metrik: lag detik, calls/menit, bytes, shard volume, kegagalan ingest.
-- Alert: INDEX_LAGGING, checkpoint tidak maju, LCA unresolved, budget planner deficit.
+- Metrics: lag in seconds, calls/minute, bytes, shard volume, ingest failures.
+- Alerts: INDEX_LAGGING, stalled checkpoint, unresolved LCA, planner budget deficit.

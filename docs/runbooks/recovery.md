@@ -2,14 +2,14 @@
 
 ## Rotasi backup (M12-01)
 - Rotasi time-based (`planRotation`): FULL/INCREMENTAL, generasi dibatasi (default 7).
-- Kunci enkripsi: hanya `encryptionRecipientId` yang masuk manifest — kunci privat tidak pernah menyentuh repo/manifest.
-- Generasi dengan recipient lama ditandai rotate; tidak pernah dienkripsi-ulang in place.
-- Object storage private; duplicate upload = versi baru, bukan overwrite.
+- Encryption key: only `encryptionRecipientId` is included in the manifest—the private key must never touch the repo/manifest.
+- Generations with an old recipient are marked for rotation; they are never re-encrypted in place.
+- Object storage is private; a duplicate upload creates a new version instead of overwriting.
 
 ## RPO/RTO (M12-02)
-- `checkRpo` gagal keras jika belum pernah restore test (NEVER_RESTORE_TESTED) atau restore test terakhir lebih tua dari RPO.
+- `checkRpo` fails hard if no restore test has ever been run (NEVER_RESTORE_TESTED) or the last restore test is older than the RPO.
 - Target operasional: restore drill terjadwal; hasil dicatat di `backup_manifests.restore_tested_at` (M07-01 schema).
-- Restore-verified-before-prune: arsip tidak dihapus sebelum export terverifikasi (`planPrune` di M07-04).
+- Restore-verified-before-prune: archives are not deleted until the export is verified (`planPrune` in M07-04).
 
 ## Drill (BLOCKED offline)
-Restore drill butuh storage live. Evidence `restore/RPO/RTO` tetap terbuka sampai drill pertama tercatat.
+The restore drill requires live storage. Evidence `restore/RPO/RTO` remains open until the first drill is recorded.

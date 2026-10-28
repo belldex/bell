@@ -1,54 +1,54 @@
 # BELL
 
-Session-aware AMM untuk token saham Robinhood Chain. Fee dan batas flow berubah mengikuti sesi
-pasar (regular, extended, overnight, planned closure); kalau calendar, sumber harga, atau health
-tidak jelas, swap berhenti daripada menebak.
+Session-aware AMM for Robinhood Chain stock tokens. Fees and flow limits adapt to market sessions
+(regular, extended, overnight, planned closure); if the calendar, price source, or health state is
+unclear, swaps halt rather than guessing.
 
-## Mulai dari sini
+## Start here
 
-| Dokumen | Isi |
+| Document | Contents |
 |---|---|
-| **`docs/CURRENT-STATE.md`** | Kondisi aktual: apa yang hidup onchain, apa yang tidak, dan buktinya. **Baca ini dulu.** |
-| `docs/BELL-Developer-Brief-Final.md` | Spesifikasi normatif (hash-pinned; jangan diubah) |
-| `docs/BELL-Implementation-Plan-Final.md` | Rencana 16 milestone / 80 task (hash-pinned) |
+| **`docs/CURRENT-STATE.md`** | Current state: what is live on-chain, what is not, and the evidence. **Read this first.** |
+| `docs/BELL-Developer-Brief-Final.md` | Normative specification (hash-pinned; do not modify) |
+| `docs/BELL-Implementation-Plan-Final.md` | 16-milestone / 80-task plan (hash-pinned; do not modify) |
 | `evidence/task-status.json` | Ledger status per task |
 | `evidence/release-index.json` | Index evidence rilis (E01–E06) |
-| `docs/runbooks/` | Deploy testnet, sumber Yahoo, hak data, keeper, indexer, migrasi, recovery |
+| `docs/runbooks/` | Testnet deployment, Yahoo source, data rights, keeper, indexer, migrations, recovery |
 
-Kalau dokumen mana pun bertentangan dengan `docs/CURRENT-STATE.md`, dokumen itu yang basi.
+If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of date.
 
-## Status singkat
+## Quick status
 
-- **End-to-end sudah jalan di Robinhood Testnet (46630).** Pool pertama live, swap pertama berhasil
+- **End-to-end has run on Robinhood Testnet (46630).** The first pool is live and the first swap succeeded
   onchain: 5 token0 → 3 token1, budget commit `[5, 3]`, rolling cap turun `[100,100] → [95,97]`.
-- Protokol lengkap secara kode dan seluruh suite hijau: 351 forge test (27 suite, termasuk 2 suite
-  invariant 100k run), 297 node:test, 45+18 reference Python, 15 Deno, 6 keeper-b.
-- Jalur harga: **Yahoo Finance + reporter EIP-712 BELL**. Chainlink tidak dipakai (berbayar).
-- **Swap enforcement aktif untuk SESSION_ONLY.** `BellHook` menyiapkan dan menyelesaikan swap;
-  evaluasi policy pindah ke `BellPolicyOracle` agar muat EIP-170.
-- **PRICE_GUARDED masih tertutup** (belum ada referensi yang diadmit).
-- **Mainnet belum disentuh.** Tidak ada transaksi di chainId 4663.
-- Frontend belum mengirim transaksi; keeper harga masih no-op.
+- The protocol implementation is complete and all suites are green: 351 forge tests (27 suites, including 2 suites
+  invariant runs of 100k), 297 node:test, 45+18 reference Python, 15 Deno, 6 keeper-b.
+- Price path: **Yahoo Finance + BELL EIP-712 reporter**. Chainlink is not used (paid).
+- **Swap enforcement is active for SESSION_ONLY.** `BellHook` prepares and settles swaps;
+  policy evaluation was moved to `BellPolicyOracle` to fit within EIP-170.
+- **PRICE_GUARDED remains blocked** (no reference has been admitted yet).
+- **Mainnet has not been touched.** No transactions have occurred on chainId 4663.
+- The frontend does not submit transactions; the price keeper is still a no-op.
 
-## Struktur
+## Structure
 
 ```text
 contracts/          Solidity: hook, registry, factory, router, adapter, treasury, library
 packages/domain/    State machine, budget, policy, indexing, keeper logic (runtime-neutral)
-packages/protocol/  Codec, ABI, kalender, atestasi Yahoo, status testnet
-apps/web/           Next.js UI (read-only terhadap testnet; belum mengirim transaksi)
+packages/protocol/  Codec, ABI, calendar, Yahoo attestations, testnet status
+apps/web/           Next.js UI (read-only on testnet; does not submit transactions)
 workers/keeper-b/   Cloudflare Durable Object keeper
-supabase/           Migrasi, RLS, edge functions
+supabase/           Migrations, RLS, edge functions
 scripts/            discovery / deploy / evidence / calendar / tooling
-evidence/           Manifest deploy, bukti runtime, ledger task, index rilis
-docs/               Brief, plan, runbook, review, CURRENT-STATE
+evidence/           Deployment manifests, runtime evidence, task ledger, release index
+docs/               Brief, plan, runbooks, reviews, CURRENT-STATE
 ```
 
-## Perintah
+## Commands
 
 ```bash
 pnpm install
-pnpm check                                  # seluruh gate: test, compile, abi, evidence, secret
+pnpm check                                  # all gates: tests, compile, ABI, evidence, secrets
 
 pnpm test:contracts                         # forge test
 pnpm test:unit                              # node:test
@@ -59,18 +59,17 @@ pnpm abi:check
 pnpm evidence:check
 
 node scripts/deploy/check-testnet-addresses.mjs --rpc      # state onchain vs manifest
-node scripts/deploy/verify-testnet-deployment.mjs --check  # evidence deploy masih valid?
+node scripts/deploy/verify-testnet-deployment.mjs --check  # is deployment evidence still valid?
 ```
 
-Perintah yang masih scaffold dan sengaja gagal dengan pesan `BLOCKED`: `test:e2e`, `test:fork`,
-`test:invariants`, `preflight:sources`, `preflight:rpc`, `release:dry-run`. Kegagalannya jujur,
-bukan bug.
+Commands that are still scaffolds and intentionally fail with `BLOCKED`: `test:e2e`, `test:fork`,
+`test:invariants`, `preflight:sources`, `preflight:rpc`, `release:dry-run`. These fail honestly;
+this is intentional, not a bug.
 
-## Peringatan
+## Warnings
 
-- `.env` tidak pernah di-commit. `YAHOO_REPORTER_PRIVATE_KEY` harus kunci terpisah dari
+- `.env` is never committed. `YAHOO_REPORTER_PRIVATE_KEY` must be separate from
   governance/treasury.
-- Reporter EIP-712 adalah trust boundary: Yahoo tidak menandatangani responsnya.
-- `AaplTestnetFacade` bukan token saham Robinhood. Dia fixture supaya konstruktor adapter lolos cek
-  kode di testnet.
-- Treasury SafetyController masih burn address; handover belum direhearsal.
+- The EIP-712 reporter is a trust boundary: Yahoo does not sign its responses.
+- `AaplTestnetFacade` is not a Robinhood stock token. It is a fixture that lets the adapter constructor pass its code check on testnet.
+- The SafetyController treasury is still a burn address; handover has not been rehearsed.

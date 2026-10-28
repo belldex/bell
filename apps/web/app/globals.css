@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --font-display: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, 'SFMono-Regular', monospace;
 
   /* Obsidian */
   --color-bg-0: #05070a;
@@ -14,14 +14,14 @@
   --color-line-strong: #2b3b52;
 
   --color-ink: #e8eef7;
-  --color-muted: #8a98ad;
-  --color-dim: #5b687c;
+  --color-muted: #a3adb9;
+  --color-dim: #8190a0;
 
   /* Ion Cyan accent (replaces gold) */
-  --color-ion: #3ce6ff;
-  --color-ion-strong: #12b8d9;
+  --color-ion: #37d7e8;
+  --color-ion-strong: #18b6ca;
   --color-ion-deep: #0b5e73;
-  --color-ion-soft: #9fdcff;
+  --color-ion-soft: #9cebf2;
 
   /* Session phases */
   --color-phase-regular: #3ce6ff;
@@ -57,6 +57,12 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Match the reference's Instrument Sans / Geist Mono / Silkscreen metrics. */
+@font-face { font-family: 'Instrument Sans'; src: url('/assets/instrument-sans-v4.woff2') format('woff2'); font-display: swap; font-style: normal; font-weight: 400 800; }
+@font-face { font-family: 'Geist Mono'; src: url('/assets/geist-mono-v4.woff2') format('woff2'); font-display: swap; font-style: normal; font-weight: 400 700; }
+@font-face { font-family: 'Silkscreen'; src: url('/assets/silkscreen-v4.woff2') format('woff2'); font-display: swap; font-style: normal; font-weight: 700; }
+:root { --font-instrument: "Instrument Sans"; --font-geist-mono: "Geist Mono"; --font-pixel: "Silkscreen"; }
+
 html {
   background: var(--color-bg-0);
   scroll-behavior: auto;
@@ -68,7 +74,7 @@ html.lenis, html.lenis body { height: auto; }
 body {
   background: var(--color-bg-0);
   color: var(--color-ink);
-  font-family: var(--font-sans);
+  font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
@@ -112,6 +118,28 @@ button, a, [role='button'], select, summary { cursor: pointer; touch-action: man
 }
 
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+/* Shared BELL terminal hierarchy: restrained black/navy surfaces, precise rules,
+   consistent 1440px rail and readable data typography across every app route. */
+.app-page { max-width: 1520px; }
+.app-page h1 { font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif; font-size: clamp(34px, 3.2vw, 48px); line-height: 1.05; letter-spacing: -0.045em; }
+.app-page h2 { letter-spacing: -0.025em; }
+.app-page header > p:first-child,
+.app-page label,
+.app-page legend,
+.app-page dt { font-family: "Geist Mono", ui-monospace, monospace; }
+.app-page :is(input, select, textarea) { border-radius: 0 !important; background-color: #090d12; }
+.app-page :is(button, a) { transition-property: color, background-color, border-color, opacity, transform; transition-duration: 180ms; transition-timing-function: cubic-bezier(.22,1,.36,1); }
+.app-page :is(button, a):active:not(:disabled) { transform: translateY(1px); }
+.app-page .glass { border-radius: 0 !important; background: #0b1016; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.app-page .glass-hover:hover { box-shadow: inset 0 1px 0 rgb(255 255 255 / .035); }
+.app-page table { border-collapse: collapse; }
+.app-page th { font-family: "Geist Mono", ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+.app-page td, .app-page th { border-bottom: 1px solid var(--color-line); padding: 12px 14px; }
+@media (max-width: 767px) {
+  .app-page { padding-top: 28px; }
+  .app-page h1 { font-size: clamp(32px, 9vw, 40px); }
+}
 
 .scroll-hide { scrollbar-width: none; }
 .scroll-hide::-webkit-scrollbar { display: none; }

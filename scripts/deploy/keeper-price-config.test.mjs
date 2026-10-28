@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { amountMaxForTokens, isNewYahooQuote, isPoolCreatePreflightReady, price18FromYahooQuote, reportValidUntil, resolveSessionRegistry, shouldContinueAfterTickError, transactionGas, yahooRegularPhaseReady, yahooSessionPhase, yahooWireForCalendarPhase, yahooWireScopeForCalendarPhase } from './keeper-price-config.mjs';
+import { activeSessionCalendar, amountMaxForTokens, isNewYahooQuote, isPoolCreatePreflightReady, price18FromYahooQuote, reportValidUntil, resolveSessionRegistry, shouldContinueAfterTickError, transactionGas, yahooRegularPhaseReady, yahooSessionPhase, yahooWireForCalendarPhase, yahooWireScopeForCalendarPhase } from './keeper-price-config.mjs';
 
 test('uses the current deployment manifest when no registry override is set', () => {
   assert.equal(
@@ -74,6 +74,19 @@ test('returns the admitted wire for each active calendar phase', () => {
   assert.deepEqual(yahooWireForCalendarPhase(adapters, 2), { wire: 'regular', wireHash: 'rh' });
   assert.deepEqual(yahooWireForCalendarPhase(adapters, 3), { wire: 'extended', wireHash: 'eh' });
   assert.equal(yahooWireForCalendarPhase(adapters, 5), null);
+});
+
+test('builds a short calendar interval for a fresh supported Yahoo phase', () => {
+  const quote = { phase: 'REGULAR', observedAt: 1_000, ageSeconds: 5 };
+  assert.deepEqual(activeSessionCalendar(quote, 1_005), {
+    phase: 2,
+    start: 1_185,
+    end: 1_185 + 1_800,
+    quoteObservedAt: 1_000,
+  });
+  assert.equal(activeSessionCalendar({ ...quote, phase: 'CLOSED' }, 1_005), null);
+  assert.equal(activeSessionCalendar({ ...quote, ageSeconds: 120 }, 1_005), null);
+  assert.equal(activeSessionCalendar({ ...quote, observedAt: 1_006 }, 1_005), null);
 });
 
 test('accepts a positive explicit gas limit and defaults to RPC estimation', () => {

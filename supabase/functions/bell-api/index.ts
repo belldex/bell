@@ -110,7 +110,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         if (!body || typeof body !== "object") throw new ValidationError("body", "must be a JSON object");
         const merged = Object.assign({}, body, { configHash: "0x" + "0".repeat(64), quoteExpirySeconds: 30, deadlineSeconds: 120 });
         const request = validateQuoteRequest(merged);
-        // Simulasi eksekusi butuh kontrak M05/M06 - typed response, bukan 503 palsu.
+        // Execution simulation requires the M05/M06 contracts; return a typed response, not a misleading 503.
         const response = quoteResponse({
           chainId, observedBlockNumber: provenance.observedBlockNumber, observedBlockHash: provenance.observedBlockHash, observedAt: provenance.observedAt, requestId,
           request, quoteExpirySeconds: 30,

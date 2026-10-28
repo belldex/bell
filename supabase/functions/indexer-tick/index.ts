@@ -57,7 +57,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const headNum = BigInt(head.number);
     const headTsMs = Number(BigInt(head.timestamp) * 1000n);
     const lagSeconds = Math.max(0, Math.round((Date.now() - headTsMs) / 1000));
-    // reorg check: canonical row di nomor sama dengan hash beda?
+    // Reorg check: does the canonical row at the same number have a different hash?
     const existing = await rest("chain_blocks?chain_id=eq." + CHAIN_ID + "&block_number=eq." + headNum + "&canonical=eq.true&select=block_hash", 'GET');
     const prevHash = Array.isArray(existing) && existing[0]?.block_hash ? existing[0].block_hash.replace(/^\\\\x/, '') : null;
     const newHash = head.hash.slice(2).toLowerCase();

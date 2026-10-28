@@ -1,17 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const sans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-sans',
+const sans = localFont({
+  src: '../public/assets/instrument-sans-v4.woff2',
+  variable: '--font-instrument',
   display: 'swap',
 });
-const mono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-mono',
+const mono = localFont({
+  src: '../public/assets/geist-mono-v4.woff2',
+  variable: '--font-geist-mono',
+  display: 'swap',
+});
+const pixel = localFont({
+  src: '../public/assets/silkscreen-v4.woff2',
+  variable: '--font-pixel',
   display: 'swap',
 });
 
@@ -39,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${pixel.variable}`}>
       <body>
         <a
           href="#main"

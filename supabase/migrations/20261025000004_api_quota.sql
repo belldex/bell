@@ -8,7 +8,7 @@ BEGIN
   ON CONFLICT (account_scope, resource, period) DO UPDATE
     SET estimated_usage = quota_counters.estimated_usage + 1
   RETURNING estimated_usage INTO v_used;
-  -- retention: buang period lebih tua dari 10 menit (tabel kecil, murah)
+  -- Retention: discard periods older than 10 minutes (the table is small and inexpensive).
   DELETE FROM quota_counters WHERE resource = p_resource AND period < to_char(now() - interval '10 minutes', 'YYYY-MM-DD"T"HH24:MI');
   RETURN jsonb_build_object('used', v_used, 'admitted', v_used <= p_limit);
 END $$;

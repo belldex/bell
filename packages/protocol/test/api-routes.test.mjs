@@ -89,6 +89,7 @@ test('unknown token produces INTAKE_NEEDED, not a deployable preview', () => {
   assert.equal(res.status, 'INTAKE_NEEDED');
   assert.equal(res.preview, null);
   assert.equal(res.intake.unknownAssets.length, 2);
+  assert.match(res.intake.message, /not registered/i);
 });
 
 test('SESSION_ONLY without a canonical stock is not admitted', () => {
@@ -102,6 +103,7 @@ test('SESSION_ONLY without a canonical stock is not admitted', () => {
     request: { baseAsset: '0x' + 'aa'.repeat(20), quoteAsset: '0x' + 'bb'.repeat(20), class: 'SESSION_ONLY', initialPriceRaw: '1', seedMaxRaw: '10', capsRaw: {} },
     registry });
   assert.equal(res.status, 'NOT_ADMITTED');
+  assert.match(res.reason, /canonical stock asset is required/i);
 });
 
 test('eligible preview exposes predicted identity, fee and disclosures', () => {
@@ -118,4 +120,5 @@ test('eligible preview exposes predicted identity, fee and disclosures', () => {
   assert.equal(res.preview.predictedHookAddress, '0x1');
   assert.equal(res.preview.serviceFeeUsdg, '49000000');
   assert.ok(res.preview.disclosures[0].includes('SESSION_ONLY'));
+  assert.match(res.preview.disclosures[0], /does not guarantee a fair price/i);
 });

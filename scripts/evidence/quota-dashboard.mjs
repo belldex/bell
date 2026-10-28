@@ -12,7 +12,7 @@ const cp = await get('/indexer_checkpoints?select=shard_id,last_block_number,lag
 const leases = await get('/job_leases?select=chain_id,job_kind,fence,expires_at&limit=5');
 const dashboard = {
   generatedAt: new Date().toISOString(),
-  admission: { stocks: 6, pricedQuoteAssets: 8, indexedPools: 24, note: 'ceiling per brief 20.L; bukan klaim terpenuhi' },
+  admission: { stocks: 6, pricedQuoteAssets: 8, indexedPools: 24, note: 'ceiling per brief 20.L; not a claim that capacity has been reached' },
   health: { indexLag: metrics.find(m => m.metric_name === 'index_lag_seconds')?.aggregate ?? null, keeperTicks15m: metrics.find(m => m.metric_name === 'keeper_ticks_15m')?.aggregate ?? null, apiQuota: metrics.find(m => m.metric_name === 'api_quota_used')?.aggregate ?? null },
   indexerCheckpoints: cp, activeLeases: leases,
   topQuotaConsumers: quota.map(q => ({ scope: q.account_scope.slice(0, 8) + '***', period: q.period, used: q.estimated_usage })),

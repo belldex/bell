@@ -1,61 +1,60 @@
-# Hak akses & batas redistribusi data (M01-04)
+# Data Access and Redistribution Limits (M01-04)
 
-Status berkas ini: `config/sources/rights-status.json` → **BLOCKED_ACCESS**. Belum ada sumber yang
-diadmit untuk produksi.
+Status of this file: `config/sources/rights-status.json` → **BLOCKED_ACCESS**. No source has been
+admitted for production.
 
-## Perubahan arah: Chainlink → Yahoo
+## Direction change: Chainlink → Yahoo
 
-Jalur harga yang dipakai sekarang adalah **Yahoo Finance chart publik + reporter EIP-712 BELL**.
-Chainlink Data Streams ditinggalkan karena berbayar. Karena itu:
+The current price path is **the public Yahoo Finance chart + a BELL EIP-712 reporter**.
+Chainlink Data Streams was dropped because it is paid. Therefore:
 
-- Bagian Chainlink di bawah tetap disimpan sebagai catatan historis, bukan sebagai jalur aktif.
-- Yang sekarang menjadi pertanyaan hak data adalah **Yahoo**, dan pertanyaan itu **belum dijawab**.
+- The Chainlink section below is retained as historical documentation, not as an active path.
+- The current data-rights question concerns **Yahoo**, and it **has not been answered**.
 
 ## Yahoo Finance (jalur aktif)
 
 - Endpoint: `query1.finance.yahoo.com/v8/finance/chart/{SYMBOL}`. Gratis, tanpa API key.
-- Yahoo **tidak menandatangani** respons HTTP-nya. Yang memberi jaminan kriptografis adalah reporter
-  BELL (`YahooSourceVerifier` + EIP-712), bukan Yahoo. Ini berarti kunci reporter menjadi
-  trust boundary baru yang harus dijaga seperti kunci oracle.
-- Cakupan sesi: PRE, REGULAR, POST. **Tidak ada feed OVERNIGHT.** Sesi overnight tidak boleh
-  dinyatakan sehat dari Yahoo.
-- Batas yang belum jelas dan tidak boleh diklaim selesai:
-  - hak redistribusi harga turunan ke pengguna produk (`derivedCustomerProduct` = NOT_VERIFIED);
-  - hak penyimpanan/backup harga mentah (`encryptedBackup` = NOT_VERIFIED);
+- Yahoo does **not sign** its HTTP responses. Cryptographic assurance is provided by the BELL reporter
+  (`YahooSourceVerifier` + EIP-712), not Yahoo. This makes the reporter key a new trust boundary that must
+  be protected like an oracle key.
+- Session coverage: PRE, REGULAR, POST. **There is no OVERNIGHT feed.** Yahoo must not be used to claim
+  overnight sessions are healthy.
+- Unresolved limits that must not be claimed as settled:
+  - rights to redistribute derived prices to product users (`derivedCustomerProduct` = NOT_VERIFIED);
+  - rights to store/back up raw prices (`encryptedBackup` = NOT_VERIFIED);
   - hak pemrosesan internal (`internalProcessing` = NOT_VERIFIED).
-- Yang **boleh**: menampilkan harga indikatif di UI dengan disclaimer dan sumber tercantum.
-- Yang **tidak boleh**: menyatakan harga Yahoo sebagai "provider-signed", atau menganggap
-  akses publik sama dengan izin redistribusi komersial.
+- **Allowed**: display indicative prices in the UI with a disclaimer and cited source.
+- **Not allowed**: describe Yahoo prices as "provider-signed" or treat public access as permission for
+  commercial redistribution.
 
-## Chainlink Data Streams (historis, tidak dipakai)
+## Chainlink Data Streams (historical, not in use)
 
 - Akses = entitlement per API key (username + HMAC secret). Kredensial di `.env` (gitignored).
-- Redistribusi laporan mentah tanpa hak tidak diizinkan; laporan hanya untuk guard/quote/verify.
-- Robinhood equity streams = hidden streams, hanya terlihat bagi key berentitlement aktif.
-- Probe 2026-10-26: endpoint Testnet mengembalikan `Unauthorized` karena kredensial yang ada
-  mainnet-only. Ini yang memicu pivot, bersama faktor biaya.
+- Redistribution of raw reports without rights is not permitted; reports are only for guard/quote/verify.
+- Robinhood equity streams are hidden streams, visible only to keys with active entitlement.
+- Probe 2026-10-26: the Testnet endpoint returned `Unauthorized` because the available credentials were
+  mainnet-only. This, along with cost, prompted the pivot.
 
 ## Data on-chain (publik)
 
-- State/log/block via RPC berautentikasi: boleh dibaca, disimpan, ditampilkan ulang (data konsensus
-  publik).
-- Feed push-based on-chain (heartbeat 24 jam): metadata proxy publik; hanya acuan harian, tidak
-  pernah dipakai sebagai harga eksekusi.
+- State/log/block data via authenticated RPC may be read, stored, and redisplayed (public consensus data).
+- Push-based on-chain feeds (24-hour heartbeat): public proxy metadata; daily reference only, never used as
+  an execution price.
 
 ## Data internet indikatif
 
-- Boleh untuk UI/display dengan disclaimer "indicative" dan sumber tercantum.
-- Tidak boleh masuk jalur signing/keeper/verifikasi on-chain tanpa atestasi BELL.
+- May be used in the UI/display with an "indicative" disclaimer and cited source.
+- Must not enter signing/keeper/on-chain verification paths without BELL attestation.
 
 ## Penyimpanan internal
 
 - `incident_records`, `service_metrics`, `job_lease_history` = PRIVATE_OPS (RLS default-deny).
-- Backup terenkripsi AES-256-GCM ke bucket privat; kunci di secret manager lokal.
-- Frontend hanya menerima data sanitasi via view publik + API typed.
+- AES-256-GCM encrypted backups go to a private bucket; keys are in the local secret manager.
+- The frontend only receives sanitized data through public views + a typed API.
 
-## Yang membuka blokir ini
+## What will unblock this
 
-1. Keputusan pemilik proyek tentang cakupan penggunaan data Yahoo (indikatif saja vs turunan produk).
-2. Kalau butuh jalur berbayar dengan hak jelas: pilih provider ber-SLA, dan itu keputusan biaya
-   terpisah dari pekerjaan teknis.
-3. Setelah keputusan ada, `config/sources/rights-status.json` diisi dan M01-04 baru bisa bergerak.
+1. The project owner's decision on Yahoo data usage scope (indicative only vs. derived product).
+2. If a paid path with clear rights is needed, select an SLA-backed provider; this is a separate cost decision,
+   independent of the technical work.
+3. Once a decision is made, populate `config/sources/rights-status.json` so M01-04 can proceed.
