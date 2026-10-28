@@ -93,10 +93,10 @@ contract DeployTestnet {
             IPositionDescriptor(address(0)),
             IWETH9(d.weth)
         ));
-        address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
         // One shared oracle for the whole deployment: each hook receives it instead of creating its own,
         // which keeps per-hook initcode inside the EIP-3860 limit.
         address policyOracle = address(new BellPolicyOracle());
+        address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
         d.hookDeployer = address(new BellHookDeployer(
             futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle
         ));

@@ -61,7 +61,10 @@ async function main() {
     process.exit(1);
   }
 
-  const forgeEnv = { ...env, DEPLOYER_PRIVATE_KEY: privateKey };
+  const foundryPath = 'C:\\Users\\sifaq\\.foundry\\bin';
+  const customPath = process.env.PATH ? `${foundryPath};${process.env.PATH}` : foundryPath;
+  const forgeEnv = { ...env, DEPLOYER_PRIVATE_KEY: privateKey, PATH: customPath };
+  const forgeExecutable = process.platform === 'win32' ? `${foundryPath}\\forge.exe` : 'forge';
   const forgeArgs = [
     'script',
     'script/DeployTestnet.s.sol',
@@ -78,7 +81,7 @@ async function main() {
   }
 
   const child = spawn(
-    'forge',
+    forgeExecutable,
     forgeArgs,
     {
       cwd: fileURLToPath(new URL('contracts/', ROOT_URL)),
