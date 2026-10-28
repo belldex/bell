@@ -49,6 +49,45 @@ test('hero is pinned to the first viewport with the reference 301px top offset',
   assert.match(page, /max-w-\[1034px\]/, 'hero inner max-width 1034px');
 });
 
+test('landing has all 10 source sections in their correct scroll poses and order', async () => {
+  const page = await read('../app/page.tsx');
+  const sourceOrder = [
+    'data-pose="0"', 'data-pose="1"', 'data-pose="2"', 'data-pose="3"',
+    'data-pose="4"', 'data-pose="5"', 'data-pose="6"', 'data-pose="7"',
+    'data-pose="8"', 'data-pose="8"',
+  ];
+  const positions = sourceOrder.map((token) => page.indexOf(token));
+  assert.ok(positions.every((p) => p >= 0), 'all ten section pose markers exist');
+  assert.deepEqual(positions, [...positions].sort((a, b) => a - b), 'section order matches source');
+  for (const title of [
+    'One immutable policy per pool',
+    'Every swap follows the policy',
+    'BELL policy',
+    'Pool classes',
+    'Weekend-safe by construction',
+    'Recovery and exit',
+    'Session fees by market state',
+    'A policy for every pool',
+    'Explore BELL by design.',
+  ]) assert.ok(page.includes(title), `section copy ${title} exists`);
+  assert.match(page, /bell-v4-valley\.webp/);
+  assert.match(page, /bell-v4-canyon\.webp/);
+  assert.match(page, /bell-v4-beaver-bank\.webp/);
+});
+
+test('custom navbar uses working direct route/anchor links and accessible disclosure controls', async () => {
+  const nav = await read('../components/landing/SiteNav.tsx');
+  assert.match(nav, /aria-expanded=\{open === index\}/);
+  assert.match(nav, /aria-controls=/);
+  assert.match(nav, /Escape/);
+  assert.match(nav, /onMouseEnter=\{\(\) => setOpen\(index\)\}/);
+  assert.match(nav, /\/pools/);
+  assert.match(nav, /\/swap/);
+  assert.match(nav, /\/create/);
+  assert.match(nav, /\/positions/);
+  assert.doesNotMatch(nav, /onMouseLeave=\{\(\) => setOpen\(null\)\}/);
+});
+
 test('nav and footer mirror the reference layout with BELL wording', async () => {
   const nav = await read('../components/landing/SiteNav.tsx');
   // Reference header: 58px muted ticker bar, mono 12px links, dropdown slab.

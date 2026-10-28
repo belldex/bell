@@ -103,22 +103,50 @@ export default function LandingPage() {
           </Reveal>
         </section>
 
-        {/* Pose 4 — weekend (reference side / is-right) */}
+        {/* Pose 4 — pool classes (reference side / is-right) */}
         <section data-pose="4" className="flex min-h-screen items-center justify-end px-10 text-right md:px-16">
+          <Reveal className="w-[240px]">
+            <h2 className="text-xl font-bold leading-[30px] text-ink">Pool classes</h2>
+            <p className="mt-5 font-mono text-xs leading-[18px] text-muted">
+              PRICE_GUARDED uses independent references for both assets. SESSION_ONLY applies
+              session and raw-unit budgets without independent counterasset protection.
+            </p>
+            <Link href="/pools" className={`${ULINK} mt-5`}>
+              Compare pool classes
+            </Link>
+          </Reveal>
+        </section>
+
+        {/* Pose 5 — planned close (reference side / is-left) */}
+        <section data-pose="5" className="flex min-h-screen items-center justify-start px-10 md:px-16">
           <Reveal className="w-[240px]">
             <h2 className="text-xl font-bold leading-[30px] text-ink">Weekend-safe by construction</h2>
             <p className="mt-5 font-mono text-xs leading-[18px] text-muted">
               A closed stock uses a historical close anchor captured before market close. Anchor
               age, provenance and one non-refilling closure-episode budget remain binding.
             </p>
-            <Link href="/protocol" className={`${ULINK} mt-5`}>
+            <Link href="/protocol#closure" className={`${ULINK} mt-5`}>
               Read the closure rules
             </Link>
           </Reveal>
         </section>
 
-        {/* Pose 5 — fee cards (reference cases + cards4) */}
-        <section data-pose="5" className="flex min-h-screen flex-col items-center px-6 pt-[150px]">
+        {/* Pose 6 — recovery (reference side / is-right) */}
+        <section data-pose="6" className="flex min-h-screen items-center justify-end px-10 text-right md:px-16">
+          <Reveal className="w-[240px]">
+            <h2 className="text-xl font-bold leading-[30px] text-ink">Recovery and exit</h2>
+            <p className="mt-5 font-mono text-xs leading-[18px] text-muted">
+              Trading resumes only after fresh checkpoints and recovery delay. In-kind exits are
+              independent from swap guards; wallet position reads are not wired yet.
+            </p>
+            <Link href="/positions" className={`${ULINK} mt-5`}>
+              Review exit policy
+            </Link>
+          </Reveal>
+        </section>
+
+        {/* Pose 7 — fee cards (reference cases + cards4) */}
+        <section data-pose="7" className="flex min-h-screen flex-col items-center px-6 pt-[150px]">
           <Reveal>
             <h2 className={`${H2} max-w-[560px] text-center`}>Session fees by market state</h2>
             <p className={`${TP} max-w-[560px] text-center`}>
@@ -148,8 +176,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pose 6 — attribute wall (reference wall) */}
-        <section data-pose="6" className="min-h-screen overflow-hidden pt-[150px]">
+        {/* Pose 8 — attribute wall (reference wall) */}
+        <section data-pose="8" className="min-h-screen overflow-hidden pt-[150px]">
           <Reveal className="px-6 text-center">
             <h2 className={`${H2} mx-auto text-center`}>A policy for every pool</h2>
             <p className={`${TP} mx-auto max-w-[560px] text-center`}>
@@ -160,18 +188,35 @@ export default function LandingPage() {
           <AnimatedRows rows={ROWS} />
         </section>
 
-        {/* Pose 7 — CTA (reference build) */}
-        <section data-pose="7" className="flex min-h-screen flex-col items-center px-6 pt-[150px]">
+        {/* Pose 8 — CTA (reference build: statement + image-card row) */}
+        <section data-pose="8" className="flex min-h-screen flex-col items-center px-10 pt-[150px] max-md:px-[30px]">
           <Reveal className="flex flex-col items-center text-center">
-            <h2 className={H2}>Explore the pools</h2>
+            <h2 className={H2}>Explore BELL by design.</h2>
             <p className={`${TP} max-w-[560px]`}>
-              Browse the pool preview, compare immutable risk classes, or inspect the rehearsal
-              interface. Current sample data is not an executable quote.
+              Inspect the pool directory, read how session controls behave, and review the rehearsal
+              interface before connecting a wallet. Fixture data is not an executable quote.
             </p>
             <Link href="/pools" className={`${BTN} mt-10`}>
-              Open pools
+              Open pool directory
             </Link>
           </Reveal>
+          <div className="mt-[60px] grid w-full max-w-[1600px] items-start gap-5 md:grid-cols-[435fr_321fr_549fr]">
+            {[
+              { src: '/assets/bell-v4-valley.webp', title: 'Pool directory', href: '/pools', action: 'Browse preview pools', alt: 'BELL monochrome pixel artwork of a block valley' },
+              { src: '/assets/bell-v4-canyon.webp', title: 'Session and risk policy', href: '/protocol', action: 'Read BELL policy', alt: 'BELL monochrome pixel artwork of a canyon at night' },
+              { src: '/assets/bell-v4-beaver-bank.webp', title: 'Weekend controls', href: '/protocol#closure', action: 'Review close rules', alt: 'BELL monochrome pixel artwork of a block structure in a frozen landscape' },
+            ].map((item, index) => (
+              <article key={item.title} className={`group ${index === 1 ? 'md:mt-[150px]' : ''}`}>
+                <Link href={item.href} className="block border border-line bg-surface/60 p-2 transition-colors hover:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
+                  <img src={item.src} alt={item.alt} loading="lazy" className={`w-full object-cover opacity-75 transition-opacity group-hover:opacity-100 ${index === 0 ? 'h-[320px] md:h-[420px]' : index === 1 ? 'h-[240px] md:h-[290px]' : 'h-[280px] md:h-[360px]'}`} />
+                </Link>
+                <h3 className="mt-6 text-xl font-bold leading-[30px] text-ink">{item.title}</h3>
+                <Link href={item.href} className={`${ULINK} mt-5`}>
+                  {item.action} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </article>
+            ))}
+          </div>
         </section>
       </main>
 

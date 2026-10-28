@@ -88,7 +88,7 @@ export default function SiteNav() {
               Read BELL policy.
             </Link>
           </span>
-          <span className="max-md:inline">
+          <span className="hidden max-md:inline">
             BELL testnet rehearsal · Production swaps are not enabled. Mainnet release has not been approved.
             <Link href="/protocol" className="ml-1.5 border-b border-current pb-px">
               Read BELL policy.
@@ -99,6 +99,7 @@ export default function SiteNav() {
 
       {/* Dropdown slab */}
       <div
+        id="bell-desktop-menu"
         aria-hidden={open === null}
         className={`pointer-events-auto fixed inset-x-0 z-40 h-[575px] border-b border-line bg-slab transition-[transform,opacity] duration-300 ${
           open !== null ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
@@ -134,6 +135,7 @@ export default function SiteNav() {
               <button
                 className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.06em] text-ink transition-colors hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion xl:text-xs xl:tracking-[0.08em]"
                 aria-expanded={open === index}
+                aria-controls="bell-desktop-menu"
                 onClick={() => setOpen(open === index ? null : index)}
               >
                 {menu.label} <Chevron />
