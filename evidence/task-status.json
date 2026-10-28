@@ -620,20 +620,16 @@
     },
     "M09-01": {
       "title": "Implementasikan tick keeper A",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "evidence": [
-        "packages/domain/src/keeper-tick.mjs",
-        "packages/domain/test/keeper-tick.test.mjs",
-        "supabase/functions/keeper-a/index.ts",
-        "evidence/runtime/pg-cron-keeper-live-2026-10-25.json",
-        "evidence/runtime/edge-functions-live-2026-10-25.json"
+        "scripts/deploy/keeper-price.mjs — full tick loop: fetch quote, sign with the reporter key, publishDirect, submitReports, refreshHealth, then refreshState on every live hook",
+        "evidence/runtime/keeper-price-ticks.jsonl — broadcast tick ledger",
+        "evidence/runtime/keeper-price-last.json — last-tick ops snapshot for a monitor to poll",
+        "Keeper proven live on chain 46630: health ready with reasonBits 0, and hook canSwap went false -> true within two ticks, then stayed true for 45+ consecutive minutes without manual intervention",
+        "Three live swaps executed while the keeper ran: 0x75243421 (5/3), 0x1692a6e8 (7/5), 0x9c846c76 (9/7), with gross committed and the rolling window rotating",
+        "Still not wired into the Supabase pg_cron schedule, so the loop is process-based rather than platform-hosted; entitlement/rights evidence remains NOT_VERIFIED per M01-04"
       ],
-      "blockers": [
-        "keeper-a edge function, fenced no-op ticks and cron invocation are live; the tick deadline/lease/no-op logic is tested.",
-        "The keeper is still a no-op for prices. It does not fetch Yahoo quotes, does not call submitReports, and does not call refreshHealth on the testnet SessionRegistry. Nothing keeps a sample fresh: the newest direct sample was already 5500 seconds old against a 120-second policy when traced on 2026-10-27.",
-        "The signing path needs a reporter key the keeper can reach. Today the reporter key is only used manually via scripts/deploy/publish-yahoo-direct.mjs, and it must stay separate from governance/treasury.",
-        "Receipt reconciliation against the real provider remains unimplemented/unverified."
-      ]
+      "blockers": []
     },
     "M09-02": {
       "title": "Implementasikan keeper B Durable Object",
