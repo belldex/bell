@@ -208,7 +208,23 @@ const buckets = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functi
 check('hook.selfInKey', String(hookKey.hooks).toLowerCase() === pool.hook.toLowerCase(), hookKey.hooks);
 check('hook.configToken0', String(hookConfig.token0).toLowerCase() === pool.token0.toLowerCase(), hookConfig.token0);
 check('hook.configToken1', String(hookConfig.token1).toLowerCase() === pool.token1.toLowerCase(), hookConfig.token1);
-check('hook.poolClassSessionOnly', Number(hookConfig.poolClass) === 1, String(hookConfig.poolClass));
+const isPriceGuarded = Number(hookConfig.poolClass) === 0;
+check('hook.poolClassMatchesEvidence',
+  isPriceGuarded === (pool.poolClass === 0),
+  `hook=${hookConfig.poolClass} evidence=${pool.poolClass}`);
+if (isPriceGuarded) {
+  // PRICE_GUARDED: both reference adapters must exist and produce a live in-band reference now.
+  const REF_ABI = parseAbi(['function referencePrice() view returns (uint128)']);
+  const [ref0, ref1] = await Promise.all([
+    c.readContract({ address: hookConfig.referenceAdapter0, abi: REF_ABI, functionName: 'referencePrice' }).catch(() => 0n),
+    c.readContract({ address: hookConfig.referenceAdapter1, abi: REF_ABI, functionName: 'referencePrice' }).catch(() => 0n),
+  ]);
+  check('priceGuard.referenceAdaptersLive', ref0 > 0n && ref1 > 0n, `${ref0}/${ref1}`);
+} else {
+  check('sessionOnly.noReferenceAdapters',
+    String(hookConfig.referenceAdapter0) === Z.slice(0, 42) && String(hookConfig.referenceAdapter1) === Z.slice(0, 42),
+    `${hookConfig.referenceAdapter0}/${hookConfig.referenceAdapter1}`);
+}
 check('hook.lifecycleLive', Number(hookState.lifecycle) === 2, String(hookState.lifecycle));
 check('hook.bellStartSet', Number(hookState.bellStart) > 0, String(hookState.bellStart));
 check('hook.notLatched', !hookState.closedLatched, 'closedLatched');

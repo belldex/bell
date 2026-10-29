@@ -132,3 +132,36 @@ test('wrapping preserves the configured native gas reserve', () => {
   assert.deepEqual(result.shortfalls, ['native ETH after wrap 9 < gas reserve 10']);
   assert.equal(result.nativeToWrap, 2n);
 });
+
+test('deriveInitialSqrtPrice is monotonic in the price ratio', async () => {
+  const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
+  const low = deriveInitialSqrtPrice({ price0_18: 100n * 10n ** 18n, price1_18: 1n * 10n ** 18n });
+  const high = deriveInitialSqrtPrice({ price0_18: 200n * 10n ** 18n, price1_18: 1n * 10n ** 18n });
+  assert.ok(high > low);
+});
+
+test('deriveInitialSqrtPrice handles decimal differences', async () => {
+  const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
+  // 18-decimal stock at $350 vs 6-decimal USDG at $1: ratio is 350 * 1e12 raw.
+  const sqrt = deriveInitialSqrtPrice({ price0_18: 350n * 10n ** 18n, price1_18: 1n * 10n ** 18n, decimals0: 18, decimals1: 6 });
+  assert.ok(sqrt > 0n);
+});
+
+test('deriveInitialSqrtPrice rejects non-positive prices', async () => {
+  const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
+  assert.throws(() => deriveInitialSqrtPrice({ price0_18: 0n, price1_18: 1n }), /price0_18/);
+  assert.throws(() => deriveInitialSqrtPrice({ price0_18: 1n, price1_18: 0n }), /price1_18/);
+});
+
+test('resolvePoolConfig supports poolClass 0 with both reference adapters', async () => {
+  const config = resolvePoolConfig({
+    weth: WETH, wethAssetId: WETH_ASSET, stock: STOCK, stockAssetId: STOCK_ASSET,
+    wethMax: 1n, stockMax: 1n, ...WIRING,
+    poolClass: 0,
+    referenceAdapter0: '0x00000000000000000000000000000000000000d1',
+    referenceAdapter1: '0x00000000000000000000000000000000000000d2',
+  });
+  assert.equal(config.config.poolClass, 0);
+  assert.equal(config.config.referenceAdapter0, '0x00000000000000000000000000000000000000d1');
+  assert.equal(config.config.referenceAdapter1, '0x00000000000000000000000000000000000000d2');
+});

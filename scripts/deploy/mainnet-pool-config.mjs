@@ -69,6 +69,7 @@ export function resolvePoolConfig(input) {
     tradeCap = [10n, 10n],
     windowCap = [100n, 100n],
     closureCap = [1n, 1n],
+    poolClass = 1, // SESSION_ONLY by default; 0 = PRICE_GUARDED (requires both reference adapters)
   } = input;
 
   const sorted = sortPoolTokens({ weth, wethAssetId, stock, stockAssetId });
@@ -77,6 +78,8 @@ export function resolvePoolConfig(input) {
 
   const wethIsToken0 = sorted.token0 === requireAddress(weth, 'weth');
   const amountMax = wethIsToken0 ? [wethAmount, stockAmount] : [stockAmount, wethAmount];
+
+  if (![0, 1].includes(poolClass)) throw new RangeError('poolClass must be 0 (PRICE_GUARDED) or 1 (SESSION_ONLY)');
 
   // PoolConfig.policyId is a bytes32, and the deploy script stores keccak256(bytes(label)). Passing
   // the raw label would either throw at encode time or produce a hash the factory never committed.
@@ -94,7 +97,7 @@ export function resolvePoolConfig(input) {
     calendarRegistry: requireAddress(calendarRegistry, 'calendarRegistry'),
     safetyController: requireAddress(safetyController, 'safetyController'),
     treasuryAdapter: ZERO_ADDRESS,
-    poolClass: 1, // SESSION_ONLY; PRICE_GUARDED needs both reference adapters plus an in-band seed
+    poolClass,
     liquidityMode: 0, // PUBLIC
     referenceMode: 0,
     tickSpacing,
@@ -103,7 +106,8 @@ export function resolvePoolConfig(input) {
     closureCap,
     policyId: policyIdHash,
     // Chainlink reference adapters per pool side (token0/token1 order). Zero means "no reference
-    // on this side"; the factory rejects any non-zero adapter on SESSION_ONLY pools.
+    // on this side"; the factory rejects any non-zero adapter on SESSION_ONLY pools, and
+    // PRICE_GUARDED requires both to be set with an in-band initial price.
     referenceAdapter0: resolveReferenceAdapter(input.referenceAdapter0, 'referenceAdapter0'),
     referenceAdapter1: resolveReferenceAdapter(input.referenceAdapter1, 'referenceAdapter1'),
   };
@@ -112,6 +116,7 @@ export function resolvePoolConfig(input) {
     ...sorted,
     policyId,
     policyIdHash,
+    poolClass,
     config,
     key: {
       currency0: sorted.token0,
@@ -122,6 +127,34 @@ export function resolvePoolConfig(input) {
     },
     amountMax,
   });
+}
+
+/**
+ * Derive the initial pool sqrtPriceX96 from two 1e18-scale reference prices so the opening price
+ * sits inside the PRICE_GUARDED band. sqrtPriceX96 = sqrt(priceRatio) * 2^96, where priceRatio is
+ * token1-per-token0 on the raw axis (accounting for each token's decimals).
+ */
+export function deriveInitialSqrtPrice({ price0_18, price1_18, decimals0 = 18, decimals1 = 18 }) {
+  for (const [name, value, decimals] of [['price0_18', price0_18, 18], ['price1_18', price1_18, 18]]) {
+    if (typeof value !== 'bigint' || value <= 0n) throw new RangeError(`${name} must be a positive bigint at 1e18 scale`);
+    void decimals;
+  }
+  if (!Number.isSafeInteger(decimals0) || decimals0 < 0 || decimals0 > 18) throw new RangeError('decimals0 out of range');
+  if (!Number.isSafeInteger(decimals1) || decimals1 < 0 || decimals1 > 18) throw new RangeError('decimals1 out of range');
+  // rawRatio = (price0/1e18 * 10^-d0 inverted appropriately) ... normalized:
+  // raw token1 per raw token0 = (price0_18 / price1_18) * 10^(d0 - d1)
+  const num = price0_18 * 10n ** BigInt(decimals0);
+  const den = price1_18 * 10n ** BigInt(decimals1);
+  // sqrtPriceX96 = floor(sqrt(num/den) * 2^96) computed with extra precision to avoid truncation:
+  // sqrtPriceX96 = floor(sqrt(num * 2^192 / den))
+  const scaled = num << 192n;
+  let lo = 0n;
+  let hi = (1n << 160n);
+  while (lo < hi) {
+    const mid = (lo + hi + 1n) / 2n;
+    if (mid * mid <= scaled / den) lo = mid; else hi = mid - 1n;
+  }
+  return lo;
 }
 
 /**

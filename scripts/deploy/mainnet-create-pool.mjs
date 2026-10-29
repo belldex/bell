@@ -19,7 +19,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, decodeEventLog 
 import { privateKeyToAccount } from 'viem/accounts';
 import FactoryArtifact from '../../contracts/out/BellPoolFactory.sol/BellPoolFactory.json' with { type: 'json' };
 import { mineHookSalt } from '../tooling/mine-hook-salt.mjs';
-import { checkSeedFunding, deriveProfileHash, resolvePoolConfig } from './mainnet-pool-config.mjs';
+import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, resolvePoolConfig } from './mainnet-pool-config.mjs';
 import { isPoolCreatePreflightReady } from './keeper-price-config.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
@@ -70,8 +70,19 @@ const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32 assetId) view returns ((bytes32 assetId, uint16 year, uint32 index, uint64 start, uint64 end, uint8 phase, bytes32 provenanceHash))',
 ]);
 
-const stockAssetId = assetQueue.stock.descriptorId;
+const stockAssetId = assetQueue.stock?.descriptorId
+  ?? Object.values(assetQueue.stocks ?? {})[0]?.descriptorId
+  ?? null;
 const wethAssetId = assetQueue.weth.descriptorId;
+const stockSymbol = assetQueue.stock?.descriptorId
+  ? null
+  : Object.keys(assetQueue.stocks ?? {})[0] ?? null;
+const stockAdapters = stockSymbol
+  ? (adapters.assets?.[stockSymbol] ?? null)
+  : adapters;
+
+const poolClass = Number(process.env.BELL_POOL_CLASS || 1);
+if (![0, 1].includes(poolClass)) throw new Error('BELL_POOL_CLASS must be 0 (PRICE_GUARDED) or 1 (SESSION_ONLY)');
 
 // The factory compares keccak256(config-without-tokens) against the immutable profileHash it was
 // deployed with. policyId survives that hash, so a mismatch here is InvalidConfiguration on chain.
@@ -86,7 +97,7 @@ const deployedProfileHash = await publicClient.readContract({
 const config = resolvePoolConfig({
   weth: manifest.weth,
   wethAssetId,
-  stock: adapters.stockToken,
+  stock: stockstockAdapters.stockToken,
   stockAssetId,
   wethMax: BigInt(env.BELL_MAINNET_WETH_SEED_WEI || 2n * 10n ** 15n),
   stockMax: BigInt(env.BELL_MAINNET_STOCK_SEED_WEI || 10n ** 18n),
@@ -97,6 +108,7 @@ const config = resolvePoolConfig({
   calendarRegistry: manifest.calendarRegistry,
   safetyController: manifest.safetyController,
   policyId: env.BELL_POLICY_ID || 'bell-mainnet-v1',
+  poolClass,
   referenceAdapter0: env.BELL_MAINNET_REFERENCE_ADAPTER_0,
   referenceAdapter1: env.BELL_MAINNET_REFERENCE_ADAPTER_1,
 });
@@ -134,7 +146,7 @@ if (!isPoolCreatePreflightReady(health, now)) {
 // 3. Balance and allowance preflight, so a failed seed cannot burn gas on approvals only.
 const [wethBalance, stockBalance, nativeBalance, feeBalance, serviceFee, feeDecimals] = await Promise.all([
   publicClient.readContract({ address: manifest.weth, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
-  publicClient.readContract({ address: adapters.stockToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
+  publicClient.readContract({ address: stockAdapters.stockToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.getBalance({ address: account.address }),
   publicClient.readContract({ address: manifest.feeToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.readContract({ address: manifest.poolFactory, abi: parseAbi(['function serviceFee() view returns (uint128)']), functionName: 'serviceFee' }),
@@ -177,7 +189,7 @@ if (!broadcast) {
 
 // 4. Approvals.
 console.log('Approving WETH, stock, and fee token to the factory...');
-for (const token of [manifest.weth, adapters.stockToken, manifest.feeToken]) {
+for (const token of [manifest.weth, stockAdapters.stockToken, manifest.feeToken]) {
   const hash = await walletClient.writeContract({
     address: token, abi: ERC20, functionName: 'approve', args: [manifest.poolFactory, 10n ** 24n],
   });
@@ -221,13 +233,30 @@ const mined = mineHookSalt({
 console.log(`Mined hook ${mined.hook} after ${mined.attempts} attempts`);
 
 const deadline = BigInt(Number((await publicClient.getBlock()).timestamp) + 1200);
+// PRICE_GUARDED: derive the opening price from the live Chainlink feeds so the seed sits inside
+// the reference band. SESSION_ONLY keeps the creator-chosen 1:1 starting price (an explicit
+// creator decision per the brief, never an oracle claim).
+let sqrtPriceX96 = 79228162514264337593543950336n;
+if (poolClass === 0) {
+  const REF_ABI = parseAbi(['function referencePrice() view returns (uint128)']);
+  const [raw0, raw1, d0, d1] = await Promise.all([
+    publicClient.readContract({ address: config.config.referenceAdapter0, abi: REF_ABI, functionName: 'referencePrice' }),
+    publicClient.readContract({ address: config.config.referenceAdapter1, abi: REF_ABI, functionName: 'referencePrice' }),
+    publicClient.readContract({ address: config.config.token0, abi: ERC20, functionName: 'decimals' }),
+    publicClient.readContract({ address: config.config.token1, abi: ERC20, functionName: 'decimals' }),
+  ]);
+  sqrtPriceX96 = deriveInitialSqrtPrice({
+    price0_18: BigInt(raw0), price1_18: BigInt(raw1), decimals0: Number(d0), decimals1: Number(d1),
+  });
+  console.log(`PRICE_GUARDED initial sqrtPriceX96 from live feeds: ${sqrtPriceX96}`);
+}
 const request = {
   config: config.config,
   salt: mined.requestSalt,
   nonce,
   deadline,
   recipient: account.address,
-  sqrtPriceX96: 79228162514264337593543950336n,
+  sqrtPriceX96,
   tickLower: -6000,
   tickUpper: 6000,
   liquidity: 10n ** 15n,
