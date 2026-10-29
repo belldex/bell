@@ -26,6 +26,8 @@ interface VmDeploy {
     function envAddress(string calldata name) external view returns (address);
     function envOr(string calldata name, address defaultValue) external view returns (address);
     function envOr(string calldata name, uint256 defaultValue) external view returns (uint256);
+    function envString(string calldata name) external view returns (string memory);
+    function envOr(string calldata name, string calldata defaultValue) external view returns (string memory);
     function computeCreateAddress(address deployer, uint256 nonce) external pure returns (address);
     function getNonce(address account) external view returns (uint64);
     function addr(uint256 privateKey) external view returns (address);
@@ -33,16 +35,21 @@ interface VmDeploy {
     function toString(uint256 value) external pure returns (string memory);
 }
 
-/// @notice Robinhood testnet (chainId 46630) rehearsal deployment.
-/// @dev Phase 1-3 of M14-01: registries, v4 core/periphery, hook deployer and the PUBLIC factory
-/// profile. Deploys are env-driven and fail closed on wrong chain, missing treasury/recipient or a
-/// zero deployer. Canonical Permit2 on this chain is verified by the caller (see runbook); the
-/// address below is the deterministic Permit2 deployment shared by the ecosystem.
-/// Run: forge script script/DeployTestnet.s.sol --rpc-url $RH_TESTNET_RPC_PRIMARY --broadcast
+/// @notice BELL deployment for Robinhood Chain, testnet (46630) and mainnet (4663).
+/// @dev Everything is env-driven and fails closed: wrong chain, missing or non-distinct roles, a
+/// missing fee token on mainnet, or a zero deployer all abort before any broadcast.
+///
+/// The deployer supplies the real treasury, guardian and service recipient. Mainnet additionally
+/// requires a real fee token because the factory fails closed when FeeToken is unbound, and
+/// PRICE_GUARDED stays disabled until an independent reference is admitted.
+///
+/// Run testnet: forge script script/DeployTestnet.s.sol --rpc-url $RH_TESTNET_RPC_PRIMARY --broadcast
+/// Run mainnet: forge script script/DeployTestnet.s.sol --rpc-url $RH_MAINNET_RPC_PRIMARY --broadcast
 contract DeployTestnet {
     VmDeploy private constant vm = VmDeploy(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    uint256 internal constant EXPECTED_CHAIN_ID = 46630;
+    uint256 internal constant TESTNET_CHAIN_ID = 46630;
+    uint256 internal constant MAINNET_CHAIN_ID = 4663;
     address internal constant CANONICAL_PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     uint256 internal constant POSITION_MANAGER_UNSUBSCRIBE_GAS_LIMIT = 100000;
 
@@ -60,31 +67,84 @@ contract DeployTestnet {
     }
 
     function run() external returns (Deployment memory d) {
-        require(block.chainid == EXPECTED_CHAIN_ID, "wrong chain: expected Robinhood testnet 46630");
-        uint256 pk = vm.envOr("RH_TESTNET_DEPLOYER_PRIVATE_KEY", uint256(0));
-        if (pk == 0) pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        bool isMainnet = block.chainid == MAINNET_CHAIN_ID;
+        require(isMainnet || block.chainid == TESTNET_CHAIN_ID, "wrong chain: expected Robinhood 4663 or 46630");
+
+        uint256 pk = _deployerKey(isMainnet);
         address deployer = vm.addr(pk);
         require(deployer != address(0), "missing deployer");
-        // SafetyController enforces strict role separation: three distinct addresses.
-        address governance = vm.envOr("TESTNET_GOVERNANCE_ADDRESS", deployer);
-        address guardian = vm.envAddress("TESTNET_GUARDIAN_ADDRESS");
-        address treasury = vm.envAddress("TESTNET_TREASURY_ADDRESS");
-        address recipient = vm.envAddress("TESTNET_SERVICE_RECIPIENT");
-        require(treasury != address(0) && recipient != address(0) && guardian != address(0), "missing role address");
-        require(governance != guardian && governance != treasury && guardian != treasury, "roles must be distinct");
-        address feeToken = vm.envOr("TESTNET_FEE_TOKEN_ADDRESS", address(0));
-        uint8 poolClass = uint8(vm.envOr("TESTNET_POOL_CLASS", uint256(1)));
-        require(poolClass == 1, "only SESSION_ONLY rehearsal is enabled; PRICE_GUARDED stays blocked");
+
+        Roles memory roles = _roles(isMainnet, deployer);
+        address feeToken = _feeToken(isMainnet);
+
+        uint8 poolClass = uint8(vm.envOr("BELL_POOL_CLASS", vm.envOr("TESTNET_POOL_CLASS", uint256(1))));
+        require(poolClass == 1, "only SESSION_ONLY is enabled; PRICE_GUARDED stays blocked");
 
         vm.startBroadcast(pk);
-        d.safetyController = address(new SafetyController(governance, guardian, treasury));
+        d = _deploy(deployer, roles, feeToken, poolClass, isMainnet);
+        vm.stopBroadcast();
+
+        _writeManifest(d, deployer, roles.treasury, roles.recipient, feeToken, isMainnet);
+    }
+
+    struct Roles {
+        address governance;
+        address guardian;
+        address treasury;
+        address recipient;
+    }
+
+    function _deployerKey(bool isMainnet) private view returns (uint256 pk) {
+        pk = vm.envOr("RH_DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (pk == 0) {
+            pk = vm.envOr(
+                isMainnet ? "RH_MAINNET_DEPLOYER_PRIVATE_KEY" : "RH_TESTNET_DEPLOYER_PRIVATE_KEY",
+                uint256(0)
+            );
+        }
+        if (pk == 0) pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+    }
+
+    function _roles(bool isMainnet, address deployer) private view returns (Roles memory roles) {
+        roles.governance = vm.envOr(
+            isMainnet ? "MAINNET_GOVERNANCE_ADDRESS" : "TESTNET_GOVERNANCE_ADDRESS", deployer
+        );
+        roles.guardian = vm.envAddress(isMainnet ? "MAINNET_GUARDIAN_ADDRESS" : "TESTNET_GUARDIAN_ADDRESS");
+        roles.treasury = vm.envAddress(isMainnet ? "MAINNET_TREASURY_ADDRESS" : "TESTNET_TREASURY_ADDRESS");
+        roles.recipient = vm.envAddress(isMainnet ? "MAINNET_SERVICE_RECIPIENT" : "TESTNET_SERVICE_RECIPIENT");
+        require(
+            roles.treasury != address(0) && roles.recipient != address(0) && roles.guardian != address(0),
+            "missing role address"
+        );
+        require(
+            roles.governance != roles.guardian && roles.governance != roles.treasury
+                && roles.guardian != roles.treasury,
+            "roles must be distinct"
+        );
+        if (isMainnet) {
+            // A burn address or the deployer standing in for treasury is acceptable only on testnet.
+            require(roles.treasury != deployer, "mainnet treasury must not be the deployer");
+            require(roles.guardian != deployer, "mainnet guardian must not be the deployer");
+        }
+    }
+
+    function _feeToken(bool isMainnet) private view returns (address feeToken) {
+        feeToken = vm.envOr(isMainnet ? "MAINNET_FEE_TOKEN_ADDRESS" : "TESTNET_FEE_TOKEN_ADDRESS", address(0));
+        if (isMainnet) require(feeToken != address(0), "mainnet requires a real fee token");
+    }
+
+    function _deploy(
+        address deployer, Roles memory roles, address feeToken, uint8 poolClass, bool isMainnet
+    ) private returns (Deployment memory d) {
+        d.safetyController = address(new SafetyController(roles.governance, roles.guardian, roles.treasury));
         d.assetRegistry = address(new AssetRegistry(d.safetyController));
         d.calendarRegistry = address(new CalendarRegistry(d.safetyController));
         d.sessionRegistry = address(new SessionRegistry(d.assetRegistry, d.calendarRegistry));
         d.poolManager = address(new PoolManager(deployer));
-        // WETH for the wrap/unwrap path. No canonical WETH9 on this chain: deploy a fixture unless
-        // TESTNET_WETH_ADDRESS points at an existing one. Must exist before PositionManager is built.
-        d.weth = vm.envOr("TESTNET_WETH_ADDRESS", address(0));
+        // WETH for the wrap/unwrap path. On mainnet a canonical WETH must be supplied; deploying a
+        // fixture would silently give users a token that is not the chain's real wrapped ETH.
+        d.weth = vm.envOr(isMainnet ? "MAINNET_WETH_ADDRESS" : "TESTNET_WETH_ADDRESS", address(0));
+        if (isMainnet) require(d.weth != address(0), "mainnet requires the canonical WETH address");
         if (d.weth == address(0)) d.weth = address(new WETH());
         d.positionManager = address(new PositionManager(
             IPoolManager(d.poolManager),
@@ -100,27 +160,32 @@ contract DeployTestnet {
         d.hookDeployer = address(new BellHookDeployer(
             futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle
         ));
-        PoolConfig memory profile = PoolConfig({
+        d.poolFactory = address(new BellPoolFactory(
+            _profile(d, futureFactory, poolClass), BellHookDeployer(d.hookDeployer), feeToken, roles.recipient
+        ));
+        require(d.poolFactory == futureFactory, "factory address prediction mismatch");
+        d.router = address(new BellRouter(IPoolManager(d.poolManager), d.weth));
+    }
+
+    function _profile(Deployment memory d, address futureFactory, uint8 poolClass)
+        private
+        view
+        returns (PoolConfig memory)
+    {
+        return PoolConfig({
             token0: address(0), token1: address(0), asset0: bytes32(0), asset1: bytes32(0),
             poolManager: d.poolManager, positionManager: d.positionManager, factory: futureFactory,
             assetRegistry: d.assetRegistry, calendarRegistry: d.calendarRegistry,
             safetyController: d.safetyController, treasuryAdapter: address(0),
             poolClass: poolClass, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
             tradeCap: [uint128(10), uint128(10)], windowCap: [uint128(100), uint128(100)],
-            closureCap: [uint128(1), uint128(1)], policyId: keccak256("bell-testnet-v1")
+            closureCap: [uint128(1), uint128(1)],
+            policyId: keccak256(bytes(vm.envOr("BELL_POLICY_ID", string("bell-testnet-v1"))))
         });
-        d.poolFactory = address(new BellPoolFactory(profile, BellHookDeployer(d.hookDeployer), feeToken, recipient));
-        require(d.poolFactory == futureFactory, "factory address prediction mismatch");
-        d.router = address(new BellRouter(IPoolManager(d.poolManager), d.weth));
-
-        vm.stopBroadcast();
-
-        _writeManifest(d, deployer, treasury, recipient, feeToken);
-        // governance/guardian are recorded in the manifest by the caller's env; see runbook.
     }
 
     function _writeManifest(
-        Deployment memory d, address deployer, address treasury, address recipient, address feeToken
+        Deployment memory d, address deployer, address treasury, address recipient, address feeToken, bool isMainnet
     ) private {
         string memory p1 = string.concat(
             '{\n  "chainId": ', vm.toString(block.chainid),
@@ -143,10 +208,17 @@ contract DeployTestnet {
             '",\n  "poolFactory": "', _hex(d.poolFactory),
             '",\n  "weth": "', _hex(d.weth),
             '",\n  "router": "', _hex(d.router),
-            '",\n  "status": "REHEARSAL",\n  "note": "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked."\n}\n'
+            '",\n  "status": "', isMainnet ? "PRODUCTION" : "REHEARSAL",
+            '",\n  "note": "', isMainnet
+                ? "PRICE_GUARDED stays blocked until an independent reference is admitted."
+                : "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked.",
+            '"\n}\n'
         );
         string memory json = string.concat(p1, p2, p3);
-        vm.writeFile("../evidence/deploy/testnet-46630.json", json);
+        vm.writeFile(
+            isMainnet ? "../evidence/deploy/mainnet-4663.json" : "../evidence/deploy/testnet-46630.json",
+            json
+        );
     }
 
     function _hex(address value) private pure returns (string memory) {

@@ -133,7 +133,7 @@ check('calendar.phaseMatchesExpected', Number(interval.phase) === expectedCalend
 
 // 5. session health for the stock asset
 const SESSION_ABI = parseAbi([
-  'function health(bytes32) view returns ((bool ready, uint32 reasonBits, uint64 validUntil, uint64 refreshedAt, uint64 healthySince, uint64 latestObservation))',
+  'function health(bytes32) view returns ((bool ready, uint256 reasonBits, uint64 healthySince, uint64 validUntil, uint64 baselineObservation, uint64 latestObservation))',
   'function latestSample(bytes32, uint8) view returns ((bytes32 descriptorId, bytes32 feedId, uint8 phase, uint128 price18, uint64 observedAt, uint64 inputAt, uint64 validFrom, uint64 expiresAt, uint64 validUntil, bytes32 reportHash))',
 ]);
 const health = await c.readContract({

@@ -124,3 +124,42 @@ test('counts gas from the broadcast receipts when they are available', async () 
   assert.equal(result.blocks.last, 20);
   assert.equal(result.sourceCommit, 'ee407db');
 });
+
+test('defaults stay testnet: a mainnet chain is still rejected without an explicit opt-in', async () => {
+  // Guards against a mainnet deployment silently producing testnet-labelled evidence.
+  await assert.rejects(
+    () => buildVerification({ manifest, client: fakeClient({ chainId: 4663, answers: wiredAnswers() }), verifiedAt: '2026-10-27' }),
+    /expected 46630/,
+  );
+});
+
+test('mainnet verification pins its own chain, status and fee-token label', async () => {
+  const mainnetManifest = { ...manifest, chainId: 4663 };
+  const result = await buildVerification({
+    manifest: mainnetManifest,
+    client: fakeClient({ chainId: 4663, answers: wiredAnswers() }),
+    verifiedAt: '2026-10-27',
+    expectedChainId: 4663,
+    status: 'PRODUCTION_DEPLOYED',
+    feeTokenLabel: 'PRODUCTION_FEE_TOKEN',
+    notCovered: ['no pool yet'],
+  });
+  assert.equal(result.chainId, 4663);
+  assert.equal(result.status, 'PRODUCTION_DEPLOYED');
+  assert.equal(result.contracts.feeToken.label, 'PRODUCTION_FEE_TOKEN');
+  // A rehearsal label on production evidence would be a lie in the other direction.
+  assert.notEqual(result.contracts.feeToken.label, 'REHEARSAL_FIXTURE_NOT_USDG');
+  assert.deepEqual(result.notCovered, ['no pool yet']);
+});
+
+test('mainnet verification still rejects a testnet chain when mainnet is requested', async () => {
+  await assert.rejects(
+    () => buildVerification({
+      manifest: { ...manifest, chainId: 4663 },
+      client: fakeClient({ chainId: 46630, answers: wiredAnswers() }),
+      verifiedAt: '2026-10-27',
+      expectedChainId: 4663,
+    }),
+    /expected 4663/,
+  );
+});

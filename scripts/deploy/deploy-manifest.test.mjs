@@ -33,7 +33,20 @@ test('validates correct Robinhood testnet deploy manifest', () => {
 test('rejects wrong chainId', () => {
   assert.throws(
     () => validateDeployManifest({ ...VALID_MANIFEST, chainId: 1 }),
-    /chainId must be Robinhood testnet 46630/
+    /chainId must be a supported Robinhood chain/
+  );
+});
+
+test('accepts the Robinhood mainnet chain and keeps the chain id it was given', () => {
+  const mainnet = validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, status: 'PRODUCTION' });
+  assert.equal(mainnet.chainId, 4663);
+  assert.equal(mainnet.status, 'PRODUCTION');
+});
+
+test('rejects an unknown chain instead of guessing a deployment target', () => {
+  assert.throws(
+    () => validateDeployManifest({ ...VALID_MANIFEST, chainId: 8453 }),
+    /chainId must be a supported Robinhood chain/
   );
 });
 

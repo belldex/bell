@@ -83,9 +83,21 @@ function loadEnv(text) {
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 
-export async function buildVerification({ manifest, client, broadcast, sourceCommit, verifiedAt }) {
+export async function buildVerification({
+  manifest,
+  client,
+  broadcast,
+  sourceCommit,
+  verifiedAt,
+  expectedChainId = 46630,
+  status = 'REHEARSAL_DEPLOYED',
+  feeTokenLabel = 'REHEARSAL_FIXTURE_NOT_USDG',
+  notCovered,
+}) {
   const chainId = await client.getChainId();
-  if (chainId !== 46630) throw new Error(`RPC answered chainId ${chainId}, expected 46630`);
+  if (chainId !== expectedChainId) {
+    throw new Error(`RPC answered chainId ${chainId}, expected ${expectedChainId}`);
+  }
 
   const block = await client.getBlock();
   const contracts = {};
@@ -103,7 +115,7 @@ export async function buildVerification({ manifest, client, broadcast, sourceCom
     codeBytes: (feeCode.length - 2) / 2,
     codeHash: keccak256(feeCode),
     decimals: Number(await client.readContract({ address: manifest.feeToken, abi: ABI, functionName: 'decimals' })),
-    label: 'REHEARSAL_FIXTURE_NOT_USDG',
+    label: feeTokenLabel,
   };
 
   const wiringChecks = {};
@@ -146,7 +158,7 @@ export async function buildVerification({ manifest, client, broadcast, sourceCom
   return {
     chainId,
     verifiedAt,
-    status: 'REHEARSAL_DEPLOYED',
+    status,
     sourceCommit: sourceCommit ?? broadcast?.commit ?? 'UNKNOWN',
     manifestHash,
     deployer: manifest.deployer,
@@ -163,7 +175,7 @@ export async function buildVerification({ manifest, client, broadcast, sourceCom
       priceWei: priceWei.toString(),
       costEth: (Number(gasUsed * priceWei) / 1e18).toString(),
     },
-    notCovered: [
+    notCovered: notCovered ?? [
       'PRICE_GUARDED pool class remains blocked',
       'Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0): the TREASURY_ONLY path cannot be exercised on this factory, so TreasuryAdapter has no live deployment',
       'No pool has been created: asset admission needs a stock descriptor, a calendar root and a healthy source; only the oracleless WETH counterasset is ACTIVE',
