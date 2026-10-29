@@ -42,26 +42,41 @@ Asset admission has the same 48h delay but no leaf window: `activateAsset` accep
 
 ## 1. Fill `.env`
 
+All values below already exist in `.env` for this deployment. The operator wallets are the same
+addresses used on testnet, by request; only the deployer key and the two mainnet-only external
+addresses are different.
+
 ```bash
-RH_MAINNET_RPC_PRIMARY=https://<mainnet-rpc>
-RH_MAINNET_RPC_SECONDARY=https://<second-provider>          # head-agreement check
-RH_MAINNET_DEPLOYER_PRIVATE_KEY=0x...                        # dedicated; never treasury or guardian
+RH_MAINNET_RPC_PRIMARY=https://<mainnet-rpc>                 # already set
+RH_MAINNET_RPC_SECONDARY=https://<second-provider>            # already set; head-agreement check
+RH_MAINNET_DEPLOYER_PRIVATE_KEY=0x...                         # mirrors DEPLOYER_PRIVATE_KEY
 
-MAINNET_GOVERNANCE_ADDRESS=0x...                             # must be a real multisig/timelock
-MAINNET_GUARDIAN_ADDRESS=0x...                               # distinct from governance and treasury
-MAINNET_TREASURY_ADDRESS=0x...                               # distinct; NOT the burn address
-MAINNET_SERVICE_RECIPIENT=0x...                              # receives the pool service fee
+MAINNET_GOVERNANCE_ADDRESS=0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399   # = TESTNET_GOVERNANCE_ADDRESS
+MAINNET_GUARDIAN_ADDRESS=0x072f9d4165DccBD9172023601d07bCE2FCF37072     # = TESTNET_GUARDIAN_ADDRESS
+MAINNET_TREASURY_ADDRESS=0xF6e272FBF862AE055949C61BC41E6395dfE20841     # = TESTNET_TREASURY_ADDRESS
+MAINNET_SERVICE_RECIPIENT=0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC    # = TESTNET_SERVICE_RECIPIENT
 
-MAINNET_WETH_ADDRESS=0x...                                   # canonical wrapped ETH on 4663
-MAINNET_FEE_TOKEN_ADDRESS=0x...                              # real token; factory fails closed at zero
+MAINNET_WETH_ADDRESS=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73        # canonical WETH on 4663
+MAINNET_FEE_TOKEN_ADDRESS=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168   # USDG on 4663
 
-YAHOO_REPORTER_ADDRESS=0x...                                 # the signer the verifier will pin
-YAHOO_REPORTER_PRIVATE_KEY=0x...                             # used by the keeper, not by deploy
+YAHOO_REPORTER_ADDRESS=0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a       # already set
+YAHOO_REPORTER_PRIVATE_KEY=0x...                                      # already set; used by the keeper
 
-BELL_POOL_CLASS=1                                            # SESSION_ONLY only
-BELL_POLICY_ID=bell-mainnet-v1                               # hashed into the factory profileHash
+BELL_POOL_CLASS=1
+BELL_POLICY_ID=bell-mainnet-v1
 BELL_MAINNET_SYMBOL=AAPL
+BELL_MAINNET_MIN_DEPLOYER_WEI=500000000000000000                     # optional preflight floor
 ```
+
+The two mainnet-only external addresses were verified on chain 4663, not copied from testnet:
+`0x0Bd7D308…` returns symbol `WETH` with 18 decimals and 2202 bytes of code, and `0x5fc5360D…` returns
+symbol `USDG` with 6 decimals. The testnet fee token and the testnet WETH fixture both have **zero**
+code on mainnet, so reusing them would have failed at the factory.
+
+Note: because the deployer wallet is shared and its mainnet nonce starts at 0, the deployed contract
+addresses will collide with the addresses that wallet produced on testnet at the same nonces. That is
+expected — CREATE depends only on sender and nonce — but it means a mainnet address must never be
+read from testnet evidence.
 
 `BELL_POLICY_ID` is load-bearing: `BellPoolFactory` stores `profileHash = keccak256(config)` with the
 tokens zeroed but the policy id **kept**. A pool request whose policy id differs reverts
@@ -74,10 +89,13 @@ deployed `profileHash()` before signing.
 pnpm mainnet:preflight
 ```
 
-Fails closed on: wrong chain id, RPC head disagreement over 50 blocks, deployer below 0.5 ETH,
-non-distinct or zero roles, treasury/guardian equal to the deployer, missing code at WETH/fee
+Fails closed on: wrong chain id, RPC head disagreement over 50 blocks, deployer below the funding
+floor, non-distinct or zero roles, treasury/guardian equal to the deployer, missing code at WETH/fee
 token/Permit2, a WETH symbol that is not `WETH`, a fee token without `decimals()`, and any fee token
 whose symbol is the testnet `mBELL` fixture.
+
+The floor defaults to 0.5 ETH and can be lowered with `BELL_MAINNET_MIN_DEPLOYER_WEI` for a readiness
+report on an unfunded wallet.
 
 ## 3. Deploy the protocol stack
 

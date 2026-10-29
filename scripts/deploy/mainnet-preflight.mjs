@@ -12,7 +12,6 @@ import { privateKeyToAccount } from 'viem/accounts';
 
 const MAINNET_CHAIN_ID = 4663;
 const CANONICAL_PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
-const MIN_DEPLOYER_BALANCE = 5n * 10n ** 17n; // 0.5 ETH floor; the suite is ~12 contracts.
 
 function loadEnv() {
   const env = { ...process.env };
@@ -24,6 +23,9 @@ function loadEnv() {
 }
 
 const env = loadEnv();
+// Configurable floor so the same preflight can gate a funded deploy and still report a useful
+// readiness summary on a fresh wallet. The default stays a real budget, not a token amount.
+const MIN_DEPLOYER_BALANCE = BigInt(env.BELL_MAINNET_MIN_DEPLOYER_WEI || 5n * 10n ** 17n);
 const failures = [];
 const notes = [];
 const fail = (message) => failures.push(message);
@@ -40,8 +42,11 @@ if (failures.length === 0) {
 
   const deployer = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`).address;
   const balance = await client.getBalance({ address: deployer });
+  const funding = { address: deployer, balanceWei: balance.toString(), balanceEth: formatEther(balance), floorEth: formatEther(MIN_DEPLOYER_BALANCE) };
   if (balance < MIN_DEPLOYER_BALANCE) {
     fail(`deployer ${deployer} holds ${formatEther(balance)} ETH, below the ${formatEther(MIN_DEPLOYER_BALANCE)} floor`);
+  } else {
+    notes.push(`deployer funded with ${formatEther(balance)} ETH`);
   }
 
   const roles = {
@@ -105,8 +110,10 @@ if (failures.length === 0) {
   console.log(JSON.stringify({
     chainId,
     deployer,
-    deployerBalanceEth: formatEther(balance),
+    funding,
     roles,
+    feeToken: env.MAINNET_FEE_TOKEN_ADDRESS,
+    weth: env.MAINNET_WETH_ADDRESS,
     notes,
     failures,
     verdict: failures.length === 0 ? 'READY' : 'NOT_READY',
