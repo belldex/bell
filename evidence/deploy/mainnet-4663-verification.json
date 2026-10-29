@@ -1,0 +1,116 @@
+{
+  "chainId": 4663,
+  "verifiedAt": "2026-10-29",
+  "status": "PRODUCTION_DEPLOYED",
+  "sourceCommit": "962379d",
+  "manifestHash": "0x92f91acbf7d3937ccce026b507019b27ea5b85e9d4a91077f3869c1a5cf47d4d",
+  "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+  "blocks": {
+    "first": 100896286,
+    "last": 100896418,
+    "verifiedAtBlock": 100897755
+  },
+  "contracts": {
+    "safetyController": {
+      "address": "0x7bdd9a3053e4f5df81ca8afe63a5a80046572b89",
+      "codeBytes": 5292,
+      "codeHash": "0xf98ef5720cc4196f2f20048991dd2ce1e8a523369ea3c777b2852cd152187904"
+    },
+    "assetRegistry": {
+      "address": "0x6935173de1499e81490b4aa2844a0bfd36491d6a",
+      "codeBytes": 12550,
+      "codeHash": "0xb3529deeb0456445052f61ec818d2468182854b2b02b310328b26cac86e5f2d4"
+    },
+    "calendarRegistry": {
+      "address": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+      "codeBytes": 10849,
+      "codeHash": "0x1451699dd3cfad6a975c6719408b239580261a84113563f03416d324b1e92414"
+    },
+    "sessionRegistry": {
+      "address": "0x5f357f9b5c2e09706260ee6b3a6e7d58d1d3338c",
+      "codeBytes": 18515,
+      "codeHash": "0x4c88b741e8c96201fabf6aaa4220914be1a67fccd250a80b8555b3723e1592ac"
+    },
+    "poolManager": {
+      "address": "0x41a3a17b28e88025bcd76d6ec58b00980e6b5c38",
+      "codeBytes": 19725,
+      "codeHash": "0x2fda81d5abd4439b4568d1c62fa17cf181a175bd9ee839659babb4d09b07b2ba"
+    },
+    "positionManager": {
+      "address": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701",
+      "codeBytes": 20664,
+      "codeHash": "0x557c5517bdddbe45d038f6c83974f7674ecb7c6d0a9305da6c440e4210cd393d"
+    },
+    "hookDeployer": {
+      "address": "0xe428b98f9c1c8a4cc1d89e30e5767097880db69c",
+      "codeBytes": 3116,
+      "codeHash": "0xbc92533d199f48ef79ba538dacf02fc1ab87e9929b8b374466c0b7e7f991b7c8"
+    },
+    "poolFactory": {
+      "address": "0x2fcd196c50e348fbfe48a9d2a10776eee70d49a2",
+      "codeBytes": 16877,
+      "codeHash": "0x23269727f111e6ee5507e6b2617f82a433619de0950f37911a0d00a322e0e380"
+    },
+    "weth": {
+      "address": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+      "codeBytes": 2202,
+      "codeHash": "0x5706be52f64875fee65a2cec0d80e47a23d8793cbe85d214b48445e2d05f5353"
+    },
+    "router": {
+      "address": "0x7bb0cbd999447758a343066ea99381766c0ae17e",
+      "codeBytes": 7502,
+      "codeHash": "0x039dfa4d4836e5e99fdf3bbf71f6ea1770ad89d71ff0031126d6e82898e79ffa"
+    },
+    "feeToken": {
+      "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+      "codeBytes": 170,
+      "codeHash": "0x864cc9ad53b338b82da1f7cab85ab0b3d5c8861acb422b6fec63cf36234f36a6",
+      "decimals": 6,
+      "label": "PRODUCTION_FEE_TOKEN"
+    }
+  },
+  "wiringChecks": {
+    "router.poolManager": "0x41a3a17b28e88025BCD76D6Ec58b00980E6B5c38",
+    "router.canonicalWeth": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "positionManager.poolManager": "0x41a3a17b28e88025BCD76D6Ec58b00980E6B5c38",
+    "positionManager.WETH9": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+    "positionManager.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolFactory.hookDeployer": "0xE428B98f9C1c8A4cc1d89E30E5767097880Db69C",
+    "poolFactory.positionManager": "0xBe86dF1BFF45001Ec70D14D3b7d7BFD4a0e66701",
+    "poolFactory.serviceToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+    "hookDeployer.factory": "0x2FCD196c50E348fbfe48A9D2a10776eeE70d49a2",
+    "hookDeployer.sessionRegistry": "0x5f357f9b5c2E09706260EE6b3a6E7D58D1D3338C",
+    "sessionRegistry.assetRegistry": "0x6935173dE1499e81490B4aA2844a0bfD36491D6A",
+    "sessionRegistry.calendarRegistry": "0xe683F39FbAf9CeD50C0ac2FD56c2032c58d82150",
+    "assetRegistry.safetyController": "0x7bdD9A3053e4F5df81ca8aFE63A5a80046572B89",
+    "calendarRegistry.safetyController": "0x7bdD9A3053e4F5df81ca8aFE63A5a80046572B89",
+    "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "safetyController.roles": {
+      "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+      "guardian": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+      "treasury": "0xF6e272FBF862AE055949C61BC41E6395dfE20841",
+      "distinct": true
+    },
+    "factory.liquidityMode": 0,
+    "factory.serviceFee": "49000000",
+    "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
+    "factory.profileHash": "0x3f24c7d6c4c6365bbde0893c1aa6dac6c866fa67277c6aea2990236ffa005c54",
+    "hookDeployer.templateCodeHash": "0xe0138cf1826731ebf568f697c3bdda48cdf4ec9bd0c052b98d7ca01901ba3a0a",
+    "weth.symbol": "WETH",
+    "weth.decimals": 18
+  },
+  "gas": {
+    "txCount": 10,
+    "used": "39861323",
+    "priceWei": "20076000",
+    "costEth": "0.000800255920548"
+  },
+  "notCovered": [
+    "PRICE_GUARDED pool class remains blocked until an independent reference pair is admitted",
+    "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0): the TREASURY_ONLY path has no live deployment",
+    "No pool exists at deploy time: that needs an admitted stock descriptor, an activated calendar root, and a healthy source",
+    "The keeper is not pointed at these addresses until evidence/deploy/mainnet-4663.json is wired into its configuration",
+    "PoolManager ownership is held by the deployer; a handover to governance has not run",
+    "Stock token rights and entitlements are NOT verified by this script; it only proves the contracts are wired"
+  ]
+}

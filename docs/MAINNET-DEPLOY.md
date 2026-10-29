@@ -14,6 +14,20 @@ The code path is ready. Three things are **not** proven by this repo and cannot 
 3. **Keeper liveness in production.** The Worker is deployed separately and has to be pointed at the
    mainnet manifest.
 
+## Current mainnet deployment record
+
+The protocol stack is now deployed on Robinhood Chain mainnet (chain ID 4663). The canonical,
+RPC-verified record is `evidence/deploy/mainnet-4663-broadcast.json`; it contains every contract
+address, creation transaction, block, receipt status, runtime code hash and Blockscout URL. The
+separate `evidence/deploy/mainnet-4663-verification.json` records on-chain wiring checks. Do not use
+addresses from rehearsal evidence for mainnet.
+
+Explorer: <https://robinhoodchain.blockscout.com>
+
+The 10 protocol deployment receipts all returned success. Total measured gas cost was
+`0.000801145289812 ETH`. This is only the protocol stack; Yahoo verifier/adapters, stock admission,
+calendar, keeper, pool, swap and acceptance are not included in this record.
+
 ## Timeline: it is instant by default
 
 Governance latency is a **deployment parameter**, not a network property. The old design hardcoded

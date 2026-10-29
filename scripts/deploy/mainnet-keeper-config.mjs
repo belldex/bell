@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 const EVIDENCE = {
   manifest: 'evidence/deploy/mainnet-4663.json',
+  broadcast: 'evidence/deploy/mainnet-4663-broadcast.json',
   adapters: 'evidence/deploy/mainnet-4663-stock-adapters.json',
   assets: 'evidence/deploy/mainnet-4663-asset-queue.json',
   pool: 'evidence/deploy/mainnet-4663-pool.json',
@@ -31,12 +32,16 @@ if (missing.length) {
 }
 
 const manifest = readJson(EVIDENCE.manifest);
+const broadcast = readJson(EVIDENCE.broadcast);
 const adapters = readJson(EVIDENCE.adapters);
 const assets = readJson(EVIDENCE.assets);
 const pool = readJson(EVIDENCE.pool);
 
 const failures = [];
 if (Number(manifest.chainId) !== 4663) failures.push(`manifest chainId is ${manifest.chainId}, expected 4663`);
+if (Number(broadcast.chainId) !== 4663 || broadcast.status !== 'BROADCASTED_AND_LIVE_CODE_VERIFIED') {
+  failures.push('broadcast evidence is not live-code-verified on chain 4663');
+}
 if (Number(adapters.chainId) !== 4663) failures.push(`adapters chainId is ${adapters.chainId}, expected 4663`);
 if (assets.activationPending) failures.push('asset admission is still pending; the keeper would publish for an inactive asset');
 if (/facade|testnet|rehearsal/i.test(String(adapters.symbol))) failures.push(`stock symbol "${adapters.symbol}" looks like a rehearsal fixture`);
