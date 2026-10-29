@@ -26,3 +26,6 @@ evidence/private/
 # vercel
 .vercel
 .env*.local
+
+# Mainnet deployment evidence is produced by a real broadcast, never by a dry run.
+evidence/deploy/mainnet-4663.json
