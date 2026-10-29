@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { Activity, CalendarClock, CalendarDays, Gauge, Percent } from "lucide-react";
 import { Arrow } from "./arrow";
 import { createCipherSculpture } from "./cipher-sculpture";
 import { createGlobeSculpture } from "./globe-sculpture";
@@ -22,13 +23,13 @@ import { scrollToId } from "./smooth-scroll";
    in the stylesheet reads them. Nothing here animates by itself, so it runs in reverse. */
 
 const STACK = [
-  "Market sessions",
-  "Dynamic LP fees",
-  "Gross-flow limits",
-  "Bounded closure",
-  "Robinhood Chain",
-  "Uniswap v4",
-  "BELL protocol",
+  { label: "Market sessions", icon: CalendarDays },
+  { label: "Dynamic LP fees", icon: Percent },
+  { label: "Gross-flow limits", icon: Gauge },
+  { label: "Bounded closure", icon: CalendarClock },
+  { label: "Robinhood Chain", logo: "/landing/partners/robinhood.svg" },
+  { label: "Uniswap v4", logo: "/landing/partners/uniswap.svg" },
+  { label: "BELL protocol", brand: true, icon: Activity },
 ];
 
 /* "Prove more. Reveal less." -> ["Prove more", "Reveal less."]; the stop after "more" becomes the dot */
@@ -288,7 +289,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB}</span> : null}
           </h1>
           <p className="lp-sub">
-                Tokenized-stock pools need rules that move with the exchange clock. BELL verifies each session, sets its fee and flow limits, and stops when required market data cannot be trusted.
+            BELL is a Uniswap v4 liquidity protocol for tokenized-stock pools. It sets LP fees and swap limits from verified market sessions, then halts swaps when required stock data is stale or uncertain.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -307,10 +308,10 @@ export function CoverReveal({ tagline }: Props) {
               <p className="lp-badge">
                 <i aria-hidden="true" />
                 <span>
-                  BELL · SESSION-AWARE LIQUIDITY
+                  BELL · UNISWAP V4 HOOK
                 </span>
-                <span>Not audited</span>
-                <span>Synthetic assets</span>
+                <span>Robinhood Chain testnet</span>
+                <span>Synthetic rehearsal assets · unaudited</span>
               </p>
               <h2 className="lp-h">
                 {/* the first words are the original headline, untouched; the other three overlay it, one at a time, as the picture changes form */}
@@ -388,7 +389,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-i={0}
                     data-story-kind="lede"
                   >
-                    Before the open, during the session, and after the close are different operating conditions for the same pool.
+                    One tokenized-stock pool can face different liquidity and data conditions before, during and after the exchange session.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -396,7 +397,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Verified session data selects the applicable base fee and flow limits.
+                    Verified calendar and stock data select the session’s base LP fee and flow limits.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -404,7 +405,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Per-trade and rolling gross-flow caps bound the amount that can pass through.
+                    Each swap is checked against per-trade and rolling gross-flow caps before it executes.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -412,7 +413,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A proven scheduled closure uses a historical close anchor and one finite, non-refilling budget.
+                    A calendar-proven closure may use a historical close anchor and one finite episode budget.
                   </span>
                 </p>
                 <div className="lp-actions">
@@ -449,22 +450,34 @@ export function CoverReveal({ tagline }: Props) {
           <div className="lp-marq__view">
             <div className="lp-marq__track" aria-hidden="true">
               <ul className="lp-marq__group">
-                {STACK.map((n) => (
-                  <li className="lp-marq__item" key={n}>
-                    {n}
+                {STACK.map((item) => (
+                  <li className="lp-marq__item" key={item.label} data-brand={"brand" in item ? "bell" : "logo" in item ? "external" : "feature"}>
+                    {"logo" in item ? (
+                      <span className="lp-marq__logo lp-marq__logo--wordmark" data-logo={item.label === "Robinhood Chain" ? "robinhood" : "uniswap"} role="img" aria-label={item.label} style={{ ["--logo-src" as string]: `url("${item.logo}")` }} />
+                    ) : "brand" in item ? (
+                      <><span className="lp-marq__bell-mark" aria-hidden="true">B</span><span>{item.label}</span></>
+                    ) : (
+                      <><item.icon className="lp-marq__icon" aria-hidden="true" strokeWidth={1.7} /><span>{item.label}</span></>
+                    )}
                   </li>
                 ))}
               </ul>
               <ul className="lp-marq__group">
-                {STACK.map((n) => (
-                  <li className="lp-marq__item" key={n}>
-                    {n}
+                {STACK.map((item) => (
+                  <li className="lp-marq__item" key={item.label} data-brand={"brand" in item ? "bell" : "logo" in item ? "external" : "feature"}>
+                    {"logo" in item ? (
+                      <span className="lp-marq__logo lp-marq__logo--wordmark" data-logo={item.label === "Robinhood Chain" ? "robinhood" : "uniswap"} role="img" aria-label={item.label} style={{ ["--logo-src" as string]: `url("${item.logo}")` }} />
+                    ) : "brand" in item ? (
+                      <><span className="lp-marq__bell-mark" aria-hidden="true">B</span><span>{item.label}</span></>
+                    ) : (
+                      <><item.icon className="lp-marq__icon" aria-hidden="true" strokeWidth={1.7} /><span>{item.label}</span></>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
           </div>
-          <p className="lp-sr">Built on {STACK.join(", ")}.</p>
+          <p className="lp-sr">Built on {STACK.map((item) => item.label).join(", ")}.</p>
         </div>
       </div>
     </section>

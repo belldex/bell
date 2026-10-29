@@ -20,15 +20,15 @@ const pixel = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bell.exchange'),
-  title: { default: 'BELL — Liquidity that knows the bell', template: '%s · BELL' },
+  title: { default: 'BELL — Market-aware liquidity for tokenized stocks', template: '%s · BELL' },
   description:
-    'BELL is a Uniswap v4 hook layer for Robinhood Stock Token pools: session-aware fees, bounded flow and weekend-safe closed-market controls.',
+    'BELL is a Uniswap v4 hook for tokenized-stock pools. Session-aware LP fees, bounded swap flow and fail-closed market-data checks. Testnet prototype; no mainnet deployment.',
   icons: {
     icon: '/assets/emblem-guarded.jpg',
   },
   openGraph: {
-    title: 'BELL — Bourse-Event Liquidity Layer',
-    description: 'Session-aware fees, bounded flow and weekend-safe controls for tokenized-stock liquidity.',
+    title: 'BELL — Market-aware liquidity for tokenized stocks',
+    description: 'A Uniswap v4 hook for tokenized-stock pools with session-aware LP fees, bounded swap flow and fail-closed data checks. Testnet prototype; no mainnet deployment.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

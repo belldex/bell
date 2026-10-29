@@ -77,9 +77,12 @@ if (amount <= 0n) throw new Error('--amount must be a positive integer in the in
 const legs = resolveSwapLegs({ token0: pool.token0, token1: pool.token1, zeroForOne });
 const useNativeInput = arg('native', 'false') === 'true';
 
-// Slippage bound: the router requires a non-zero limit. Default to the exact input amount when
-// buying with native ETH (exact-input bound), otherwise require an explicit --limit.
-const limitAmount = BigInt(arg('limit', amount.toString()));
+// Exact-input router limit is minimum output in output-token base units, never amount-in units.
+// Require it explicitly; a guessed default can reject a valid trade or admit an unacceptable fill.
+const minAmountOutArg = arg('minAmountOut', null);
+if (!minAmountOutArg) throw new Error('--minAmountOut is required in output-token base units');
+const minAmountOut = BigInt(minAmountOutArg);
+if (minAmountOut <= 0n) throw new Error('--minAmountOut must be a positive integer');
 
 const block = await publicClient.getBlock();
 const configHash = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'configHash' });
@@ -89,7 +92,7 @@ const request = buildMainnetSwapRequest({
   hook: pool.hook,
   zeroForOne,
   amountIn: amount,
-  limitAmount,
+  minAmountOut,
   recipient: account.address,
   nonce,
   deadline: BigInt(Number(block.timestamp) + 600),

@@ -42,10 +42,10 @@ export function SmoothScroll({ children, enabled = true }: { children: ReactNode
       return;
     }
     const instance = new Lenis({
-      duration: 0.9,
+      duration: 0.68,
       smoothWheel: true,
       wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
+      touchMultiplier: 1.15,
     });
     setLenis(instance);
     instance.on('scroll', st.update);

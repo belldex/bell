@@ -13,6 +13,7 @@ import { createPublicClient, createWalletClient, custom, type EIP1193Provider } 
 import { WagmiConfig, createConfig, http, injected } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { ConnectButton, RainbowKitProvider } from '@rainbow-me/rainbowkit/components';
+import { darkTheme } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { defineChain } from 'viem';
 import '@rainbow-me/rainbowkit/styles.css';
@@ -159,7 +160,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiConfig config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider initialChain={robinhoodTestnet} theme={null}>
+        <RainbowKitProvider
+          initialChain={robinhoodTestnet}
+          theme={darkTheme({
+            accentColor: '#aeb7b9',
+            accentColorForeground: '#101416',
+            borderRadius: 'small',
+            fontStack: 'system',
+            overlayBlur: 'small',
+          })}
+        >
           <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
         </RainbowKitProvider>
       </QueryClientProvider>

@@ -3,11 +3,11 @@ import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { TestnetBanner } from '@/components/app/TestnetBanner';
 
 const sections = [
-  ['Session fee', 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown session or unhealthy source state fails closed.'],
-  ['Flow budgets', 'Per-trade T, rolling W, and closure-episode C are raw token units per currency. Adding liquidity never raises caps or refills spent budgets.'],
-  ['PRICE_GUARDED', 'Requires reviewed independent price references for both assets and enforces a reference band. Closed stock pricing uses a provenance-bound historical close anchor.'],
-  ['SESSION_ONLY', 'Enforces session controls and raw-unit flow limits but does not provide independent counterasset price protection or USD valuation.'],
-  ['Recovery and exit', 'Trading resumes only after required fresh checkpoints and recovery delay. In-kind position removal/fee collection is not subject to swap guards, but live position transactions are not wired in this frontend.'],
+  ['sessions', 'Session fee', 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown session or unhealthy source state fails closed.'],
+  ['budgets', 'Flow budgets', 'Per-trade T, rolling W, and closure-episode C are raw token units per currency. Adding liquidity never raises caps or refills spent budgets.'],
+  ['price-guarded', 'PRICE_GUARDED', 'Requires reviewed independent price references for both assets and enforces a reference band. Closed stock pricing uses a provenance-bound historical close anchor.'],
+  ['session-only', 'SESSION_ONLY', 'Enforces session controls and raw-unit flow limits but does not provide independent counterasset price protection or USD valuation.'],
+  ['closure', 'Recovery and exit', 'Trading resumes only after required fresh checkpoints and recovery delay. In-kind position removal/fee collection is not subject to swap guards, but live position transactions are not wired in this frontend.'],
 ];
 
 export default function ProtocolPage() {
@@ -18,9 +18,9 @@ export default function ProtocolPage() {
       <h1 className="mt-3 max-w-[760px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Formulas, sessions, and explicit limits.</h1>
       <p className="mt-5 max-w-[620px] text-base leading-relaxed text-muted">BELL is a rehearsal frontend for the deployed hook protocol. This page describes intended policy behavior; live pool data requires a pool indexer, and mainnet release is not approved.</p>
       <div className="mt-10 grid gap-5 md:grid-cols-2">
-        {sections.map(([title, body], i) => (
-          <section key={title} id={['sessions','budgets','price-guarded','session-only','closure'][i]} className="border border-line bg-surface/70 p-6">
-            <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-ion">{String(i + 1).padStart(2, '0')} · {title}</h2>
+        {sections.map(([id, title, body]) => (
+          <section key={title} id={id} className="border border-line bg-surface/70 p-6">
+            <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-ion">{title}</h2>
             <p className="mt-4 text-sm leading-relaxed text-muted">{body}</p>
           </section>
         ))}

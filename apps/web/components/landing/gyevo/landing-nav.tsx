@@ -3,26 +3,51 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "./bell-mark";
-import { getFeature, subscribeFeature, type FeatureId } from "./feature-state";
+import { getFeature, subscribeFeature } from "./feature-state";
 import { scrollToId } from "./smooth-scroll";
 
-/* The public bar: three direct links to BELL's market-session story, risk policy and planned close, plus app access. */
+/* Every primary landing chapter is directly reachable; app access remains its own action. */
 const SECTIONS = [
+  { id: "idea", label: "Why BELL", desc: "The market problem BELL is built around." },
+  { id: "how", label: "How it works", desc: "The checks every swap must pass." },
   { id: "market-rhythm", label: "Market rhythm", desc: "Fees follow verified market sessions." },
   { id: "risk-policy", label: "Risk policy", desc: "Flow caps and clear halt conditions." },
   { id: "planned-close", label: "Planned close", desc: "A bounded path through scheduled closure." },
+  { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
+  { id: "roadmap", label: "Readiness", desc: "What has been rehearsed and what remains." },
+  { id: "facts-title", label: "Testnet status", desc: "Deployment and rehearsal snapshot; not live-updating." },
 ] as const;
 
-type SectionId = FeatureId;
+type SectionId = (typeof SECTIONS)[number]["id"];
 
 export function LandingNav({ appName }: { appName: string }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<SectionId | null>(null);
 
-  /* which introduction is on screen: written by the pinned story, and the only thing that marks a link */
+  /* Sync the active chapter with both the pinned story and the regular content sections. */
   useEffect(() => {
     setActive(getFeature());
-    return subscribeFeature(setActive);
+    const unsubscribe = subscribeFeature(setActive);
+    const sectionIds = ["how", "sessions", "roadmap"] as const;
+    const sections: Element[] = [
+      ...sectionIds.map((id) => document.getElementById(id)).filter((section): section is HTMLElement => !!section),
+    ];
+    const facts = document.querySelector(".lp-facts");
+    if (facts) sections.push(facts);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const current = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (current) setActive((current.target as HTMLElement).id === "" ? "facts-title" : (current.target as HTMLElement).id as SectionId);
+      },
+      { rootMargin: "-28% 0px -58% 0px", threshold: [0, 0.15, 0.3, 0.5] },
+    );
+    sections.forEach((section) => { if (section) observer.observe(section); });
+    return () => {
+      unsubscribe();
+      observer.disconnect();
+    };
   }, []);
 
   /* arriving with a hash (from another page, or back/forward): put the introduction in view once the page has laid out */
@@ -62,6 +87,7 @@ export function LandingNav({ appName }: { appName: string }) {
   const go =
     (id: SectionId) => (event: React.MouseEvent<HTMLAnchorElement>) => {
       setOpen(false);
+      setActive(id);
       if (scrollToId(id)) {
         event.preventDefault();
         window.history.replaceState(null, "", `#${id}`);
@@ -91,23 +117,10 @@ export function LandingNav({ appName }: { appName: string }) {
         </nav>
 
         <div className="lp-nav__right">
-          <div className="lp-launch">
-            <Link
-              className="lp-pill lp-pill--launch"
-              href="/pools"
-              aria-describedby="lp-launch-hint"
-            >
-              Open app
-            </Link>
-            <span
-              className="lp-launch__hint"
-              id="lp-launch-hint"
-              role="tooltip"
-            >
-              <b>Opens the application</b>
-              <span>Pool directory · risk policy · protocol status</span>
-            </span>
-          </div>
+          <Link className="lp-pill lp-pill--launch" href="/pools">
+            <span>Open app</span>
+            <span className="lp-launch__arrow" aria-hidden="true">↗</span>
+          </Link>
           <button
             type="button"
             className="lp-menu-btn"
@@ -130,21 +143,17 @@ export function LandingNav({ appName }: { appName: string }) {
       >
         <p className="lp-menu__label">Explore</p>
         {SECTIONS.map((s) => (
-          <a href={`#${s.id}`} key={s.id} onClick={go(s.id)}>
+          <a
+            href={`#${s.id}`}
+            key={s.id}
+            data-active={active === s.id ? "true" : "false"}
+            aria-current={active === s.id ? "location" : undefined}
+            onClick={go(s.id)}
+          >
             <span className="lp-menu__name">{s.label}</span>
             <span className="lp-menu__desc">{s.desc}</span>
           </a>
         ))}
-        <Link
-          className="lp-menu__launch"
-          href="/pools"
-          onClick={() => setOpen(false)}
-        >
-          Open app
-        </Link>
-        <p className="lp-menu__hint">
-          Opens the BELL pool directory and available protocol tools.
-        </p>
       </nav>
     </>
   );

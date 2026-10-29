@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, ChevronDown, CircleHelp, Coins, LifeBuoy, Minus, Plus, ShieldAlert } from 'lucide-react';
+import { ChevronDown, CircleHelp, Coins, LifeBuoy, Minus, Plus, ShieldAlert } from 'lucide-react';
 import { Button, ClassBadge, HaltBadge, PhaseBadge } from '@/components/ui/primitives';
+import { TokenPair } from '@/components/ui/TokenLogo';
 import { POSITIONS, getPool, type PositionPreview } from '@/lib/fixtures';
 import { cn } from '@/lib/format';
 import { useWallet } from '@/lib/wallet';
@@ -18,8 +19,9 @@ function PositionCard({ p }: { p: PositionPreview }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-xs text-dim">Position fixture {p.id}</p>
-          <Link href={`/pool/?id=${pool.id}`} className="mt-1 inline-flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-ink hover:text-ion sm:text-3xl transition-colors">
-            {pool.pair[0]} <span className="text-dim font-normal">/</span> {pool.pair[1]} <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+          <Link href={`/pool/?id=${pool.id}`} className="mt-2 inline-flex items-center gap-3 font-display text-2xl font-medium tracking-tight text-ink transition-colors hover:text-ion sm:text-3xl">
+            <TokenPair symbols={pool.pair} size={32} />
+            {pool.pair[0]} <span className="text-dim font-normal">/</span> {pool.pair[1]} <span className="text-sm text-dim" aria-hidden="true">↗</span>
           </Link>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <ClassBadge poolClass={pool.poolClass} />
@@ -91,7 +93,7 @@ export default function PositionsPage() {
       <header className="max-w-3xl">
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · preview</p>
         <h1 className="mt-3 max-w-[760px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
-          Positions you own. Exits nobody gates.
+          Liquidity positions at a glance.
         </h1>
         <p className="mt-3 text-base text-muted">
           Position data comes from your wallet when the live PositionManager reader is available.

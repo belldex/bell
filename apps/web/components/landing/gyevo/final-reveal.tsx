@@ -82,7 +82,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             Know the session. <em>Respect the limits.</em>
           </h2>
           <p className="lp-final__lead">
-            Explore the BELL pool directory, review its risk class, and understand what happens when market data is unavailable.
+            Browse tokenized-stock pools, inspect their policy class, and see how BELL handles sessions, swap limits and missing market data.
           </p>
           <div className="lp-actions">
             <Link className="lp-btn lp-btn--primary" href="/pools">
@@ -106,7 +106,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <span>{appName}</span>
               </Link>
               <p>
-                BELL is session-aware liquidity infrastructure for tokenized stocks. Current evidence is from a testnet rehearsal; it is not a live health guarantee or an independent price-protection claim.
+                BELL is a Uniswap v4 hook and liquidity policy for tokenized-stock pools. It sets base LP fees and flow limits from verified market state. Current evidence is testnet-only; rehearsal assets are synthetic, and SESSION_ONLY does not promise independent counterasset price protection.
               </p>
             </div>
             <nav aria-label="Protocol">
@@ -145,8 +145,8 @@ export function FinalReveal({ appName }: { appName: string }) {
             </nav>
           </div>
           <p className="lp-legal">
-            <span>Contract evidence · See Contracts</span>
-            <span>Unaudited · Not public production-ready</span>
+            <span>Robinhood Chain Testnet · 46630</span>
+            <span>Unaudited · No mainnet deployment</span>
           </p>
           <span
             className="lp-word-out"

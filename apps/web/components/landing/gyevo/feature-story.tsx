@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Activity, CalendarClock } from "lucide-react";
 import { Arrow } from "./arrow";
 import { setFeature, type FeatureId } from "./feature-state";
 import { scrollToId } from "./smooth-scroll";
@@ -40,10 +41,10 @@ const SCENES: Scene[] = [
     n: "REG",
     name: "Market rhythm",
     sub: "Session-aware fees",
-    kicker: "Market clock · verified state",
-    headline: "The market sets the starting conditions.",
-    text: "BELL distinguishes regular, pre-market, post-market, overnight and scheduled-closure states. Each supported session has a base fee; missing or unexpected data means the pool halts.",
-    use: "A regular session starts at 0.05%. PRE and POST use 0.30%; overnight uses 0.50% when its feed is supported and healthy.",
+    kicker: "Uniswap v4 hook · verified market state",
+    headline: "Fees and limits follow the exchange session.",
+    text: "Before every swap, BELL verifies exchange hours and stock-feed health. The session sets the base LP fee and flow limits; missing or stale inputs halt execution.",
+    use: "Regular: 0.05%; pre-market and after-hours: 0.30%; overnight: 0.50% with a healthy, supported feed.",
     chips: ["Regular · 0.05%", "Extended · 0.30%", "Overnight · 0.50%"],
     href: "/pools",
     cta: "Explore pools",
@@ -54,9 +55,9 @@ const SCENES: Scene[] = [
     name: "Risk policy",
     sub: "Bounded gross flow",
     kicker: "Per-trade · rolling limits",
-    headline: "Fees price conditions. Limits bound exposure.",
-    text: "BELL caps cumulative swap flow as well as individual trades. Limits tighten as sessions become less liquid, and they do not refill when liquidity is added or the market clock rolls over.",
-    use: "SESSION_ONLY applies session controls without claiming independent price protection for the counterasset. PRICE_GUARDED remains unavailable until a reference is admitted.",
+    headline: "Every swap faces two independent limits.",
+    text: "The hook checks trade size and cumulative gross flow together. Less liquid sessions tighten both; reopening, corporate-action and repricing guards can tighten them further.",
+    use: "Capacity returns only as older swaps leave the rolling window. Deposits and midnight do not reset it. SESSION_ONLY does not independently protect the counterasset price.",
     chips: ["SESSION_ONLY · guarded swaps", "PRICE_GUARDED · blocked"],
     href: "/protocol",
     cta: "Read risk policy",
@@ -67,9 +68,9 @@ const SCENES: Scene[] = [
     name: "Planned close",
     sub: "Finite closure budget",
     kicker: "Scheduled closure · bounded exception",
-    headline: "A closed market is not a live quote.",
-    text: "When a valid calendar proves a scheduled closure, BELL can use a captured historical close anchor with a single, non-refilling budget. The anchor is clearly historical—not a fresh market price.",
-    use: "Unexpected staleness, invalid closure context, an expired anchor or a changed multiplier halts swaps. Exit in-kind stays separate from swap guards.",
+    headline: "A planned close uses one bounded historical anchor.",
+    text: "Only a committed calendar can authorize the close anchor captured while stock data was valid—and only while its context remains valid.",
+    use: "The episode budget never refills before a verified reopen. Unexpected outages or expired anchors halt swaps; LP exits remain in-kind.",
     chips: ["CLOSED · 1.00% base fee", "Unknown state · halt"],
     href: "/protocol",
     cta: "See closure rules",
@@ -91,91 +92,72 @@ function sceneAt(u: number): number {
 /* ---- Three policy instruments. Illustrations, never live pool state. ---- */
 function CredentialVisual() {
   return (
-    <div className="fxv fxv--dojang" aria-hidden="true">
-      <div className="fxv__ledger">
-        <p>Session feed · verified</p>
-        {[0, 1, 2].map((i) => (
-          <span key={i}><i /><u /><em /></span>
-        ))}
+    <div className="fxv fxv--clock" aria-hidden="true">
+      <div className="fxv-clock__top"><span>EXCHANGE SESSION MAP</span><span><i /> POLICY MODEL</span></div>
+      <div className="fxv-clock__body">
+        <div className="fxv-clock__dial">
+          <svg className="fxv-clock__arcs" viewBox="0 0 320 320" fill="none">
+            <circle className="fxv-clock__track" cx="160" cy="160" r="132" />
+            <circle className="fxv-clock__arc fxv-clock__arc--day" cx="160" cy="160" r="132" />
+            <circle className="fxv-clock__arc fxv-clock__arc--extended" cx="160" cy="160" r="132" />
+            <circle className="fxv-clock__arc fxv-clock__arc--close" cx="160" cy="160" r="132" />
+            <circle className="fxv-clock__inner" cx="160" cy="160" r="98" />
+            <path className="fxv-clock__hand" d="M160 160 218 111" />
+            <circle cx="160" cy="160" r="5" fill="currentColor" />
+          </svg>
+          <span className="fxv-clock__time">09:30<small>NEW YORK · ET</small></span>
+          <span className="fxv-clock__tick fxv-clock__tick--open">OPEN</span>
+          <span className="fxv-clock__tick fxv-clock__tick--extended">EXTENDED</span>
+          <span className="fxv-clock__tick fxv-clock__tick--close">CLOSE</span>
+        </div>
+        <div className="fxv-clock__readout">
+          <p className="fxv-clock__readout-label"><CalendarClock size={15} /> VERIFIED PHASE</p>
+          <strong>Regular session</strong>
+          <div className="fxv-clock__fee"><span>BASE LP FEE</span><b>0.05%</b></div>
+          <div className="fxv-clock__feed"><span className="fxv-clock__spark"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></span><small>STOCK FEED <b>FRESH</b></small></div>
+        </div>
       </div>
-      <div className="fxv__card">
-        <div className="fxv__card-top"><i /><span>Market session</span><em>Illustration</em></div>
-        <dl>
-          <div><dt>Session</dt><dd><strong>REGULAR</strong></dd></div>
-          <div><dt>Base fee</dt><dd><strong>0.05%</strong></dd></div>
-          <div><dt>Stock data</dt><dd><strong>Fresh · example</strong></dd></div>
-          <div><dt>Calendar</dt><dd><u className="fxv__short" /></dd></div>
-          <div><dt>Flow cap</dt><dd><u /></dd></div>
-          <div><dt>Updated</dt><dd><u className="fxv__short" /></dd></div>
-          <div><dt>Decision</dt><dd><strong>Swap allowed · example</strong></dd></div>
-        </dl>
-        <span className="fxv__seal">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.2 4.2L19 7" /></svg>
-        </span>
-      </div>
-      <p className="fxv__tag fxv__tag--a">Session sets the base fee</p>
-      <p className="fxv__tag fxv__tag--b">Health gates every swap</p>
+      <div className="fxv-clock__foot"><span>SESSION + FEED</span><i /><b>SELECT FEE & FLOW LIMITS</b><Activity size={14} /></div>
     </div>
   );
 }
 
 function ProofVisual() {
   return (
-    <div className="fxv fxv--bojagi" aria-hidden="true">
-      <div className="fxv__side fxv__side--device">
-        <p className="fxv__label">Gross-flow policy</p>
-        <div className="fxv__witness">
-          <div><span>Per trade</span><i className="lp-veil" /></div>
-          <div><span>Rolling window</span><i className="lp-veil" /></div>
-          <div><span>Session mode</span><b>Limits scale by session</b></div>
+    <div className="fxv fxv--gates" aria-hidden="true">
+      <div className="fxv-gates__head"><span>SWAP FLOW · POLICY SIMULATION</span><span>ATOMIC POLICY CHECK</span></div>
+      <div className="fxv-gates__scene">
+        <div className="fxv-gates__thresholds">
+          <div className="fxv-gates__gate"><span>TRADE SIZE</span><b>Per swap</b><small>One trade at a time</small><i><u /></i></div>
+          <div className="fxv-gates__gate"><span>GROSS FLOW</span><b>Rolling window</b><small>Recent swaps together</small><i><u /></i></div>
         </div>
-        <div className="fxv__circuit"><span>Current use</span><b>Illustrative</b></div>
-        <div className="fxv__gen"><span>Cap does not refill</span><u /></div>
-      </div>
-      <div className="fxv__bridge">
-        <span className="fxv__bridge-line" />
-        <span className="fxv__bridge-dot" />
-        <p>Policy check</p>
-      </div>
-      <div className="fxv__side fxv__side--chain">
-        <p className="fxv__label">Swap decision</p>
-        <div className="fxv__verifier">
-          <span>BELL policy</span>
-          <strong><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.2 4.2L19 7" /></svg>Within limits</strong>
+        <div className="fxv-gates__lanes">
+          <div className="fxv-gates__lane"><span>TRADE REQUEST</span><i><u /><u /><u /><u /><u /></i><b>CHECK</b></div>
+          <div className="fxv-gates__lane"><span>FLOW HISTORY</span><i><u /><u /><u /><u /><u /><u /><u /><u /></i><b>WINDOW</b></div>
         </div>
-        <ul className="fxv__public">
-          <li>Session</li><li>Data age</li><li>Trade size</li><li>Rolling flow</li><li>Close state</li><li>Pool policy</li>
-        </ul>
+        <div className="fxv-gates__meter"><span>CAPACITY</span><b><i /></b><small>RELEASES AS OLD SWAPS AGE OUT</small></div>
       </div>
+      <div className="fxv-gates__result"><span><i /> POLICY CHECK</span><b><Activity size={15} /> ALLOW WITHIN BOTH LIMITS</b></div>
+      <p className="fxv-gates__note">Liquidity added · new day · larger trade <strong>≠</strong> reset</p>
     </div>
   );
 }
 
 function BallotVisual() {
-  const wallets = [1, 1, 1, 1, 0, 1, 1, 2, 0, 1, 2, 1, 0, 1, 3, 1, 1, 0, 2, 1, 1, 0, 1, 1, 3, 1, 2, 1, 0, 1];
   return (
-    <div className="fxv fxv--dao" aria-hidden="true">
-      <div className="fxv__proposal">
-        <div className="fxv__proposal-top"><span>Scheduled closure</span><em>Policy model</em></div>
-        <p className="fxv__proposal-title">Historical close anchor · bounded episode</p>
-        <ol className="fxv__steps">
-          <li data-done="true"><i />Calendar verified</li>
-          <li data-done="true"><i />Anchor captured</li>
-          <li><i />Finite budget</li>
-          <li><i />Halt on mismatch</li>
-        </ol>
-        <div className="fxv__votes">
-          <span>Used<u style={{ ["--w" as string]: "34%" }} /></span>
-          <span>Available<u style={{ ["--w" as string]: "56%" }} /></span>
-          <span>Reserved<u style={{ ["--w" as string]: "10%" }} /></span>
-        </div>
+    <div className="fxv fxv--closure" aria-hidden="true">
+      <div className="fxv-close__top"><span>PLANNED MARKET CLOSURE</span><span>ONE FINITE EPISODE</span></div>
+      <div className="fxv-close__timeline">
+        <div className="fxv-close__event fxv-close__event--proof"><i><CalendarClock size={17} /></i><span>EXCHANGE CALENDAR</span><b>Closure verified</b></div>
+        <div className="fxv-close__track"><i /><i /><i /><i /><i /><span className="fxv-close__anchor">ANCHOR<br />CAPTURED</span></div>
+        <div className="fxv-close__event fxv-close__event--halt"><i><span>×</span></i><span>REOPEN VERIFIED</span><b>Normal policy resumes</b></div>
       </div>
-      <div className="fxv__wallets">
-        <p>Illustrative budget view · no live pool data</p>
-        <div>
-          {wallets.map((w, i) => <i key={i} data-v={w} />)}
-        </div>
+      <div className="fxv-close__budget">
+        <div className="fxv-close__budget-title"><span>BOUNDED CLOSE BUDGET</span><b>DOES NOT REFILL</b></div>
+        <div className="fxv-close__reservoir"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><span /></div>
+        <div className="fxv-close__budget-foot"><span>Captured while feed was valid</span><span>Consumed across this closure</span></div>
       </div>
+      <div className="fxv-close__guard"><span><i /> PROVEN CALENDAR + VALID ANCHOR</span><b>BOUNDED EXCEPTION</b><span className="fxv-close__guard-stop">UNEXPECTED OUTAGE / INVALID CONTEXT <b>→ HALT</b></span></div>
     </div>
   );
 }
@@ -276,16 +258,48 @@ export function FeatureStory() {
     <>
       <section className="lp-sec lp-fx-intro" id="policy-overview" aria-labelledby="trust-title">
         <div className="lp-wrap">
-          <p className="lp-eyebrow" data-lp-reveal style={{ ["--ac" as string]: "var(--lp-public)" }}>
-            <i aria-hidden="true" />
-            Designed for changing market hours
-          </p>
-          <h2 className="lp-h2" id="trust-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-            No swap proceeds <em>on a guess.</em>
-          </h2>
-          <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            Session, feed freshness, trade size and cumulative flow meet at the same decision point. Missing evidence closes the gate.
-          </p>
+          <div className="lp-fx-intro__copy">
+            <p className="lp-eyebrow" data-lp-reveal style={{ ["--ac" as string]: "var(--lp-public)" }}>
+              <i aria-hidden="true" />
+              Designed for changing market hours
+            </p>
+            <h2 className="lp-h2" id="trust-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
+              A market clock. <em>A different rule at every hour.</em>
+            </h2>
+            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
+              Before a swap, BELL verifies the exchange session and stock feed. That state sets the pool&apos;s base fee and flow limits; stale or unsupported data stops execution.
+            </p>
+          </div>
+
+          <figure className="lp-cycle" data-lp-reveal="right" style={{ ["--i" as string]: 2 }}>
+            <figcaption className="lp-cycle__head">
+              <span>SESSION → FEE → FLOW</span>
+              <span>ILLUSTRATIVE POLICY · NOT LIVE DATA</span>
+            </figcaption>
+            <div className="lp-cycle__dial" aria-hidden="true">
+              <div className="lp-cycle__orbit">
+                <div className="lp-cycle__ring" />
+                <span className="lp-cycle__signal"><i /></span>
+                <div className="lp-cycle__core">
+                  <CalendarClock size={25} strokeWidth={1.5} />
+                  <b>MARKET<br />CLOCK</b>
+                  <span><i /> STATE VERIFIED</span>
+                </div>
+                <div className="lp-cycle__phase lp-cycle__phase--regular"><span>REGULAR</span><b>0.05%</b></div>
+                <div className="lp-cycle__phase lp-cycle__phase--extended"><span>PRE / POST</span><b>0.30%</b></div>
+                <div className="lp-cycle__phase lp-cycle__phase--overnight"><span>OVERNIGHT</span><b>0.50%</b></div>
+                <div className="lp-cycle__phase lp-cycle__phase--close"><span>SCHEDULED CLOSE</span><b>1.00%</b></div>
+              </div>
+            </div>
+            <div className="lp-cycle__output">
+              <span>VERIFIED SESSION</span>
+              <i aria-hidden="true" />
+              <Activity size={15} strokeWidth={1.7} aria-hidden="true" />
+              <b>BASE FEE + FLOW LIMITS</b>
+              <span>RECOMPUTED AT SWAP</span>
+            </div>
+            <p className="lp-sr">Illustrative market-session cycle. Regular session base fee 0.05%, pre-market and after-hours 0.30%, overnight 0.50%, and scheduled close 1.00%. These are policy examples, not live market data.</p>
+          </figure>
         </div>
       </section>
 

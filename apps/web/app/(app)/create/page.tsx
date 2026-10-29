@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { isAddress, parseUnits, formatUnits } from 'viem';
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleDashed, Coins, FileCheck2, Lock, ShieldCheck, Sparkles, Timer } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
 import { Button, ClassBadge } from '@/components/ui/primitives';
+import { TokenPair } from '@/components/ui/TokenLogo';
 import { cn } from '@/lib/format';
 import { nowWeekMinuteET, phaseAtWeekMinute, SERVICE_FEE_USDG, HOOK_PERMISSION_MASK } from '@/lib/policy';
 import { useWallet } from '@/lib/wallet';
@@ -131,14 +132,14 @@ export default function CreatePage() {
       <header className="max-w-[760px]">
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create preview</p>
         <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
-          Configure the pool. Review before deploy.
+          Preview a new pool configuration.
         </h1>
         <p className="mt-3 text-base text-muted">
           This wizard checks pair, class, reference mode, seed ratio and immutable raw-unit caps. The frontend does not currently submit a factory transaction; every value below is configuration preview only.
         </p>
       </header>
 
-      <ol className="mt-8 flex items-center gap-2 overflow-x-auto scroll-hide" aria-label="Progress">
+      <ol className="app-create-steps mt-8 flex items-center gap-2 overflow-x-auto scroll-hide" aria-label="Progress">
         {STEPS.map((s, i) => (
             <li key={s} className="flex items-center gap-2">
             <button
@@ -155,7 +156,7 @@ export default function CreatePage() {
                   : 'border-line text-dim opacity-60'
               )}
             >
-              <span className={cn('grid h-4 w-4 place-items-center rounded-full text-[0.62rem]', i < step ? 'bg-ion text-bg-0 font-bold' : 'border border-current')}>{i < step ? <Check className="h-2.5 w-2.5" aria-hidden="true" /> : i + 1}</span>
+              {i < step && <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
               {s}
             </button>
             {i < STEPS.length - 1 && <span className="h-px w-5 bg-line" aria-hidden="true" />}
@@ -163,8 +164,16 @@ export default function CreatePage() {
         ))}
       </ol>
 
-      <div className="glass mt-6 rounded-none border border-line bg-surface/75 p-6 sm:p-8">
+      <div key={step} className="app-create-stage glass mt-6 rounded-none border border-line bg-surface/75 p-6 sm:p-8">
         {step === 0 && (
+          <>
+          <div className="app-pair-preview mb-7 flex items-center gap-4 border-b border-line pb-5">
+            <TokenPair symbols={[stock.symbol, counterTok.symbol]} size={32} />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Selected pair</p>
+              <p className="mt-1 text-lg font-medium tracking-tight text-ink">{stock.symbol}<span className="px-2 text-dim">/</span>{counterTok.symbol}</p>
+            </div>
+          </div>
           <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Canonical Stock Token" hint="Only reviewed canonical Robinhood Stock Tokens can anchor a pool.">
               <select value={stockSym} onChange={(e) => setStockSym(e.target.value)} className={inputCls}>
@@ -190,10 +199,10 @@ export default function CreatePage() {
                 <Field label="Symbol (display)"><input value={customSym} onChange={(e) => setCustomSym(e.target.value.toUpperCase().slice(0, 10))} className={inputCls} /></Field>
                 <Field label="Decimals (verified at intake)"><input value={customDec} inputMode="numeric" onChange={(e) => setCustomDec(e.target.value.replace(/\D/g, '').slice(0, 2))} className={inputCls} /></Field>
                 <div className="sm:col-span-2 rounded-none border border-line bg-bg-1/70 p-4">
-                  <p className="flex items-center gap-2 text-sm font-medium text-ink"><CircleDashed className="h-4 w-4 text-warn" aria-hidden="true" /> Intake required before deployment</p>
-                  <ul className="mt-3 grid gap-2 text-sm text-muted sm:grid-cols-2">
+                  <p className="text-sm font-medium text-ink">Intake required before deployment</p>
+                  <ul className="app-intake-list mt-3 grid gap-x-6 sm:grid-cols-2">
                     {['Nonzero code & stable decimals 0–18', 'Actual debit/credit equals nominal on official route', 'No fee-on-transfer, rebase or reflect behavior', 'Proxy / admin / blacklist capabilities disclosed', 'Approval semantics (zero-first if needed)', 'Position can be redeemed in-kind'].map((t) => (
-                      <li key={t} className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-dim" aria-hidden="true" />{t}</li>
+                      <li key={t} className="border-t border-line py-2.5 text-sm text-muted">{t}</li>
                     ))}
                   </ul>
                   <p className="mt-3 text-xs text-dim">These checks run against the chain once contracts and the intake endpoint exist. Nothing is marked as passed in preview.</p>
@@ -201,6 +210,7 @@ export default function CreatePage() {
               </>
             )}
           </div>
+          </>
         )}
 
         {step === 1 && (
@@ -213,12 +223,12 @@ export default function CreatePage() {
               <p className="rounded-none border border-warn/30 bg-warn/5 p-4 text-sm font-medium text-warn">Session controls only; no independent price protection for the counterasset.</p>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                <ModeCard active={!secondary} onClick={() => setSecondary(false)} icon={ShieldCheck} title="FROZEN_CLOSE (default)" body="Closed stock uses its captured close anchor; the counterasset stays live. No extra dependency." />
-                <ModeCard active={secondary} onClick={() => setSecondary(true)} icon={Timer} title="SECONDARY_REFERENCE" body="Only if a 24/7 feed for this same canonical token is proven. If it fails the pool halts — it never falls back." />
+                <ModeCard active={!secondary} onClick={() => setSecondary(false)} title="FROZEN_CLOSE (default)" body="Closed stock uses its captured close anchor; the counterasset stays live. No extra dependency." />
+                <ModeCard active={secondary} onClick={() => setSecondary(true)} title="SECONDARY_REFERENCE" body="Only if a 24/7 feed for this same canonical token is proven. If it fails the pool halts — it never falls back." />
               </div>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
-              <ModeCard active icon={Coins} title="PUBLIC liquidity" body="Noncustodial positions via PositionManager. The position NFT is minted to you." />
+              <ModeCard active title="PUBLIC liquidity" body="Noncustodial positions via PositionManager. The position NFT is minted to you." />
               <div className="rounded-none border border-line p-4 opacity-55" aria-disabled="true">
                 <p className="flex items-center gap-2 text-sm font-medium text-ink"><Lock className="h-4 w-4" aria-hidden="true" /> TREASURY_ONLY</p>
                 <p className="mt-1.5 text-sm text-muted">Reserved for project-owned pilot pools. Not available to creators.</p>
@@ -304,11 +314,11 @@ export default function CreatePage() {
   );
 }
 
-function ModeCard({ active, onClick, icon: Icon, title, body }: { active: boolean; onClick?: () => void; icon: React.ComponentType<{ className?: string }>; title: string; body: string }) {
+function ModeCard({ active, onClick, title, body }: { active: boolean; onClick?: () => void; title: string; body: string }) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag type={onClick ? 'button' : undefined} onClick={onClick} aria-pressed={onClick ? active : undefined} className={cn('rounded-none border p-4 text-left transition-colors', active ? 'border-ion/50 bg-ion/[0.07]' : 'border-line hover:border-line-strong')}>
-      <p className="flex items-center gap-2 text-sm font-medium text-ink"><Icon className={cn('h-4 w-4', active ? 'text-ion' : 'text-dim')} aria-hidden="true" /> {title}</p>
+      <p className="text-sm font-medium text-ink">{title}</p>
       <p className="mt-1.5 text-sm text-muted">{body}</p>
     </Tag>
   );

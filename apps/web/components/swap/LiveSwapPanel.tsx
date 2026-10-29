@@ -11,7 +11,8 @@
  * when a live pool address is configured.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { ConnectButton } from '@rainbow-me/rainbowkit/components';
 import { Button } from '@/components/ui/primitives';
 import { useWallet } from '@/lib/wallet';
 import {
@@ -86,8 +87,8 @@ export function LiveSwapPanel() {
 
   const cta = useMemo(() => {
     if (!LIVE_HOOK) return { label: 'No live pool configured', disabled: true };
-    if (wallet.status !== 'connected') return { label: 'Connect wallet', disabled: true };
-    if (wallet.chainId !== TESTNET.chainId) return { label: 'Switch to testnet', disabled: true };
+    if (wallet.status !== 'connected') return { label: 'Connect wallet', disabled: false };
+    if (wallet.chainId !== TESTNET.chainId) return { label: 'Switch to Robinhood Testnet', disabled: false };
     if (stage === 'reading' || !pool) return { label: 'Reading pool state…', disabled: true };
     if (!pool.canSwap) return { label: 'Pool is not currently tradable', disabled: true };
     return { label: stage === 'swapping' ? 'Submitting…' : 'Swap onchain', disabled: stage === 'swapping' || stage === 'approving' };
@@ -158,16 +159,19 @@ export function LiveSwapPanel() {
   };
 
   return (
-    <section className="glass mt-6 rounded-none border border-line bg-surface/75 p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-dim">Live pool policy · Robinhood Testnet</h2>
+    <section id="live-execution" className="app-live-transaction glass mt-6 rounded-none border border-line bg-surface/75 p-6 sm:p-7" aria-labelledby="live-swap-title">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
+        <div>
+          <p className="font-mono text-[9px] uppercase tracking-[0.13em] text-dim">Testnet execution · 46630</p>
+          <h2 id="live-swap-title" className="mt-1 font-display text-xl font-medium tracking-tight text-ink">Deployed testnet swap</h2>
+        </div>
         <button
           type="button"
           onClick={() => void refresh()}
           className="inline-flex min-h-10 items-center gap-1.5 border border-line px-3 text-xs text-muted hover:border-ion/50 hover:text-ink"
           disabled={stage === 'reading'}
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${stage === 'reading' ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
+          {stage === 'reading' ? 'Reading…' : 'Refresh policy'}
         </button>
       </div>
 
@@ -219,10 +223,18 @@ export function LiveSwapPanel() {
         </label>
       </div>
 
-      <Button size="lg" className="mt-5 w-full" disabled={cta.disabled} onClick={() => void run()}>
-        {(stage === 'approving' || stage === 'swapping') && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-        {cta.label}
-      </Button>
+      <ConnectButton.Custom>
+        {({ openConnectModal }) => (
+          <Button size="lg" className="mt-5 w-full" disabled={cta.disabled} onClick={() => {
+            if (wallet.status !== 'connected') { openConnectModal(); return; }
+            if (wallet.chainId !== TESTNET.chainId) { void wallet.switchChain(46630); return; }
+            void run();
+          }}>
+            {(stage === 'approving' || stage === 'swapping') && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+            {cta.label}
+          </Button>
+        )}
+      </ConnectButton.Custom>
 
       {message && (
         <p

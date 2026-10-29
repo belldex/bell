@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/lib/format';
 import { PHASE_META, type MarketPhase, type PoolClass } from '@/lib/policy';
-import { ShieldCheck, Timer, Octagon } from 'lucide-react';
 
 type Variant = 'primary' | 'ghost' | 'outline';
 
@@ -14,8 +13,7 @@ const sizes = {
   lg: 'h-12 px-7 text-base rounded-xl font-semibold',
 } as const;
 const variants: Record<Variant, string> = {
-  primary:
-    'bg-ion text-bg-0 hover:bg-ion-soft font-semibold shadow-[0_0_20px_-3px_color-mix(in_oklab,var(--color-ion)_60%,transparent)] hover:shadow-[0_0_28px_-2px_color-mix(in_oklab,var(--color-ion)_75%,transparent)]',
+  primary: 'border border-ion-soft bg-ion-soft text-bg-0 hover:bg-[#f4f5ef] font-semibold',
   ghost: 'text-muted hover:text-ink hover:bg-white/5',
   outline: 'border border-line-strong text-ink hover:border-ion/60 hover:bg-ion/5 hover:text-ion',
 };
@@ -49,11 +47,7 @@ export function PhaseBadge({ phase, className }: { phase: MarketPhase | 'HALTED'
   const meta = PHASE_META[key];
   const label = phase === 'HALTED' ? 'Halted' : meta.label;
   return (
-    <span
-      className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-medium uppercase tracking-[0.08em]', className)}
-      style={{ color: meta.css, borderColor: `color-mix(in oklab, ${meta.css} 40%, transparent)`, background: `color-mix(in oklab, ${meta.css} 10%, transparent)` }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: meta.css }} aria-hidden="true" />
+    <span className={cn('app-badge app-badge--phase', className)} data-phase={phase}>
       {label}
     </span>
   );
@@ -61,17 +55,15 @@ export function PhaseBadge({ phase, className }: { phase: MarketPhase | 'HALTED'
 
 export function ClassBadge({ poolClass, className }: { poolClass: PoolClass; className?: string }) {
   const guarded = poolClass === 'PRICE_GUARDED';
-  const Icon = guarded ? ShieldCheck : Timer;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.1em]',
-        guarded ? 'border-ion/35 bg-ion/10 text-ion' : 'border-line-strong bg-white/[0.04] text-muted',
+        'app-badge app-badge--class',
         className,
       )}
+      data-guarded={guarded}
       title={guarded ? 'Independent price reference with band protection' : 'Session controls only; no independent price protection for the counterasset.'}
     >
-      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {guarded ? 'Price guarded' : 'Session only'}
     </span>
   );
@@ -79,8 +71,7 @@ export function ClassBadge({ poolClass, className }: { poolClass: PoolClass; cla
 
 export function HaltBadge({ className }: { className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-md border border-down/40 bg-down/10 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-down', className)}>
-      <Octagon className="h-3.5 w-3.5" aria-hidden="true" />
+    <span className={cn('app-badge app-badge--halt', className)}>
       Swaps halted
     </span>
   );

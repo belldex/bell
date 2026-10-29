@@ -3,19 +3,18 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertOctagon, ArrowLeft, ArrowLeftRight, Clock, Hash, Info, Layers, Snowflake, Radio, ShieldCheck } from 'lucide-react';
+import { AlertOctagon, ArrowLeft, Radio, ShieldCheck, Snowflake } from 'lucide-react';
 import { BudgetBar } from '@/components/policy/BudgetBar';
 import { ButtonLink, ClassBadge, HaltBadge, PhaseBadge } from '@/components/ui/primitives';
+import { TokenLogo, TokenPair } from '@/components/ui/TokenLogo';
 import { getPool, type PoolPolicy } from '@/lib/fixtures';
 import { cn, formatDuration, formatRaw } from '@/lib/format';
 import { effectiveLimits, feePercent, PHASE_META, sessionDivisors, type MarketPhase } from '@/lib/policy';
 
-function Card({ title, icon: Icon, children, className }: { title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode; className?: string }) {
+function Card({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={cn('glass rounded-none border border-line bg-surface/70 p-5 sm:p-6', className)}>
-      <h2 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-        <Icon className="h-4 w-4 text-ion" aria-hidden="true" /> {title}
-      </h2>
+      <h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -48,7 +47,10 @@ function Detail({ pool }: { pool: PoolPolicy }) {
             {pool.canSwap ? <PhaseBadge phase={pool.poolPhase} /> : <HaltBadge />}
             <span className="rounded-none border border-line px-2 py-1 text-[0.68rem] uppercase tracking-[0.1em] text-dim">Preview fixture · {pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'}</span>
           </div>
-          <h1 className="mt-4 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">{pool.pair[0]}<span className="text-dim font-normal"> / </span>{pool.pair[1]}</h1>
+          <div className="mt-4 flex items-center gap-4">
+            <TokenPair symbols={pool.pair} size={32} />
+            <h1 className="font-display text-[36px] font-medium leading-[1.06] tracking-[-0.05em] text-ink sm:text-[48px]">{pool.pair[0]}<span className="px-1.5 font-normal text-dim">/</span>{pool.pair[1]}</h1>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2.5">
           <span className="inline-flex min-h-10 items-center border border-line px-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">Fixture · no executable swap</span>
@@ -66,7 +68,7 @@ function Detail({ pool }: { pool: PoolPolicy }) {
 
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
         {/* Fee */}
-        <Card title="Effective fee" icon={Info}>
+        <Card title="Effective fee">
           <p className="num text-5xl text-ion">{feePercent(pool.effectiveFeeUnits)}</p>
           <p className="mt-1 text-xs text-dim">{pool.effectiveFeeUnits.toLocaleString('en-US')} v4 units · max(session, bell, corporate, repricing)</p>
           <dl className="mt-5 grid grid-cols-2 gap-4">
@@ -78,12 +80,12 @@ function Detail({ pool }: { pool: PoolPolicy }) {
         </Card>
 
         {/* Legs */}
-        <Card title="Stock legs & sources" icon={Radio} className="lg:col-span-2">
+        <Card title="Stock legs & sources" className="lg:col-span-2">
           <ul className="divide-y divide-line">
             {pool.legs.map((l) => (
               <li key={l.symbol} className="grid min-w-0 gap-4 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(8rem,.65fr)_minmax(0,1.35fr)] sm:items-center">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="font-display text-2xl text-ink">{l.symbol}</span>
+                  <span className="flex items-center gap-2"><TokenLogo symbol={l.symbol} size={24} /><span className="font-display text-lg text-ink">{l.symbol}</span></span>
                   <PhaseBadge phase={l.phase} />
                 </div>
                 <dl className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 sm:gap-x-5 lg:gap-x-8">
@@ -100,7 +102,7 @@ function Detail({ pool }: { pool: PoolPolicy }) {
         </Card>
 
         {/* Budgets */}
-        <Card title="Flow budgets" icon={Layers} className="lg:col-span-2">
+        <Card title="Flow budgets" className="lg:col-span-2">
           <div className="grid gap-6 sm:grid-cols-2">
             {pool.budgets.map((b) => {
               const lim = phase ? effectiveLimits(phase, BigInt(b.perTrade), BigInt(b.rolling)) : null;
@@ -117,7 +119,7 @@ function Detail({ pool }: { pool: PoolPolicy }) {
         </Card>
 
         {/* Timers + valuation */}
-        <Card title="Timers & lifecycle" icon={Clock}>
+        <Card title="Timers & lifecycle">
           <dl className="grid grid-cols-2 gap-4">
             <Stat label="Lifecycle" value={pool.lifecycle} />
             <Stat label="Closure nonce" value={pool.closureNonce ?? '—'} />
@@ -143,7 +145,7 @@ function Detail({ pool }: { pool: PoolPolicy }) {
           </div>
         </Card>
 
-        <Card title="Pool identity" icon={Hash} className="lg:col-span-3">
+        <Card title="Pool identity" className="lg:col-span-3">
           <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Hook / PoolId" value={<span className="text-sm text-dim">Not discovered for this fixture</span>} />
             <Stat label="Config hash" value={<span className="text-sm text-dim">Not available</span>} />

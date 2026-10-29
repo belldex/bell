@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GlyphSolid, type ShapeId } from "./glyph-solid";
+import Image from "next/image";
 import { scrollToY } from "./smooth-scroll";
 
 /* BELL's operating idea: one pool moves through three market conditions.
@@ -20,14 +20,18 @@ const ZIN = 0.62; /* screens of scroll the scene takes to grow in; keep in sync 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 const STATES = [
-  { name: "Regular session", note: "Fresh market data. Standard limits apply.", tone: "valid", chip: "0.05% base fee" },
-  { name: "Extended session", note: "Higher fee. Tighter flow limits.", tone: "warn", chip: "0.30% base fee" },
-  { name: "Scheduled close", note: "Historical anchor. One finite close budget.", tone: "neutral", chip: "1.00% base fee" },
+  { name: "Regular session", note: "Verified regular-hours data. Standard session limits.", tone: "valid", chip: "0.05% base LP fee" },
+  { name: "Extended session", note: "Supported PRE/POST data. Higher fee, tighter limits.", tone: "warn", chip: "0.30% base LP fee" },
+  { name: "Scheduled close", note: "Calendar-proven only. Historical anchor, finite budget.", tone: "neutral", chip: "1.00% base LP fee" },
 ] as const;
 
-const CAPTION = "A session-aware pool responds to the market clock. Policy illustration, not live pool data.";
-const IDEA_SHAPES: readonly ShapeId[] = ["orb", "rings", "seal"];
-const SOLID_LABEL = [
+const CAPTION = "Session policy · illustrative, not live data.";
+const SESSION_ART = [
+  { src: "/landing/market-orbit.webp", label: "Interlocking digital market signals for the regular session." },
+  { src: "/landing/session-limits.webp", label: "Layered digital flow limits for the extended session." },
+  { src: "/landing/market-close-floating.webp", label: "A sealed digital market record for the scheduled close." },
+] as const;
+const ART_LABEL = [
   "Regular market session with fresh stock data and standard limits.",
   "Extended session with a higher base fee and smaller trading limits.",
   "Scheduled market closure using a historical close anchor and finite budget.",
@@ -144,13 +148,13 @@ export function IdeaScene() {
               A MARKET WITH A CLOCK
             </p>
             <h2 className="lp-h2 lp-ie" id="idea-title">
-              Liquidity should know what <em>time</em> it is.
+              Market hours change. <em>Pool rules adapt.</em>
             </h2>
             <p className="lp-lead lp-ie">
-              A stock pool behaves differently at the open, during regular hours, and after the close. One flat fee cannot reflect those changing conditions.
+              BELL provides liquidity pools for tokenized stocks. Regular hours, extended trading and scheduled closures carry different data quality and liquidity risks.
             </p>
             <p className="lp-body lp-ie">
-              BELL reads the session and data health before each swap. It adjusts the fee and flow limits when the market changes—and halts when the state cannot be verified.
+              Before every swap, BELL checks the exchange calendar, stock identity and feed freshness. Verified conditions set the base LP fee and flow caps; stale, unsupported or conflicting state stops execution.
             </p>
 
             {/* sticky mode only: where you are in the scene */}
@@ -180,9 +184,22 @@ export function IdeaScene() {
                     <h3 key={s.name} data-on={state === i} data-past={state > i}>{s.name}</h3>
                   ))}
                 </div>
-                <GlyphSolid className="lp-solid" shape={IDEA_SHAPES[state]} label={SOLID_LABEL[state]} />
+                <div className="lp-session-art" role="img" aria-label={ART_LABEL[state]}>
+                  {SESSION_ART.map((art, i) => (
+                    <Image
+                      key={art.src}
+                      src={art.src}
+                      alt=""
+                      aria-hidden="true"
+                      fill
+                      sizes="(min-width: 1024px) 42vw, 100vw"
+                      className="lp-session-art__image"
+                      data-on={state === i}
+                    />
+                  ))}
+                </div>
                 <div className="lp-vrule">
-                  <span>{["Fresh data · standard limits", "Extended session · tighter limits", "Historical anchor · finite budget"][state]}</span>
+                  <span>{["Verified regular feed · standard limits", "Supported PRE/POST feed · tighter limits", "Committed closure · finite episode budget"][state]}</span>
                   <span className="lp-yes">{state === 2 ? "CLOSED" : "VERIFIED"}</span>
                 </div>
                 <div className="lp-vchips">
@@ -199,19 +216,19 @@ export function IdeaScene() {
               <p className="lp-ledger__cap">{CAPTION}</p>
               <div className="lp-lrow">
                 <h3>Regular session</h3>
-                <GlyphSolid className="lp-solid lp-solid--row" shape="orb" animated={false} label={SOLID_LABEL[0]} />
-                <span className="lp-chip" data-tone="valid"><i aria-hidden="true" />0.05% · standard limits</span>
+                <Image src={SESSION_ART[0].src} alt="" aria-hidden="true" width={320} height={220} sizes="(max-width: 640px) 80vw, 320px" className="lp-session-art__row" />
+                <span className="lp-chip" data-tone="valid"><i aria-hidden="true" />0.05% base LP fee · standard limits</span>
               </div>
               <div className="lp-lrow">
                 <h3>Extended session</h3>
-                <GlyphSolid className="lp-solid lp-solid--row" shape="rings" animated={false} label={SOLID_LABEL[1]} />
-                <span className="lp-chip" data-tone="warn"><i aria-hidden="true" />0.30% · tighter limits</span>
+                <Image src={SESSION_ART[1].src} alt="" aria-hidden="true" width={320} height={220} sizes="(max-width: 640px) 80vw, 320px" className="lp-session-art__row" />
+                <span className="lp-chip" data-tone="warn"><i aria-hidden="true" />0.30% base LP fee · tighter limits</span>
               </div>
               <div className="lp-lrow lp-lrow--proof">
                 <h3>Scheduled close</h3>
-                <GlyphSolid className="lp-solid lp-solid--row" shape="seal" animated={false} label={SOLID_LABEL[2]} />
-                <div className="lp-lrow__view"><u>Historical anchor · one non-refilling budget</u><span className="lp-yes">CLOSED</span></div>
-                <span className="lp-chip" data-tone="neutral"><i aria-hidden="true" />1.00% · bounded exception</span>
+                <Image src={SESSION_ART[2].src} alt="" aria-hidden="true" width={320} height={220} sizes="(max-width: 640px) 80vw, 320px" className="lp-session-art__row" />
+                <div className="lp-lrow__view"><u>Historical anchor · budget lasts for the closure episode</u><span className="lp-yes">CLOSED</span></div>
+                <span className="lp-chip" data-tone="neutral"><i aria-hidden="true" />1.00% base LP fee · bounded exception</span>
               </div>
             </div>
           </div>

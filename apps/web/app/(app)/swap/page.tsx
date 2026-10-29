@@ -4,12 +4,12 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { parseUnits } from 'viem';
 import { AlertTriangle, ArrowDownUp, ChevronDown, Info, RefreshCw, Timer } from 'lucide-react';
-import { Button, ClassBadge, PhaseBadge } from '@/components/ui/primitives';
+import { ClassBadge, PhaseBadge } from '@/components/ui/primitives';
+import { TokenLogo } from '@/components/ui/TokenLogo';
 import { BudgetBar } from '@/components/policy/BudgetBar';
 import { POOLS, getPool, type CurrencyBudget, type PoolPolicy } from '@/lib/fixtures';
 import { cn, formatRaw, remaining } from '@/lib/format';
 import { effectiveLimits, feePercent, type MarketPhase } from '@/lib/policy';
-import { useWallet } from '@/lib/wallet';
 import { LiveSwapPanel } from '@/components/swap/LiveSwapPanel';
 
 /** Preview pricing only: 1 stock = price counter units. Not a market quote. */
@@ -52,7 +52,6 @@ interface Quote {
 
 function SwapInner() {
   const params = useSearchParams();
-  const wallet = useWallet();
   const swappable = POOLS.filter((p) => p.canSwap);
   const initial = getPool(params.get('pool')) ?? getPool('weth-tsla') ?? swappable[0];
   const [poolId, setPoolId] = useState(initial.id);
@@ -138,23 +137,14 @@ function SwapInner() {
   const stale = !!quote && quote.key !== key;
   const left = Math.max(0, QUOTE_TTL - age);
 
-  const cta = (() => {
-    if (wallet.wrongChain) return { label: 'Switch network', action: () => wallet.switchChain(46630), disabled: false };
-    if (wallet.status !== 'connected') return { label: 'Connect wallet', action: undefined, disabled: true };
-    if (!quote || stale) return { label: 'Fetching quote…', action: undefined, disabled: true };
-    if (expired) return { label: 'Quote expired — re-quote', action: () => setQuote(compute()), disabled: false };
-    if (!quote.canExecute) return { label: quote.reasons[0] ?? 'Cannot execute', action: undefined, disabled: true };
-    return { label: 'No executable fixture quote — open live policy panel below', action: undefined, disabled: true };
-  })();
-
   const lim = phase ? effectiveLimits(phase, BigInt(inB.perTrade), BigInt(inB.rolling)) : null;
 
     return (
-      <div className="mx-auto max-w-[1440px]">
+      <div className="app-swap-page mx-auto max-w-[1440px]">
       <header className="mb-8 max-w-[760px] border-b border-line pb-6">
-        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap · Policy preview</p>
-        <h1 id="swap-title" className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Review the policy before you sign.</h1>
-        <p className="mt-4 max-w-[620px] text-sm leading-relaxed text-muted">Fixture quotes are for UI review only. They are not live prices or executable quotes. A separate panel below reads the deployed testnet hook policy.</p>
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Review</p>
+        <h1 id="swap-title" className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Check pool rules before a live swap.</h1>
+        <p className="mt-4 max-w-[620px] text-sm leading-relaxed text-muted">The quote preview uses sample values. Review the deployed testnet pool below before submitting any onchain transaction.</p>
       </header>
       <div className="mb-6 flex flex-wrap items-center gap-2 border border-warn/30 bg-warn/5 px-4 py-3 font-mono text-[11px] text-warn">
         <span className="font-semibold uppercase tracking-[0.1em]">Preview only</span>
@@ -163,9 +153,12 @@ function SwapInner() {
       <div className="grid items-start gap-8 lg:grid-cols-2">
       {/* Preview form — never submits; the live policy panel is a separate onchain reader. */}
       <section aria-label="Preview swap inputs" className="glass rounded-none border border-line bg-surface/75 p-6 sm:p-7">
-        <div className="flex items-center justify-between">
-          <h2 className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-dim">Preview inputs</h2>
-          <span className="rounded-none border border-warn/40 bg-warn/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-warn">Fixture · no tx sent</span>
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
+          <div>
+            <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Illustrative quote</p>
+            <h2 className="mt-1 font-display text-xl font-medium text-ink">Quote preview</h2>
+          </div>
+          <span className="border border-line-strong px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-muted">No transaction</span>
         </div>
 
         <div className="mt-5">
@@ -212,9 +205,11 @@ function SwapInner() {
           </ul>
         )}
 
-        <Button size="lg" className="mt-5 w-full" disabled={cta.disabled} onClick={cta.action}>
-          {cta.label}
-        </Button>
+        <a href="#live-execution" className="app-live-swap-link mt-5">
+          <span>Continue to deployed testnet swap</span>
+          <span aria-hidden="true">↓</span>
+        </a>
+        <p className="mt-2 text-xs leading-relaxed text-dim">This quote is an illustration only. The live panel below reads the deployed pool policy and is the only place that can submit a testnet swap.</p>
       </section>
 
       {/* Disclosure + quote */}
@@ -251,7 +246,7 @@ function SwapInner() {
         </div>
 
           <div className="glass rounded-none border border-line bg-surface/75 p-5 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-dim"><Timer className="h-4 w-4 text-ion" aria-hidden="true" /> Preview refresh age</h2>
             <button type="button" onClick={() => setQuote(compute())} className="inline-flex min-h-10 items-center gap-2 rounded-none border border-line px-3.5 font-mono text-[11px] uppercase text-muted hover:border-ion/50 hover:text-ink">
               <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> Re-quote
@@ -295,7 +290,7 @@ function TokenRow({ label, symbol, value, editable, onChange }: { label: string;
           placeholder="0.0"
           className="num w-full min-w-0 bg-transparent text-3xl text-ink outline-none placeholder:text-dim"
         />
-        <span className="rounded-none border border-line bg-bg-0 px-3.5 py-2 font-mono text-xs text-ink">{symbol}</span>
+          <span className="app-token-select"><TokenLogo symbol={symbol} size={24} /><span>{symbol}</span></span>
       </div>
     </div>
   );

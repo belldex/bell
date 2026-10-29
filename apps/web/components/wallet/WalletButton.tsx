@@ -12,7 +12,7 @@ export function WalletButton() {
         const connected = ready && account && chain;
 
         return (
-          <div aria-hidden={!ready} className="min-w-0">
+          <div aria-hidden={!ready} className="app-wallet-control min-w-0">
             {!connected ? (
               <button type="button" onClick={openConnectModal} disabled={!ready} className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-line-strong bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-[0.06em] text-ink transition-colors hover:border-ion hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion disabled:opacity-60">
                 <Wallet className="h-4 w-4 text-ion" aria-hidden="true" /> Connect wallet

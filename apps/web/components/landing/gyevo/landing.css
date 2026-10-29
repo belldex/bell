@@ -733,9 +733,6 @@
 .lp-vcard__eye i::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid currentColor; animation: lp-ring 2.6s ease-out infinite; }
 .lp-vcard__body { display: grid; gap: 1.2rem; align-content: start; padding: 2rem 1.5rem 1.6rem; }
 .lp-vtitles { position: relative; height: 3.4rem; }
-/* the object made of characters; drawn by glyph-solid.tsx */
-.lp-solid { display: block; width: 100%; height: clamp(12rem, 35svh, 19rem); overflow: visible; transition: opacity .25s ease, transform .55s var(--lp-ease); }
-.lp-solid--row { height: 10.5rem; }
 .lp-vtitles h3 {
   position: absolute; left: 0; top: 0; max-width: 20ch; font: 700 clamp(1.3rem, 1rem + .85vw, 1.85rem) / 1.12 var(--lp-font-display); letter-spacing: -.015em;
   opacity: 0; transform: translateY(22px); filter: blur(4px);
@@ -755,13 +752,13 @@
 .lp-vchips .lp-chip[data-on="true"] { opacity: 1; transform: none; transition-delay: .15s; }
 .lp-vcard__note { max-width: 40ch; color: var(--lp-muted); font-size: .98rem; min-height: 3em; }
 
-.lp-idea__steps { position: relative; margin-top: 2.2rem; padding-left: 1.6rem; gap: .2rem; }
+.lp-idea__steps { position: relative; margin-top: 1.6rem; padding-left: 2rem; gap: .1rem; }
 .lp-idea__steps::before, .lp-idea__steps::after { content: ""; position: absolute; left: 0; top: .6rem; width: 2px; border-radius: 2px; }
 .lp-idea__steps::before { bottom: .6rem; background: var(--lp-line); }
 .lp-idea__steps::after { height: calc((100% - 1.2rem) * var(--ip, 0)); background: linear-gradient(to bottom, var(--lp-accent), var(--lp-public)); }
 .lp .lp-istep {
   --ac: var(--lp-accent); --at: #F0EEE8; /* small text stays light against the neutral accent */
-  display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); gap: .15rem .8rem; width: 100%; padding: .85rem .5rem .85rem 0;
+  display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: .15rem .65rem; width: 100%; padding: .75rem .5rem .75rem 0;
   text-align: left; background: none; border: 0; opacity: .45; transition: opacity .45s ease;
 }
 .lp-idea__steps li:nth-child(2) .lp-istep { --ac: var(--lp-muted); }
@@ -779,13 +776,13 @@
      final place while the hero finishes zooming; idea-scene.tsx writes --zk (0..1) and the scene grows from small. */
   .lp-idea-run { --lp-zin: 62svh; --zk: 0; margin-top: calc(-100svh - var(--lp-zin)); height: calc(360svh + var(--lp-zin)); }
   .lp-ie { opacity: 1; translate: none; }
-  /* it only becomes visible once the hero is almost gone (--zk .6), so the two never fight; the growth is the same --zk */
-  .lp-idea__copy { opacity: clamp(0, calc((var(--zk) - .6) * 2.5), 1); scale: calc(.7 + .3 * var(--zk)); }
-  .lp-idea__stage { opacity: clamp(0, calc((var(--zk) - .6) * 2.5), 1); scale: calc(.35 + .65 * var(--zk)); }
+  /* The hero headline reaches zero opacity at q=.8. Reveal this section after that hand-off, not underneath the outgoing words. */
+  .lp-idea__copy { opacity: clamp(0, calc((var(--zk) - .72) * 3.6), 1); scale: calc(.7 + .3 * var(--zk)); }
+  .lp-idea__stage { opacity: clamp(0, calc((var(--zk) - .72) * 3.6), 1); scale: calc(.35 + .65 * var(--zk)); }
   /* the run starts over the hero, so until the scene is live it must not catch the hero's clicks or hover */
   .lp-idea-run, .lp-idea-pin { pointer-events: none; }
   .lp-idea[data-live="1"] { pointer-events: auto; }
-  .lp-idea-pin { position: sticky; top: 0; height: 100svh; display: flex; align-items: center; padding-block: calc(var(--lp-nav-h) + .5rem) 2rem; }
+  .lp-idea-pin { position: sticky; top: 0; height: 100svh; display: flex; align-items: center; padding-block: calc(var(--lp-nav-h) + 2rem) .5rem; }
   .lp-idea { width: 100%; }
   .lp-ledger--static { display: none; }
   .lp-vcard { display: block; }

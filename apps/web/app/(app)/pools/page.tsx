@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 import { PoolCard } from '@/components/policy/PoolCard';
 import { RehearsalPoolCard } from '@/components/policy/RehearsalPoolCard';
 import { POOLS } from '@/lib/fixtures';
@@ -51,41 +51,53 @@ export default function PoolsPage() {
       }),
     [q, cls, state],
   );
+  const filtersActive = Boolean(q.trim()) || cls !== 'ALL' || state !== 'ALL';
+  const clearFilters = () => { setQ(''); setCls('ALL'); setState('ALL'); };
 
   return (
-    <div>
+    <div className="app-pools-page">
       <header className="max-w-3xl border-b border-line pb-7">
-        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Pool directory · Testnet</p>
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Testnet</p>
         <h1 className="mt-3 max-w-[720px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
-          Every pool, its state, and its limits.
+          Explore pools and review trading limits.
         </h1>
         <p className="mt-3 text-base text-muted">
-          Class, session, fee, source and budgets are shown before you sign. The {POOLS.length} cards below are preview fixtures; the deployed testnet protocol status is shown above, but fixture rows are not pool records and are never executable.
+          Review policy state, session phase and flow budgets before opening a pool. Live contract state and example pool data are kept separate.
         </p>
       </header>
 
       <RehearsalPoolCard />
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 border-b border-line pb-6">
-        <label className="glass flex h-11 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-xs">
-          <Search className="h-4 w-4 text-dim" aria-hidden="true" />
-          <span className="sr-only">Search pairs</span>
-           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="w-full bg-transparent font-mono text-xs text-ink outline-none placeholder:text-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion" />
-        </label>
-        <SlidersHorizontal className="hidden h-4 w-4 text-dim sm:block" aria-hidden="true" />
-        <Segmented<ClassFilter> label="Class" value={cls} onChange={setCls} options={[{ v: 'ALL', l: 'All' }, { v: 'PRICE_GUARDED', l: 'Price guarded' }, { v: 'SESSION_ONLY', l: 'Session only' }]} />
-        <Segmented<StateFilter> label="State" value={state} onChange={setState} options={[{ v: 'ALL', l: 'Any state' }, { v: 'OPEN', l: 'Open' }, { v: 'CLOSED', l: 'Closed' }, { v: 'HALTED', l: 'Halted' }]} />
-      </div>
+      <section className="mt-9" aria-labelledby="example-pools-title">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 id="example-pools-title" className="font-display text-2xl font-medium tracking-tight text-ink">Example pools</h2>
+            <p className="mt-1.5 text-sm text-muted">Preview data only · no transactions can be sent from these rows.</p>
+          </div>
+          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim" role="status" aria-live="polite">{list.length} of {POOLS.length} examples</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-y border-line py-4">
+          <label className="glass flex h-11 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-xs">
+            <Search className="h-4 w-4 text-dim" aria-hidden="true" />
+            <span className="sr-only">Search pairs</span>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="w-full bg-transparent font-mono text-xs text-ink outline-none placeholder:text-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion" />
+          </label>
+          <Segmented<ClassFilter> label="Class" value={cls} onChange={setCls} options={[{ v: 'ALL', l: 'All' }, { v: 'PRICE_GUARDED', l: 'Price guarded' }, { v: 'SESSION_ONLY', l: 'Session only' }]} />
+          <Segmented<StateFilter> label="State" value={state} onChange={setState} options={[{ v: 'ALL', l: 'Any state' }, { v: 'OPEN', l: 'Open' }, { v: 'CLOSED', l: 'Closed' }, { v: 'HALTED', l: 'Halted' }]} />
+          {filtersActive && <button type="button" className="app-filter-clear" onClick={clearFilters}><RotateCcw size={13} aria-hidden="true" /> Clear filters</button>}
+        </div>
 
-      {list.length === 0 ? (
-        <div className="glass mt-10 rounded-none border border-line p-10 text-center font-mono text-xs uppercase tracking-[0.08em] text-muted" role="status">No fixture pools match these filters.</div>
-      ) : (
-        <ul className="mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 xl:grid-cols-3">
-          {list.map((p) => (
-            <li key={p.id} className="bg-bg-0"><PoolCard pool={p} /></li>
-          ))}
-        </ul>
-      )}
+        {list.length === 0 ? (
+          <div className="mt-6 border border-line p-8 text-center text-sm text-muted" role="status">
+            <p>No example pools match these filters.</p>
+            {filtersActive && <button type="button" className="app-filter-clear mt-4" onClick={clearFilters}><RotateCcw size={13} aria-hidden="true" /> Reset search and filters</button>}
+          </div>
+        ) : (
+          <ul className="app-pool-grid mt-5">
+            {list.map((p) => <li key={p.id}><PoolCard pool={p} /></li>)}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

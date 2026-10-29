@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ArrowLeftRight, Clock3, Droplets, Layers, Menu, PlusCircle, ShieldCheck, WifiOff, X } from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
+import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X } from 'lucide-react';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
 import { TestnetBanner } from '@/components/app/TestnetBanner';
@@ -13,71 +12,84 @@ import { SmoothScroll } from '@/lib/motion';
 import { cn } from '@/lib/format';
 import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/policy';
 
-
-const NAV = [
-  { href: '/pools', label: 'Pools', icon: Droplets },
-  { href: '/swap', label: 'Swap', icon: ArrowLeftRight },
-  { href: '/create', label: 'Create pool', icon: PlusCircle },
-  { href: '/positions', label: 'Positions', icon: Layers },
-  { href: '/protocol', label: 'Protocol', icon: ShieldCheck },
+const NAV_GROUPS = [
+  { label: 'Markets', items: [
+    { href: '/pools', label: 'Pools', detail: 'Browse pool policies', icon: ChartNoAxesColumnIncreasing },
+    { href: '/swap', label: 'Swap', detail: 'Preview + live testnet', icon: ArrowLeftRight },
+  ] },
+  { label: 'Liquidity', items: [
+    { href: '/create', label: 'Create pool', detail: 'Preview pool settings', icon: Plus },
+    { href: '/positions', label: 'Positions', detail: 'Sample LP positions', icon: BriefcaseBusiness },
+  ] },
+  { label: 'Reference', items: [
+    { href: '/protocol', label: 'Protocol', detail: 'Rules and contracts', icon: ShieldCheck },
+  ] },
 ] as const;
 
-function CalendarChip() {
-  const [m, setM] = useState<number | null>(null);
-  useEffect(() => {
-    const tick = () => setM(nowWeekMinuteET());
-    tick();
-    const id = setInterval(tick, 15_000);
-    return () => clearInterval(id);
-  }, []);
-  if (m === null) return <span className="h-8 w-40" aria-hidden="true" />;
-  const f = formatWeekMinute(m);
+const PAGE_NAMES: Record<string, string> = {
+  '/pools': 'Pools',
+  '/pool': 'Pool',
+  '/swap': 'Swap',
+  '/create': 'Create',
+  '/positions': 'Positions',
+  '/protocol': 'Protocol',
+  '/privacy': 'Privacy',
+  '/terms': 'Terms',
+  '/cookies': 'Cookies',
+};
+
+function MarketClock({ minute }: { minute: number | null }) {
+  if (minute === null) return <span className="app-market-time" aria-hidden="true" />;
+  const formatted = formatWeekMinute(minute);
   return (
-    <span className="hidden items-center gap-2 rounded-full border border-line bg-bg-1/70 py-1 pl-3 pr-1.5 text-xs text-muted lg:inline-flex" title="Scheduled phase from a calendar preview (no holidays). Onchain state is authoritative.">
-      <span className="num">{f.day} {f.time} ET</span>
-      <PhaseBadge phase={phaseAtWeekMinute(m)} />
+    <span className="app-market-time" title="Scheduled market phase preview; onchain state is authoritative.">
+      <span>{formatted.day} {formatted.time} ET</span>
+      <PhaseBadge phase={phaseAtWeekMinute(minute)} />
     </span>
   );
 }
 
-function ChainGuard() {
-  const w = useWallet();
-  if (!w.wrongChain && !w.error) return null;
+function SidebarSession({ minute }: { minute: number | null }) {
+  if (minute === null) return <div className="app-sidebar__session" aria-hidden="true" />;
+  const formatted = formatWeekMinute(minute);
+  const phase = phaseAtWeekMinute(minute);
   return (
-    <div role="alert" className="border-b border-warn/30 bg-warn/10 px-4 py-2 text-center text-sm text-warn">
-      <AlertTriangle className="mr-2 inline h-4 w-4 -translate-y-px" aria-hidden="true" />
-      {w.wrongChain ? 'Wrong network. Transactions are disabled until you switch to Robinhood Chain (4663) or Testnet (46630).' : w.error}
-    </div>
-  );
-}
-
-function PhaseTicker() {
-  return (
-    <div className="app-ticker overflow-hidden border-b border-line bg-bg-1 text-muted">
-      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-3 px-3 font-mono text-[9px] uppercase tracking-[0.06em] sm:gap-5 sm:px-4 sm:text-[10px] sm:tracking-[0.1em] max-md:justify-start">
-        <span className="text-ion">BELL · Robinhood Chain</span>
-        <span className="hidden sm:inline">Testnet rehearsal</span>
-        <span className="hidden border-b border-current pb-px hover:text-ion lg:inline">Policy</span>
-        <span className="hidden lg:inline">Sample pools are previews · writes require wallet + live policy</span>
+    <section className="app-sidebar__session" aria-label="Scheduled market session preview">
+      <div className="app-sidebar__session-heading">
+        <span className="app-sidebar__section-label">Market session</span>
+        <span className="app-sidebar__session-note">Schedule</span>
       </div>
-    </div>
+      <div className="app-sidebar__session-state">
+        <PhaseBadge phase={phase} />
+        <span>{formatted.day} · {formatted.time} ET</span>
+      </div>
+      <p>Scheduled preview. Pool policy onchain controls swaps.</p>
+    </section>
   );
 }
 
-function TerminalClock() {
-  const [now, setNow] = useState('');
-  useEffect(() => {
-    const fmt = () => setNow(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()));
-    fmt();
-    const id = window.setInterval(fmt, 30_000);
-    return () => window.clearInterval(id);
-  }, []);
-  return <div className="flex items-center justify-between border-y border-line/70 py-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted"><span className="flex items-center gap-2"><Clock3 className="h-3.5 w-3.5 text-ion" /> New York</span><span className="num text-ink">{now || '—'} ET</span></div>;
+function ChainGuard() {
+  const wallet = useWallet();
+  if (!wallet.wrongChain && !wallet.error) return null;
+  return (
+    <div role="alert" className="app-chain-guard">
+      {wallet.wrongChain
+        ? 'Wrong network. Switch to Robinhood Chain (4663) or Testnet (46630) before continuing.'
+        : wallet.error}
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [minute, setMinute] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => setMinute(nowWeekMinuteET());
+    tick();
+    const id = window.setInterval(tick, 15_000);
+    return () => window.clearInterval(id);
+  }, []);
   useEffect(() => setMobileOpen(false), [path]);
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -86,66 +98,95 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, []);
+
+  const pageName = PAGE_NAMES[path] ?? PAGE_NAMES[path.replace(/\/$/, '')] ?? 'Markets';
+  const isActive = (href: string) =>
+    path === href || path === `${href}/` ||
+    (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) ||
+    (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
+
   return (
     <WalletProvider>
-      <SmoothScroll enabled={false}>
-        <div className="relative min-h-dvh overflow-x-clip bg-bg-0">
-          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_4%,transparent),transparent_70%)]" aria-hidden="true" />
+      <SmoothScroll enabled>
+        <div className="app-shell">
+          <a className="app-skip-link" href="#main">Skip to content</a>
 
-          <PhaseTicker />
-          <div className="lg:ml-[280px]">
-            <TestnetBanner />
-            <ChainGuard />
-          </div>
+          <aside className={cn('app-sidebar', mobileOpen && 'app-sidebar--open')} aria-label="BELL terminal navigation">
+            <div className="app-sidebar__brand-row">
+              <Link href="/" aria-label="BELL home" className="app-brand">
+                <span className="app-brand__mark" aria-hidden="true">B</span>
+                <span><b className="app-brand__name">BELL</b><small className="app-brand__descriptor">MARKET TERMINAL</small></span>
+              </Link>
+              <button type="button" className="app-menu-toggle app-menu-toggle--close" aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
+                <X aria-hidden="true" />
+              </button>
+            </div>
 
-          <aside className={cn('fixed bottom-0 left-0 top-[38px] z-40 flex w-[280px] flex-col border-r border-line bg-[#111719] px-5 py-6 transition-transform duration-300 max-lg:w-[260px]', mobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full')} aria-label="Terminal sidebar">
-            <div className="flex items-center justify-between">
-              <Link href="/" aria-label="BELL home" className="rounded-none"><Logo /></Link>
-              <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X className="h-5 w-5" aria-hidden="true" /></button>
+            <div className="app-sidebar__navigation">
+              {NAV_GROUPS.map((group) => (
+                <section key={group.label} className="app-sidebar__nav-group" aria-label={group.label}>
+                  <p className="app-sidebar__section-label">{group.label}</p>
+                  <nav className="app-sidebar__nav" aria-label={`${group.label} navigation`}>
+                    {group.items.map(({ href, label, detail, icon: Icon }) => (
+                      <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined}>
+                        <Icon className="app-sidebar__nav-icon" size={17} strokeWidth={1.6} aria-hidden="true" />
+                        <span className="app-sidebar__nav-copy"><b>{label}</b><small>{detail}</small></span>
+                      </Link>
+                    ))}
+                  </nav>
+                </section>
+              ))}
             </div>
-            <div className="mt-7"><TerminalClock /></div>
-            <div className="mb-2 mt-8 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Workspace</div>
-            <nav aria-label="Terminal app navigation" className="flex flex-col gap-1">
-              {NAV.map(({ href, label, icon: Icon }) => {
-                const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
-                return <Link key={href} href={href} aria-current={active ? 'page' : undefined} onClick={() => setMobileOpen(false)} className={cn('flex min-h-12 items-center gap-3 border-l-2 px-3 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-200', active ? 'border-ion bg-ion/10 text-ion' : 'border-transparent text-muted hover:border-line-strong hover:bg-white/[0.03] hover:text-ink')}><Icon className="h-4 w-4" aria-hidden="true" />{label}</Link>;
-              })}
-            </nav>
-            <div className="mt-6 border-t border-line pt-5">
-              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Policy tools</p>
-              <Link href="/protocol" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-3 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted transition-colors hover:text-ion"><ShieldCheck className="h-4 w-4" /> Protocol reference</Link>
-              <Link href="/positions" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-3 px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted transition-colors hover:text-ion"><Layers className="h-4 w-4" /> Exit policy</Link>
-            </div>
-            <div className="mt-auto space-y-3 border-t border-line pt-5">
-              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-dim"><span>Market clock</span><CalendarChip /></div>
-              <div className="font-mono text-[10px] leading-5 text-muted">Robinhood Chain<br /><span className="text-ion">Testnet rehearsal · 46630</span></div>
-              <WalletButton />
+
+            <SidebarSession minute={minute} />
+
+            <div className="app-sidebar__bottom">
+              <p className="app-sidebar__section-label">Network</p>
+              <div className="app-sidebar__network-card">
+                <span className="app-sidebar__network-label">Workspace target</span>
+                <b>Robinhood Chain</b>
+                <span>Testnet · Chain 46630</span>
+              </div>
+              <a className="app-sidebar__reference" href="https://robinhood-testnet.explorer.alchemy.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>
             </div>
           </aside>
 
-          {mobileOpen ? <button aria-label="Close sidebar overlay" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
+          {mobileOpen && <button type="button" aria-label="Close navigation overlay" className="app-sidebar-overlay" onClick={() => setMobileOpen(false)} />}
 
-          <header className="sticky top-0 z-20 ml-0 border-b border-line/80 bg-bg-0 lg:ml-[280px]">
-            <div className="flex min-h-[62px] items-center justify-between gap-4 px-4 sm:px-6">
-              <div className="flex items-center gap-3">
-                <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label={mobileOpen ? 'Close sidebar' : 'Open sidebar'} aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>
-                  {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </button>
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-dim">{path === '/' ? 'Overview' : path.replaceAll('/', ' / ').replaceAll('-', ' ').trim()}</span>
+          <div className="app-workspace">
+            <header className="app-terminal-bar">
+              <div className="app-terminal-bar__left">
+                <button
+                  type="button"
+                  className="app-menu-toggle app-menu-toggle--open"
+                  aria-label="Open navigation"
+                  aria-expanded={mobileOpen}
+                  onClick={() => setMobileOpen(true)}
+                ><Menu aria-hidden="true" /></button>
+                <p><span>Markets</span><span aria-hidden="true">/</span><b>{pageName}</b></p>
               </div>
-              <div className="flex items-center gap-3"><CalendarChip /><div className="lg:hidden"><WalletButton /></div></div>
-            </div>
-          </header>
+              <div className="app-terminal-bar__right"><MarketClock minute={minute} /><WalletButton /></div>
+            </header>
 
-          <main id="main" className="app-page relative z-10 ml-0 min-h-[calc(100vh-150px)] px-4 py-8 sm:px-6 sm:py-10 lg:ml-[280px] lg:px-10 xl:px-12">{children}</main>
-
-          <footer className="relative z-10 ml-0 px-4 pb-10 sm:px-6 lg:ml-[280px] lg:px-10 xl:px-12">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-5 font-mono text-[10px] uppercase tracking-[0.06em] text-dim">
-              <span className="inline-flex items-center gap-1.5"><WifiOff className="h-3.5 w-3.5" aria-hidden="true" /> Indexer: <span className="num">not connected</span></span>
-              <span>Fixture data ≠ live pool state</span>
-              <span className="lg:ml-auto">Fees and caps are not a guarantee of fills or returns.</span>
+            <div className="app-status-wrap">
+              <TestnetBanner />
+              <ChainGuard />
             </div>
-          </footer>
+
+            <main id="main" className={cn('app-page', path === '/swap' && 'app-page--swap')}>
+              <div key={path} className="app-route-enter">
+                {children}
+              </div>
+            </main>
+
+            <footer className="app-footer">
+              <div className="app-footer__inner">
+                <span>Testnet rehearsal · Chain 46630</span>
+                <span>Fixture data is illustrative and does not represent live pool state.</span>
+                <span>Fees and caps do not guarantee fills or returns.</span>
+              </div>
+            </footer>
+          </div>
         </div>
       </SmoothScroll>
     </WalletProvider>
