@@ -1150,7 +1150,14 @@
 .lp-cols li a[target] span.arr { display: inline-block; margin-left: .35em; color: var(--lp-dim); transition: transform .4s var(--lp-ease), color .25s ease; }
 .lp-cols li a[target]:hover span.arr { transform: translate(2px, -2px); color: var(--lp-accent-light); }
 .lp-cols__brand p { margin-top: 1rem; max-width: 34ch; color: var(--lp-muted); font-size: .92rem; }
-.lp-legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .6rem 2rem; margin-top: clamp(1.2rem, 2.6svh, 2rem); font: 500 .7rem/1.4 var(--lp-font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--lp-dim); }
+.lp-ecosystem { display: flex; align-items: center; gap: .85rem; margin-top: 1.15rem; color: #d2d5d3; }
+.lp-ecosystem__item { display: inline-flex; align-items: center; gap: .4rem; min-width: 0; }
+.lp-ecosystem__logo { display: block; height: 1rem; flex: none; background: currentColor; -webkit-mask: var(--logo-src) center / contain no-repeat; mask: var(--logo-src) center / contain no-repeat; }
+.lp-ecosystem__logo--robinhood { width: 4.8rem; }
+.lp-ecosystem__logo--uniswap { width: 3.8rem; }
+.lp-ecosystem__suffix { color: var(--lp-dim); font: 500 .62rem/1 var(--lp-font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.lp-ecosystem__divider { width: 1px; height: .95rem; background: var(--lp-line-2); }
+.lp-legal { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem 2rem; margin-top: clamp(1.2rem, 2.6svh, 2rem); font: 500 .7rem/1.4 var(--lp-font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--lp-dim); }
 .lp-word-out {
   display: block; margin: clamp(.5rem, 1.6svh, 1.2rem) calc(var(--lp-gutter) * -1) 0; overflow: hidden;
   /* sized from the name's length (--chars), so a short name is as bold as a long one is wide */

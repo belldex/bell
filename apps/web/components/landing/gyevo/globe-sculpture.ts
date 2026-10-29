@@ -726,8 +726,8 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       /* A clock hand turns inside the market mesh and follows the same scroll camera. */
       const clockAngle = -Math.PI * 0.5 + secs * 0.16 + p * Math.PI * 1.7;
       const clockR = coreR * 0.76 * f / Math.max(0.4, cz);
-      ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(0.78 * coreA).toFixed(3)})`;
-      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(0.94 * coreA).toFixed(3)})`;
+      ctx.lineWidth = 2.6;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx + Math.cos(clockAngle) * clockR, cy + Math.sin(clockAngle) * clockR);
