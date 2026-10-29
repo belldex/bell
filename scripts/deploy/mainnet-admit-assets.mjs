@@ -190,9 +190,12 @@ if (command === 'status') {
   console.log(JSON.stringify(out, null, 2));
 } else if (command === 'queue') {
   const adapters = readJson('evidence/deploy/mainnet-4663-stock-adapters.json');
-  if (!adapters) {
-    throw new Error('evidence/deploy/mainnet-4663-stock-adapters.json is required; deploy the verifier and adapters first');
+  if (!adapters?.assets) {
+    throw new Error('evidence/deploy/mainnet-4663-stock-adapters.json with an `assets` map is required; run mainnet-yahoo-stack.mjs first');
   }
+  const configured = JSON.parse(readFileSync('config/assets/candidates.mainnet.json', 'utf8'));
+  // Every documented candidate stock is admitted, not a single configured symbol.
+  const stocks = configured.assets.map((a) => a.symbol);
   const state = readJson(STATE_PATH) ?? { chainId, registryAddress };
 
   console.log('=== WETH counterasset ===');
@@ -200,61 +203,67 @@ if (command === 'status') {
     ? state.weth
     : await queueAsset({ label: 'WETH', token: wethAddress, isStock: false, capabilityMask: 0, adapters: {} });
 
-  console.log('\n=== Stock asset ===');
-  const stock = state.stock?.operationId
-    ? state.stock
-    : await queueAsset({
-      label: adapters.symbol ?? 'STOCK',
-      token: adapters.stockToken,
-      isStock: true,
-      capabilityMask: Number(process.env.BELL_CAPABILITY_MASK || adapters.capabilityMask || 0b110),
-      adapters: {
-        tokenPrice: adapters.directAdapter,
-        regular: adapters.regularAdapter,
-        extended: adapters.extendedAdapter,
-        overnight: adapters.overnightAdapter,
-      },
-      sourceConfig: encodeSourceWires([adapters.directWire, adapters.regularWire, adapters.extendedWire].filter(Boolean)),
-    });
+  state.weth = { ...weth, token: wethAddress };
+  const queuedStocks = {};
+  for (const symbol of stocks) {
+    const perSymbol = adapters.assets[symbol];
+    if (!perSymbol) throw new Error(`${symbol}: no adapter evidence in mainnet-4663-stock-adapters.json`);
+    console.log(`\n=== Stock asset ${symbol} ===`);
+    const stock = state.stocks?.[symbol]?.operationId
+      ? state.stocks[symbol]
+      : await queueAsset({
+        label: symbol,
+        token: perSymbol.stockToken,
+        isStock: true,
+        // PRE | REGULAR | POST per the brief's session scope; Yahoo has no overnight feed, so
+        // OVERNIGHT capability is deliberately not requested (fail-closed rather than unbacked).
+        capabilityMask: Number(process.env.BELL_CAPABILITY_MASK || perSymbol.capabilityMask || 0b1110),
+        adapters: {
+          tokenPrice: perSymbol.directAdapter,
+          regular: perSymbol.regularAdapter,
+          extended: perSymbol.extendedAdapter,
+          overnight: perSymbol.overnightAdapter,
+        },
+        sourceConfig: encodeSourceWires([perSymbol.directWire, perSymbol.regularWire, perSymbol.extendedWire].filter(Boolean)),
+      });
+    queuedStocks[symbol] = { ...stock, token: perSymbol.stockToken, symbol };
+    state.stocks = { ...(state.stocks ?? {}), [symbol]: queuedStocks[symbol] };
+    writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
+  }
 
-  const pendingEtas = [weth.eta, stock.eta].filter((value) => Number.isSafeInteger(value));
-  const eta = pendingEtas.length ? Math.max(...pendingEtas) : now;
-  const next = {
-    ...state,
-    chainId,
-    registryAddress,
-    weth: { ...weth, token: wethAddress },
-    stock: { ...stock, token: adapters.stockToken },
-    queuedAt: now,
-    eta,
-    expiry: eta + 7 * 86_400,
-  };
-  writeFileSync(STATE_PATH, `${JSON.stringify(next, null, 2)}\n`);
+  const allEtas = [weth.eta, ...Object.values(queuedStocks).map((s) => s.eta)].filter((v) => Number.isSafeInteger(v));
+  const eta = allEtas.length ? Math.max(...allEtas) : now;
+  state.chainId = chainId;
+  state.registryAddress = registryAddress;
+  state.queuedAt = now;
+  state.eta = eta;
+  state.expiry = eta + 7 * 86_400;
+  writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
   writeFileSync(QUEUE_PATH, `${JSON.stringify({
     weth: { token: wethAddress, descriptorId: weth.descriptorId, isStock: false },
-    stock: {
-      token: adapters.stockToken,
-      descriptorId: stock.descriptorId,
+    stocks: Object.fromEntries(Object.entries(queuedStocks).map(([symbol, s]) => [symbol, {
+      symbol,
+      token: s.token,
+      descriptorId: s.descriptorId,
       isStock: true,
-      directAdapter: adapters.directAdapter,
-      regularAdapter: adapters.regularAdapter,
-      extendedAdapter: adapters.extendedAdapter,
-    },
+      directAdapter: adapters.assets[symbol].directAdapter,
+      regularAdapter: adapters.assets[symbol].regularAdapter,
+      extendedAdapter: adapters.assets[symbol].extendedAdapter,
+    }])),
     registryAddress,
     chainId,
     admittedAt: new Date().toISOString(),
     activationPending: true,
   }, null, 2)}\n`);
-  console.log(`\nQueued. Activate at or after ${new Date(next.eta * 1000).toISOString()}.`);
-  console.log(`Both WETH and the stock asset must be activated; WETH is not oracleless-exempt from the delay.`);
+  console.log(`\nQueued ${Object.keys(queuedStocks).length} stock assets + WETH. Activate at or after ${new Date(eta * 1000).toISOString()}.`);
 } else if (command === 'activate') {
   const state = readJson(STATE_PATH);
   if (!state) throw new Error('no asset state; run `queue` first');
 
-  // Both operations were queued in the same block, so they share an ETA. Activate each one that
-  // is still pending, in order, and stop on the first genuine failure.
-  for (const key of ['weth', 'stock']) {
-    const entry = state[key];
+  // Activate every pending operation: WETH plus each queued stock. Zero governance delay means
+  // activation can follow immediately; each step is idempotent and re-read on-chain status.
+  const entries = [['weth', state.weth], ...Object.entries(state.stocks ?? {})];
+  for (const [key, entry] of entries) {
     if (!entry?.operationId) {
       if (entry?.alreadyActive || entry?.descriptorId) {
         console.log(`${key}: already active, nothing to activate`);
@@ -296,18 +305,23 @@ if (command === 'status') {
     const descriptorId = await publicClient.readContract({
       address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [entry.token],
     });
-    state[key] = { ...entry, descriptorId, active: true };
+    if (key === 'weth') state.weth = { ...entry, descriptorId, active: true };
+    else {
+      state.stocks = { ...(state.stocks ?? {}), [key]: { ...entry, descriptorId, active: true } };
+    }
     console.log(`${key}: descriptor active ${descriptorId}`);
   }
 
   const queue = readJson(QUEUE_PATH);
   queue.weth.descriptorId = state.weth.descriptorId;
-  queue.stock.descriptorId = state.stock.descriptorId;
+  for (const [symbol, entry] of Object.entries(state.stocks ?? {})) {
+    queue.stocks = { ...(queue.stocks ?? {}), [symbol]: { ...(queue.stocks?.[symbol] ?? {}), descriptorId: entry.descriptorId } };
+  }
   queue.activationPending = false;
   queue.activatedAt = new Date().toISOString();
   writeFileSync(QUEUE_PATH, `${JSON.stringify(queue, null, 2)}\n`);
   writeFileSync(STATE_PATH, `${JSON.stringify({ ...state, stage: 'ACTIVE', activatedAt: now }, null, 2)}\n`);
-  console.log('Both descriptors are ACTIVE on mainnet.');
+  console.log('WETH and all stock descriptors are ACTIVE on mainnet.');
 } else {
   console.error(`Unknown command "${command}". Use status | queue | activate`);
   process.exit(1);

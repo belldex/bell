@@ -45,11 +45,11 @@ function loadEnv(text) {
 }
 
 function readState() {
-  return existsSync(STATE_PATH) ? JSON.parse(readFileSync(STATE_PATH, 'utf8')) : null;
+  return existsSync(STATE_PATH_ASSET) ? JSON.parse(readFileSync(STATE_PATH_ASSET, 'utf8')) : null;
 }
 
 function writeState(next) {
-  writeFileSync(STATE_PATH, `${JSON.stringify({ ...next, updatedAt: new Date().toISOString() }, null, 2)}\n`);
+  writeFileSync(STATE_PATH_ASSET, `${JSON.stringify({ ...next, assetId, assetLabel, updatedAt: new Date().toISOString() }, null, 2)}\n`);
 }
 
 const env = loadEnv(readFileSync('.env', 'utf8'));
@@ -68,7 +68,17 @@ if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
 const assetQueue = existsSync('evidence/deploy/mainnet-4663-asset-queue.json')
   ? JSON.parse(readFileSync('evidence/deploy/mainnet-4663-asset-queue.json', 'utf8'))
   : null;
-const assetId = assetQueue?.stock?.descriptorId ?? null;
+// Multi-asset: resolve the target asset via --asset=<descriptorId|SYMBOL> falling back to the
+// first stock in the queue evidence. Each asset owns its own calendar root/state file.
+const ASSET_ARG = process.argv.find((a) => a.startsWith('--asset='))?.slice('--asset='.length) ?? null;
+const stockEntries = Object.entries(assetQueue?.stocks ?? {});
+const resolvedStock = ASSET_ARG
+  ? stockEntries.find(([symbol, s]) => symbol === ASSET_ARG || s.descriptorId?.toLowerCase() === ASSET_ARG.toLowerCase())
+    ?? (ASSET_ARG.match(/^0x[0-9a-fA-F]{64}$/) ? [null, { descriptorId: ASSET_ARG, symbol: ASSET_ARG.slice(0, 10) }] : null)
+  : stockEntries[0] ?? null;
+const assetId = resolvedStock?.[1]?.descriptorId ?? null;
+const assetLabel = resolvedStock?.[0] ?? 'asset';
+const STATE_PATH_ASSET = `evidence/deploy/mainnet-4663-calendar-state-${assetLabel}.json`;
 const calendarRegistry = manifest.calendarRegistry;
 
 const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `0x${deployerPk}`);
