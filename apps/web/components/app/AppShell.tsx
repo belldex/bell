@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X } from 'lucide-react';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
-import { TestnetBanner } from '@/components/app/TestnetBanner';
+import { MainnetStatusBanner } from '@/components/app/MainnetStatusBanner';
 import { WalletProvider, useWallet } from '@/lib/wallet';
 import { SmoothScroll } from '@/lib/motion';
 import { cn } from '@/lib/format';
@@ -15,7 +15,7 @@ import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/poli
 const NAV_GROUPS = [
   { label: 'Markets', items: [
     { href: '/pools', label: 'Pools', detail: 'Browse pool policies', icon: ChartNoAxesColumnIncreasing },
-    { href: '/swap', label: 'Swap', detail: 'Preview + live testnet', icon: ArrowLeftRight },
+    { href: '/swap', label: 'Swap', detail: 'Mainnet readiness + preview', icon: ArrowLeftRight },
   ] },
   { label: 'Liquidity', items: [
     { href: '/create', label: 'Create pool', detail: 'Preview pool settings', icon: Plus },
@@ -74,7 +74,7 @@ function ChainGuard() {
   return (
     <div role="alert" className="app-chain-guard">
       {wallet.wrongChain
-        ? 'Wrong network. Switch to Robinhood Chain (4663) or Testnet (46630) before continuing.'
+        ? 'Wrong network. Switch to Robinhood Chain Mainnet (4663) before continuing.'
         : wallet.error}
     </div>
   );
@@ -145,9 +145,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="app-sidebar__network-card">
                 <span className="app-sidebar__network-label">Workspace target</span>
                 <b>Robinhood Chain</b>
-                <span>Testnet · Chain 46630</span>
+                <span>Mainnet · Chain 4663</span>
               </div>
-              <a className="app-sidebar__reference" href="https://robinhood-testnet.explorer.alchemy.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>
+              <a className="app-sidebar__reference" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>
             </div>
           </aside>
 
@@ -169,7 +169,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </header>
 
             <div className="app-status-wrap">
-              <TestnetBanner />
+              <MainnetStatusBanner />
               <ChainGuard />
             </div>
 
@@ -181,7 +181,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <footer className="app-footer">
               <div className="app-footer__inner">
-                <span>Testnet rehearsal · Chain 46630</span>
+                <span>Robinhood Chain Mainnet · 4663</span>
                 <span>Fixture data is illustrative and does not represent live pool state.</span>
                 <span>Fees and caps do not guarantee fills or returns.</span>
               </div>

@@ -11,17 +11,15 @@ import {
 } from 'react';
 import { createPublicClient, createWalletClient, custom, type EIP1193Provider } from 'viem';
 import { WagmiConfig, createConfig, http, injected } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
 import { ConnectButton, RainbowKitProvider } from '@rainbow-me/rainbowkit/components';
 import { darkTheme } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { defineChain } from 'viem';
 import '@rainbow-me/rainbowkit/styles.css';
 
-/** Robinhood Chain ids from the brief (§11). */
+/** The app wallet is pinned to Robinhood Chain mainnet. */
 export const CHAINS = {
   4663: { name: 'Robinhood Chain', short: 'Mainnet' },
-  46630: { name: 'Robinhood Chain Testnet', short: 'Testnet' },
 } as const;
 
 export const robinhoodMainnet = defineChain({
@@ -33,29 +31,17 @@ export const robinhoodMainnet = defineChain({
   blockExplorers: { default: { name: 'Robinhood Explorer', url: 'https://robinhoodchain.blockscout.com' } },
 });
 
-export const robinhoodTestnet = defineChain({
-  id: 46630,
-  name: 'Robinhood Chain Testnet',
-  network: 'robinhood-testnet',
-  nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
-  rpcUrls: { default: { http: ['https://rpc.testnet.chain.robinhood.com'] }, public: { http: ['https://rpc.testnet.chain.robinhood.com'] } },
-  blockExplorers: { default: { name: 'Robinhood Testnet Explorer', url: 'https://explorer.testnet.chain.robinhood.com' } },
-  testnet: true,
-});
-
-const chains = [robinhoodMainnet, robinhoodTestnet, mainnet] as const;
+const chains = [robinhoodMainnet] as const;
 const wagmiConfig = createConfig({
   chains,
   connectors: [injected({ shimDisconnect: true })],
   transports: {
     [robinhoodMainnet.id]: http(),
-    [robinhoodTestnet.id]: http(),
-    [mainnet.id]: http(),
   },
 });
 const queryClient = new QueryClient();
 export type SupportedChainId = keyof typeof CHAINS;
-export const isSupportedChain = (id: number | null): id is SupportedChainId => id === 4663 || id === 46630;
+export const isSupportedChain = (id: number | null): id is SupportedChainId => id === 4663;
 
 export type WalletStatus = 'no-provider' | 'disconnected' | 'connecting' | 'connected';
 
@@ -161,7 +147,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     <WagmiConfig config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          initialChain={robinhoodTestnet}
+          initialChain={robinhoodMainnet}
           theme={darkTheme({
             accentColor: '#aeb7b9',
             accentColorForeground: '#101416',

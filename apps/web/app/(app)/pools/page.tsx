@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { RotateCcw, Search } from 'lucide-react';
 import { PoolCard } from '@/components/policy/PoolCard';
-import { RehearsalPoolCard } from '@/components/policy/RehearsalPoolCard';
 import { POOLS } from '@/lib/fixtures';
 import { cn } from '@/lib/format';
 
@@ -57,7 +56,7 @@ export default function PoolsPage() {
   return (
     <div className="app-pools-page">
       <header className="max-w-3xl border-b border-line pb-7">
-        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Testnet</p>
+        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Robinhood Chain</p>
         <h1 className="mt-3 max-w-[720px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
           Explore pools and review trading limits.
         </h1>
@@ -65,8 +64,6 @@ export default function PoolsPage() {
           Review policy state, session phase and flow budgets before opening a pool. Live contract state and example pool data are kept separate.
         </p>
       </header>
-
-      <RehearsalPoolCard />
 
       <section className="mt-9" aria-labelledby="example-pools-title">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">

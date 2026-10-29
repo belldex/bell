@@ -22,13 +22,13 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://bell.exchange'),
   title: { default: 'BELL — Market-aware liquidity for tokenized stocks', template: '%s · BELL' },
   description:
-    'BELL is a Uniswap v4 hook for tokenized-stock pools. Session-aware LP fees, bounded swap flow and fail-closed market-data checks. Testnet prototype; no mainnet deployment.',
+    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
   icons: {
     icon: '/assets/emblem-guarded.jpg',
   },
   openGraph: {
     title: 'BELL — Market-aware liquidity for tokenized stocks',
-    description: 'A Uniswap v4 hook for tokenized-stock pools with session-aware LP fees, bounded swap flow and fail-closed data checks. Testnet prototype; no mainnet deployment.',
+    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

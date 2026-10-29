@@ -14,7 +14,10 @@ import { encodeCreateRequest, POOL_CONFIG_COMPONENTS, CREATE_REQUEST_COMPONENTS 
 import { bellFee, effectiveLpFee } from '@bell/domain/fee-policy';
 // @ts-expect-error Workspace package export
 import { ClosureBudget } from '@bell/domain/closure-budget';
-import { readTestnetStatus, TESTNET, isUnusableRole, type TestnetStatus } from '@bell/protocol/testnet-status';
+
+export function isUnusableRole(address: string): boolean {
+  return /^0x0{36}(0000|0001|0002|dead)$/i.test(address);
+}
 
 export interface ProtocolAbiManifest {
   schemaVersion: number;
@@ -48,8 +51,4 @@ export {
   bellFee,
   effectiveLpFee,
   ClosureBudget,
-  readTestnetStatus,
-  TESTNET,
-  isUnusableRole,
-  type TestnetStatus,
 };

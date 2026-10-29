@@ -10,7 +10,6 @@ import { BudgetBar } from '@/components/policy/BudgetBar';
 import { POOLS, getPool, type CurrencyBudget, type PoolPolicy } from '@/lib/fixtures';
 import { cn, formatRaw, remaining } from '@/lib/format';
 import { effectiveLimits, feePercent, type MarketPhase } from '@/lib/policy';
-import { LiveSwapPanel } from '@/components/swap/LiveSwapPanel';
 
 /** Preview pricing only: 1 stock = price counter units. Not a market quote. */
 const RATE: Record<string, { stock: string; price: number }> = {
@@ -144,7 +143,7 @@ function SwapInner() {
       <header className="mb-8 max-w-[760px] border-b border-line pb-6">
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Review</p>
         <h1 id="swap-title" className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Check pool rules before a live swap.</h1>
-        <p className="mt-4 max-w-[620px] text-sm leading-relaxed text-muted">The quote preview uses sample values. Review the deployed testnet pool below before submitting any onchain transaction.</p>
+        <p className="mt-4 max-w-[620px] text-sm leading-relaxed text-muted">The quote preview uses illustrative values. Mainnet swap execution is unavailable until a market asset is admitted and a live pool is verified.</p>
       </header>
       <div className="mb-6 flex flex-wrap items-center gap-2 border border-warn/30 bg-warn/5 px-4 py-3 font-mono text-[11px] text-warn">
         <span className="font-semibold uppercase tracking-[0.1em]">Preview only</span>
@@ -205,11 +204,7 @@ function SwapInner() {
           </ul>
         )}
 
-        <a href="#live-execution" className="app-live-swap-link mt-5">
-          <span>Continue to deployed testnet swap</span>
-          <span aria-hidden="true">↓</span>
-        </a>
-        <p className="mt-2 text-xs leading-relaxed text-dim">This quote is an illustration only. The live panel below reads the deployed pool policy and is the only place that can submit a testnet swap.</p>
+        <p className="mt-5 border border-line bg-bg-1 px-4 py-3 text-xs leading-relaxed text-muted">Mainnet execution is locked. This fixture quote does not read a live pool and cannot be submitted.</p>
       </section>
 
       {/* Disclosure + quote */}
@@ -258,7 +253,6 @@ function SwapInner() {
           <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Fixture preview expired. Refresh to recalculate.' : stale ? 'Inputs changed — recalculating preview…' : `Fixture calculation refreshed ${Math.ceil(left)} s ago · not an executable quote`}</p>
         </div>
       </aside>
-      <LiveSwapPanel />
       </div>
     </div>
   );

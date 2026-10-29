@@ -23,7 +23,7 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
         <div className="flex min-w-0 items-center gap-3">
           <TokenPair symbols={pool.pair} size={32} />
           <div className="min-w-0">
-            <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Example pool · Chain 46630</p>
+            <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Illustrative pool · mainnet preview</p>
             <h3 className="truncate font-display text-xl font-semibold tracking-tight text-ink sm:text-2xl">{pool.pair[0]}<span className="px-1.5 font-normal text-dim">/</span>{pool.pair[1]}</h3>
           </div>
         </div>

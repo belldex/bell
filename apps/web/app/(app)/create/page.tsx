@@ -107,7 +107,7 @@ export default function CreatePage() {
   const recipient = wallet.account ?? '— connect wallet —';
 
   const request = [
-    ['chainId', wallet.chainId ? String(wallet.chainId) : '4663 / 46630'],
+    ['chainId', wallet.chainId ? String(wallet.chainId) : '4663'],
     ['pair', `${stock.symbol} / ${counterTok.symbol}${isCustom && isAddress(customAddr) ? ` (${customAddr.slice(0, 8)}…)` : ''}`],
     ['class', poolClass],
     ['price / anchor mode', poolClass === 'SESSION_ONLY' ? 'none (no counter reference)' : secondary ? 'SECONDARY_REFERENCE' : 'FROZEN_CLOSE'],
@@ -135,7 +135,7 @@ export default function CreatePage() {
           Preview a new pool configuration.
         </h1>
         <p className="mt-3 text-base text-muted">
-          This wizard checks pair, class, reference mode, seed ratio and immutable raw-unit caps. The frontend does not currently submit a factory transaction; every value below is configuration preview only.
+          This wizard previews pair, class, reference mode, seed ratio and raw-unit caps for Robinhood Chain mainnet. Pool creation is unavailable until asset admission and a verified mainnet market are in place; no transaction is submitted here.
         </p>
       </header>
 

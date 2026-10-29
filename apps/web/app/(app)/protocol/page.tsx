@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
-import { TestnetBanner } from '@/components/app/TestnetBanner';
 
 const sections = [
   ['sessions', 'Session fee', 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown session or unhealthy source state fails closed.'],
@@ -13,10 +12,9 @@ const sections = [
 export default function ProtocolPage() {
   return (
     <div className="mx-auto max-w-[1120px]">
-      <div className="mb-8"><TestnetBanner /></div>
-      <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Protocol · Robinhood testnet 46630</p>
+      <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Protocol · Robinhood Chain mainnet 4663</p>
       <h1 className="mt-3 max-w-[760px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Formulas, sessions, and explicit limits.</h1>
-      <p className="mt-5 max-w-[620px] text-base leading-relaxed text-muted">BELL is a rehearsal frontend for the deployed hook protocol. This page describes intended policy behavior; live pool data requires a pool indexer, and mainnet release is not approved.</p>
+      <p className="mt-5 max-w-[620px] text-base leading-relaxed text-muted">BELL protocol contracts are deployed on Robinhood Chain mainnet. Asset admission and active pool state are not verified yet, so this page describes policy behavior rather than a live market.</p>
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         {sections.map(([id, title, body]) => (
           <section key={title} id={id} className="border border-line bg-surface/70 p-6">
