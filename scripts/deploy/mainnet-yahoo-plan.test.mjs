@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { privateKeyToAccount } from 'viem/accounts';
 import { getContractAddress } from 'viem';
-import { buildMainnetYahooPlan } from './mainnet-yahoo-plan.mjs';
+import { buildMainnetYahooPlan, verifierRuntimeCodeHash } from './mainnet-yahoo-plan.mjs';
 import { buildYahooSourceWire } from '../../packages/protocol/src/yahoo-attestation.mjs';
+import { readFile } from 'node:fs/promises';
 
 const PRIVATE_KEY = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
 const TOKEN = '0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9';
@@ -93,4 +94,22 @@ test('missing nonce or malformed token fails before returning a seemingly valid 
     symbol: 'AAPL',
     reporter: account.address,
   }), /token/);
+});
+
+test('runtime verifier code hash applies the immutable reporter before hashing', async () => {
+  const artifact = JSON.parse(await readFile(
+    new URL('../../contracts/out/YahooSourceVerifier.sol/YahooSourceVerifier.json', import.meta.url),
+    'utf8',
+  ));
+  const reporter = '0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a';
+
+  assert.equal(
+    verifierRuntimeCodeHash({
+      deployedBytecode: artifact.deployedBytecode.object,
+      immutableReferences: artifact.deployedBytecode.immutableReferences,
+      reporter,
+    }),
+    // Runtime code hash read from the live testnet verifier in evidence/deploy/yahoo-verifier-adapter-testnet.json.
+    '0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a',
+  );
 });

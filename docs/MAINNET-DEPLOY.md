@@ -178,13 +178,14 @@ because it needs the deployer nonce and runs once.
 ## 8. Swap through the router, then accept
 
 ```bash
-pnpm mainnet:swap -- --zeroForOne=true --amount=1000000000000000
+pnpm mainnet:swap -- --zeroForOne=true --amount=1000000000000000 --minAmountOut=<output-token-base-units>
 pnpm mainnet:acceptance
 ```
 
-The swap goes through `BellRouter`, not the `TestnetSwapExecutor` fixture. The router enforces nonce,
-deadline, a non-zero `limitAmount`, and canonical WETH wrap/unwrap; the helper refuses native input
-unless the input really is WETH.
+The swap goes through `BellRouter`, not the `TestnetSwapExecutor` fixture. `--minAmountOut` is
+required and is denominated in the output token's base units; it is never guessed from input amount.
+The router enforces nonce, deadline, slippage, and canonical WETH wrap/unwrap; the helper refuses
+native input unless the input really is WETH.
 
 `mainnet:acceptance` is read-only and fails on: missing code, wiring mismatches, an unadmitted
 descriptor, a dead calendar interval, blocking health reasons, a stale report, a hook that is not

@@ -19,7 +19,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, decodeEventLog 
 import { privateKeyToAccount } from 'viem/accounts';
 import FactoryArtifact from '../../contracts/out/BellPoolFactory.sol/BellPoolFactory.json' with { type: 'json' };
 import { mineHookSalt } from '../tooling/mine-hook-salt.mjs';
-import { deriveProfileHash, resolvePoolConfig } from './mainnet-pool-config.mjs';
+import { checkSeedFunding, deriveProfileHash, resolvePoolConfig } from './mainnet-pool-config.mjs';
 import { isPoolCreatePreflightReady } from './keeper-price-config.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
@@ -130,17 +130,26 @@ if (!isPoolCreatePreflightReady(health, now)) {
 }
 
 // 3. Balance and allowance preflight, so a failed seed cannot burn gas on approvals only.
-const [wethBalance, stockBalance, feeBalance, serviceFee, feeDecimals] = await Promise.all([
+const [wethBalance, stockBalance, nativeBalance, feeBalance, serviceFee, feeDecimals] = await Promise.all([
   publicClient.readContract({ address: manifest.weth, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.readContract({ address: adapters.stockToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
+  publicClient.getBalance({ address: account.address }),
   publicClient.readContract({ address: manifest.feeToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.readContract({ address: manifest.poolFactory, abi: parseAbi(['function serviceFee() view returns (uint128)']), functionName: 'serviceFee' }),
   publicClient.readContract({ address: manifest.feeToken, abi: ERC20, functionName: 'decimals' }),
 ]);
-const shortfalls = [];
-if (wethBalance < config.amountMax[config.token0 === manifest.weth.toLowerCase() ? 0 : 1]) shortfalls.push(`WETH ${wethBalance}`);
-if (stockBalance < config.amountMax[config.token0 === adapters.stockToken.toLowerCase() ? 0 : 1]) shortfalls.push(`stock ${stockBalance}`);
-if (feeBalance < serviceFee) shortfalls.push(`fee token ${feeBalance} < ${serviceFee}`);
+const funding = checkSeedFunding({
+  token0: config.token0,
+  weth: manifest.weth,
+  amountMax: config.amountMax,
+  wethBalance,
+  stockBalance,
+  nativeBalance,
+  feeBalance,
+  serviceFee,
+  wrapNativeForWeth: true,
+});
+const shortfalls = [...funding.shortfalls];
 if (shortfalls.length) {
   throw new Error(`insufficient balances for the seed: ${shortfalls.join(', ')} (fee token has ${feeDecimals} decimals)`);
 }
@@ -173,8 +182,8 @@ for (const token of [manifest.weth, adapters.stockToken, manifest.feeToken]) {
 }
 
 // 5. Wrap ETH if the WETH leg is short.
-if (wethBalance < config.amountMax[config.token0 === manifest.weth.toLowerCase() ? 0 : 1]) {
-  const needed = config.amountMax[config.token0 === manifest.weth.toLowerCase() ? 0 : 1] - wethBalance;
+if (funding.nativeToWrap > 0n) {
+  const needed = funding.nativeToWrap;
   console.log(`Wrapping ${needed} wei into WETH`);
   const hash = await walletClient.sendTransaction({ to: manifest.weth, value: needed });
   await publicClient.waitForTransactionReceipt({ hash });

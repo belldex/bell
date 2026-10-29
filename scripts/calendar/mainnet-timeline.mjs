@@ -22,6 +22,14 @@ export const MAINNET_GOVERNANCE_MINIMUM_DELAY_SECONDS = 172_800;
 /** Mirrors PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS. */
 export const MAINNET_GOVERNANCE_OPERATION_EXPIRY_SECONDS = 604_800;
 
+/** Choose a coverage start that leaves enough time to queue/activate the root without rounding to midnight. */
+export function planCalendarCoverageStart({ now, noticeSeconds, activationBufferSeconds = 300 } = {}) {
+  for (const [name, value] of Object.entries({ now, noticeSeconds, activationBufferSeconds })) {
+    if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(`${name} must be a non-negative safe integer`);
+  }
+  return now + Math.max(noticeSeconds, activationBufferSeconds);
+}
+
 const PHASE_PRE_START = [4, 0];
 const PHASE_REGULAR_START = [9, 30];
 const PHASE_CLOSED_START = [16, 0];

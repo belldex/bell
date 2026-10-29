@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolvePoolConfig, sortPoolTokens } from './mainnet-pool-config.mjs';
+import { resolvePoolConfig, sortPoolTokens, checkSeedFunding } from './mainnet-pool-config.mjs';
 
 const WETH = '0x00000000000000000000000000000000000000aa';
 const STOCK = '0x00000000000000000000000000000000000000bb';
@@ -83,4 +83,35 @@ test('identical tokens are rejected instead of building a self-pool', () => {
     }),
     /distinct/,
   );
+});
+
+test('native ETH can cover a WETH seed shortfall without existing WETH', () => {
+  const result = checkSeedFunding({
+    token0: WETH,
+    weth: WETH,
+    amountMax: [2n, 100n],
+    wethBalance: 0n,
+    stockBalance: 100n,
+    nativeBalance: 2n,
+    feeBalance: 1n,
+    serviceFee: 1n,
+    wrapNativeForWeth: true,
+  });
+  assert.deepEqual(result.shortfalls, []);
+  assert.equal(result.nativeToWrap, 2n);
+});
+
+test('native ETH insufficiency is reported when WETH must be wrapped', () => {
+  const result = checkSeedFunding({
+    token0: WETH,
+    weth: WETH,
+    amountMax: [2n, 100n],
+    wethBalance: 0n,
+    stockBalance: 100n,
+    nativeBalance: 1n,
+    feeBalance: 1n,
+    serviceFee: 1n,
+    wrapNativeForWeth: true,
+  });
+  assert.deepEqual(result.shortfalls, ['native ETH 1 < WETH shortfall 2']);
 });

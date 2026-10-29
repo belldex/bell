@@ -18,7 +18,7 @@ import { createPublicClient, createWalletClient, http, keccak256 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import YahooVerifierArtifact from '../../contracts/out/YahooSourceVerifier.sol/YahooSourceVerifier.json' with { type: 'json' };
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
-import { buildMainnetYahooPlan } from './mainnet-yahoo-plan.mjs';
+import { buildMainnetYahooPlan, verifierRuntimeCodeHash } from './mainnet-yahoo-plan.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const EVIDENCE_PATH = 'evidence/deploy/mainnet-4663-stock-adapters.json';
@@ -68,9 +68,13 @@ if (/facade|testnet|rehearsal|fixture|mock/i.test(tokenSymbol ?? '')) {
   throw new Error(`${symbol} token symbol "${tokenSymbol}" looks like a rehearsal fixture`);
 }
 
-const verifierCodeHash = keccak256(YahooVerifierArtifact.deployedBytecode.object);
 const reporter = env.YAHOO_REPORTER_ADDRESS;
 if (!reporter || !/^0x[0-9a-fA-F]{40}$/.test(reporter)) throw new Error('YAHOO_REPORTER_ADDRESS must be a valid address');
+const verifierCodeHash = verifierRuntimeCodeHash({
+  deployedBytecode: YahooVerifierArtifact.deployedBytecode.object,
+  immutableReferences: YahooVerifierArtifact.deployedBytecode.immutableReferences,
+  reporter,
+});
 
 // The verifier address is the deployer's CREATE address at the current nonce. Build the wires
 // against that exact address so plan-only hashes equal the hashes used after broadcast. The

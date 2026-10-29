@@ -36,7 +36,7 @@ export function resolveSwapLegs({ token0, token1, zeroForOne }) {
 
 export function buildMainnetSwapRequest(input) {
   const {
-    hook, zeroForOne, amountIn, recipient, nonce, deadline, expectedConfigHash,
+    hook, zeroForOne, amountIn, minAmountOut, recipient, nonce, deadline, expectedConfigHash,
     token0, token1, weth, now, useNativeInput = false, unwrapOutput = false,
   } = input;
 
@@ -53,11 +53,12 @@ export function buildMainnetSwapRequest(input) {
   const legs = resolveSwapLegs({ token0, token1, zeroForOne });
   const wethAddress = address(weth, 'weth');
 
-  // BellRouter rejects limitAmount == 0 with SettlementMismatch, which reads like a settlement
-  // bug rather than "you forgot slippage protection". Require it explicitly.
-  const limitAmount = input.limitAmount;
+  // This helper always builds exact-input requests, where BellRouter interprets limitAmount as
+  // the minimum output in output-token base units. Never default it from amountIn: the two tokens
+  // can have different decimals and prices.
+  const limitAmount = minAmountOut;
   if (typeof limitAmount !== 'bigint' || limitAmount <= 0n) {
-    throw new RangeError('limitAmount is the router slippage bound and must be a positive bigint');
+    throw new RangeError('minAmountOut is required in output-token base units');
   }
 
   // Wrapping only makes sense when the input really is WETH; otherwise the router would demand

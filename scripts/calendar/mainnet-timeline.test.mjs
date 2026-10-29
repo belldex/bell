@@ -5,6 +5,7 @@ import {
   MAINNET_GOVERNANCE_MINIMUM_DELAY_SECONDS,
   MAINNET_GOVERNANCE_OPERATION_EXPIRY_SECONDS,
   planMainnetCalendarTimeline,
+  planCalendarCoverageStart,
 } from './mainnet-timeline.mjs';
 
 const DAY = 86_400;
@@ -85,4 +86,16 @@ test('the planner reports the phase the chain clock will be in at coverage start
 test('a zero or negative day count is rejected instead of producing an empty calendar', () => {
   assert.throws(() => planMainnetCalendarTimeline({ now: NOW, coverageStart: NOW + 7 * DAY, coverageDays: 0 }), /coverageDays/);
   assert.throws(() => planMainnetCalendarTimeline({ now: NOW, coverageStart: NOW + 7 * DAY, coverageDays: -3 }), /coverageDays/);
+});
+
+test('zero publication lead starts coverage after a short activation buffer, not at next midnight', () => {
+  const now = Date.UTC(2026, 2, 1, 13, 0, 0) / 1000;
+  const start = planCalendarCoverageStart({ now, noticeSeconds: 0, activationBufferSeconds: 300 });
+  assert.equal(start, now + 300);
+});
+
+test('nonzero publication lead remains the lower bound for the coverage start', () => {
+  const now = Date.UTC(2026, 2, 1, 13, 0, 0) / 1000;
+  const start = planCalendarCoverageStart({ now, noticeSeconds: 600, activationBufferSeconds: 300 });
+  assert.equal(start, now + 600);
 });

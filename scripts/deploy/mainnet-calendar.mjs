@@ -22,7 +22,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { hashCalendarLeaf, verifyMerkleProof } from '../../packages/protocol/src/calendar.mjs';
 import { buildCalendarDataset } from '../calendar/calendar-builder.mjs';
 import { buildEtMarketIntervals } from '../calendar/et-market-calendar.mjs';
-import { planMainnetCalendarTimeline } from '../calendar/mainnet-timeline.mjs';
+import { planCalendarCoverageStart, planMainnetCalendarTimeline } from '../calendar/mainnet-timeline.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const ZERO32 = `0x${'0'.repeat(64)}`;
@@ -120,10 +120,9 @@ const command = process.argv[2] ?? 'status';
 
 if (command === 'plan') {
   const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
-  // Coverage must start after whatever publication notice this deployment chose. Round up to the
-  // next whole UTC day so every leaf begins on a session boundary rather than mid-session.
-  const earliest = now + latency.calendarLeadSeconds;
-  const coverageStart = Math.ceil(earliest / DAY) * DAY;
+  // Leave only the configured notice or a short activation buffer. Do not round to midnight:
+  // same-day activation is valid and avoids an unnecessary multi-hour idle period.
+  const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
   const plan = planMainnetCalendarTimeline({
     now,
     coverageStart,
@@ -163,7 +162,7 @@ if (command === 'plan') {
   }
 
   const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
-  const coverageStart = Math.ceil((now + latency.calendarLeadSeconds) / DAY) * DAY;
+  const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
   const coverageEnd = coverageStart + coverageDays * DAY;
   const plan = planMainnetCalendarTimeline({
     now,

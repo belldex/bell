@@ -25,7 +25,10 @@ function loadEnv() {
 const env = loadEnv();
 // Configurable floor so the same preflight can gate a funded deploy and still report a useful
 // readiness summary on a fresh wallet. The default stays a real budget, not a token amount.
-const MIN_DEPLOYER_BALANCE = BigInt(env.BELL_MAINNET_MIN_DEPLOYER_WEI || 5n * 10n ** 17n);
+// Current measured protocol-stack simulation is about 0.00208 ETH; allow ~3x headroom for gas
+// price movement and the remaining verifier/adapters/registration transactions. Operator may
+// override this floor, but the default must not require an arbitrary 0.5 ETH balance.
+const MIN_DEPLOYER_BALANCE = BigInt(env.BELL_MAINNET_MIN_DEPLOYER_WEI || 7_000_000_000_000_000n);
 const failures = [];
 const notes = [];
 const fail = (message) => failures.push(message);
