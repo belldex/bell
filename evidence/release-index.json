@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "createdAt": "2026-10-26",
-  "updatedAt": "2026-10-29",
+  "updatedAt": "2026-10-30",
   "buildCommit": null,
   "note": "Release evidence index sesuai Brief baris 1500. Nilai MISSING/NOT_RUN berarti belum ada artifact — bukan PASS. Field diisi hanya dengan artifact nyata. File ini adalah index deskriptif; file yang divalidasi mesin adalah evidence/releases/index.json (dibaca scripts/evidence/check-release.mjs). Keduanya kini dijaga konsisten oleh pnpm evidence:check.",
   "chainId": 46630,
@@ -128,5 +128,12 @@
   },
   "evidenceByGate": {},
   "mainnetFundingAllowed": false,
-  "publicReleaseAllowed": false
+  "publicReleaseAllowed": false,
+  "mainnetDeployment": {
+    "status": "BROADCASTED_AND_LIVE_CODE_VERIFIED",
+    "chainId": 4663,
+    "evidence": "evidence/deploy/mainnet-4663-broadcast.json",
+    "contracts": 10,
+    "gasCostEth": "0.000801145289812"
+  }
 }

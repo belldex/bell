@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "briefSha256": "ee01ecdf591a6c1ee37dbb390279cfbc79f47ca575b40062a54d8ef0c4dc6975",
   "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
-  "buildCommit": null,
+  "buildCommit": "ee49865",
   "artifactHashes": {},
   "sourceManifestHash": null,
   "gates": {
@@ -15,5 +15,18 @@
   },
   "mainnetFundingAllowed": false,
   "publicReleaseAllowed": false,
-  "reviewedBy": []
+  "reviewedBy": [],
+  "ownerDecisions": [
+    {
+      "decidedAt": "2026-10-29",
+      "decision": "Four-weekend availability gate removed by owner decision; availability evidence is still collected and reported honestly but is no longer release-blocking.",
+      "recordedIn": ["docs/BELL-Developer-Brief-Final.md", "config/release-baseline.json"]
+    },
+    {
+      "decidedAt": "2026-10-29",
+      "decision": "Yahoo data-rights gating removed as a production blocker by owner decision; Yahoo charts are the active session price source signed by the BELL reporter.",
+      "recordedIn": ["docs/BELL-Developer-Brief-Final.md", "config/sources/rights-status.json"]
+    }
+  ],
+  "note": "Gates stay NOT_RUN until their actual artifacts exist. The protocol stack is live on chain 4663 (evidence/deploy/mainnet-4663-broadcast.json); full-product mainnet execution (multi-asset admission, calendar, keeper, pools, swaps, acceptance) still requires owner gas."
 }
