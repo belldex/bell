@@ -61,7 +61,9 @@
     "mainnet:pool": "node scripts/deploy/mainnet-create-pool.mjs",
     "mainnet:pool:broadcast": "node scripts/deploy/mainnet-create-pool.mjs --broadcast",
     "mainnet:swap": "node scripts/deploy/mainnet-swap.mjs",
-    "mainnet:acceptance": "node scripts/deploy/mainnet-acceptance.mjs"
+    "mainnet:acceptance": "node scripts/deploy/mainnet-acceptance.mjs",
+    "mainnet:keeper-config": "node scripts/deploy/mainnet-keeper-config.mjs",
+    "mainnet:keeper-config:write": "node scripts/deploy/mainnet-keeper-config.mjs --write"
   },
   "devDependencies": {
     "@chainlink/data-streams-sdk": "2.0.0",

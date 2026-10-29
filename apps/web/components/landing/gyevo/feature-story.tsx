@@ -281,10 +281,10 @@ export function FeatureStory() {
             Designed for changing market hours
           </p>
           <h2 className="lp-h2" id="trust-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-            Every swap follows the <em>same rules.</em>
+            No swap proceeds <em>on a guess.</em>
           </h2>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            Session, data freshness, trade size and cumulative flow are checked together. If any required input is invalid, BELL stops the swap instead of guessing.
+            Session, feed freshness, trade size and cumulative flow meet at the same decision point. Missing evidence closes the gate.
           </p>
         </div>
       </section>

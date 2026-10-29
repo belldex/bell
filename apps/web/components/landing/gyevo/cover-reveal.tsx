@@ -8,7 +8,7 @@ import { createGlobeSculpture } from "./globe-sculpture";
 import { FORM_TIMELINE, GlyphField } from "./glyph-field";
 import { scrollToId } from "./smooth-scroll";
 
-/* Phase 1 is the claim on white. The full stop after "more" is a black dot, like the one after "less";
+/* Phase 1 is the claim on white. The full stop after "move" is a black dot;
    scrolling cuts it into a row of slabs that turn, fly and settle as the strips of the screen (see
    cipher-sculpture.ts), and phase 2, the hero, was behind them all along. After a short hold the camera
    pushes into the headline: it zooms in until the hero is gone, and the next section rises in behind it.
@@ -288,7 +288,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB}</span> : null}
           </h1>
           <p className="lp-sub">
-            Session-aware liquidity for tokenized stocks. Fees and trading limits respond to the market clock; uncertain state means trading stops.
+                Tokenized-stock pools need rules that move with the exchange clock. BELL verifies each session, sets its fee and flow limits, and stops when required market data cannot be trusted.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -321,17 +321,17 @@ export function CoverReveal({ tagline }: Props) {
                 >
                   <span className="lp-h__line lp-h__l1">
                     <span className="lp-h__in">
-                  Read the <b className="lp-h__public">session</b>
+                  The session sets the fee.
                     </span>
                   </span>
                   <span className="lp-h__line lp-h__l2">
                     <span className="lp-h__in">
-                      Set the <b className="lp-h__private">fee</b>
+                      Limits bound the flow.
                     </span>
                   </span>
                   <span className="lp-h__line lp-h__l3">
                     <span className="lp-h__in">
-                    Bound the <b className="lp-h__public">flow</b>
+                    Unverified? Swaps stop.
                     </span>
                   </span>
                 </span>
@@ -342,11 +342,11 @@ export function CoverReveal({ tagline }: Props) {
                   aria-hidden="true"
                 >
                   <span className="lp-h__line lp-h__l1">
-                  <span className="lp-h__in">Market rhythm.</span>
+                  <span className="lp-h__in">A different session.</span>
                   </span>
                   <span className="lp-h__line lp-h__l2">
                     <span className="lp-h__in">
-                      Session <b className="lp-h__private">aware.</b>
+                      A different <b className="lp-h__private">fee.</b>
                     </span>
                   </span>
                 </span>
@@ -357,11 +357,11 @@ export function CoverReveal({ tagline }: Props) {
                   aria-hidden="true"
                 >
                   <span className="lp-h__line lp-h__l1">
-                  <span className="lp-h__in">Risk has limits.</span>
+                  <span className="lp-h__in">Flow is capped.</span>
                   </span>
                   <span className="lp-h__line lp-h__l2">
                     <span className="lp-h__in">
-                      Flow stays <b className="lp-h__private">bounded.</b>
+                      Limits do not <b className="lp-h__private">refill.</b>
                     </span>
                   </span>
                 </span>
@@ -372,11 +372,11 @@ export function CoverReveal({ tagline }: Props) {
                   aria-hidden="true"
                 >
                   <span className="lp-h__line lp-h__l1">
-                  <span className="lp-h__in">Market closed.</span>
+                  <span className="lp-h__in">Market is closed.</span>
                   </span>
                   <span className="lp-h__line lp-h__l2">
                     <span className="lp-h__in">
-                      Closure stays <b className="lp-h__public">bounded.</b>
+                      The exception stays <b className="lp-h__public">bounded.</b>
                     </span>
                   </span>
                 </span>
@@ -388,7 +388,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-i={0}
                     data-story-kind="lede"
                   >
-                    The same pool can face very different conditions before the bell, during regular hours, and after the close.
+                    Before the open, during the session, and after the close are different operating conditions for the same pool.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -396,7 +396,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Verified session data selects the base fee and applicable flow limits.
+                    Verified session data selects the applicable base fee and flow limits.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -404,7 +404,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Per-trade and rolling gross-flow caps constrain how much can move through the pool.
+                    Per-trade and rolling gross-flow caps bound the amount that can pass through.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -412,7 +412,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    During a proven scheduled closure, a historical close anchor and one finite budget govern the exception.
+                    A proven scheduled closure uses a historical close anchor and one finite, non-refilling budget.
                   </span>
                 </p>
                 <div className="lp-actions">
@@ -428,7 +428,7 @@ export function CoverReveal({ tagline }: Props) {
                       if (scrollToId("how")) e.preventDefault();
                     }}
                   >
-                    How BELL works
+                    Trace a swap
                   </a>
                   <span className="lp-ca"><span className="lp-ca__label">BELL</span><span className="lp-ca__address">Testnet preview</span></span>
                 </div>

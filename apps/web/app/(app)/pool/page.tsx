@@ -23,7 +23,7 @@ function Card({ title, icon: Icon, children, className }: { title: string; icon:
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2">
       <dt className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">{label}</dt>
       <dd className="num mt-1 text-lg text-ink">{value}</dd>
       {sub && <p className="text-[0.7rem] text-dim">{sub}</p>}
@@ -81,12 +81,12 @@ function Detail({ pool }: { pool: PoolPolicy }) {
         <Card title="Stock legs & sources" icon={Radio} className="lg:col-span-2">
           <ul className="divide-y divide-line">
             {pool.legs.map((l) => (
-              <li key={l.symbol} className="flex flex-wrap items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-                <div className="flex items-center gap-3">
+              <li key={l.symbol} className="grid min-w-0 gap-4 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[minmax(8rem,.65fr)_minmax(0,1.35fr)] sm:items-center">
+                <div className="flex min-w-0 items-center gap-3">
                   <span className="font-display text-2xl text-ink">{l.symbol}</span>
                   <PhaseBadge phase={l.phase} />
                 </div>
-                <dl className="flex gap-8">
+                <dl className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 sm:gap-x-5 lg:gap-x-8">
                   <Stat label="Source" value={<span className="inline-flex items-center gap-1.5">{l.source === 'FROZEN' ? <><Snowflake className="h-4 w-4 text-phase-closed" aria-hidden="true" />Frozen close</> : l.source === 'LIVE' ? <><Radio className="h-4 w-4 text-ion" aria-hidden="true" />Live</> : 'Unavailable'}</span>} />
                   <Stat label={l.source === 'FROZEN' ? 'Anchor age' : 'Input age'} value={l.anchorAgeSec !== null ? formatDuration(l.anchorAgeSec) : l.ageSec !== null ? formatDuration(l.ageSec) : '—'} sub={l.source === 'FROZEN' ? 'max 96 h' : undefined} />
                   <Stat label="Window" value={<span className="text-sm">{PHASE_META[l.phase].window}</span>} />

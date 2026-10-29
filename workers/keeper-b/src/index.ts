@@ -32,7 +32,7 @@ const CALENDAR_ABI = parseAbi([
 const SESSION_ABI = parseAbi([
   'function submitReports(bytes32,bytes[])',
   'function refreshHealth(bytes32) returns (uint256)',
-  'function health(bytes32) view returns ((bool ready,uint32 reasonBits,uint64 validUntil,uint64 refreshedAt,uint64 healthySince,uint64 latestObservation))',
+  'function health(bytes32) view returns ((bool ready,uint256 reasonBits,uint64 healthySince,uint64 validUntil,uint64 baselineObservation,uint64 latestObservation))',
 ]);
 const DIRECT_ABI = parseAbi([
   'function publishDirect((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash),bytes)',
@@ -50,8 +50,10 @@ function json(body, status = 200) {
 
 /** Runs one keeper tick. Exported so it can be exercised without Cloudflare bindings. */
 export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
-  const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
-  if (!rpcUrl) return { status: 'skipped', reason: 'RH_TESTNET_RPC_PRIMARY is not configured' };
+  // The RPC is configuration, not a testnet assumption. BELL_RPC_URL wins; the testnet variable is
+  // kept as a fallback so an existing deployment keeps working unchanged.
+  const rpcUrl = env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
+  if (!rpcUrl) return { status: 'skipped', reason: 'BELL_RPC_URL is not configured' };
   if (!env.YAHOO_REPORTER_PRIVATE_KEY) return { status: 'skipped', reason: 'YAHOO_REPORTER_PRIVATE_KEY is not configured' };
 
   const assetId = env.BELL_STOCK_ASSET_ID;
@@ -76,7 +78,12 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
   const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
 
   const chainId = await publicClient.getChainId();
-  if (chainId !== 46630) return { status: 'failed', reason: `wrong chain ${chainId}` };
+  // The keeper used to hardcode testnet 46630, which made a mainnet deployment unpublishable no
+  // matter what the vars said. The expected chain is configuration now.
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
+  if (chainId !== expectedChainId) {
+    return { status: 'failed', reason: `wrong chain ${chainId}, expected ${expectedChainId}` };
+  }
 
   const interval = await publicClient.readContract({
     address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId],

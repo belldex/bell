@@ -14,7 +14,7 @@ export function WalletButton() {
         return (
           <div aria-hidden={!ready} className="min-w-0">
             {!connected ? (
-              <button type="button" onClick={openConnectModal} disabled={!ready} className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-line-strong bg-[#0b1016] px-3 font-mono text-[11px] uppercase tracking-[0.06em] text-ink transition-colors hover:border-ion hover:bg-[#101a21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion disabled:opacity-60">
+              <button type="button" onClick={openConnectModal} disabled={!ready} className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-line-strong bg-bg-1 px-3 font-mono text-[11px] uppercase tracking-[0.06em] text-ink transition-colors hover:border-ion hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion disabled:opacity-60">
                 <Wallet className="h-4 w-4 text-ion" aria-hidden="true" /> Connect wallet
               </button>
             ) : chain.unsupported ? (
@@ -28,7 +28,7 @@ export function WalletButton() {
                   <span className="truncate">{chain.name ?? 'Network'}</span>
                   <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={openAccountModal} className="min-h-11 min-w-0 border border-line-strong bg-[#0b1016] px-3 font-mono text-[11px] text-ink hover:border-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
+                <button type="button" onClick={openAccountModal} className="min-h-11 min-w-0 border border-line-strong bg-bg-1 px-3 font-mono text-[11px] text-ink hover:border-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
                   <span className="block max-w-32 truncate">{account.displayName}</span>
                 </button>
               </div>

@@ -12,7 +12,7 @@ type StateFilter = 'ALL' | 'OPEN' | 'CLOSED' | 'HALTED';
 
 function Segmented<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: Array<{ v: T; l: string }> }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-none border border-line bg-surface/70 p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap rounded-none border border-line bg-surface/70 p-1">
       {options.map((o) => (
         <button
           key={o.v}

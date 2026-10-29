@@ -15,9 +15,9 @@ import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/poli
 
 
 const NAV = [
-  { href: '/pools', label: 'Pool preview', icon: Droplets },
+  { href: '/pools', label: 'Pools', icon: Droplets },
   { href: '/swap', label: 'Swap', icon: ArrowLeftRight },
-  { href: '/create', label: 'Create preview', icon: PlusCircle },
+  { href: '/create', label: 'Create pool', icon: PlusCircle },
   { href: '/positions', label: 'Positions', icon: Layers },
   { href: '/protocol', label: 'Protocol', icon: ShieldCheck },
 ] as const;
@@ -54,11 +54,11 @@ function ChainGuard() {
 function PhaseTicker() {
   return (
     <div className="app-ticker overflow-hidden border-b border-line bg-bg-1 text-muted">
-      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-6 px-4 font-mono text-[10px] uppercase tracking-[0.1em] max-md:justify-start">
+      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-3 px-3 font-mono text-[9px] uppercase tracking-[0.06em] sm:gap-5 sm:px-4 sm:text-[10px] sm:tracking-[0.1em] max-md:justify-start">
         <span className="text-ion">BELL · Robinhood Chain</span>
-        <span>Testnet rehearsal</span>
-        <span className="hidden sm:inline">Sample pools are previews · writes require wallet + live policy</span>
-        <Link href="/protocol" className="hidden border-b border-current pb-px hover:text-ion md:inline">Policy</Link>
+        <span className="hidden sm:inline">Testnet rehearsal</span>
+        <span className="hidden border-b border-current pb-px hover:text-ion lg:inline">Policy</span>
+        <span className="hidden lg:inline">Sample pools are previews · writes require wallet + live policy</span>
       </div>
     </div>
   );
@@ -90,13 +90,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <WalletProvider>
       <SmoothScroll enabled={false}>
         <div className="relative min-h-dvh overflow-x-clip bg-bg-0">
-          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_5%,transparent),transparent_70%)]" aria-hidden="true" />
+          <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(60%_40%_at_70%_-10%,color-mix(in_oklab,var(--color-ion)_4%,transparent),transparent_70%)]" aria-hidden="true" />
 
           <PhaseTicker />
-          <TestnetBanner />
-          <ChainGuard />
+          <div className="lg:ml-[280px]">
+            <TestnetBanner />
+            <ChainGuard />
+          </div>
 
-          <aside className={cn('fixed bottom-0 left-0 top-[38px] z-40 flex w-[280px] flex-col border-r border-line bg-[#080b10] px-5 py-6 transition-transform duration-300 max-lg:w-[260px]', mobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full')} aria-label="Terminal sidebar">
+          <aside className={cn('fixed bottom-0 left-0 top-[38px] z-40 flex w-[280px] flex-col border-r border-line bg-[#111719] px-5 py-6 transition-transform duration-300 max-lg:w-[260px]', mobileOpen ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full')} aria-label="Terminal sidebar">
             <div className="flex items-center justify-between">
               <Link href="/" aria-label="BELL home" className="rounded-none"><Logo /></Link>
               <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X className="h-5 w-5" aria-hidden="true" /></button>
@@ -123,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {mobileOpen ? <button aria-label="Close sidebar overlay" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setMobileOpen(false)} /> : null}
 
-          <header className="sticky top-0 z-20 ml-0 border-b border-line/80 bg-bg-0/95 lg:ml-[280px]">
+          <header className="sticky top-0 z-20 ml-0 border-b border-line/80 bg-bg-0 lg:ml-[280px]">
             <div className="flex min-h-[62px] items-center justify-between gap-4 px-4 sm:px-6">
               <div className="flex items-center gap-3">
                 <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label={mobileOpen ? 'Close sidebar' : 'Open sidebar'} aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>

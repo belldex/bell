@@ -242,7 +242,7 @@ export default function CreatePage() {
             </div>
             {poolClass === 'SESSION_ONLY' && (
               <label className="sm:col-span-2 flex cursor-pointer items-start gap-3 rounded-none border border-warn/30 bg-warn/5 p-4 text-sm text-warn">
-                <input type="checkbox" checked={ackPrice} onChange={(e) => setAckPrice(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#3ce6ff]" />
+                <input type="checkbox" checked={ackPrice} onChange={(e) => setAckPrice(e.target.checked)} className="mt-0.5 h-4 w-4 accent-ion" />
                 I understand the initial price is my own decision. It is not validated by any oracle.
               </label>
             )}
@@ -280,7 +280,7 @@ export default function CreatePage() {
                 ['seed', `I will pay ${SERVICE_FEE_USDG} USDG plus my seed. Fee, deploy, initialize and seed succeed or fail together.`],
               ] as const).map(([k, t]) => (
                 <label key={k} className="flex cursor-pointer items-start gap-3 text-sm text-muted">
-                  <input type="checkbox" checked={ackAll[k]} onChange={(e) => setAckAll((a) => ({ ...a, [k]: e.target.checked }))} className="mt-0.5 h-4 w-4 accent-[#3ce6ff]" />
+                  <input type="checkbox" checked={ackAll[k]} onChange={(e) => setAckAll((a) => ({ ...a, [k]: e.target.checked }))} className="mt-0.5 h-4 w-4 accent-ion" />
                   {t}
                 </label>
               ))}

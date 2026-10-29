@@ -6,9 +6,9 @@ export function LogoMark({ className }: { className?: string }) {
     <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="bell-mark" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#9FDCFF" />
-          <stop offset="0.55" stopColor="#3CE6FF" />
-          <stop offset="1" stopColor="#12B8D9" />
+          <stop stopColor="#dce5e4" />
+          <stop offset="0.55" stopColor="#a4b6b2" />
+          <stop offset="1" stopColor="#718582" />
         </linearGradient>
       </defs>
       <path d="M16 3.2c-5.4 0-9.2 4-9.2 9.4V19l-2.4 4.2h23.2L25.2 19v-6.4C25.2 7.2 21.4 3.2 16 3.2Z" stroke="url(#bell-mark)" strokeWidth="1.8" strokeLinejoin="round" />

@@ -56,10 +56,10 @@ export function PathSection() {
       <div className="lp-wrap">
         <Eyebrow n="">How it works</Eyebrow>
         <h2 className="lp-h2" id="how-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-          From a verified session to a <em className="o">bounded</em> swap.
+          Every swap clears a series of <em className="o">gates.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          Every swap moves through the same sequence: verify the market, apply the pool policy, then execute—or halt.
+          BELL checks its inputs in order. A single stale feed, invalid session or exhausted limit keeps the swap from executing.
         </p>
         <p className="lp-legend" data-lp-reveal style={{ ["--i" as string]: 3 }}>
           <span className="pv"><i aria-hidden="true" />Required inputs are verified</span>
@@ -107,7 +107,7 @@ export function SessionSection() {
         <div className="lp-lend__copy">
           <Eyebrow n="" ac="blue">Fees follow the session</Eyebrow>
           <h2 className="lp-h2" id="lending-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-            Different hours. <em className="o">Different rules.</em>
+            A market clock. <em className="o">A fee curve.</em>
           </h2>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
             BELL&apos;s documented base fees scale with the market session. The hook also applies session-specific gross-flow limits and halts when required feeds or calendar state cannot be verified.
@@ -148,7 +148,7 @@ const STATUS_LABEL: Record<PhaseStatus, string> = { done: "Rehearsed", live: "Te
 
 const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: readonly string[] }[] = [
   {
-    n: "A",
+    n: "PROVED",
     name: "REGULAR session rehearsal",
     status: "done",
     items: [
@@ -158,7 +158,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "B",
+    n: "SCOPED",
     name: "Broader session coverage",
     status: "wip",
     items: [
@@ -168,7 +168,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "C",
+    n: "HELD",
     name: "PRICE_GUARDED profile",
     status: "blocked",
     items: [
@@ -178,7 +178,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "D",
+    n: "PENDING",
     name: "Production readiness",
     status: "future",
     items: [
@@ -205,7 +205,7 @@ export function RoadmapSection() {
       <div className="lp-wrap">
         <Eyebrow n="" ac="blue">Status, without the gloss</Eyebrow>
         <h2 className="lp-h2" id="road-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-          A testnet rehearsal is a <em className="o">starting point.</em>
+          The rehearsal is evidence, <em className="o">not a release.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
           BELL has one successful REGULAR-session rehearsal on Robinhood Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). That evidence is a snapshot; it does not mean the pool or market-data feeds are currently live.
