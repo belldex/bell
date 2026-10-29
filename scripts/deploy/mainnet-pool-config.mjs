@@ -31,6 +31,18 @@ function requirePositive(value, name) {
 }
 
 /**
+ * Reference adapters are optional and default to the zero address (no reference on that side).
+ * A configured value must be a well-formed EVM address, lowercased for canonical hashing.
+ */
+function resolveReferenceAdapter(value, name) {
+  if (value === undefined || value === null) return ZERO_ADDRESS;
+  if (typeof value !== 'string' || !ADDRESS.test(value)) {
+    throw new TypeError(`${name} must be an EVM address when provided`);
+  }
+  return value.toLowerCase();
+}
+
+/**
  * Order a WETH/stock pair canonically, keeping every assetId attached to its own token.
  * `asset0` follows `token0`; it is never assigned by position in the input.
  */
@@ -82,7 +94,7 @@ export function resolvePoolConfig(input) {
     calendarRegistry: requireAddress(calendarRegistry, 'calendarRegistry'),
     safetyController: requireAddress(safetyController, 'safetyController'),
     treasuryAdapter: ZERO_ADDRESS,
-    poolClass: 1, // SESSION_ONLY; PRICE_GUARDED stays blocked until a reference is admitted
+    poolClass: 1, // SESSION_ONLY; PRICE_GUARDED needs both reference adapters plus an in-band seed
     liquidityMode: 0, // PUBLIC
     referenceMode: 0,
     tickSpacing,
@@ -90,6 +102,10 @@ export function resolvePoolConfig(input) {
     windowCap,
     closureCap,
     policyId: policyIdHash,
+    // Chainlink reference adapters per pool side (token0/token1 order). Zero means "no reference
+    // on this side"; the factory rejects any non-zero adapter on SESSION_ONLY pools.
+    referenceAdapter0: resolveReferenceAdapter(input.referenceAdapter0, 'referenceAdapter0'),
+    referenceAdapter1: resolveReferenceAdapter(input.referenceAdapter1, 'referenceAdapter1'),
   };
 
   return Object.freeze({
@@ -137,6 +153,8 @@ export function deriveProfileHash(config) {
         { name: 'tickSpacing', type: 'int24' }, { name: 'tradeCap', type: 'uint128[2]' },
         { name: 'windowCap', type: 'uint128[2]' }, { name: 'closureCap', type: 'uint128[2]' },
         { name: 'policyId', type: 'bytes32' },
+        // Appended after policyId, matching the Solidity PoolConfig field order exactly.
+        { name: 'referenceAdapter0', type: 'address' }, { name: 'referenceAdapter1', type: 'address' },
       ],
     }],
     [zeroed],

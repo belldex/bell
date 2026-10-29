@@ -107,6 +107,10 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     address private immutable _calendarRegistry;
     address private immutable _safetyController;
     address private immutable _treasuryAdapter;
+    /// @notice Chainlink reference adapters bound at creation (zero = no reference on that side).
+    /// PRICE_GUARDED pools must carry both; SESSION_ONLY pools keep both zero.
+    address public immutable referenceAdapter0;
+    address public immutable referenceAdapter1;
     /// @notice Session/health registry dependency. `PoolConfig` has no session-registry field, so M06's
     /// deploy manifest must bind this address alongside the normative config hash.
     address public immutable sessionRegistry;
@@ -243,6 +247,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         _calendarRegistry = config_.calendarRegistry;
         _safetyController = config_.safetyController;
         _treasuryAdapter = config_.treasuryAdapter;
+        referenceAdapter0 = config_.referenceAdapter0;
+        referenceAdapter1 = config_.referenceAdapter1;
         sessionRegistry = sessionRegistry_;
         _poolClass = config_.poolClass;
         _liquidityMode = config_.liquidityMode;
@@ -486,6 +492,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         result.calendarRegistry = _calendarRegistry;
         result.safetyController = _safetyController;
         result.treasuryAdapter = _treasuryAdapter;
+        result.referenceAdapter0 = referenceAdapter0;
+        result.referenceAdapter1 = referenceAdapter1;
         result.poolClass = _poolClass;
         result.liquidityMode = _liquidityMode;
         result.referenceMode = _referenceMode;
@@ -716,6 +724,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         input.calendarRegistry = _calendarRegistry;
         input.safetyController = _safetyController;
         input.sessionRegistry = sessionRegistry;
+        input.referenceAdapter0 = referenceAdapter0;
+        input.referenceAdapter1 = referenceAdapter1;
         input.poolClass = _poolClass;
         input.referenceMode = _referenceMode;
         input.executionReady = SWAP_EXECUTION_READY;

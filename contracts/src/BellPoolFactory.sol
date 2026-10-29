@@ -9,6 +9,9 @@ import {IBellPoolFactory, IAssetRegistry, ISessionRegistry} from "./interfaces/I
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
 import {PositionReceipt, IPositionReceiptManager} from "./libraries/PositionReceipt.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
+import {PolicyConstants} from "./libraries/PolicyConstants.sol";
+import {WidePriceMath} from "./libraries/WidePriceMath.sol";
+import {ChainlinkTokenReferenceAdapter} from "./adapters/ChainlinkTokenReferenceAdapter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
@@ -42,6 +45,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     error BalanceMismatch();
     error ReentrantRequest();
     error PriceGuardUnavailable();
+    error InitialPriceOutOfBand();
 
     BellHookDeployer public immutable hookDeployer;
     IPositionManager public immutable positionManager;
@@ -171,8 +175,11 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     function _validate(CreateRequest calldata r) private view {
         if (serviceToken == address(0)) revert FeeTokenNotBound();
         if (r.config.liquidityMode != liquidityMode) revert UnsupportedLiquidityMode();
-        // No configured-reference-band evaluator is integrated yet. Never imply priced protection.
-        if (r.config.poolClass == 0) revert PriceGuardUnavailable();
+        if (r.config.poolClass > 1 || (r.config.poolClass == 1
+            && (r.config.referenceAdapter0 != address(0) || r.config.referenceAdapter1 != address(0)))) {
+            // SESSION_ONLY has no reference path; an adapter there would imply priced protection.
+            revert PriceGuardUnavailable();
+        }
         if (_profileHash(r.config) != profileHash || r.config.token0 == address(0) || r.config.token0 >= r.config.token1
             || r.config.token0.code.length == 0 || r.config.token1.code.length == 0) revert InvalidConfiguration();
         if (msg.sender == serviceRecipient || block.timestamp > r.deadline || r.nonce != nonces[msg.sender] || r.nonce == type(uint64).max
@@ -187,7 +194,38 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         bool stock0 = _admitted(r.config.assetRegistry, r.config.asset0, r.config.token0, r.config.poolClass);
         bool stock1 = _admitted(r.config.assetRegistry, r.config.asset1, r.config.token1, r.config.poolClass);
         // SESSION_ONLY requires exactly one verified stock. Stock/stock belongs to PRICE_GUARDED.
-        if (stock0 == stock1) revert InvalidConfiguration();
+        if (r.config.poolClass != 0 && stock0 == stock1) revert InvalidConfiguration();
+        if (r.config.poolClass == 0) _validatePriceGuard(r, stock0, stock1);
+    }
+
+    /// @dev PRICE_GUARDED admission: both sides must carry a live Chainlink reference adapter, the
+    /// adapter on the stock side must pin that exact stock token (the counterasset side may be
+    /// zero-bound), and the initial pool price must sit inside ACTIVE_BAND_BPS of the feed-derived
+    /// reference ratio.
+    function _validatePriceGuard(CreateRequest calldata r, bool stock0, bool stock1) private view {
+        address adapter0 = r.config.referenceAdapter0;
+        address adapter1 = r.config.referenceAdapter1;
+        if (adapter0 == address(0) || adapter1 == address(0) || adapter0.code.length == 0 || adapter1.code.length == 0) {
+            revert InvalidConfiguration();
+        }
+        // Each stock side's adapter must pin that exact token, so a misdirected or repurposed feed
+        // cannot anchor a different asset. The counterasset side may be zero-bound; its feed only
+        // contributes the ratio below and identity there is a deployment-manifest trust boundary.
+        // Stock/stock is a valid PRICE_GUARDED shape, so both sides are checked in that case.
+        if ((stock0 && ChainlinkTokenReferenceAdapter(adapter0).stockToken() != r.config.token0)
+            || (stock1 && ChainlinkTokenReferenceAdapter(adapter1).stockToken() != r.config.token1)) {
+            revert InvalidConfiguration();
+        }
+        uint128 price0 = ChainlinkTokenReferenceAdapter(adapter0).referencePrice();
+        uint128 price1 = ChainlinkTokenReferenceAdapter(adapter1).referencePrice();
+        uint8 decimals0 = IERC20Metadata(r.config.token0).decimals();
+        uint8 decimals1 = IERC20Metadata(r.config.token1).decimals();
+        // Full-precision band math shared with the swap path: the reference ratio is
+        // (P0 * 10^d1) / (P1 * 10^d0) on the raw price axis, exactly the convention
+        // WidePriceMath.isWithinPriceBand compares sqrtPriceX96^2 against.
+        if (!WidePriceMath.isWithinPriceBand(r.sqrtPriceX96, price0, price1, decimals0, decimals1, PolicyConstants.ACTIVE_BAND_BPS)) {
+            revert InitialPriceOutOfBand();
+        }
     }
 
     function _admitted(address registry, bytes32 id, address token, uint8 poolClass) private view returns(bool) {

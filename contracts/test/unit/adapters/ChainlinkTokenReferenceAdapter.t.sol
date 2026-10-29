@@ -165,7 +165,7 @@ contract ChainlinkTokenReferenceAdapterTest {
         require(identity.sourceConfigHash() == b.sourceConfigHash(), "sourceConfigHash not deterministic");
     }
 
-    function _canonicalWire(address feed_, uint8 decimals_, uint32 heartbeatSec_) private view returns (SourceWire memory wire) {
+    function _canonicalWire(address feed_, uint8 decimals_, uint32 heartbeatSec_, address stockToken_) private view returns (SourceWire memory wire) {
         wire = SourceWire({
             kind: 4,
             phaseScope: 4,
@@ -177,7 +177,7 @@ contract ChainlinkTokenReferenceAdapterTest {
             heartbeatSec: heartbeatSec_,
             expectedCodeHash: feed_.codehash,
             expectedImplementation: feed_,
-            canonicalTokenId: keccak256(abi.encode(block.chainid, address(0)))
+            canonicalTokenId: keccak256(abi.encode(block.chainid, stockToken_))
         });
     }
 
@@ -185,7 +185,7 @@ contract ChainlinkTokenReferenceAdapterTest {
         setUp();
         StubAggregator agg = new StubAggregator(100, block.timestamp, 8);
         ChainlinkTokenReferenceAdapter a = new ChainlinkTokenReferenceAdapter(address(agg), 86400, 8, "x", address(0));
-        SourceWire memory wire = _canonicalWire(address(agg), 8, 86400);
+        SourceWire memory wire = _canonicalWire(address(agg), 8, 86400, address(0));
         bytes32 expected = keccak256(abi.encode(
             wire.kind,
             wire.phaseScope,
@@ -205,6 +205,31 @@ contract ChainlinkTokenReferenceAdapterTest {
         require(a.sourceConfigHash() != SourceConfigHash.hash(wire), "pause binding is not domain-separated");
     }
 
+    function test_sourceConfigHash_binds_explicit_stock_token_identity() external {
+        setUp();
+        StubAggregator agg = new StubAggregator(100, block.timestamp, 8);
+        StubStockWithPause stock = new StubStockWithPause();
+        ChainlinkTokenReferenceAdapter a = new ChainlinkTokenReferenceAdapter(address(agg), 86400, 8, "x", address(stock));
+        // The canonical token id derives from the explicitly bound stock token, not a zero pin.
+        SourceWire memory wire = _canonicalWire(address(agg), 8, 86400, address(stock));
+        bytes32 expected = keccak256(abi.encode(
+            wire.kind,
+            wire.phaseScope,
+            wire.endpoint,
+            wire.feedId,
+            wire.schema,
+            wire.decimals,
+            wire.priceBasis,
+            wire.heartbeatSec,
+            wire.expectedCodeHash,
+            wire.expectedImplementation,
+            wire.canonicalTokenId,
+            block.chainid,
+            address(stock)
+        ));
+        require(a.sourceConfigHash() == expected, "stock-token canonical identity not bound");
+    }
+
     function test_sourceConfigHash_differs_when_pause_binding_differs() external {
         setUp();
         StubAggregator agg = new StubAggregator(100, block.timestamp, 8);
@@ -212,7 +237,7 @@ contract ChainlinkTokenReferenceAdapterTest {
         ChainlinkTokenReferenceAdapter bound = new ChainlinkTokenReferenceAdapter(address(agg), 86400, 8, "x", address(1));
         require(unbound.sourceConfigHash() != bound.sourceConfigHash(), "sourceConfigHash ignored the pause binding");
         // Changing the stockToken alone must not change the canonical wire fields.
-        require(unbound.sourceConfigHash() != SourceConfigHash.hash(_canonicalWire(address(agg), 8, 86400)),
+        require(unbound.sourceConfigHash() != SourceConfigHash.hash(_canonicalWire(address(agg), 8, 86400, address(1))),
             "pause-binding domain separation is not appended after the wire hash");
     }
 

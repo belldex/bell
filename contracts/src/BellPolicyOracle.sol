@@ -12,6 +12,11 @@ import {AssetPolicy} from "./libraries/AssetPolicy.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
 import {Mode, PoolClass} from "./types/ProtocolTypes.sol";
 
+/// @dev Narrow local surface of ChainlinkTokenReferenceAdapter consumed with bounded staticcalls.
+interface IChainlinkTokenReference {
+    function referencePrice() external view returns (uint128);
+}
+
 /// @title BellPolicyOracle
 /// @notice Stateless view-only transport for the complete BELL policy evaluation.
 /// @dev This contract exists because `BellHook` was 5 bytes short of the EIP-170 limit. Every dependency read,
@@ -36,6 +41,8 @@ contract BellPolicyOracle {
         address calendarRegistry;
         address safetyController;
         address sessionRegistry;
+        address referenceAdapter0;
+        address referenceAdapter1;
         uint8 poolClass;
         uint8 referenceMode;
         bool executionReady;
@@ -130,6 +137,12 @@ contract BellPolicyOracle {
     {
         DependencyEvaluation memory deps = _evaluateDependencies(input);
 
+        // PRICE_GUARDED reference reads happen before the decision so a failed/stale feed is a
+        // recorded blocking reason inside the same dependency aggregation, never a revert of the
+        // whole evaluate and never a healthy default.
+        (uint128[2] memory referencePrices, uint256 referenceReasons) = _referencePrices(input);
+        deps.reasons |= referenceReasons;
+
         ModePolicy.Context memory context;
         context.lifecycle = input.state.lifecycle;
         context.previousMode = input.state.mode;
@@ -185,7 +198,7 @@ contract BellPolicyOracle {
             _closureRemaining(input, episodeGross[0], 0),
             _closureRemaining(input, episodeGross[1], 1)
         ];
-        output.referencePrice18 = [uint128(0), uint128(0)];
+        output.referencePrice18 = referencePrices;
         output.validUntil =
             input.state.lifecycle == uint8(Lifecycle.LIVE) && deps.validUntil != type(uint64).max ? deps.validUntil : 0;
         output.closureNonce = input.state.closureNonce;
@@ -197,6 +210,41 @@ contract BellPolicyOracle {
 
     function _tradeCap(Input calldata input, uint256 i) private pure returns (uint128) {
         return input.tradeCap[i];
+    }
+
+    /// @notice Per-side reference prices for PRICE_GUARDED. Each read is a bounded staticcall: a
+    /// failed or stale feed becomes a recorded blocking reason, never a revert of the evaluation and
+    /// never a healthy default. SESSION_ONLY (or a pool missing an adapter) reports ([0, 0], 0).
+    function _referencePrices(Input calldata input)
+        private
+        view
+        returns (uint128[2] memory prices, uint256 reasons)
+    {
+        if (input.poolClass != uint8(PoolClass.PRICE_GUARDED) || input.referenceAdapter0 == address(0)
+            || input.referenceAdapter1 == address(0)) {
+            return (prices, 0);
+        }
+        prices[0] = _readReferencePrice(input.referenceAdapter0);
+        prices[1] = _readReferencePrice(input.referenceAdapter1);
+        // A zero price means the bounded read failed, returned out of domain or reported a stale
+        // feed (the adapter reverts); either way the side cannot anchor a price and blocks trading.
+        if (prices[0] == 0 || prices[1] == 0) reasons = ReasonBits.PRICE_INPUT_INVALID_OR_STALE;
+    }
+
+    /// @dev Selector-only staticcall with the house gas bound; returndata must be one uint128 word.
+    function _readReferencePrice(address adapter) private view returns (uint128) {
+        bytes4 selector = IChainlinkTokenReference.referencePrice.selector;
+        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
+        bool success;
+        uint256 value;
+        assembly ("memory-safe") {
+            mstore(0, selector)
+            success := staticcall(gasLimit, adapter, 0, 4, 0, 32)
+            if iszero(eq(returndatasize(), 32)) { success := 0 }
+            value := mload(0)
+        }
+        if (!success || value > type(uint128).max) return 0;
+        return uint128(value);
     }
 
     function _windowCap(Input calldata input, uint256 i) private pure returns (uint128) {

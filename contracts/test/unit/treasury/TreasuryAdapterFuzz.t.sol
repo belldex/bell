@@ -111,7 +111,8 @@ contract TreasuryAdapterFuzzTest {
             assetRegistry: address(1), calendarRegistry: address(2), safetyController: address(3),
             treasuryAdapter: address(adapter), poolClass: 1, liquidityMode: 1, referenceMode: 0,
             tickSpacing: 60, tradeCap: [uint128(10), uint128(10)], windowCap: [uint128(100), uint128(100)],
-            closureCap: [uint128(1), uint128(1)], policyId: keccak256("fuzz")
+            closureCap: [uint128(1), uint128(1)], policyId: keccak256("fuzz"),
+            referenceAdapter0: address(0), referenceAdapter1: address(0)
         });
         return CreateRequest({
             config: config, salt: bytes32(uint256(7)), nonce: 0, deadline: uint64(block.timestamp + 1000),

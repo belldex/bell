@@ -138,6 +138,11 @@ struct PoolConfig {
     uint128[2] windowCap;
     uint128[2] closureCap;
     bytes32 policyId;
+    // Appended AFTER the existing fields to avoid reordering the ABI layout that
+    // _profileHash, BellHook.configHash and every off-chain codec already pin.
+    // Zero means "no reference anchor on this side"; SESSION_ONLY must keep both zero.
+    address referenceAdapter0;
+    address referenceAdapter1;
 }
 
 struct PoolState {

@@ -143,7 +143,8 @@ contract BellPoolFactoryTest {
         PoolConfig memory c = PoolConfig({token0:address(token0), token1:address(token1), asset0:bytes32(uint256(1)), asset1:bytes32(uint256(2)),
             poolManager:address(manager),positionManager:address(positions),factory:future,assetRegistry:address(assets),calendarRegistry:address(calendar),
             safetyController:address(safety),treasuryAdapter:address(0),poolClass:1,liquidityMode:0,referenceMode:0,tickSpacing:60,
-            tradeCap:[uint128(10),uint128(10)],windowCap:[uint128(100),uint128(100)],closureCap:[uint128(1),uint128(1)],policyId:keccak256("candidate")});
+            tradeCap:[uint128(10),uint128(10)],windowCap:[uint128(100),uint128(100)],closureCap:[uint128(1),uint128(1)],policyId:keccak256("candidate"),
+            referenceAdapter0:address(0),referenceAdapter1:address(0)});
         factory = new BellPoolFactory(c, deployer, address(usdg), SERVICE);
         require(address(factory) == future, "factory prediction");
         _admit(c.asset0, address(token0), true);
@@ -245,7 +246,7 @@ contract BellPoolFactoryTest {
         require(token0.balanceOf(SERVICE) == 49e6 && token0.balanceOf(address(factory)) == 777,"fee custody/sweep");
     }
     function testMaxServiceFeeRejectedBeforeFunding() external { request.maxServiceFee--; _rollback(request); }
-    function testPriceGuardedOutOfBandSeedFailsClosedBeforeFunding() external {
+    function testPriceGuardedMissingAdaptersRejectedBeforeFunding() external {
         PoolConfig memory c = request.config;
         oracle_hoisted = new BellPolicyOracle();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
@@ -254,7 +255,8 @@ contract BellPoolFactoryTest {
         factory = new BellPoolFactory(c,deployer,address(usdg),SERVICE);
         request.config = c; request.tickLower = -6000; request.tickUpper = 6000;
         request.sqrtPriceX96 = TickMath.getSqrtPriceAtTick(3000);
-        require(bytes4(_rollback(request)) == bytes4(keccak256("PriceGuardUnavailable()")),"priced initial guard bypass");
+        // PRICE_GUARDED without both reference adapters is a malformed profile, not a priced pool.
+        require(bytes4(_rollback(request)) == BellPoolFactory.InvalidConfiguration.selector,"priced initial guard bypass");
     }
     function testCreatorServiceRecipientRejectedBeforeFunding() external {
         vm.prank(SERVICE);

@@ -140,7 +140,8 @@ contract TreasuryAdapterTest {
             safetyController: address(safety), treasuryAdapter: predictedAdapter,
             poolClass: 1, liquidityMode: 1, referenceMode: 0, tickSpacing: 60,
             tradeCap: [uint128(10), uint128(10)], windowCap: [uint128(100), uint128(100)],
-            closureCap: [uint128(1), uint128(1)], policyId: keccak256("candidate")
+            closureCap: [uint128(1), uint128(1)], policyId: keccak256("candidate"),
+            referenceAdapter0: address(0), referenceAdapter1: address(0)
         });
         _admit(c.asset0, address(token0), true);
         _admit(c.asset1, address(token1), false);

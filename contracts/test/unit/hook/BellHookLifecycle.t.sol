@@ -1279,6 +1279,8 @@ contract BellHookLifecycleTest {
         config.windowCap = [uint128(10_000_000), uint128(20_000_000)];
         config.closureCap = [uint128(500_000), uint128(1_000_000)];
         config.policyId = keccak256("POLICY_V1");
+        config.referenceAdapter0 = address(0);
+        config.referenceAdapter1 = address(0);
     }
 
     function _key() internal view returns (PoolKey memory key) {

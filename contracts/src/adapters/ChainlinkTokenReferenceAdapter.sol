@@ -61,6 +61,10 @@ contract ChainlinkTokenReferenceAdapter is ISourceAdapterIdentity {
         feedDecimals = feedDecimals_;
         _symbol = symbol_;
         stockToken = stockToken_;
+        // Task 3 admits real tokens through PoolConfig references, so the canonical token id is
+        // derived from the explicitly bound stock token (the zero-address pin was Task 2's
+        // placeholder). The pause binding stays separate so two adapters differing only in that
+        // binding still hash differently.
         _sourceConfigHash = keccak256(abi.encode(
             KIND_SECONDARY,
             PHASE_SCOPE_SECONDARY,
@@ -72,7 +76,7 @@ contract ChainlinkTokenReferenceAdapter is ISourceAdapterIdentity {
             heartbeat_,
             feed_.codehash,
             feed_,
-            keccak256(abi.encode(block.chainid, address(0))),
+            keccak256(abi.encode(block.chainid, stockToken_)),
             block.chainid,
             stockToken_
         ));

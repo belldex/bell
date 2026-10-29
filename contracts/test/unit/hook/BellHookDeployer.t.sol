@@ -57,7 +57,9 @@ contract BellHookDeployerTest {
             tradeCap: [uint128(10), uint128(10)],
             windowCap: [uint128(100), uint128(100)],
             closureCap: [uint128(1), uint128(1)],
-            policyId: keccak256("policy")
+            policyId: keccak256("policy"),
+            referenceAdapter0: address(0),
+            referenceAdapter1: address(0)
         });
         key = PoolKey({
             currency0: Currency.wrap(token0),
