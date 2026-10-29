@@ -262,7 +262,7 @@ const route = (from: number, to: number) => {
   return d;
 };
 const LAST_LIVE = PHASES.reduce((last, p, i) => (p.status === "done" || p.status === "live" ? i : last), 0);
-const FUTURE_ROUTE = LAST_LIVE < PHASES.length - 1 ? `${route(LAST_LIVE, PHASES.length - 1)} L1000 ${NODE_Y(PHASES.length - 1)}` : "";
+const FUTURE_ROUTE = LAST_LIVE < PHASES.length - 1 ? route(LAST_LIVE, PHASES.length - 1) : "";
 
 export function RoadmapSection() {
   return (

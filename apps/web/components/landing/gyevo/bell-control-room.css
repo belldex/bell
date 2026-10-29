@@ -428,6 +428,11 @@
 
 /* Readiness is an operations route with the evidence attached to it. */
 .lp--bell .lp-road__map { display:block; position:relative; height:4.5rem; margin-top:3rem; isolation:isolate; }
+.lp--bell .lp-road__svg--signal { pointer-events:none; }
+.lp--bell .lp-road__svg--signal path {
+  fill:none; stroke:var(--lp-public-hi); stroke-width:2.5; stroke-linecap:round; vector-effect:non-scaling-stroke;
+  stroke-dasharray:1000 1000; stroke-dashoffset:1000; opacity:0; filter:drop-shadow(0 0 4px rgba(202,204,202,.58));
+}
 .lp--bell .lp-road__node { width:1.9rem; height:1.9rem; margin:-.95rem 0 0 -.95rem; border-radius:2px; box-shadow:0 0 0 .4rem var(--lp-bg); font-size:0; }
 .lp--bell .lp-road__node[data-status="wip"] { border-color:var(--lp-public); background:var(--lp-bg); }
 .lp--bell .lp-road__node[data-status="wip"]::after {
@@ -586,7 +591,6 @@
   .lp--bell .lp-lend__idx { grid-column:1/-1; }
   .lp--bell .lp-lend__gate { grid-column:2; grid-row:2; }
   .lp--bell .lp-lend__act { grid-column:1; grid-row:2; }
-  .lp--bell .lp-road__map { display:none; }
   .lp--bell .lp-road__list { grid-template-columns:1fr; }
   .lp--bell .lp-phase,.lp--bell .lp-phase:first-child,.lp--bell .lp-phase:nth-child(even) {
     min-height:0; padding:1.15rem 0; border:0; border-bottom:1px solid var(--lp-line);
@@ -672,6 +676,7 @@
   .lp--bell .lp-session-art__image { transition:none; transform:none; translate:none; }
   .lp--bell .lp-lend__acts li::after { scale:1 1; transition:none; }
   .lp--bell .lp-road__node[data-status="wip"]::after { animation:none; }
+  .lp--bell .lp-road__svg--signal path { opacity:0 !important; }
 }
 
 /* BELL policy instruments: each chapter gets its own animated visual language. */

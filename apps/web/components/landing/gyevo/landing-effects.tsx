@@ -18,6 +18,31 @@ export function LandingEffects() {
     root.dataset.js = "1";
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const fine = window.matchMedia("(pointer: fine)").matches;
+    const roadMap = root.querySelector<HTMLElement>(".lp-road__map");
+    const roadSignal = root.querySelector<SVGPathElement>(".lp-road__svg--signal path");
+
+    /* Scrub the roadmap highlight against the map's viewport travel, so it can
+       move forward and backward with the user's scroll and finish at the last node. */
+    let roadRaf = 0;
+    const updateRoadProgress = () => {
+      roadRaf = 0;
+      if (!roadMap || !roadSignal || reduced) return;
+
+      const { top } = roadMap.getBoundingClientRect();
+      const start = window.innerHeight * 0.84;
+      const end = window.innerHeight * 0.16;
+      const progress = Math.max(0, Math.min(1, (start - top) / (start - end)));
+      roadSignal.style.strokeDashoffset = String(1000 * (1 - progress));
+      roadSignal.style.opacity = progress === 0 ? "0" : String(Math.min(0.95, progress * 5));
+    };
+    const scheduleRoadProgress = () => {
+      if (!roadRaf) roadRaf = requestAnimationFrame(updateRoadProgress);
+    };
+    if (!reduced && roadMap && roadSignal) {
+      scheduleRoadProgress();
+      window.addEventListener("scroll", scheduleRoadProgress, { passive: true });
+      window.addEventListener("resize", scheduleRoadProgress, { passive: true });
+    }
 
     const io = new IntersectionObserver(
       (entries) => {
@@ -75,9 +100,12 @@ export function LandingEffects() {
 
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      if (roadRaf) cancelAnimationFrame(roadRaf);
       io.disconnect();
       root.removeEventListener("pointermove", onMove);
       root.removeEventListener("pointerout", onOut);
+      window.removeEventListener("scroll", scheduleRoadProgress);
+      window.removeEventListener("resize", scheduleRoadProgress);
       delete root.dataset.js;
     };
   }, []);
