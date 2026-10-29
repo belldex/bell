@@ -95,12 +95,14 @@ contract DeployTestnet {
     }
 
     function _deployerKey(bool isMainnet) private view returns (uint256 pk) {
-        pk = vm.envOr("RH_DEPLOYER_PRIVATE_KEY", uint256(0));
-        if (pk == 0) {
-            pk = vm.envOr(
-                isMainnet ? "RH_MAINNET_DEPLOYER_PRIVATE_KEY" : "RH_TESTNET_DEPLOYER_PRIVATE_KEY",
-                uint256(0)
-            );
+        // On mainnet the chain-specific key is checked FIRST. Falling back to the shared
+        // RH_DEPLOYER_PRIVATE_KEY there would silently spend from the rehearsal wallet.
+        if (isMainnet) {
+            pk = vm.envOr("RH_MAINNET_DEPLOYER_PRIVATE_KEY", uint256(0));
+            if (pk == 0) pk = vm.envOr("RH_DEPLOYER_PRIVATE_KEY", uint256(0));
+        } else {
+            pk = vm.envOr("RH_TESTNET_DEPLOYER_PRIVATE_KEY", uint256(0));
+            if (pk == 0) pk = vm.envOr("RH_DEPLOYER_PRIVATE_KEY", uint256(0));
         }
         if (pk == 0) pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
     }
@@ -109,12 +111,14 @@ contract DeployTestnet {
         roles.governance = vm.envOr(
             isMainnet ? "MAINNET_GOVERNANCE_ADDRESS" : "TESTNET_GOVERNANCE_ADDRESS", deployer
         );
-        roles.guardian = vm.envAddress(isMainnet ? "MAINNET_GUARDIAN_ADDRESS" : "TESTNET_GUARDIAN_ADDRESS");
-        roles.treasury = vm.envAddress(isMainnet ? "MAINNET_TREASURY_ADDRESS" : "TESTNET_TREASURY_ADDRESS");
-        roles.recipient = vm.envAddress(isMainnet ? "MAINNET_SERVICE_RECIPIENT" : "TESTNET_SERVICE_RECIPIENT");
+        // envOr + explicit require so a missing variable reports the role name instead of a raw
+        // cheatcode revert that reads like a tooling failure.
+        roles.guardian = vm.envOr(isMainnet ? "MAINNET_GUARDIAN_ADDRESS" : "TESTNET_GUARDIAN_ADDRESS", address(0));
+        roles.treasury = vm.envOr(isMainnet ? "MAINNET_TREASURY_ADDRESS" : "TESTNET_TREASURY_ADDRESS", address(0));
+        roles.recipient = vm.envOr(isMainnet ? "MAINNET_SERVICE_RECIPIENT" : "TESTNET_SERVICE_RECIPIENT", address(0));
         require(
             roles.treasury != address(0) && roles.recipient != address(0) && roles.guardian != address(0),
-            "missing role address"
+            "missing role address: set MAINNET_GUARDIAN_ADDRESS, MAINNET_TREASURY_ADDRESS and MAINNET_SERVICE_RECIPIENT"
         );
         require(
             roles.governance != roles.guardian && roles.governance != roles.treasury
