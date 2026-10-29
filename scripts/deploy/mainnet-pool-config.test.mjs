@@ -115,3 +115,20 @@ test('native ETH insufficiency is reported when WETH must be wrapped', () => {
   });
   assert.deepEqual(result.shortfalls, ['native ETH 1 < WETH shortfall 2']);
 });
+
+test('wrapping preserves the configured native gas reserve', () => {
+  const result = checkSeedFunding({
+    token0: WETH,
+    weth: WETH,
+    amountMax: [2n, 100n],
+    wethBalance: 0n,
+    stockBalance: 100n,
+    nativeBalance: 11n,
+    nativeGasReserve: 10n,
+    feeBalance: 1n,
+    serviceFee: 1n,
+    wrapNativeForWeth: true,
+  });
+  assert.deepEqual(result.shortfalls, ['native ETH after wrap 9 < gas reserve 10']);
+  assert.equal(result.nativeToWrap, 2n);
+});

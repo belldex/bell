@@ -145,6 +145,7 @@ const funding = checkSeedFunding({
   wethBalance,
   stockBalance,
   nativeBalance,
+  nativeGasReserve: BigInt(env.BELL_MAINNET_GAS_RESERVE_WEI || 5_000_000_000_000_000n),
   feeBalance,
   serviceFee,
   wrapNativeForWeth: true,

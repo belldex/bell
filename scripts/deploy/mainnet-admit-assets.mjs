@@ -56,6 +56,9 @@ const pk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
 if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 if (!pk) throw new Error('RH_MAINNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required');
 
+if (!existsSync('evidence/deploy/mainnet-4663.json')) {
+  throw new Error('mainnet deployment manifest is missing: evidence/deploy/mainnet-4663.json; run the mainnet deploy first');
+}
 const manifest = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8'));
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
   throw new Error(`manifest chainId is ${manifest.chainId}, expected ${MAINNET_CHAIN_ID}`);

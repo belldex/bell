@@ -151,6 +151,7 @@ export function checkSeedFunding({
   wethBalance,
   stockBalance,
   nativeBalance,
+  nativeGasReserve = 0n,
   feeBalance,
   serviceFee,
   wrapNativeForWeth = false,
@@ -158,7 +159,7 @@ export function checkSeedFunding({
   if (!Array.isArray(amountMax) || amountMax.length !== 2 || amountMax.some((x) => typeof x !== 'bigint' || x < 0n)) {
     throw new TypeError('amountMax must be a two-element non-negative bigint array');
   }
-  for (const [name, value] of Object.entries({ wethBalance, stockBalance, nativeBalance, feeBalance, serviceFee })) {
+  for (const [name, value] of Object.entries({ wethBalance, stockBalance, nativeBalance, nativeGasReserve, feeBalance, serviceFee })) {
     if (typeof value !== 'bigint' || value < 0n) throw new TypeError(`${name} must be a non-negative bigint`);
   }
   const wethIndex = token0?.toLowerCase() === weth?.toLowerCase() ? 0 : 1;
@@ -167,13 +168,17 @@ export function checkSeedFunding({
   const requiredStock = amountMax[stockIndex];
   const wethShortfall = requiredWeth > wethBalance ? requiredWeth - wethBalance : 0n;
   const nativeToWrap = wrapNativeForWeth ? wethShortfall : 0n;
+  const nativeAfterWrap = nativeBalance > nativeToWrap ? nativeBalance - nativeToWrap : 0n;
   const shortfalls = [];
   if (wethShortfall > 0n && (!wrapNativeForWeth || nativeBalance < wethShortfall)) {
     shortfalls.push(wrapNativeForWeth
       ? `native ETH ${nativeBalance} < WETH shortfall ${wethShortfall}`
       : `WETH ${wethBalance} < ${requiredWeth}`);
   }
+  if (wrapNativeForWeth && nativeBalance >= nativeToWrap && nativeAfterWrap < nativeGasReserve) {
+    shortfalls.push(`native ETH after wrap ${nativeAfterWrap} < gas reserve ${nativeGasReserve}`);
+  }
   if (stockBalance < requiredStock) shortfalls.push(`stock ${stockBalance} < ${requiredStock}`);
   if (feeBalance < serviceFee) shortfalls.push(`fee token ${feeBalance} < ${serviceFee}`);
-  return Object.freeze({ shortfalls: Object.freeze(shortfalls), nativeToWrap });
+  return Object.freeze({ shortfalls: Object.freeze(shortfalls), nativeToWrap, nativeAfterWrap });
 }

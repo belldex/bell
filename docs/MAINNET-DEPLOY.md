@@ -29,16 +29,18 @@ BELL_CALENDAR_PUBLICATION_LEAD_SECONDS=0   # no coverage notice
 BELL_OPERATION_EXPIRY_SECONDS=604800       # operations still expire after 7 days
 ```
 
-So `queueAsset` → `activateAsset` and `queueRoot` → `activateRoot` → `activateInterval` all complete
-without waiting. Verified by `contracts/test/unit/governance/GovernanceLatency.t.sol`, which asserts
-same-block activation on chain id 4663.
-
-The one remaining sequencing constraint is not a delay: `activateRoot` requires
+So `queueAsset` → `activateAsset` and `queueRoot` → `activateRoot` can complete in the same block.
+The interval itself has a 5-minute activation buffer by default: `activateRoot` requires
 `block.timestamp < coverageStart`, and `activateInterval` requires the chain clock to be inside a
-leaf. Start coverage a few minutes in the future and do all three steps in one sitting.
+leaf. Queue and activate the root immediately, then run `activateInterval` after that short buffer.
+Verified by `contracts/test/unit/governance/GovernanceLatency.t.sol` and
+`scripts/calendar/mainnet-timeline.test.mjs`.
 
-Raise the values later if you want a real timelock — the contracts do not need redeploying to change
-policy, but the delay is immutable per deployment, so a change means a new `SafetyController`.
+Raise the values if you want a real timelock. They are immutable deployment settings. Because both
+registries bind `SafetyController` immutably, changing them requires redeploying the controller,
+registries and dependent stack; it cannot be changed by replacing only the controller.
+With zero governance delay, resume and role-rotation operations are also immediately executable.
+That is an explicit launch-speed tradeoff, not a retained 48-hour safety delay.
 
 ## 1. Fill `.env`
 
@@ -65,7 +67,8 @@ YAHOO_REPORTER_PRIVATE_KEY=0x...                                      # already 
 BELL_POOL_CLASS=1
 BELL_POLICY_ID=bell-mainnet-v1
 BELL_MAINNET_SYMBOL=AAPL
-BELL_MAINNET_MIN_DEPLOYER_WEI=500000000000000000                     # optional preflight floor
+BELL_MAINNET_MIN_DEPLOYER_WEI=7000000000000000                       # optional override; default 0.007 ETH
+BELL_MAINNET_GAS_RESERVE_WEI=5000000000000000                        # retain 0.005 ETH after WETH wrapping
 
 # Instant launch. Raise these for a real timelock.
 BELL_GOVERNANCE_DELAY_SECONDS=0
