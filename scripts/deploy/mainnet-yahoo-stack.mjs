@@ -18,7 +18,7 @@ import { createPublicClient, createWalletClient, http, keccak256 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import YahooVerifierArtifact from '../../contracts/out/YahooSourceVerifier.sol/YahooSourceVerifier.json' with { type: 'json' };
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
-import { buildYahooSourceWire } from '../../packages/protocol/src/yahoo-attestation.mjs';
+import { buildMainnetYahooPlan } from './mainnet-yahoo-plan.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const EVIDENCE_PATH = 'evidence/deploy/mainnet-4663-stock-adapters.json';
@@ -40,6 +40,10 @@ if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 if (!pk) throw new Error('RH_MAINNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required');
 
 const broadcast = process.argv.includes('--broadcast');
+const nonceOffsetArg = process.argv.find((arg) => arg.startsWith('--nonce-offset='))?.slice('--nonce-offset='.length);
+const nonceOffset = nonceOffsetArg === undefined ? 0n : BigInt(nonceOffsetArg);
+if (nonceOffset < 0n) throw new Error('--nonce-offset must be a non-negative integer');
+if (broadcast && nonceOffset !== 0n) throw new Error('--nonce-offset is plan-only; broadcast uses the live deployer nonce');
 
 const candidates = JSON.parse(readFileSync('config/assets/candidates.mainnet.json', 'utf8'));
 const asset = candidates.assets?.find((a) => a.symbol === symbol);
@@ -68,46 +72,49 @@ const verifierCodeHash = keccak256(YahooVerifierArtifact.deployedBytecode.object
 const reporter = env.YAHOO_REPORTER_ADDRESS;
 if (!reporter || !/^0x[0-9a-fA-F]{40}$/.test(reporter)) throw new Error('YAHOO_REPORTER_ADDRESS must be a valid address');
 
-// One wire per phase scope. Scope 0 is the direct adjusted-token quote; scopes 1-3 are the
-// PRE/REGULAR/POST streams. Building them for 4663 is what makes canonicalTokenId correct here.
-const scopes = [
-  { scope: 0, key: 'directWire', label: 'direct' },
-  { scope: 1, key: 'regularWire', label: 'regular' },
-  { scope: 2, key: 'extendedWire', label: 'extended' },
-];
-const wires = scopes.map(({ scope, key, label }) => {
-  const info = buildYahooSourceWire({
-    chainId: MAINNET_CHAIN_ID,
-    token: asset.token,
-    verifier: env.YAHOO_SOURCE_VERIFIER_ADDRESS || '0x0000000000000000000000000000000000000000',
-    verifierCodeHash,
-    phaseScope: scope,
-    symbol,
-  });
-  return { ...info, scope, key, label };
+// The verifier address is the deployer's CREATE address at the current nonce. Build the wires
+// against that exact address so plan-only hashes equal the hashes used after broadcast. The
+// existing YAHOO_SOURCE_VERIFIER_ADDRESS may be the testnet verifier, so this mainnet flow never
+// implicitly reuses it.
+const liveDeployerNonce = await publicClient.getTransactionCount({ address: account.address });
+const deployerNonce = BigInt(liveDeployerNonce) + nonceOffset;
+const plan = buildMainnetYahooPlan({
+  deployer: account.address,
+  deployerNonce,
+  token: asset.token,
+  verifierCodeHash,
+  symbol,
+  reporter,
 });
 
 if (!broadcast) {
   console.log(JSON.stringify({
     mode: 'PLAN_ONLY',
     chainId,
+    deployer: account.address,
+    liveDeployerNonce,
+    nonceOffset: nonceOffset.toString(),
+    plannedVerifierNonce: deployerNonce.toString(),
     symbol,
     token: asset.token,
     tokenSymbol,
     reporter,
-    note: 'Wire hashes below are provisional when YAHOO_SOURCE_VERIFIER_ADDRESS is unset, because the verifier address is part of the hash.',
-    verifierSet: Boolean(env.YAHOO_SOURCE_VERIFIER_ADDRESS),
-    scopes: wires.map((w) => ({ scope: w.scope, label: w.label, sourceConfigHash: w.sourceConfigHash })),
+    verifierAddress: plan.verifierAddress,
+    verifierAddressSource: plan.verifierAddressSource,
+    verifierCodeHash,
+    scopes: plan.wires.map(({ scope, label, wire, sourceConfigHash }) => ({
+      scope,
+      label,
+      feedId: wire.feedId,
+      sourceConfigHash,
+    })),
   }, null, 2));
-  console.log('Re-run with --broadcast to deploy.');
+  console.log('Re-run with --broadcast to deploy the verifier at the predicted address, then its adapters.');
   process.exit(0);
 }
 
-if (!env.YAHOO_SOURCE_VERIFIER_ADDRESS) {
-  throw new Error('YAHOO_SOURCE_VERIFIER_ADDRESS must be set before broadcasting; the wire hash commits to it');
-}
-
-// 1. Verifier, pinned to the reporter that will sign quotes.
+// 1. Verifier, pinned to the reporter that will sign quotes. It must land at the predicted CREATE
+// address, otherwise all planned SourceWire hashes would point at the wrong verifier.
 console.log(`Deploying YahooSourceVerifier(reporter=${reporter})`);
 const verifierHash = await walletClient.deployContract({
   abi: YahooVerifierArtifact.abi,
@@ -117,6 +124,9 @@ const verifierHash = await walletClient.deployContract({
 const verifierReceipt = await publicClient.waitForTransactionReceipt({ hash: verifierHash });
 if (verifierReceipt.status !== 'success') throw new Error('verifier deploy reverted');
 const verifier = verifierReceipt.contractAddress;
+if (verifier.toLowerCase() !== plan.verifierAddress.toLowerCase()) {
+  throw new Error(`deployed verifier ${verifier} != predicted ${plan.verifierAddress}; refusing adapter deploy`);
+}
 const verifierOnchainCodeHash = keccak256(await publicClient.getBytecode({ address: verifier }));
 if (verifierOnchainCodeHash !== verifierCodeHash) {
   throw new Error(`deployed verifier code hash ${verifierOnchainCodeHash} != artifact ${verifierCodeHash}`);
@@ -125,15 +135,7 @@ console.log(`  verifier: ${verifier} (tx ${verifierHash})`);
 
 // 2. Adapters, each pinned to the real token and to its own wire hash.
 const deployed = {};
-for (const { scope, key, label } of scopes) {
-  const info = buildYahooSourceWire({
-    chainId: MAINNET_CHAIN_ID,
-    token: asset.token,
-    verifier,
-    verifierCodeHash,
-    phaseScope: scope,
-    symbol,
-  });
+for (const { scope, key, label, wire, sourceConfigHash } of plan.wires) {
   const direct = scope === 0;
   console.log(`Deploying ${label} adapter (scope ${scope})`);
   const hash = await walletClient.deployContract({
@@ -141,8 +143,8 @@ for (const { scope, key, label } of scopes) {
     bytecode: YahooAdapterArtifact.bytecode.object,
     args: [
       verifier,
-      info.sourceConfigHash,
-      direct ? `0x${'00'.repeat(32)}` : info.wire.feedId,
+      sourceConfigHash,
+      direct ? `0x${'00'.repeat(32)}` : wire.feedId,
       scope,
       direct,
       direct ? '0x0000000000000000000000000000000000000000' : asset.token,
@@ -158,13 +160,13 @@ for (const { scope, key, label } of scopes) {
     publicClient.readContract({ address: receipt.contractAddress, abi, functionName: 'verifier' }),
     publicClient.readContract({ address: receipt.contractAddress, abi, functionName: 'stockToken' }),
   ]);
-  if (onchainWire !== info.sourceConfigHash) throw new Error(`${label}: sourceConfigHash mismatch`);
-  if (onchainFeed !== info.wire.feedId) throw new Error(`${label}: feedId mismatch`);
+  if (onchainWire !== sourceConfigHash) throw new Error(`${label}: sourceConfigHash mismatch`);
+  if (onchainFeed !== wire.feedId) throw new Error(`${label}: feedId mismatch`);
   if (onchainVerifier.toLowerCase() !== verifier.toLowerCase()) throw new Error(`${label}: verifier mismatch`);
   if (!direct && onchainToken.toLowerCase() !== asset.token.toLowerCase()) throw new Error(`${label}: stockToken mismatch`);
 
-  deployed[key] = info.wire;
-  deployed[`${key}Hash`] = info.sourceConfigHash;
+  deployed[key] = wire;
+  deployed[`${key}Hash`] = sourceConfigHash;
   deployed[`${label}Adapter`] = receipt.contractAddress;
   console.log(`  ${label}: ${receipt.contractAddress} (tx ${hash})`);
 }
