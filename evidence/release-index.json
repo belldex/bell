@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "createdAt": "2026-10-26",
-  "updatedAt": "2026-10-27",
+  "updatedAt": "2026-10-29",
   "buildCommit": null,
   "note": "Release evidence index sesuai Brief baris 1500. Nilai MISSING/NOT_RUN berarti belum ada artifact — bukan PASS. Field diisi hanya dengan artifact nyata. File ini adalah index deskriptif; file yang divalidasi mesin adalah evidence/releases/index.json (dibaca scripts/evidence/check-release.mjs). Keduanya kini dijaga konsisten oleh pnpm evidence:check.",
   "chainId": 46630,
@@ -9,7 +9,7 @@
   "artifactHashes": {},
   "sourceManifestHash": null,
   "planSnapshot": {
-    "briefSha256": "2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c",
+    "briefSha256": "ee01ecdf591a6c1ee37dbb390279cfbc79f47ca575b40062a54d8ef0c4dc6975",
     "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
     "verifiedAgainst": "config/release-baseline.json"
   },
@@ -86,20 +86,36 @@
     "developerAutomaticallyFundsProject": false
   },
   "reviewedBy": [],
+  "ownerDecisions": [
+    {
+      "decidedAt": "2026-10-29",
+      "decision": "The four-weekend availability gate is removed by owner decision.",
+      "effect": "E04 availability evidence is still collected and reported honestly, but it is no longer a release-blocking gate. Overnight remains fail-closed because no Yahoo overnight feed exists; this is a data constraint, not a gate.",
+      "recordedIn": "docs/BELL-Developer-Brief-Final.md (section 20.M) and config/release-baseline.json mandate.fourWeekendAvailabilityGate=false"
+    },
+    {
+      "decidedAt": "2026-10-29",
+      "decision": "Yahoo data-rights gating is removed as a production blocker by owner decision.",
+      "effect": "Yahoo Finance charts are used as the active session price source signed by the BELL reporter. config/sources/rights-status.json becomes OWNER_ACCEPTED_RISK with gating.productionBlocker=false; rights fields remain disclosure, not gates. Redistribution of raw Yahoo reports remains disallowed.",
+      "recordedIn": "docs/BELL-Developer-Brief-Final.md (section 20.M) and config/sources/rights-status.json"
+    }
+  ],
   "sourceStatus": {
     "metadata": "DOCUMENTED",
     "accountAccess": "RPC_ONLY",
     "accountAccessNote": "Klaim VERIFIED_ACCESS era Chainlink sudah tidak berlaku. Yang terverifikasi sekarang hanya akses RPC read-only ke dua provider, bukan entitlement laporan sumber.",
-    "entitlementReports": "NOT_RUN",
+    "entitlementReports": "NOT_RUN (no longer a production blocker: owner decision 2026-10-29 removed Yahoo data-rights gating; see ownerDecisions)",
     "verifiedOnchain": "PARTIAL — deploy dan wiring terverifikasi; tidak ada sampel sumber yang valid saat pembacaan terakhir",
-    "rightsFile": "config/sources/rights-status.json (BLOCKED_ACCESS)"
+    "rightsFile": "config/sources/rights-status.json (OWNER_ACCEPTED_RISK by owner decision 2026-10-29; Yahoo data-rights gating is no longer a production blocker)"
   },
   "gateStatus": {
     "E01_build": "NOT_RUN",
     "E02_deployment": "NOT_RUN",
     "E03_source_capacity": "NOT_RUN",
     "E04_sessions_four_weekends": "NOT_RUN",
+    "E04_note": "Owner decision 2026-10-29 removed the four-weekend availability gate as release-blocking; E04 evidence is still collected and reported honestly, but E04 is no longer a blocker for mainnet funding.",
     "E05_audit_retest": "NOT_RUN",
+    "E05_note": "Yahoo source entitlement is no longer required for E05: owner decision 2026-10-29 removed Yahoo data-rights gating as a production blocker. E05 remains NOT_RUN until audit/retest evidence exists.",
     "E06_public_release": "NOT_RUN"
   },
   "gates": {

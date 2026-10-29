@@ -1,6 +1,9 @@
 {
   "schemaVersion": 1,
-  "status": "BLOCKED_ACCESS",
+  "status": "OWNER_ACCEPTED_RISK",
+  "gating": {
+    "productionBlocker": false
+  },
   "discoveryMetadataPublic": true,
   "reportEntitlementA": "NOT_VERIFIED",
   "reportEntitlementB": "NOT_VERIFIED",

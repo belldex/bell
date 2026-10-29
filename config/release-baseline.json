@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "project": "BELL",
-  "briefSha256": "2e7dbe11c4c01cd6d32415c8246a8a29878c92ee0c3500b7f888e7ba4e11fa0c",
+  "briefSha256": "ee01ecdf591a6c1ee37dbb390279cfbc79f47ca575b40062a54d8ef0c4dc6975",
   "implementationPlanSha256": "60ba23881cfd367f5205fd0872399d16e6fb449bf9713a1505a3e1ac753641a3",
   "scope": {
     "milestones": 16,
@@ -26,7 +26,8 @@
     "publicRpcFallback": false,
     "paidHostingOrAutomaticUpgrade": false,
     "publicLpPositions": "noncustodial-via-position-manager",
-    "canaryMayNarrowImplementationScope": false
+    "canaryMayNarrowImplementationScope": false,
+    "fourWeekendAvailabilityGate": false
   },
   "costClassification": {
     "hostingDatabaseStorageCronRpcCi": "free-tier-only-no-overage",

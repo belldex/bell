@@ -1060,7 +1060,15 @@ Receipt pertama ditampilkan PROVISIONAL. Status FINALIZED hanya jika block trans
 
 ### 20.M. Parameter dan kalibrasi yang tidak disamarkan sebagai hasil riset
 
-Candidate constants adalah yang tercantum pada tabel fee/freshness/band/timer dan resource bounds. Konfigurasi belum optimal secara empiris; menguncinya dalam source tidak membuktikan aman. Sebelum release, data capture seluruh sesi dan minimal empat weekend diperiksa tanpa melonggarkan definisi eligibility setelah melihat hasil.
+Candidate constants adalah yang tercantum pada tabel fee/freshness/band/timer dan resource bounds. Konfigurasi belum optimal secara empiris; menguncinya dalam source tidak membuktikan aman.
+
+**Decision 2026-10-29: the four-weekend availability gate is removed by owner decision.** Availability evidence is
+still collected and reported honestly, but it is no longer a release-blocking gate. Overnight remains fail-closed
+because no Yahoo overnight feed exists; this is a data constraint, not a gate.
+
+**Decision 2026-10-29: Yahoo data-rights gating is removed as a production blocker by owner decision.** Yahoo
+Finance charts are used as the active session price source signed by the BELL reporter. Rights fields are kept as
+disclosure, not gates; redistribution of raw Yahoo reports remains disallowed.
 
 Syarat availability candidate: source/calendar/anchor checkpoints berhasil >=99% dari kesempatan valid yang didefinisikan sebelumnya, termasuk closure capture windows; healthy swaps yang di bawah caps, memenuhi slippage dan masuk price path berhasil >=99% pada replay/fork dataset; expected budget-reject dilaporkan terpisah dan tidak disembunyikan dari total user-attempt success. Unexpected halt duration, missing anchors, repricing delay, budget exhaustion dan LP net PnL seluruhnya dipublikasikan per class. 99% ini target penerimaan project, bukan bukti yang sudah dicapai atau estimasi tail risk.
 
