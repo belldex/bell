@@ -13,7 +13,16 @@ interface VmCalendar {
 contract MockCalendarSafety {
     address public governance;
     address public guardian;
-    constructor(address governance_, address guardian_) { governance = governance_; guardian = guardian_; }
+    uint32 public governanceDelaySeconds;
+    uint32 public calendarPublicationLeadSeconds;
+    uint32 public operationExpirySeconds;
+    constructor(address governance_, address guardian_, uint32 delay_, uint32 lead_, uint32 expiry_) {
+        governance = governance_;
+        guardian = guardian_;
+        governanceDelaySeconds = delay_;
+        calendarPublicationLeadSeconds = lead_;
+        operationExpirySeconds = expiry_;
+    }
 }
 
 contract CalendarRegistryTest {
@@ -22,7 +31,7 @@ contract CalendarRegistryTest {
     bytes32 private constant PROVENANCE = bytes32(uint256(2));
 
     function _registry() internal returns (CalendarRegistry) {
-        MockCalendarSafety safety = new MockCalendarSafety(address(this), address(0xBEEF));
+        MockCalendarSafety safety = new MockCalendarSafety(address(this), address(0xBEEF), 172800, 604800, 604800);
         return new CalendarRegistry(address(safety));
     }
 

@@ -1,0 +1,20 @@
+{
+  "chainId": 4663,
+  "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
+  "treasury": "0xf6e272fbf862ae055949c61bc41e6395dfe20841",
+  "serviceRecipient": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
+  "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+  "permit2": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+  "safetyController": "0x7bdd9a3053e4f5df81ca8afe63a5a80046572b89",
+  "assetRegistry": "0x6935173de1499e81490b4aa2844a0bfd36491d6a",
+  "calendarRegistry": "0xe683f39fbaf9ced50c0ac2fd56c2032c58d82150",
+  "sessionRegistry": "0x5f357f9b5c2e09706260ee6b3a6e7d58d1d3338c",
+  "poolManager": "0x41a3a17b28e88025bcd76d6ec58b00980e6b5c38",
+  "positionManager": "0xbe86df1bff45001ec70d14d3b7d7bfd4a0e66701",
+  "hookDeployer": "0xe428b98f9c1c8a4cc1d89e30e5767097880db69c",
+  "poolFactory": "0x2fcd196c50e348fbfe48a9d2a10776eee70d49a2",
+  "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+  "router": "0x7bb0cbd999447758a343066ea99381766c0ae17e",
+  "status": "PRODUCTION",
+  "note": "PRICE_GUARDED stays blocked until an independent reference is admitted."
+}

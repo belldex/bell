@@ -75,6 +75,24 @@ const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
 const chainId = await publicClient.getChainId();
 if (chainId !== MAINNET_CHAIN_ID) throw new Error(`Wrong chain ${chainId}; expected ${MAINNET_CHAIN_ID}`);
 
+// Governance latency is a deployment parameter now. Read it from the controller instead of
+// assuming the old 7-day notice / 48-hour delay, so this script follows whatever was deployed.
+const SAFETY_ABI = parseAbi([
+  'function governanceDelaySeconds() view returns (uint32)',
+  'function calendarPublicationLeadSeconds() view returns (uint32)',
+  'function operationExpirySeconds() view returns (uint32)',
+]);
+const [governanceDelaySeconds, calendarLeadSeconds, operationExpirySeconds] = await Promise.all([
+  publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'governanceDelaySeconds' }),
+  publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'calendarPublicationLeadSeconds' }),
+  publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'operationExpirySeconds' }),
+]);
+const latency = {
+  governanceDelaySeconds: Number(governanceDelaySeconds),
+  calendarLeadSeconds: Number(calendarLeadSeconds),
+  operationExpirySeconds: Number(operationExpirySeconds),
+};
+
 const head = await publicClient.getBlock();
 const now = Number(head.timestamp);
 
@@ -102,16 +120,24 @@ const command = process.argv[2] ?? 'status';
 
 if (command === 'plan') {
   const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
-  // Coverage must start after the publication notice. Round up to the next whole UTC day so every
-  // leaf begins on a session boundary rather than mid-session.
-  const earliest = now + 7 * DAY;
+  // Coverage must start after whatever publication notice this deployment chose. Round up to the
+  // next whole UTC day so every leaf begins on a session boundary rather than mid-session.
+  const earliest = now + latency.calendarLeadSeconds;
   const coverageStart = Math.ceil(earliest / DAY) * DAY;
-  const plan = planMainnetCalendarTimeline({ now, coverageStart, coverageDays });
+  const plan = planMainnetCalendarTimeline({
+    now,
+    coverageStart,
+    coverageDays,
+    noticeSeconds: latency.calendarLeadSeconds,
+    etaDelaySeconds: latency.governanceDelaySeconds,
+    expirySeconds: latency.operationExpirySeconds,
+  });
   console.log(JSON.stringify({
     chainTime: now,
     chainTimeIso: new Date(now * 1000).toISOString(),
     assetId,
     assetAdmitted: Boolean(assetId),
+    deployedLatency: latency,
     ...plan,
     queueAtIso: new Date(plan.queueAt * 1000).toISOString(),
     coverageStartIso: new Date(plan.coverageStart * 1000).toISOString(),
@@ -137,9 +163,16 @@ if (command === 'plan') {
   }
 
   const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
-  const coverageStart = Math.ceil((now + 7 * DAY) / DAY) * DAY;
+  const coverageStart = Math.ceil((now + latency.calendarLeadSeconds) / DAY) * DAY;
   const coverageEnd = coverageStart + coverageDays * DAY;
-  const plan = planMainnetCalendarTimeline({ now, coverageStart, coverageDays });
+  const plan = planMainnetCalendarTimeline({
+    now,
+    coverageStart,
+    coverageDays,
+    noticeSeconds: latency.calendarLeadSeconds,
+    etaDelaySeconds: latency.governanceDelaySeconds,
+    expirySeconds: latency.operationExpirySeconds,
+  });
   if (!plan.ok) {
     console.error('Timeline is not viable:');
     for (const violation of plan.violations) console.error(`- ${violation}`);

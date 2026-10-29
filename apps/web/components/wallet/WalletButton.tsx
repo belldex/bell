@@ -1,62 +1,41 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertTriangle, ChevronDown, Eye, LogOut, Wallet } from 'lucide-react';
-import { Button } from '@/components/ui/primitives';
-import { CHAINS, isSupportedChain, shortAddress, useWallet } from '@/lib/wallet';
+import { ConnectButton } from '@rainbow-me/rainbowkit/components';
+import { ChevronDown, Wallet } from 'lucide-react';
 
+/** RainbowKit owns wallet state; this custom renderer keeps BELL's touch targets and visual system. */
 export function WalletButton() {
-  const w = useWallet();
-  const [open, setOpen] = useState(false);
-
-  if (w.status === 'no-provider') {
-    return (
-      <span className="inline-flex h-10 items-center gap-2 rounded-full border border-line px-4 text-sm text-muted" title="No EIP-1193 wallet detected. Browsing works read-only.">
-        <Eye className="h-4 w-4" aria-hidden="true" /> Read-only
-      </span>
-    );
-  }
-
-  if (w.status !== 'connected' || !w.account) {
-    return (
-      <Button size="sm" onClick={w.connect} disabled={w.status === 'connecting'} aria-busy={w.status === 'connecting'}>
-        <Wallet className="h-4 w-4" aria-hidden="true" />
-        {w.status === 'connecting' ? 'Connecting…' : 'Connect wallet'}
-      </Button>
-    );
-  }
-
-  if (w.wrongChain) {
-    return (
-      <Button size="sm" variant="outline" className="border-warn/50 text-warn hover:border-warn hover:bg-warn/10" onClick={() => w.switchChain(4663)}>
-        <AlertTriangle className="h-4 w-4" aria-hidden="true" /> Switch to Robinhood Chain
-      </Button>
-    );
-  }
-
-  const chain = isSupportedChain(w.chainId) ? CHAINS[w.chainId] : null;
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        className="glass inline-flex h-10 items-center gap-2.5 rounded-full pl-3 pr-3.5 text-sm text-ink transition-colors hover:border-ion/40"
-      >
-        <span className="h-2 w-2 rounded-full bg-up shadow-[0_0_10px_var(--color-up)]" aria-hidden="true" />
-        <span className="hidden text-xs text-muted sm:inline">{chain?.short}</span>
-        <span className="num">{shortAddress(w.account)}</span>
-        <ChevronDown className="h-4 w-4 text-dim" aria-hidden="true" />
-      </button>
-      {open && (
-        <div role="menu" className="glass absolute right-0 top-12 z-50 w-56 rounded-2xl p-1.5">
-          <p className="px-3 py-2 text-xs text-dim">{chain?.name}</p>
-          <button role="menuitem" type="button" onClick={() => { w.disconnect(); setOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-muted hover:bg-white/5 hover:text-ink">
-            <LogOut className="h-4 w-4" aria-hidden="true" /> Disconnect (this site)
-          </button>
-        </div>
-      )}
-    </div>
+    <ConnectButton.Custom>
+      {({ account, chain, mounted, openAccountModal, openChainModal, openConnectModal }) => {
+        const ready = mounted;
+        const connected = ready && account && chain;
+
+        return (
+          <div aria-hidden={!ready} className="min-w-0">
+            {!connected ? (
+              <button type="button" onClick={openConnectModal} disabled={!ready} className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-line-strong bg-[#0b1016] px-3 font-mono text-[11px] uppercase tracking-[0.06em] text-ink transition-colors hover:border-ion hover:bg-[#101a21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion disabled:opacity-60">
+                <Wallet className="h-4 w-4 text-ion" aria-hidden="true" /> Connect wallet
+              </button>
+            ) : chain.unsupported ? (
+              <button type="button" onClick={openChainModal} className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-warn/50 bg-warn/5 px-3 font-mono text-[11px] uppercase tracking-[0.04em] text-warn hover:border-warn focus-visible:outline focus-visible:outline-2 focus-visible:outline-warn">
+                Wrong network <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button type="button" onClick={openChainModal} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 border border-line px-2 font-mono text-[10px] uppercase tracking-[0.02em] text-muted hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
+                  {chain.hasIcon && chain.iconUrl ? <img src={chain.iconUrl} alt="" className="h-4 w-4 rounded-full" /> : <span className="h-2 w-2 bg-ion" />}
+                  <span className="truncate">{chain.name ?? 'Network'}</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                </button>
+                <button type="button" onClick={openAccountModal} className="min-h-11 min-w-0 border border-line-strong bg-[#0b1016] px-3 font-mono text-[11px] text-ink hover:border-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
+                  <span className="block max-w-32 truncate">{account.displayName}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      }}
+    </ConnectButton.Custom>
   );
 }

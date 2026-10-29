@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {SafetyController} from "../src/SafetyController.sol";
+import {PolicyConstants} from "../src/libraries/PolicyConstants.sol";
 
 interface VmSafety {
     function warp(uint256 timestamp) external;
@@ -23,7 +24,12 @@ contract SafetyControllerTest {
     function _newController() internal returns (SafetyController controller, SafetyRoleCaller guardian, SafetyRoleCaller treasury) {
         guardian = new SafetyRoleCaller();
         treasury = new SafetyRoleCaller();
-        controller = new SafetyController(address(this), address(guardian), address(treasury));
+        controller = new SafetyController(
+            address(this), address(guardian), address(treasury),
+            PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS,
+            PolicyConstants.CALENDAR_PUBLICATION_LEAD_SECONDS,
+            PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS
+        );
     }
 
     function testGuardianPauseAndDelayedPermissionlessResume() external {

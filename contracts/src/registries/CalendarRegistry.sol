@@ -62,7 +62,7 @@ contract CalendarRegistry is ICalendarRegistry, IBellEvents, IBellErrors {
         if (assetId == ZERO32 || metadata.root == ZERO32 || metadata.datasetHash == ZERO32 || metadata.leafCount == 0
             || metadata.coverageEnd <= metadata.coverageStart || metadata.queuedAt != 0 || metadata.executableAt != 0
             || _pendingRootForAsset[assetId] != ZERO32 || _nextRootForAsset[assetId] != ZERO32) revert BadConfig(ERR_ROOT_QUEUE);
-        uint256 notice = block.timestamp + (block.chainid == 46630 ? 0 : PolicyConstants.CALENDAR_PUBLICATION_LEAD_SECONDS);
+        uint256 notice = block.timestamp + safetyController.calendarPublicationLeadSeconds();
         if (metadata.coverageStart < notice) revert BadConfig(ERR_ROOT_TIME);
 
         bytes32 latestOperation = _nextRootForAsset[assetId] != ZERO32
@@ -71,8 +71,8 @@ contract CalendarRegistry is ICalendarRegistry, IBellEvents, IBellErrors {
         if (latestOperation != ZERO32 && metadata.coverageStart < _operations[latestOperation].metadata.coverageEnd) {
             revert BadConfig(ERR_ROOT_QUEUE);
         }
-        uint256 eta256 = block.timestamp + (block.chainid == 46630 ? 0 : PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS);
-        uint256 expiry256 = eta256 + PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS;
+        uint256 eta256 = block.timestamp + safetyController.governanceDelaySeconds();
+        uint256 expiry256 = eta256 + safetyController.operationExpirySeconds();
         if (expiry256 > type(uint64).max) revert BadConfig(ERR_ROOT_TIME);
         bytes32 payloadHash = keccak256(abi.encode(assetId, metadata.root, metadata.leafCount, metadata.coverageStart, metadata.coverageEnd, metadata.datasetHash));
         operationId = keccak256(abi.encode(block.chainid, address(this), uint8(2), payloadHash, _operationNonce++));

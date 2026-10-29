@@ -36,19 +36,37 @@ contract SafetyController is ISafetyController, IBellEvents, IBellErrors {
     address public override governance;
     address public override guardian;
     address public immutable treasury;
+    /// @notice Timelock applied to every governance operation on every chain.
+    /// @dev These are constructor parameters rather than a hardcoded per-chain constant so a
+    /// deployment can choose its own latency. A zero value means instant execution; the registries
+    /// read these values from the controller instead of deciding for themselves.
+    uint32 public immutable governanceDelaySeconds;
+    uint32 public immutable calendarPublicationLeadSeconds;
+    uint32 public immutable operationExpirySeconds;
     uint64 private _operationNonce;
     mapping(bytes32 target => bool paused) private _paused;
     mapping(bytes32 target => uint64 nonce) private _pauseNonce;
     mapping(bytes32 operationId => QueuedOperation operation) private _operations;
     mapping(bytes32 operationId => bytes payload) private _operationPayload;
 
-    constructor(address governance_, address guardian_, address treasury_) {
+    constructor(
+        address governance_,
+        address guardian_,
+        address treasury_,
+        uint32 governanceDelaySeconds_,
+        uint32 calendarPublicationLeadSeconds_,
+        uint32 operationExpirySeconds_
+    ) {
         if (governance_ == address(0) || guardian_ == address(0) || treasury_ == address(0)
             || governance_ == guardian_ || governance_ == treasury_ || guardian_ == treasury_)
             revert BadConfig(ERR_ROLE_SEPARATION);
+        if (operationExpirySeconds_ == 0) revert BadConfig(ERR_TIME_RANGE);
         governance = governance_;
         guardian = guardian_;
         treasury = treasury_;
+        governanceDelaySeconds = governanceDelaySeconds_;
+        calendarPublicationLeadSeconds = calendarPublicationLeadSeconds_;
+        operationExpirySeconds = operationExpirySeconds_;
     }
 
     modifier onlyGovernance() {
@@ -163,8 +181,8 @@ contract SafetyController is ISafetyController, IBellEvents, IBellErrors {
     function _queue(uint8 kind, bytes32 payloadHash, uint64 pauseNonce, uint8 role, address successor)
         private returns (bytes32 operationId)
     {
-        uint256 eta256 = block.timestamp + (block.chainid == 46630 ? 0 : PolicyConstants.GOVERNANCE_MINIMUM_DELAY_SECONDS);
-        uint256 expiry256 = eta256 + PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS;
+        uint256 eta256 = block.timestamp + governanceDelaySeconds;
+        uint256 expiry256 = eta256 + operationExpirySeconds;
         if (expiry256 > type(uint64).max) revert BadConfig(ERR_TIME_RANGE);
         operationId = keccak256(abi.encode(block.chainid, address(this), kind, payloadHash, _operationNonce++));
         // eta256 and expiry256 are checked against uint64 immediately above.

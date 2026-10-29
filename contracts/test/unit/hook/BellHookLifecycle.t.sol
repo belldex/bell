@@ -65,6 +65,19 @@ contract MockSafetyController {
     mapping(bytes32 target => uint8 mode) private _malformed;
     bool public revertReads;
 
+    // Governance latency surface. Defaults are zero so the many fixtures that only care about
+    // pause/policy behaviour keep activating immediately; a test that needs a real timelock sets
+    // these explicitly.
+    uint32 public governanceDelaySeconds;
+    uint32 public calendarPublicationLeadSeconds;
+    uint32 public operationExpirySeconds = 604800;
+
+    function setGovernanceLatency(uint32 delay_, uint32 lead_, uint32 expiry_) external {
+        governanceDelaySeconds = delay_;
+        calendarPublicationLeadSeconds = lead_;
+        operationExpirySeconds = expiry_;
+    }
+
     function setPause(bytes32 target, bool paused_, uint64 nonce_) external {
         _paused[target] = paused_;
         _nonce[target] = nonce_;
@@ -384,7 +397,9 @@ contract BellHookLifecycleTest {
     }
 
     function testPauseTargetIdsMatchSafetyControllerNamespaces() external {
-        SafetyController controller = new SafetyController(address(0x1111), address(0x2222), address(0x3333));
+        SafetyController controller = new SafetyController(
+            address(0x1111), address(0x2222), address(0x3333), 0, 0, 604800
+        );
         require(ModePolicy.targetId(1, address(hook)) == controller.targetId(1, address(hook)), "pool");
         require(ModePolicy.targetId(2, token0) == controller.targetId(2, token0), "token0");
         require(ModePolicy.targetId(2, token1) == controller.targetId(2, token1), "token1");

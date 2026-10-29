@@ -17,10 +17,16 @@ interface VmAsset {
 contract MockSafetyDirectory {
     address public governance;
     address public guardian;
+    uint32 public governanceDelaySeconds;
+    uint32 public calendarPublicationLeadSeconds;
+    uint32 public operationExpirySeconds;
 
-    constructor(address governance_, address guardian_) {
+    constructor(address governance_, address guardian_, uint32 delay_, uint32 lead_, uint32 expiry_) {
         governance = governance_;
         guardian = guardian_;
+        governanceDelaySeconds = delay_;
+        calendarPublicationLeadSeconds = lead_;
+        operationExpirySeconds = expiry_;
     }
 }
 
@@ -70,7 +76,7 @@ contract AssetRegistryTest {
     }
 
     function _registry() internal returns (AssetRegistry registry) {
-        MockSafetyDirectory safety = new MockSafetyDirectory(address(this), address(0xBEEF));
+        MockSafetyDirectory safety = new MockSafetyDirectory(address(this), address(0xBEEF), 172800, 0, 604800);
         registry = new AssetRegistry(address(safety));
     }
 
@@ -126,12 +132,17 @@ contract AssetRegistryTest {
         require(!mismatchedAdapter, "mismatched adapter/source config accepted");
     }
 
-    function testAssetImmediateActivationOnTestnetChain46630() external {
-        vm.chainId(46630);
-        (AssetRegistry registry, AssetDescriptor memory stock, SourceWire[] memory wires) = _stockFixture();
-        bytes32 operationId = registry.queueAsset(stock, abi.encode(wires));
+    function testAssetImmediateActivationWhenTheDeploymentSetsNoDelay() external {
+        // The delay is a deployment parameter now, not a per-chain rule. A zero-delay registry must
+        // activate in the same block on any chain id, including mainnet's.
+        vm.chainId(4663);
+        MockSafetyDirectory safety = new MockSafetyDirectory(address(this), address(0xBEEF), 0, 0, 604800);
+        AssetRegistry registry = new AssetRegistry(address(safety));
+        MockAssetToken token = new MockAssetToken();
+        AssetDescriptor memory stock = _descriptor(address(token));
+        bytes32 operationId = registry.queueAsset(stock, bytes(""));
         (,, uint64 eta,, uint8 status) = registry.operation(operationId);
-        require(eta == block.timestamp, "eta must be immediate on chain 46630");
+        require(eta == block.timestamp, "eta must equal now when the configured delay is zero");
         require(status == 1, "queued");
         bytes32 descriptorId = registry.activateAsset(operationId);
         require(descriptorId != bytes32(0), "activated immediately");

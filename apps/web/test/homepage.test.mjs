@@ -99,7 +99,7 @@ test('nav and footer mirror the reference layout with BELL wording', async () =>
   const footer = await read('../components/landing/Footer.tsx');
   assert.match(footer, /grid-cols-4/, 'footer 4-column groups');
   assert.match(footer, /gdpr/, 'gdpr disclosure line present');
-  assert.match(footer, /BOURSE-EVENT LIQUIDITY LAYER/i, 'BELL branding');
+  assert.match(footer, /<Logo/, 'footer uses the shared BELL brand component');
 });
 
 test('story sections use reference measurements (36px h2, glass cards, 7 poses)', async () => {
@@ -161,7 +161,7 @@ test('all app routes use a Bloomberg-style left sidebar with working BELL naviga
     assert.ok(shell.includes(`href: '${path}'`), `navigation must contain ${path}`);
   }
   assert.match(shell, /fixed[^\n]*left-0[^\n]*w-\[280px\]/);
-  assert.match(shell, /Terminal clock/);
+  assert.match(shell, /function TerminalClock/);
   assert.match(shell, /mobileOpen/);
   assert.doesNotMatch(shell, /App \(mobile\)/, 'mobile uses the sidebar drawer, not bottom nav');
   assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
@@ -303,6 +303,63 @@ test('mobile app navigation has 44px targets and all routes, while current route
   assert.match(shell, /aria-label="Terminal app navigation"/);
   assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
   assert.match(shell, /href: '\/protocol'/);
+});
+
+test('landing and app use one shared BELL mark component', async () => {
+  const appLogo = await read('../components/ui/Logo.tsx');
+  const landingNav = await read('../components/landing/SiteNav.tsx');
+  assert.match(appLogo, /export function LogoMark/);
+  const landingFooter = await read('../components/landing/Footer.tsx');
+  assert.match(landingNav, /<Logo/);
+  assert.match(landingFooter, /<Logo/);
+  assert.doesNotMatch(landingNav, /<svg viewBox="0 0 24 24"/, 'landing nav must not invent a second mark');
+  assert.doesNotMatch(landingFooter, /<svg viewBox="0 0 24 24"/, 'landing footer must not invent a second mark');
+});
+
+test('wallet entry uses RainbowKit and preserves Robinhood mainnet/testnet chains', async () => {
+  const pkg = JSON.parse(await read('../package.json'));
+  const wallet = await read('../components/wallet/WalletButton.tsx');
+  const provider = await read('../lib/wallet.tsx');
+  assert.ok(pkg.dependencies['@rainbow-me/rainbowkit'], 'RainbowKit installed');
+  assert.match(wallet, /ConnectButton/);
+  assert.match(wallet, /ConnectButton\.Custom/);
+  assert.match(wallet, /openConnectModal/);
+  assert.match(wallet, /min-h-11/);
+  assert.match(wallet, /@rainbow-me\/rainbowkit\/components/);
+  assert.match(provider, /@rainbow-me\/rainbowkit\/components/);
+  assert.match(provider, /RainbowKitProvider/);
+  assert.match(provider, /connectors:\s*\[injected\(/);
+  assert.match(provider, /createConfig/);
+  assert.doesNotMatch(provider, /@rainbow-me\/rainbowkit\/wallets/, 'avoid the all-wallet barrel and its unrelated optional SDK imports');
+  assert.match(provider, /4663/);
+  assert.match(provider, /46630/);
+  assert.match(provider, /https:\/\/rpc\.mainnet\.chain\.robinhood\.com/);
+  assert.match(provider, /https:\/\/rpc\.testnet\.chain\.robinhood\.com/);
+});
+
+test('app visual tokens avoid fallback font cycles and excessive card glow', async () => {
+  const css = await read('../app/globals.css');
+  assert.match(css, /--font-display:\s*var\(--font-instrument\)/);
+  assert.match(css, /--font-mono:\s*var\(--font-geist-mono\)/);
+  assert.doesNotMatch(css, /--font-sans:\s*var\(--font-sans\)/);
+  assert.match(css, /\.app-page/);
+});
+
+test('landing and app share BELL palette and the canonical mark favicon', async () => {
+  const css = await read('../app/globals.css');
+  const layout = await read('../app/layout.tsx');
+  assert.match(css, /--bell-orange:\s*#37d7e8/i, 'landing accent should use the same BELL cyan as app');
+  assert.match(layout, /icon:\s*'\/bell-mark\.svg'/, 'browser icon should be the shared bell mark');
+  const fs = await import('node:fs/promises');
+  const mark = await fs.readFile(new URL('../public/bell-mark.svg', import.meta.url), 'utf8');
+  assert.match(mark, /viewBox="0 0 32 32"/);
+  assert.match(mark, /<title>BELL<\/title>/);
+});
+
+test('swap preview does not invite wallet connection when live swap is unavailable', async () => {
+  const swap = await read('../app/(app)/swap/page.tsx');
+  assert.match(swap, /wallet\.status !== 'connected'\) return \{ label: 'Connect wallet', action: undefined, disabled: true \}/);
+  assert.match(swap, /No executable fixture quote/);
 });
 
 test('app routes share a consistent reference-width content rail and body contrast tokens', async () => {

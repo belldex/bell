@@ -140,6 +140,7 @@ function SwapInner() {
 
   const cta = (() => {
     if (wallet.wrongChain) return { label: 'Switch network', action: () => wallet.switchChain(46630), disabled: false };
+    if (wallet.status !== 'connected') return { label: 'Connect wallet', action: undefined, disabled: true };
     if (!quote || stale) return { label: 'Fetching quote…', action: undefined, disabled: true };
     if (expired) return { label: 'Quote expired — re-quote', action: () => setQuote(compute()), disabled: false };
     if (!quote.canExecute) return { label: quote.reasons[0] ?? 'Cannot execute', action: undefined, disabled: true };

@@ -14,31 +14,31 @@ The code path is ready. Three things are **not** proven by this repo and cannot 
 3. **Keeper liveness in production.** The Worker is deployed separately and has to be pointed at the
    mainnet manifest.
 
-## Timeline, and why it is not instant
+## Timeline: it is instant by default
 
-Mainnet governance is not instant. `PolicyConstants` applies these when `block.chainid != 46630`:
+Governance latency is a **deployment parameter**, not a network property. The old design hardcoded
+"zero delay on testnet, 7-day notice + 48-hour delay on mainnet" into the contracts, which is why a
+mainnet launch used to take a week. That branch is gone: `SafetyController` takes three delays in its
+constructor and the registries read them from the controller.
 
-| Constant | Value | Effect |
-|---|---|---|
-| `CALENDAR_PUBLICATION_LEAD_SECONDS` | 604800 (7d) | `queueRoot` requires `coverageStart >= now + 7d` |
-| `GOVERNANCE_MINIMUM_DELAY_SECONDS` | 172800 (48h) | `activateRoot` and `activateAsset` refuse before `now + 48h` |
-| `GOVERNANCE_OPERATION_EXPIRY_SECONDS` | 604800 (7d) | the operation dies 7d after its ETA |
+With the defaults in `.env` the whole launch is same-block:
 
-So a calendar root is a **three-step, multi-day** operation:
-
-```
-day 0     queueRoot          coverageStart must be >= day 7
-day 2     activateRoot       window: [eta, min(coverageStart, expiry))
-day 7+    activateInterval   only once the chain clock is inside a leaf
+```bash
+BELL_GOVERNANCE_DELAY_SECONDS=0            # asset admission: eta == now
+BELL_CALENDAR_PUBLICATION_LEAD_SECONDS=0   # no coverage notice
+BELL_OPERATION_EXPIRY_SECONDS=604800       # operations still expire after 7 days
 ```
 
-`activateRoot` is a half-open window: it must be at or after the ETA and strictly before
-`coverageStart`. Miss it and the root cannot be activated at all — and because a root is
-single-slot per `(asset, year)`, that asset identity is spent. `node scripts/deploy/mainnet-calendar.mjs plan`
-prints the window from chain time before anything is signed.
+So `queueAsset` → `activateAsset` and `queueRoot` → `activateRoot` → `activateInterval` all complete
+without waiting. Verified by `contracts/test/unit/governance/GovernanceLatency.t.sol`, which asserts
+same-block activation on chain id 4663.
 
-Asset admission has the same 48h delay but no leaf window: `activateAsset` accepts any time in
-`[eta, expiry]`.
+The one remaining sequencing constraint is not a delay: `activateRoot` requires
+`block.timestamp < coverageStart`, and `activateInterval` requires the chain clock to be inside a
+leaf. Start coverage a few minutes in the future and do all three steps in one sitting.
+
+Raise the values later if you want a real timelock — the contracts do not need redeploying to change
+policy, but the delay is immutable per deployment, so a change means a new `SafetyController`.
 
 ## 1. Fill `.env`
 
@@ -66,6 +66,11 @@ BELL_POOL_CLASS=1
 BELL_POLICY_ID=bell-mainnet-v1
 BELL_MAINNET_SYMBOL=AAPL
 BELL_MAINNET_MIN_DEPLOYER_WEI=500000000000000000                     # optional preflight floor
+
+# Instant launch. Raise these for a real timelock.
+BELL_GOVERNANCE_DELAY_SECONDS=0
+BELL_CALENDAR_PUBLICATION_LEAD_SECONDS=0
+BELL_OPERATION_EXPIRY_SECONDS=604800
 ```
 
 The two mainnet-only external addresses were verified on chain 4663, not copied from testnet:
@@ -124,32 +129,32 @@ mainnet AAPL has no code on 46630.
 `canonicalTokenId = keccak256(abi.encode(block.chainid, token))` is part of the wire hash, so the
 adapters are mainnet-specific and cannot be reused from testnet.
 
-## 5. Admit assets (queue, wait 48h, activate)
+## 5. Admit assets
 
 ```bash
 pnpm mainnet:admit:queue      # queues WETH and the stock asset
-pnpm mainnet:admit:status     # shows eta/expiry/executableNow for both
-# ... 48 hours later ...
-pnpm mainnet:admit:activate
+pnpm mainnet:admit:activate   # same block when the delay is zero
+pnpm mainnet:admit:status     # confirms both descriptors are ACTIVE
 ```
 
-Both WETH and the stock asset go through the delay; WETH is not exempt. The script refuses a token
-that is not in `config/assets/candidates.mainnet.json`, and refuses a symbol matching
-`facade|testnet|rehearsal|fixture|mock`.
+The script refuses a token that is not in `config/assets/candidates.mainnet.json`, and refuses a
+symbol matching `facade|testnet|rehearsal|fixture|mock`.
 
 ## 6. Commit the calendar
 
 ```bash
-pnpm mainnet:calendar:plan               # prints the window before anything is signed
-pnpm mainnet:calendar:queue              # day 0
-# ... 48 hours later, before coverageStart ...
+pnpm mainnet:calendar:plan               # reads the deployed delays, prints the window
+pnpm mainnet:calendar:queue
 pnpm mainnet:calendar:activate-root
-# ... once chain time is inside the first leaf ...
 pnpm mainnet:calendar:activate-interval
 ```
 
-State is persisted in `evidence/deploy/mainnet-4663-calendar-state.json`. Each step is resumable and
-re-reads chain state, so a failed run does not need a fresh asset.
+All four can run back to back when the delays are zero. `activateRoot` must happen before
+`coverageStart`, and `activateInterval` once the chain clock is inside a leaf, so start coverage a few
+minutes ahead rather than in the past.
+
+State is persisted in `evidence/deploy/mainnet-4663-calendar-state.json`. Each step re-reads chain
+state, so a failed run does not need a fresh asset.
 
 The calendar is a 60-day US-Eastern PRE/REGULAR/CLOSED partition built from real wall-clock boundaries
 (04:00 / 09:30 / 16:00 ET), so DST is handled. Weekdays only: there is no holiday table, and the

@@ -53,8 +53,8 @@ function ChainGuard() {
 
 function PhaseTicker() {
   return (
-    <div className="overflow-hidden border-b border-line bg-muted text-ink">
-      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-6 px-4 font-mono text-[11px] uppercase tracking-[0.12em] max-md:justify-start">
+    <div className="app-ticker overflow-hidden border-b border-line bg-bg-1 text-muted">
+      <div className="mx-auto flex min-h-[38px] max-w-[1440px] items-center justify-center gap-6 px-4 font-mono text-[10px] uppercase tracking-[0.1em] max-md:justify-start">
         <span className="text-ion">BELL · Robinhood Chain</span>
         <span>Testnet rehearsal</span>
         <span className="hidden sm:inline">Sample pools are previews · writes require wallet + live policy</span>
@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <button type="button" className="grid h-11 w-11 place-items-center border border-line text-ink hover:border-ion hover:text-ion focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion lg:hidden" aria-label="Close sidebar" onClick={() => setMobileOpen(false)}><X className="h-5 w-5" aria-hidden="true" /></button>
             </div>
             <div className="mt-7"><TerminalClock /></div>
-            <div className="mb-2 mt-8 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Terminal clock · Workspace</div>
+            <div className="mb-2 mt-8 font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Workspace</div>
             <nav aria-label="Terminal app navigation" className="flex flex-col gap-1">
               {NAV.map(({ href, label, icon: Icon }) => {
                 const active = path === href || path === `${href}/` || (href === '/pools' && (path.startsWith('/pool') || path.startsWith('/pools'))) || (href === '/protocol' && ['/privacy', '/terms', '/cookies'].some((legal) => path === legal || path === `${legal}/`));
@@ -131,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </button>
                 <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-dim">{path === '/' ? 'Overview' : path.replaceAll('/', ' / ').replaceAll('-', ' ').trim()}</span>
               </div>
-              <div className="flex items-center gap-3"><CalendarChip /><WalletButton /></div>
+              <div className="flex items-center gap-3"><CalendarChip /><div className="lg:hidden"><WalletButton /></div></div>
             </div>
           </header>
 

@@ -140,7 +140,15 @@ contract DeployTestnet {
     function _deploy(
         address deployer, Roles memory roles, address feeToken, uint8 poolClass, bool isMainnet
     ) private returns (Deployment memory d) {
-        d.safetyController = address(new SafetyController(roles.governance, roles.guardian, roles.treasury));
+        // Governance latency is a deployment parameter, not a network property. It defaults to 0 so
+        // a launch can go live in one block; raise it with BELL_GOVERNANCE_DELAY_SECONDS once the
+        // operator set is ready for a real timelock.
+        uint32 governanceDelay = uint32(vm.envOr("BELL_GOVERNANCE_DELAY_SECONDS", uint256(0)));
+        uint32 calendarLead = uint32(vm.envOr("BELL_CALENDAR_PUBLICATION_LEAD_SECONDS", uint256(0)));
+        uint32 operationExpiry = uint32(vm.envOr("BELL_OPERATION_EXPIRY_SECONDS", uint256(604800)));
+        d.safetyController = address(new SafetyController(
+            roles.governance, roles.guardian, roles.treasury, governanceDelay, calendarLead, operationExpiry
+        ));
         d.assetRegistry = address(new AssetRegistry(d.safetyController));
         d.calendarRegistry = address(new CalendarRegistry(d.safetyController));
         d.sessionRegistry = address(new SessionRegistry(d.assetRegistry, d.calendarRegistry));

@@ -104,6 +104,9 @@ interface ISafetyController {
     function acceptRoleRotation(bytes32 operationId) external;
     function governance() external view returns (address);
     function guardian() external view returns (address);
+    function governanceDelaySeconds() external view returns (uint32);
+    function calendarPublicationLeadSeconds() external view returns (uint32);
+    function operationExpirySeconds() external view returns (uint32);
     function pauseState(bytes32 target) external view returns (bool paused, uint64 nonce);
     function operation(bytes32 operationId)
         external view returns (uint8 kind, bytes32 payloadHash, uint64 eta, uint64 expiry, uint8 status);

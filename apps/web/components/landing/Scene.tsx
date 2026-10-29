@@ -231,9 +231,7 @@ export default function Scene() {
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const positions = new Float32Array(CAPACITY * 3);
-    const hidden = new Float32Array(CAPACITY);
-    let poseIndex = 0;
+    let sceneProgress = 0;
 
     const cam = {
       scale: POSES[0].scale,
@@ -250,18 +248,6 @@ export default function Scene() {
 
     const poseFor = (index: number): Pose => POSES[Math.max(0, Math.min(POSES.length - 1, index))];
 
-    // Seed instance positions below the frame so blocks fly up into the first pose.
-    {
-      const initial = poseFor(0).blocks;
-      for (let i = 0; i < CAPACITY; i++) {
-        const b = initial[i % Math.max(1, initial.length)];
-        positions[i * 3] = b[0];
-        positions[i * 3 + 1] = b[1] - 14;
-        positions[i * 3 + 2] = b[2];
-        hidden[i] = i < initial.length ? 0 : 1;
-      }
-    }
-
     const resize = () => {
       const w = host.clientWidth;
       const h = host.clientHeight;
@@ -274,67 +260,59 @@ export default function Scene() {
     window.addEventListener('resize', resize);
 
     let raf = 0;
-    let last = performance.now();
     let visible = true;
-    let poseChangedAt = performance.now();
 
     const onVisibility = () => {
       visible = document.visibilityState === 'visible';
       if (visible) {
-        last = performance.now();
         raf = requestAnimationFrame(frame);
       }
     };
 
-    /** Read the nearest [data-pose] section above the viewport midpoint. */
-    const readPose = () => {
-      const sections = document.querySelectorAll('[data-pose]');
+    /** Map the viewport midpoint to a continuous value between landing scene markers. */
+    const readPoseProgress = () => {
+      const sections = Array.from(document.querySelectorAll<HTMLElement>('.bell-landing [data-pose]'))
+        .map((section) => ({ top: section.getBoundingClientRect().top, value: Number(section.dataset.pose) }))
+        .filter((marker) => Number.isFinite(marker.value));
       const mid = 0.5 * window.innerHeight;
-      let next = poseIndex;
-      let found = false;
-      sections.forEach((section) => {
-        if (section.getBoundingClientRect().top <= mid) {
-          next = Number((section as HTMLElement).dataset.pose);
-          found = true;
+      if (sections.length === 0) return 0;
+      let previous = sections[0];
+      if (mid <= previous.top) return previous.value;
+      for (let i = 1; i < sections.length; i++) {
+        const next = sections[i];
+        if (mid <= next.top) {
+          const amount = Math.max(0, Math.min(1, (mid - previous.top) / Math.max(1, next.top - previous.top)));
+          return previous.value + (next.value - previous.value) * amount;
         }
-      });
-      return found ? next : 0;
+        previous = next;
+      }
+      return previous.value;
     };
 
     function frame(now: number) {
       if (!visible) return;
 
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-
-      const next = readPose();
-      if (next !== poseIndex) {
-        poseIndex = next;
-        poseChangedAt = now;
-      }
-
-      const pose = poseFor(poseIndex);
-      const ease = reduced ? 1 : 1 - Math.pow(9e-4, dt);
-      const sinceChange = (now - poseChangedAt) / 1000;
+      sceneProgress = reduced ? 0 : readPoseProgress();
+      const poseIndex = Math.max(0, Math.min(POSES.length - 1, Math.floor(sceneProgress)));
+      const from = poseFor(poseIndex);
+      const to = poseFor(Math.min(POSES.length - 1, poseIndex + 1));
+      const blend = Math.max(0, Math.min(1, sceneProgress - poseIndex));
+      const mix = (a: number, b: number) => a + (b - a) * blend;
 
       for (let i = 0; i < CAPACITY; i++) {
-        const present = i < pose.blocks.length;
-        const b = pose.blocks[present ? i : i % Math.max(1, pose.blocks.length)];
-        const delay = sinceChange - (i % 17) * 0.018;
-
-        if (delay > 0 || reduced) positions[i * 3 + 1] += (b[1] - positions[i * 3 + 1]) * ease;
-        if (delay > 0.18 || reduced) positions[i * 3] += (b[0] - positions[i * 3]) * ease;
-        if (delay > 0.32 || reduced) positions[i * 3 + 2] += (b[2] - positions[i * 3 + 2]) * ease;
-
-        hidden[i] += ((present ? 0 : 1) - hidden[i]) * ease;
-
-        const scale = Math.max(1e-4, 1 - hidden[i]);
-        dummy.position.set(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
-        dummy.scale.setScalar(scale);
+        const fromPresent = i < from.blocks.length;
+        const toPresent = i < to.blocks.length;
+        const a = from.blocks[fromPresent ? i : i % Math.max(1, from.blocks.length)];
+        const b = to.blocks[toPresent ? i : i % Math.max(1, to.blocks.length)];
+        const presence = (fromPresent ? 1 - blend : 0) + (toPresent ? blend : 0);
+        dummy.position.set(mix(a[0], b[0]), mix(a[1], b[1]), mix(a[2], b[2]));
+        dummy.scale.setScalar(Math.max(1e-4, presence));
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
 
-        const hot = present && b[3] === 1 ? 1 : present && b[3] === 2 ? 0.5 : 0;
+        const hotA = fromPresent ? (a[3] === 1 ? 1 : a[3] === 2 ? 0.5 : 0) : 0;
+        const hotB = toPresent ? (b[3] === 1 ? 1 : b[3] === 2 ? 0.5 : 0) : 0;
+        const hot = mix(hotA, hotB);
         color[i * 3] = hot;
         color[i * 3 + 1] = 0;
         color[i * 3 + 2] = 0;
@@ -343,23 +321,21 @@ export default function Scene() {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
-      const camEase = reduced ? 1 : 1 - Math.pow(0.02, dt);
-      cam.scale += (pose.scale - cam.scale) * camEase;
-      cam.y += (pose.y - cam.y) * camEase;
-      cam.x += ((window.innerWidth < 768 ? 0 : pose.x ?? 0) - cam.x) * camEase;
-      cam.rx += (pose.rx - cam.rx) * camEase;
-      cam.ry += (pose.ry - cam.ry) * camEase;
-      cam.dim += (pose.dim - cam.dim) * camEase;
-      if (!reduced) cam.spin += dt * pose.spin;
+      cam.scale = mix(from.scale, to.scale);
+      cam.y = mix(from.y, to.y);
+      cam.x = window.innerWidth < 768 ? 0 : mix(from.x ?? 0, to.x ?? 0);
+      cam.rx = mix(from.rx, to.rx);
+      cam.ry = mix(from.ry, to.ry);
+      cam.dim = mix(from.dim, to.dim);
+      cam.spin = sceneProgress * 0.18;
 
       group.scale.setScalar(cam.scale);
       group.position.y = cam.y;
       group.position.x = 4 * cam.x;
       group.rotation.set(cam.rx, cam.ry + 0.35 * Math.sin(cam.spin), 0);
 
-      material.uniforms.uDim.value =
-        cam.dim * (window.innerWidth < 768 && poseIndex === 0 ? 0.6 : 1);
-      material.uniforms.uTime.value = now / 1000;
+      material.uniforms.uDim.value = cam.dim * (window.innerWidth < 768 && poseIndex === 0 ? 0.6 : 1);
+      material.uniforms.uTime.value = reduced ? 0 : now / 1000;
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(frame);

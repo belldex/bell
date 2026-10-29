@@ -19,7 +19,6 @@ import { createPublicClient, createWalletClient, http, keccak256, stringToHex, p
 import { privateKeyToAccount } from 'viem/accounts';
 import { encodeSourceWires } from '../../packages/protocol/src/source-codec.mjs';
 import { canonicalTokenId } from '../../packages/protocol/src/identity.mjs';
-import { planGovernanceOperation } from '../calendar/mainnet-timeline.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const ZERO32 = `0x${'0'.repeat(64)}`;
@@ -271,7 +270,13 @@ if (command === 'status') {
     }
     if (Number(status) !== 1) throw new Error(`${key}: operation status is ${STATUS[Number(status)] ?? status}, not QUEUED`);
 
-    const described = planGovernanceOperation({ now: Number(eta) - 172_800 }).describe(now);
+    // Compare against the operation's own ETA rather than assuming a 48-hour delay: the delay is a
+    // deployment parameter now and may be zero.
+    const described = now < Number(eta)
+      ? { state: 'WAITING', secondsRemaining: Number(eta) - now }
+      : now > Number(expiry)
+        ? { state: 'EXPIRED' }
+        : { state: 'EXECUTABLE' };
     if (described.state === 'WAITING') {
       console.error(`${key}: too early by ${described.secondsRemaining}s; ETA is ${new Date(Number(eta) * 1000).toISOString()}`);
       process.exit(1);

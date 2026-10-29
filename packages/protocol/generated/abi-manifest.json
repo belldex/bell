@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "c5717fab42d08df8d8d81443c5f1a8f0d44dfc138f796603a39e90cfb063b579",
+  "abiSha256": "a5fa8c501bc6a310bfeb32412906caa51fa7165c741d0b24a7bc22587d2736e1",
   "interfaces": {
     "IAssetRegistry": [
       {
@@ -2393,6 +2393,19 @@
         "type": "function"
       },
       {
+        "inputs": [],
+        "name": "calendarPublicationLeadSeconds",
+        "outputs": [
+          {
+            "internalType": "uint32",
+            "name": "",
+            "type": "uint32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [
           {
             "internalType": "bytes32",
@@ -2426,6 +2439,19 @@
             "internalType": "address",
             "name": "",
             "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "governanceDelaySeconds",
+        "outputs": [
+          {
+            "internalType": "uint32",
+            "name": "",
+            "type": "uint32"
           }
         ],
         "stateMutability": "view",
@@ -2478,6 +2504,19 @@
             "internalType": "uint8",
             "name": "status",
             "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "operationExpirySeconds",
+        "outputs": [
+          {
+            "internalType": "uint32",
+            "name": "",
+            "type": "uint32"
           }
         ],
         "stateMutability": "view",
