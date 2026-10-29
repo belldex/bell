@@ -1,0 +1,11 @@
+{
+  "assetId": "0x360cf70000120cacd146d6ae8582d9f7f110953020f59a7d0fa65764b4db96d5",
+  "root": "0xb525e86d3f758de069c3ff4eeea259c5ef45dd470dc3256aa7487da7c3a57886",
+  "operationId": "0x8c5696eb982aec66083869fa865405271cd435eb62b216c02d626105aa177a88",
+  "coverageStart": 1793240500,
+  "coverageEnd": 1798424500,
+  "leafCount": 127,
+  "activePhase": 5,
+  "published": false,
+  "observedAt": "2026-10-29T02:21:39.949Z"
+}

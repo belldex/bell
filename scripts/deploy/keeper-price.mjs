@@ -313,8 +313,17 @@ if (loop) {
     await new Promise((r) => setTimeout(r, intervalSeconds * 1000));
   }
 } else {
-  const record = await tick();
-  if (!broadcast) {
-    console.log(JSON.stringify(record, null, 2).slice(0, 1200));
+  try {
+    const record = await tick();
+    if (!broadcast) {
+      console.log(JSON.stringify(record, null, 2).slice(0, 1200));
+    }
+  } catch (error) {
+    // A closed market or a phase mismatch is an expected state, not a keeper failure.
+    if (shouldContinueAfterTickError(error)) {
+      console.warn(`[${new Date().toISOString()}] source unavailable: ${String(error.message).slice(0, 160)}`);
+      process.exit(0);
+    }
+    throw error;
   }
 }

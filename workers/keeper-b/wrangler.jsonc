@@ -3,6 +3,7 @@
   "name": "bell-keeper-b",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-24",
+  "compatibility_flags": ["nodejs_compat"],
   "durable_objects": {
     "bindings": [
       { "name": "KEEPER_DO", "class_name": "KeeperState" }
@@ -10,5 +11,23 @@
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["KeeperState"] }
-  ]
+  ],
+  "vars": {
+    "BELL_STOCK_ASSET_ID": "0x360cf70000120cacd146d6ae8582d9f7f110953020f59a7d0fa65764b4db96d5",
+    "BELL_CALENDAR_REGISTRY": "0x0c7a4044f2caf793b2062920c12baf8b33641e9c",
+    "BELL_SESSION_REGISTRY": "0x1de6199618ddb2b5fdb869113e4b906628db168e",
+    "BELL_DIRECT_ADAPTER": "0x05b7cad0d07fd6f15dee724060508676ccb5bce2",
+    "BELL_HOOK_ADDRESS": "0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0",
+    "BELL_REGULAR_FEED_ID": "0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b",
+    "BELL_EXTENDED_FEED_ID": "0x6db5b18a4a76ac8566c730fdd2ffd64b80bd0147bfb259fc66da07e94f2df3f9",
+    "BELL_REGULAR_WIRE_HASH": "0x802a019ef8108b9b84fbc6441f7ac7d8ecc856f724488cd08855e28a060511f4",
+    "BELL_EXTENDED_WIRE_HASH": "0xd9136980c4fe75b9acca4c81b37a7dc10d076dce0ad8c5d65cc3369843260db6",
+    "YAHOO_SOURCE_VERIFIER_ADDRESS": "0x20a066123c260bc6c5253f75e261c5056fde4bea"
+  },
+  "triggers": {
+    "crons": ["*/1 * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
 }
