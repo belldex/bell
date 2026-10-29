@@ -5,11 +5,14 @@
  * Wraps the same Foundry script the testnet uses, but targets chain 4663, writes
  * evidence/deploy/mainnet-4663.json, and refuses to broadcast when the read-only preflight fails.
  */
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { formatDeployManifest } from './deploy-manifest.mjs';
+import { buildForgeArgs, cleanupDryRunArtifacts } from './mainnet-dry-run-cleanup.mjs';
 
 const ROOT_URL = new URL('../../', import.meta.url);
 const MANIFEST_PATH = new URL('evidence/deploy/mainnet-4663.json', ROOT_URL);
@@ -31,6 +34,10 @@ const args = process.argv.slice(2);
 const broadcast = args.includes('--broadcast');
 const skipPreflight = args.includes('--skip-preflight');
 const env = await loadEnv();
+const previousManifest = await readFile(MANIFEST_PATH).catch((error) => {
+  if (error.code === 'ENOENT') return null;
+  throw error;
+});
 
 const rpcUrl = env.RH_MAINNET_RPC_PRIMARY;
 if (!rpcUrl) {
@@ -56,26 +63,54 @@ if (!skipPreflight) {
 
 const foundryPath = process.env.FOUNDRY_BIN || 'C:\\Users\\sifaq\\.foundry\\bin';
 const forgeExecutable = process.env.FORGE_BIN || (process.platform === 'win32' ? `${foundryPath}\\forge.exe` : 'forge');
-const forgeArgs = ['script', 'script/DeployTestnet.s.sol', '--rpc-url', rpcUrl, '-vv'];
-if (broadcast) forgeArgs.push('--broadcast');
-else console.log('[SIMULATION] No transaction will be sent. Re-run with --broadcast to deploy.');
+const isolatedDir = broadcast
+  ? join(tmpdir(), `bell-mainnet-broadcast-${process.pid}`)
+  : fileURLToPath(new URL(`evidence/deploy/.mainnet-dry-run-${process.pid}/`, ROOT_URL));
+const isolatedOut = join(isolatedDir, 'out');
+const isolatedCache = join(isolatedDir, 'cache');
+const isolatedManifest = broadcast
+  ? fileURLToPath(MANIFEST_PATH)
+  : join(isolatedDir, 'mainnet-4663.json');
+await Promise.all([mkdir(isolatedOut, { recursive: true }), mkdir(isolatedCache, { recursive: true })]);
+const forgeArgs = buildForgeArgs({ rpcUrl, outDir: isolatedOut, cacheDir: isolatedCache, broadcast });
+if (!broadcast) console.log('[SIMULATION] No transaction will be sent; Forge is invoked without --broadcast.');
 
 console.log(broadcast ? 'Broadcasting mainnet deployment...' : 'Simulating mainnet deployment...');
 
 const child = spawn(forgeExecutable, forgeArgs, {
   cwd: fileURLToPath(new URL('contracts/', ROOT_URL)),
-  env: { ...env, DEPLOYER_PRIVATE_KEY: privateKey, PATH: `${foundryPath};${process.env.PATH ?? ''}` },
+  env: {
+    ...env,
+    DEPLOYER_PRIVATE_KEY: privateKey,
+    ...(broadcast ? {} : { BELL_MANIFEST_PATH: isolatedManifest }),
+    PATH: `${foundryPath};${process.env.PATH ?? ''}`,
+  },
   stdio: 'inherit',
 });
 
 child.on('close', async (code) => {
   if (code !== 0) {
+    if (!broadcast) {
+      await cleanupDryRunArtifacts({
+        manifestPath: fileURLToPath(MANIFEST_PATH),
+        previousManifest,
+        foundryDryRunFiles: [isolatedDir],
+      });
+    }
     console.error(`Deployment script failed with exit code ${code}`);
     process.exit(code ?? 1);
   }
   if (!broadcast) {
-    console.log('\n[SIMULATION OK] Nothing was written. Re-run with --broadcast to deploy.');
+    await cleanupDryRunArtifacts({
+      manifestPath: fileURLToPath(MANIFEST_PATH),
+      previousManifest,
+      foundryDryRunFiles: [isolatedDir],
+    });
+    console.log('\n[SIMULATION OK] No transaction was sent; repository evidence was restored and temporary outputs removed.');
     return;
+  }
+  if (broadcast) {
+    console.log('\n[Broadcast complete] Verify code and wiring with pnpm mainnet:verify before using this manifest.');
   }
   try {
     const raw = JSON.parse(await readFile(MANIFEST_PATH, 'utf8'));

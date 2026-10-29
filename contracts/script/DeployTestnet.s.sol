@@ -27,11 +27,11 @@ interface VmDeploy {
     function envOr(string calldata name, address defaultValue) external view returns (address);
     function envOr(string calldata name, uint256 defaultValue) external view returns (uint256);
     function envString(string calldata name) external view returns (string memory);
-    function envOr(string calldata name, string calldata defaultValue) external view returns (string memory);
     function computeCreateAddress(address deployer, uint256 nonce) external pure returns (address);
     function getNonce(address account) external view returns (uint64);
     function addr(uint256 privateKey) external view returns (address);
     function writeFile(string calldata path, string calldata data) external;
+    function envOr(string calldata name, string calldata defaultValue) external view returns (string memory);
     function toString(uint256 value) external pure returns (string memory);
 }
 
@@ -227,10 +227,11 @@ contract DeployTestnet {
             '"\n}\n'
         );
         string memory json = string.concat(p1, p2, p3);
-        vm.writeFile(
-            isMainnet ? "../evidence/deploy/mainnet-4663.json" : "../evidence/deploy/testnet-46630.json",
-            json
-        );
+        string memory defaultPath = isMainnet
+            ? "../evidence/deploy/mainnet-4663.json"
+            : "../evidence/deploy/testnet-46630.json";
+        string memory manifestPath = vm.envOr("BELL_MANIFEST_PATH", defaultPath);
+        vm.writeFile(manifestPath, json);
     }
 
     function _hex(address value) private pure returns (string memory) {
