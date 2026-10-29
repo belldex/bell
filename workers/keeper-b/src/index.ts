@@ -56,22 +56,41 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
   if (!rpcUrl) return { status: 'skipped', reason: 'BELL_RPC_URL is not configured' };
   if (!env.YAHOO_REPORTER_PRIVATE_KEY) return { status: 'skipped', reason: 'YAHOO_REPORTER_PRIVATE_KEY is not configured' };
 
-  const assetId = env.BELL_STOCK_ASSET_ID;
+  // Multi-asset: the keeper publishes for every configured asset each tick. BELL_STOCK_ASSETS is
+  // a JSON array of {symbol, assetId}; BELL_MAINNET_ASSETS is a JSON map symbol -> adapters.
+  // BELL_STOCK_ASSET_ID + flat BELL_*_ADAPTER vars remain supported as a single-asset fallback.
+  const assetList = env.BELL_STOCK_ASSETS
+    ? (() => {
+      const parsed = JSON.parse(env.BELL_STOCK_ASSETS);
+      if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('BELL_STOCK_ASSETS must be a non-empty JSON array');
+      for (const a of parsed) {
+        if (!a?.symbol || !/^0x[0-9a-fA-F]{64}$/.test(a.assetId ?? '')) {
+          throw new Error(`BELL_STOCK_ASSETS entry invalid: ${JSON.stringify(a)}`);
+        }
+      }
+      return parsed;
+    })()
+    : (env.BELL_STOCK_ASSET_ID ? [{ symbol: 'ASSET', assetId: env.BELL_STOCK_ASSET_ID }] : []);
+  if (assetList.length === 0) return { status: 'skipped', reason: 'no assets configured (BELL_STOCK_ASSETS or BELL_STOCK_ASSET_ID)' };
+
   const calendarRegistry = env.BELL_CALENDAR_REGISTRY;
   const sessionRegistry = env.BELL_SESSION_REGISTRY;
-  const directAdapter = env.BELL_DIRECT_ADAPTER;
-  const directWireHash = env.BELL_DIRECT_WIRE_HASH;
   const verifier = env.YAHOO_SOURCE_VERIFIER_ADDRESS;
-  if (!assetId || !calendarRegistry || !sessionRegistry || !directAdapter || !directWireHash || !verifier) {
+  const flatAdapters = env.BELL_MAINNET_ASSETS
+    ? JSON.parse(env.BELL_MAINNET_ASSETS)
+    : (env.BELL_DIRECT_ADAPTER ? {
+      ASSET: {
+        directAdapter: env.BELL_DIRECT_ADAPTER,
+        directWireHash: env.BELL_DIRECT_WIRE_HASH,
+        regularWire: env.BELL_REGULAR_FEED_ID ? { feedId: env.BELL_REGULAR_FEED_ID } : null,
+        regularWireHash: env.BELL_REGULAR_WIRE_HASH || null,
+        extendedWire: env.BELL_EXTENDED_FEED_ID ? { feedId: env.BELL_EXTENDED_FEED_ID } : null,
+        extendedWireHash: env.BELL_EXTENDED_WIRE_HASH || null,
+      },
+    } : {});
+  if (!calendarRegistry || !sessionRegistry || !verifier || Object.keys(flatAdapters).length === 0) {
     return { status: 'skipped', reason: 'keeper addresses are not configured' };
   }
-
-  const adapters = {
-    regularWire: env.BELL_REGULAR_FEED_ID ? { feedId: env.BELL_REGULAR_FEED_ID } : null,
-    regularWireHash: env.BELL_REGULAR_WIRE_HASH || null,
-    extendedWire: env.BELL_EXTENDED_FEED_ID ? { feedId: env.BELL_EXTENDED_FEED_ID } : null,
-    extendedWireHash: env.BELL_EXTENDED_WIRE_HASH || null,
-  };
 
   const account = privateKeyToAccount(env.YAHOO_REPORTER_PRIVATE_KEY);
   const publicClient = createPublicClient({ transport: http(rpcUrl) });
@@ -85,94 +104,107 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
     return { status: 'failed', reason: `wrong chain ${chainId}, expected ${expectedChainId}` };
   }
 
-  const interval = await publicClient.readContract({
-    address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId],
-  });
-  const calendarPhase = Number(interval.phase);
-  const expected = phaseNameForCalendarPhase(calendarPhase);
-  if (!expected) {
-    return { status: 'skipped', reason: `calendar phase ${calendarPhase} has no Yahoo source`, calendarPhase };
-  }
-  const stream = wireForCalendarPhase(adapters, calendarPhase);
-  if (!stream) return { status: 'skipped', reason: `no admitted wire for phase ${calendarPhase}`, calendarPhase };
-
-  let quote;
-  try {
-    quote = await fetchQuote('AAPL');
-  } catch (error) {
-    return { status: 'skipped', reason: `quote unavailable: ${error.message}`, calendarPhase };
-  }
-
-  const admission = evaluateQuote({ calendarPhase, quote, nowSeconds });
-  if (!admission.ok) return { status: 'skipped', reason: admission.reason, calendarPhase, yahooPhase: quote.phase };
-
-  const observedAt = BigInt(quote.observedAt);
-  const price18 = BigInt(quote.priceRaw18);
-  const validUntil = BigInt(reportValidUntil(nowSeconds, Number(observedAt)));
-  const inputAt = BigInt(nowSeconds);
-
-  const sampleDirect = {
-    descriptorId: ZERO32, feedId: ZERO32, phase: 0, price18, observedAt,
-    inputAt, validFrom: observedAt, expiresAt: BigInt(nowSeconds + 300), validUntil,
-    reportHash: keccak256(stringToHex(`bell-direct-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)),
-  };
-  const signedDirect = await signYahooSourceSample(sampleDirect, {
-    sourceConfigHash: directWireHash, chainId, verifier, privateKey: env.YAHOO_REPORTER_PRIVATE_KEY,
-  });
-  const directHash = await walletClient.writeContract({
-    address: directAdapter, abi: DIRECT_ABI, functionName: 'publishDirect',
-    args: [sampleDirect, signedDirect.signature],
-  });
-  const directReceipt = await publicClient.waitForTransactionReceipt({ hash: directHash });
-  if (directReceipt.status !== 'success') return { status: 'failed', reason: `publishDirect reverted: ${directHash}` };
-
-  const sampleStream = {
-    descriptorId: ZERO32, feedId: stream.wire.feedId, phase: calendarPhase, price18, observedAt,
-    inputAt, validFrom: observedAt, expiresAt: BigInt(nowSeconds + 300), validUntil,
-    reportHash: keccak256(stringToHex(`bell-stream-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)),
-  };
-  const signedStream = await signYahooSourceSample(sampleStream, {
-    sourceConfigHash: stream.wireHash, chainId, verifier, privateKey: env.YAHOO_REPORTER_PRIVATE_KEY,
-  });
-  const streamHash = await walletClient.writeContract({
-    address: sessionRegistry, abi: SESSION_ABI, functionName: 'submitReports',
-    args: [assetId, [signedStream.report]],
-  });
-  const streamReceipt = await publicClient.waitForTransactionReceipt({ hash: streamHash });
-  if (streamReceipt.status !== 'success') return { status: 'failed', reason: `submitReports reverted: ${streamHash}` };
-
-  const refreshHash = await walletClient.writeContract({
-    address: sessionRegistry, abi: SESSION_ABI, functionName: 'refreshHealth', args: [assetId],
-  });
-  const refreshReceipt = await publicClient.waitForTransactionReceipt({ hash: refreshHash });
-  if (refreshReceipt.status !== 'success') return { status: 'failed', reason: `refreshHealth reverted: ${refreshHash}` };
-
-  const health = await publicClient.readContract({
-    address: sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [assetId],
-  });
-
-  let canSwap = null;
-  if (env.BELL_HOOK_ADDRESS) {
+  // Per-asset loop: one failed asset is recorded and never aborts the others.
+  const results = {};
+  const publishedSymbols = [];
+  for (const { symbol, assetId } of assetList) {
+    const adapters = flatAdapters[symbol];
     try {
-      const policy = await publicClient.readContract({
-        address: env.BELL_HOOK_ADDRESS, abi: HOOK_ABI, functionName: 'getPolicy',
+      if (!adapters) { results[symbol] = { status: 'skipped', reason: 'no adapter configuration for this symbol' }; continue; }
+      const interval = await publicClient.readContract({
+        address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId],
       });
-      canSwap = policy.canSwap;
-    } catch { canSwap = null; }
+      const calendarPhase = Number(interval.phase);
+      const expected = phaseNameForCalendarPhase(calendarPhase);
+      if (!expected) {
+        results[symbol] = { status: 'skipped', reason: `calendar phase ${calendarPhase} has no Yahoo source`, calendarPhase };
+        continue;
+      }
+      const stream = wireForCalendarPhase(adapters, calendarPhase);
+      if (!stream) { results[symbol] = { status: 'skipped', reason: `no admitted wire for phase ${calendarPhase}`, calendarPhase }; continue; }
+
+      let quote;
+      try {
+        quote = await fetchQuote(symbol);
+      } catch (error) {
+        results[symbol] = { status: 'skipped', reason: `quote unavailable: ${error.message}`, calendarPhase };
+        continue;
+      }
+
+      const admission = evaluateQuote({ calendarPhase, quote, nowSeconds });
+      if (!admission.ok) {
+        results[symbol] = { status: 'skipped', reason: admission.reason, calendarPhase, yahooPhase: quote.phase };
+        continue;
+      }
+
+      const observedAt = BigInt(quote.observedAt);
+      const price18 = BigInt(quote.priceRaw18);
+      const validUntil = BigInt(reportValidUntil(nowSeconds, Number(observedAt)));
+      const inputAt = BigInt(nowSeconds);
+
+      const sampleDirect = {
+        descriptorId: ZERO32, feedId: ZERO32, phase: 0, price18, observedAt,
+        inputAt, validFrom: observedAt, expiresAt: BigInt(nowSeconds + 300), validUntil,
+        reportHash: keccak256(stringToHex(`bell-direct-${symbol}-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)),
+      };
+      const signedDirect = await signYahooSourceSample(sampleDirect, {
+        sourceConfigHash: adapters.directWireHash, chainId, verifier, privateKey: env.YAHOO_REPORTER_PRIVATE_KEY,
+      });
+      const directHash = await walletClient.writeContract({
+        address: adapters.directAdapter, abi: DIRECT_ABI, functionName: 'publishDirect',
+        args: [sampleDirect, signedDirect.signature],
+      });
+      const directReceipt = await publicClient.waitForTransactionReceipt({ hash: directHash });
+      if (directReceipt.status !== 'success') { results[symbol] = { status: 'failed', reason: `publishDirect reverted: ${directHash}` }; continue; }
+
+      const sampleStream = {
+        descriptorId: ZERO32, feedId: stream.wire.feedId, phase: calendarPhase, price18, observedAt,
+        inputAt, validFrom: observedAt, expiresAt: BigInt(nowSeconds + 300), validUntil,
+        reportHash: keccak256(stringToHex(`bell-stream-${symbol}-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)),
+      };
+      const signedStream = await signYahooSourceSample(sampleStream, {
+        sourceConfigHash: stream.wireHash, chainId, verifier, privateKey: env.YAHOO_REPORTER_PRIVATE_KEY,
+      });
+      const streamHash = await walletClient.writeContract({
+        address: sessionRegistry, abi: SESSION_ABI, functionName: 'submitReports',
+        args: [assetId, [signedStream.report]],
+      });
+      const streamReceipt = await publicClient.waitForTransactionReceipt({ hash: streamHash });
+      if (streamReceipt.status !== 'success') { results[symbol] = { status: 'failed', reason: `submitReports reverted: ${streamHash}` }; continue; }
+
+      const refreshHash = await walletClient.writeContract({
+        address: sessionRegistry, abi: SESSION_ABI, functionName: 'refreshHealth', args: [assetId],
+      });
+      const refreshReceipt = await publicClient.waitForTransactionReceipt({ hash: refreshHash });
+      if (refreshReceipt.status !== 'success') { results[symbol] = { status: 'failed', reason: `refreshHealth reverted: ${refreshHash}` }; continue; }
+
+      const health = await publicClient.readContract({
+        address: sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [assetId],
+      });
+
+      results[symbol] = {
+        status: 'published', calendarPhase, yahooPhase: quote.phase,
+        price18: price18.toString(), observedAt: Number(observedAt),
+        directTx: directHash, streamTx: streamHash, refreshTx: refreshHash,
+        healthReady: health.ready, healthReasons: health.reasonBits.toString(),
+      };
+      publishedSymbols.push(symbol);
+    } catch (error) {
+      // An unexpected per-asset fault (malformed config, RPC hiccup) must not take down the tick.
+      results[symbol] = { status: 'failed', reason: error.message };
+    }
   }
 
+  const published = publishedSymbols.length;
+  const statuses = Object.values(results).map((r) => r.status);
+  const overall = published > 0
+    ? 'published'
+    : statuses.some((s) => s === 'failed') ? 'failed' : 'skipped';
   return {
-    status: 'published',
-    calendarPhase,
-    yahooPhase: quote.phase,
-    price18: price18.toString(),
-    observedAt: Number(observedAt),
-    directTx: directHash,
-    streamTx: streamHash,
-    refreshTx: refreshHash,
-    healthReady: health.ready,
-    healthReasons: health.reasonBits.toString(),
-    canSwap,
+    status: overall,
+    publishedSymbols,
+    assets: results,
+    publishedCount: published,
   };
 }
 

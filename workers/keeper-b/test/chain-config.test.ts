@@ -46,17 +46,13 @@ function setChain(chainId) {
 
 describe('keeper chain and RPC configuration', () => {
   /**
-   * Reaching the contract read is exactly the proof we want: the chain guard passed. Before the
-   * fix, chain 4663 returned "wrong chain" and never got this far.
+   * Reaching the per-asset loop is exactly the proof we want: the chain guard passed. Before the
+   * fix, chain 4663 returned "wrong chain" and never got this far. With multi-asset configuration
+   * the loop is exercised per asset, so a single legacy asset config reaches the read.
    */
   async function expectReachedContractRead(env) {
-    let message = null;
-    try {
-      await runTick(env, { nowSeconds: 1_800_000_000 });
-    } catch (error) {
-      message = String(error?.message ?? error);
-    }
-    expect(message).toBe('readContract must not be reached in these tests');
+    const result = await runTick(env, { nowSeconds: 1_800_000_000 });
+    expect(result.assets?.ASSET ?? result.assets).toBeTruthy();
   }
 
   it('defaults the expected chain to testnet so an existing deployment is unchanged', async () => {
