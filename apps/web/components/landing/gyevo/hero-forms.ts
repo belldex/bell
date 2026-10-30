@@ -1,9 +1,6 @@
-/* BELL's two terminal glyph sculptures. The shared canvas renderer owns the point sprites,
-   perspective, scroll morph and reduced-motion behavior; this file defines only the forms:
-   a market-flow gate, then a finite close anchor. */
-
+/* Scroll forms for BELL's glyph sculpture. The letters stay the same; these builders place them on
+   broad 3D surfaces so each market policy reads as a volume rather than a wireframe. */
 type V3 = [number, number, number];
-type Stroke = { points: V3[]; tone: number; weight?: number; pulse?: boolean };
 
 export interface HeroForm {
   pos(i: number, t: number, out: Float32Array): void;
@@ -11,151 +8,144 @@ export interface HeroForm {
 }
 
 const TAU = Math.PI * 2;
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-const rnd = (n: number) => {
-  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
+const fract = (n: number) => n - Math.floor(n);
+const rnd = (n: number) => fract(Math.sin(n * 127.1 + 311.7) * 43758.5453);
+const smooth = (a: number, b: number, v: number) => {
+  const x = Math.max(0, Math.min(1, (v - a) / (b - a)));
+  return x * x * (3 - 2 * x);
 };
 
-function measurePath(points: V3[]) {
-  const cumulative = new Float32Array(points.length - 1);
-  let total = 0;
-  for (let i = 1; i < points.length; i++) {
-    total += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1], points[i][2] - points[i - 1][2]);
-    cumulative[i - 1] = total;
-  }
-  return { cumulative, total };
+function turned(p: V3, t: number, speed: number, out: Float32Array) {
+  const yaw = t * speed;
+  const pitch = Math.sin(t * 0.2) * 0.035;
+  const x = p[0] * Math.cos(yaw) - p[2] * Math.sin(yaw);
+  const z = p[0] * Math.sin(yaw) + p[2] * Math.cos(yaw);
+  out[0] = x;
+  out[1] = p[1] * Math.cos(pitch) - z * Math.sin(pitch);
+  out[2] = p[1] * Math.sin(pitch) + z * Math.cos(pitch);
 }
 
-function samplePath(points: V3[], cumulative: Float32Array, total: number, u: number, out: Float32Array) {
-  const at = clamp01(u) * total;
-  let segment = 0;
-  while (segment < cumulative.length - 1 && at > cumulative[segment]) segment++;
-  const from = segment === 0 ? 0 : cumulative[segment - 1];
-  const span = Math.max(1e-5, cumulative[segment] - from);
-  const k = (at - from) / span;
-  const a = points[segment], b = points[segment + 1];
-  out[0] = a[0] + (b[0] - a[0]) * k;
-  out[1] = a[1] + (b[1] - a[1]) * k;
-  out[2] = a[2] + (b[2] - a[2]) * k;
+function shellTone(i: number, n: number, phase = 0) {
+  const v = rnd(i * 7.31 + phase);
+  return v > 0.965 ? 4 : v > 0.78 ? 1 : v > 0.48 ? 0 : 2;
 }
 
-function loop(rx: number, ry: number, z: number, y = 0): V3[] {
-  return Array.from({ length: 9 }, (_, i) => {
-    const a = (i / 8) * TAU;
-    const bevel = i % 2 ? 0.92 : 1;
-    return [Math.cos(a) * rx * bevel, y + Math.sin(a) * ry * bevel, z];
-  });
-}
-
-function line(a: V3, b: V3): V3[] { return [a, b]; }
-
-function sculpt(count: number, strokes: Stroke[], rotate: number): HeroForm {
-  const measured = strokes.map((s) => measurePath(s.points));
-  const lengths = strokes.map((s, i) => Math.max(0.04, measured[i].total * (s.weight ?? 1)));
-  const total = lengths.reduce((a, b) => a + b, 0);
-  const raw = lengths.map((v) => (v / total) * count);
-  const amounts = raw.map(Math.floor);
-  const remainder = count - amounts.reduce((a, b) => a + b, 0);
-  raw.map((n, i) => [n - Math.floor(n), i] as const).sort((a, b) => b[0] - a[0]).slice(0, remainder).forEach(([, i]) => amounts[i]++);
-
+/* A tier is a shallow, filled fee plate. Most glyphs lie across its face; the rest wrap its edge,
+   giving the stack a readable thickness instead of three lonely circular outlines. */
+export function buildFeeStack(count: number): HeroForm {
   const base = new Float32Array(count * 3);
-  const pathId = new Uint8Array(count);
-  const pathU = new Float32Array(count);
-  let cursor = 0;
-  for (let s = 0; s < strokes.length; s++) {
-    for (let j = 0; j < amounts[s]; j++) {
-      const i = cursor++;
-      const u = (j + 0.5 + (rnd(i * 3.17 + 9) - 0.5) * 0.36) / amounts[s];
-      const point = new Float32Array(3);
-      samplePath(strokes[s].points, measured[s].cumulative, measured[s].total, u, point);
-      const wiggle = (rnd(i * 5.3 + 4) - 0.5) * 0.009;
-      base[i * 3] = point[0] + wiggle;
-      base[i * 3 + 1] = point[1] - wiggle;
-      base[i * 3 + 2] = point[2] + wiggle;
-      pathId[i] = s;
-      pathU[i] = u;
-    }
-  }
-
   const tone = new Uint8Array(count);
-  const pulse = new Uint8Array(count);
+  const radii = [0.96, 0.72, 0.48];
+  const levels = [0.48, 0, -0.48];
+  const perTier = Math.floor(count / 3);
+
   for (let i = 0; i < count; i++) {
-    tone[i] = strokes[pathId[i]].tone;
-    pulse[i] = strokes[pathId[i]].pulse ? 1 : 0;
+    const tier = Math.min(2, Math.floor(i / perTier));
+    const j = i - tier * perTier;
+    const face = rnd(i * 4.11 + 2) > 0.2;
+    const a = j * 2.399963229728653 + tier * 0.37;
+    const r = radii[tier] * Math.sqrt(rnd(i * 2.17 + 8));
+    const edgeA = a + (rnd(i * 3.7) - 0.5) * 0.02;
+    const edgeY = levels[tier] + (rnd(i * 5.9 + 1) - 0.5) * 0.115;
+    const radius = face ? r : radii[tier] * (0.975 + rnd(i * 6.1) * 0.025);
+    const o = i * 3;
+    base[o] = Math.cos(face ? a : edgeA) * radius;
+    base[o + 1] = face ? levels[tier] + (rnd(i * 8.3) - 0.5) * 0.035 : edgeY;
+    base[o + 2] = Math.sin(face ? a : edgeA) * radius;
+    tone[i] = tier === 0 ? shellTone(i, count, 0) : tier === 1 ? shellTone(i, count, 11) : shellTone(i, count, 23);
   }
 
   return {
     pos(i, t, out) {
-      const pulseScale = pulse[i] ? 1 + Math.sin(t * 2.6 - pathU[i] * 11) * 0.035 : 1;
-      const x = base[i * 3] * pulseScale;
-      const y = base[i * 3 + 1] * pulseScale;
-      const z = base[i * 3 + 2] * pulseScale;
-      const yaw = t * rotate;
-      const pitch = Math.sin(t * 0.24) * 0.08;
-      const xx = x * Math.cos(yaw) - z * Math.sin(yaw);
-      const zz = x * Math.sin(yaw) + z * Math.cos(yaw);
-      out[0] = xx;
-      out[1] = y * Math.cos(pitch) - zz * Math.sin(pitch);
-      out[2] = y * Math.sin(pitch) + zz * Math.cos(pitch);
+      const p: V3 = [base[i * 3], base[i * 3 + 1], base[i * 3 + 2]];
+      turned(p, t, 0.09, out);
     },
-    pal(i, t) {
-      if (pulse[i] && Math.sin(t * 2.6 - pathU[i] * 11) > 0.93) return 4;
-      return tone[i];
-    },
+    pal(i) { return tone[i]; },
   };
 }
 
-/* A sculpted flow gate: the market stream enters a wide chamber, narrows through a guarded
-   throat, then opens into the pool. Front/back frames and depth rails make it read as a volume. */
+/* The gross-flow limiter: a continuous octagonal channel, broad at both ports and pinched at the
+   guarded throat. Glyphs cover the entire lofted skin, so the silhouette reads as a solid conduit. */
 export function buildBoundedGate(count: number): HeroForm {
-  const back = loop(0.96, 0.78, -0.58);
-  const throat = loop(0.48, 0.42, 0);
-  const front = loop(0.96, 0.78, 0.58);
-  const strokes: Stroke[] = [
-    { points: back, tone: 1, weight: 1.15 },
-    { points: throat, tone: 0, weight: 0.8 },
-    { points: front, tone: 0, weight: 1.2 },
-  ];
-  for (let i = 0; i < 8; i++) {
-    const next = (i + 1) % 8;
-    strokes.push({ points: line(back[i], throat[i]), tone: 2, weight: 0.75 });
-    strokes.push({ points: line(throat[i], front[i]), tone: i % 2 ? 1 : 2, weight: 0.75 });
-    if (i % 2 === 0) strokes.push({ points: line(front[i], front[next]), tone: 4, weight: 0.4 });
+  const base = new Float32Array(count * 3);
+  const tone = new Uint8Array(count);
+  const facePulse = new Uint8Array(count);
+
+  for (let i = 0; i < count; i++) {
+    const u = fract((i + 0.5) * 0.61803398875);
+    const v = rnd(i * 1.91 + 14);
+    const z = (v * 2 - 1) * 0.82;
+    const throat = smooth(0.08, 0.88, Math.abs(z));
+    const sx = 0.3 + throat * 0.72;
+    const sy = 0.28 + throat * 0.56;
+    const angle = u * TAU;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    /* Superellipse cross-section: softly chamfered square ports, not a circular cage. */
+    const x = Math.sign(c) * Math.pow(Math.abs(c), 0.62) * sx;
+    const y = Math.sign(s) * Math.pow(Math.abs(s), 0.62) * sy;
+    const o = i * 3;
+    base[o] = x;
+    base[o + 1] = y;
+    base[o + 2] = z;
+    tone[i] = Math.abs(z) < 0.16 ? (rnd(i * 3.17) > 0.78 ? 4 : 0) : shellTone(i, count, 41);
+    facePulse[i] = Math.abs(z) > 0.68 && rnd(i * 9.2) > 0.82 ? 1 : 0;
   }
-  for (const y of [-0.16, 0.16]) {
-    strokes.push({ points: [[-0.9, y, -0.72], [-0.58, y, -0.34], [-0.36, y, 0], [-0.58, y, 0.34], [-0.9, y, 0.72]], tone: 4, pulse: true, weight: 1.3 });
-    strokes.push({ points: [[0.9, y, -0.72], [0.58, y, -0.34], [0.36, y, 0], [0.58, y, 0.34], [0.9, y, 0.72]], tone: 1, weight: 1.1 });
-  }
-  /* Limit bars across the throat are the visible guard, not a decorative free-floating cube. */
-  for (const x of [-0.31, 0, 0.31]) strokes.push({ points: line([x, -0.39, 0.04], [x, 0.39, 0.04]), tone: 3, weight: 0.6 });
-  strokes.push({ points: [[-0.75, -0.98, 0.66], [0, -0.98, 0.7], [0.75, -0.98, 0.66]], tone: 1, weight: 0.85 });
-  strokes.push({ points: line([0.22, -1.05, 0.69], [0.22, -0.9, 0.69]), tone: 4, weight: 0.32 });
-  return sculpt(count, strokes, 0.12);
+
+  return {
+    pos(i, t, out) {
+      const p: V3 = [base[i * 3], base[i * 3 + 1], base[i * 3 + 2]];
+      const flow = facePulse[i] ? Math.sin(t * 2.1 + i * 0.14) * 0.018 : 0;
+      turned([p[0], p[1], p[2] + flow], t, 0.075, out);
+    },
+    pal(i, t) { return facePulse[i] && Math.sin(t * 2.1 + i * 0.14) > 0.88 ? 4 : tone[i]; },
+  };
 }
 
-/* The planned-close anchor: a clock capsule with indexed ticks, a moving hand, and a hard
-   finite-budget rail. This gives the final story form a compact silhouette unlike the gate. */
+/* Scheduled close: six broad shutter leaves overlap into a sealed iris, nested inside a thick
+   octagonal housing. The filled leaf faces make the closed state unmistakable at a glance. */
 export function buildCloseAnchor(count: number): HeroForm {
-  const strokes: Stroke[] = [
-    { points: loop(0.7, 0.7, -0.14), tone: 2, weight: 1.1 },
-    { points: loop(0.58, 0.58, 0.14), tone: 0, weight: 1.2 },
-    { points: loop(0.48, 0.48, 0.19), tone: 1, weight: 1 },
-  ];
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * TAU;
-    const outer: V3 = [Math.cos(a) * 0.66, Math.sin(a) * 0.66, 0.2];
-    const inner: V3 = [Math.cos(a) * (i % 3 === 0 ? 0.52 : 0.58), Math.sin(a) * (i % 3 === 0 ? 0.52 : 0.58), 0.2];
-    strokes.push({ points: line(outer, inner), tone: i % 3 === 0 ? 4 : 2, weight: i % 3 === 0 ? 0.7 : 0.34 });
+  const base = new Float32Array(count * 3);
+  const tone = new Uint8Array(count);
+  const leafCount = Math.floor(count * 0.78);
+  const housingCount = count - leafCount;
+
+  for (let i = 0; i < count; i++) {
+    const o = i * 3;
+    if (i < leafCount) {
+      const perLeaf = Math.ceil(leafCount / 6);
+      const leaf = Math.min(5, Math.floor(i / perLeaf));
+      const j = i - leaf * perLeaf;
+      const u = fract((j + 0.5) * 0.754877666);
+      const v = rnd(i * 3.31 + 71);
+      const angle0 = leaf * TAU / 6;
+      const radius = 0.17 + u * 0.76;
+      const sweep = (v - 0.5) * (TAU / 6 + 0.15);
+      const angle = angle0 + sweep + (1 - u) * 0.48;
+      /* Each leaf rises slightly at its outer edge and overlaps the next leaf at the center. */
+      base[o] = Math.cos(angle) * radius;
+      base[o + 1] = Math.sin(angle) * radius * 0.84;
+      base[o + 2] = 0.14 + (1 - u) * 0.15 + Math.sin(angle * 3) * 0.018;
+      tone[i] = rnd(i * 7.7) > 0.91 ? 4 : leaf % 2 ? 1 : 0;
+    } else {
+      const j = i - leafCount;
+      const side = j % 8;
+      const along = fract(j * 0.61803398875);
+      const depth = j % 2 ? 0.34 : -0.34;
+      const r = 1.02;
+      const a0 = side * TAU / 8;
+      const a1 = (side + 1) * TAU / 8;
+      base[o] = Math.cos(a0) * r * (1 - along) + Math.cos(a1) * r * along;
+      base[o + 1] = (Math.sin(a0) * r * (1 - along) + Math.sin(a1) * r * along) * 0.84;
+      base[o + 2] = depth;
+      tone[i] = j % 2 ? 2 : 4;
+    }
   }
-  strokes.push({ points: [[0, 0, 0.28], [0.1, 0.28, 0.28], [0.32, 0.42, 0.28]], tone: 4, pulse: true, weight: 0.9 });
-  strokes.push({ points: line([0, 0, 0.28], [-0.28, -0.16, 0.28]), tone: 0, weight: 0.65 });
-  /* The close ledger and its single, non-refilling reserve. */
-  strokes.push({ points: [[-0.92, -0.94, 0.25], [-0.92, -0.68, 0.25], [0.92, -0.68, 0.25], [0.92, -0.94, 0.25]], tone: 2, weight: 1.1 });
-  strokes.push({ points: line([-0.82, -0.81, 0.3], [0.34, -0.81, 0.3]), tone: 0, pulse: true, weight: 1.3 });
-  strokes.push({ points: line([0.34, -0.88, 0.3], [0.34, -0.74, 0.3]), tone: 4, weight: 0.38 });
-  for (const x of [-0.54, -0.26, 0.02, 0.62]) strokes.push({ points: line([x, -0.9, 0.3], [x, -0.84, 0.3]), tone: 1, weight: 0.24 });
-  /* A rear seal sits behind the dial, giving the silhouette real depth as it turns. */
-  strokes.push({ points: loop(0.83, 0.83, -0.42), tone: 3, weight: 0.85 });
-  return sculpt(count, strokes, -0.075);
+
+  return {
+    pos(i, t, out) {
+      const p: V3 = [base[i * 3], base[i * 3 + 1], base[i * 3 + 2]];
+      turned(p, t, -0.035, out);
+    },
+    pal(i) { return tone[i]; },
+  };
 }

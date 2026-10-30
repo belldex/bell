@@ -192,7 +192,8 @@ contract DeployTestnet {
             poolClass: poolClass, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
             tradeCap: [uint128(10), uint128(10)], windowCap: [uint128(100), uint128(100)],
             closureCap: [uint128(1), uint128(1)],
-            policyId: keccak256(bytes(vm.envOr("BELL_POLICY_ID", string("bell-testnet-v1"))))
+            policyId: keccak256(bytes(vm.envOr("BELL_POLICY_ID", string("bell-testnet-v1")))),
+            referenceAdapter0: address(0), referenceAdapter1: address(0)
         });
     }
 

@@ -10,6 +10,8 @@ const config = {
   poolClass: 0, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
   tradeCap: ['1000', '2000'], windowCap: ['4000', '8000'], closureCap: ['500', '1000'],
   policyId: `0x${'c'.repeat(64)}`,
+  referenceAdapter0: '0x0000000000000000000000000000000000000000',
+  referenceAdapter1: '0x0000000000000000000000000000000000000000',
 };
 const request = {
   config, salt: `0x${'d'.repeat(64)}`, nonce: '7', deadline: '1790000000', recipient: addr(10),

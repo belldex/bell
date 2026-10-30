@@ -1,8 +1,121 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "a5fa8c501bc6a310bfeb32412906caa51fa7165c741d0b24a7bc22587d2736e1",
+  "abiSha256": "43d4f7685d8845306ed51adfd69abe9349dbb6d1278271349507d639d9b5d7fd",
   "interfaces": {
+    "AggregatorV3Interface": [
+      {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+          {
+            "internalType": "uint8",
+            "name": "",
+            "type": "uint8"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "description",
+        "outputs": [
+          {
+            "internalType": "string",
+            "name": "",
+            "type": "string"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint80",
+            "name": "roundId",
+            "type": "uint80"
+          }
+        ],
+        "name": "getRoundData",
+        "outputs": [
+          {
+            "internalType": "uint80",
+            "name": "id",
+            "type": "uint80"
+          },
+          {
+            "internalType": "int256",
+            "name": "answer",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "startedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "updatedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint80",
+            "name": "answeredInRound",
+            "type": "uint80"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "latestRoundData",
+        "outputs": [
+          {
+            "internalType": "uint80",
+            "name": "id",
+            "type": "uint80"
+          },
+          {
+            "internalType": "int256",
+            "name": "answer",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "startedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "updatedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint80",
+            "name": "answeredInRound",
+            "type": "uint80"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "version",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
     "IAssetRegistry": [
       {
         "inputs": [
@@ -1170,6 +1283,16 @@
                 "internalType": "bytes32",
                 "name": "policyId",
                 "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter1",
+                "type": "address"
               }
             ],
             "internalType": "struct PoolConfig",
@@ -1574,6 +1697,16 @@
                     "internalType": "bytes32",
                     "name": "policyId",
                     "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter1",
+                    "type": "address"
                   }
                 ],
                 "internalType": "struct PoolConfig",
@@ -1798,6 +1931,16 @@
                     "internalType": "bytes32",
                     "name": "policyId",
                     "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter1",
+                    "type": "address"
                   }
                 ],
                 "internalType": "struct PoolConfig",
@@ -3237,6 +3380,16 @@
                     "internalType": "bytes32",
                     "name": "policyId",
                     "type": "bytes32"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter0",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "referenceAdapter1",
+                    "type": "address"
                   }
                 ],
                 "internalType": "struct PoolConfig",

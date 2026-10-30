@@ -1,34 +1,32 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { buildBoundedGate, buildCloseAnchor, type HeroForm } from "./hero-forms";
+import { buildBoundedGate, buildCloseAnchor, buildFeeStack, type HeroForm } from "./hero-forms";
 
 /* The BELL hero sculpture uses one glyph-cloud engine and four market-specific forms:
 
-     A  Session bell: a flared, three-ridged market shell with indexed session lanes.
-     B  Liquidity gyre: three orbit bands constricting around the active pool.
-     C  Flow gate (hero-forms.ts): a 3D guarded throat with lanes entering and leaving it.
-     D  Close anchor (hero-forms.ts): a finite clock and budget seal.
+     A  Session dial: a deep instrument face with a turned bezel and three session tracks.
+     B  Fee stack (hero-forms.ts): three filled, offset liquidity tiers.
+     C  Flow gate (hero-forms.ts): a 3D channel that narrows at the guarded throat.
+     D  Close iris (hero-forms.ts): overlapping shutter leaves inside a finite housing.
 
    The form is a pure function of numbers the scroll code already writes on the stage, so it runs in reverse on
-   its own: --h (0 -> 1 across the first hold) turns the globe into the gyre; --k (0 -> 1 across the extra
-   forms) turns the gyre into the gate and then the gate into the bounded close anchor; --q only keeps it turning.
+   its own: --h (0 -> 1 across the first hold) turns the session dial into the fee stack; --k (0 -> 1 across the extra
+   forms) turns the stack into the gate and then the gate into the bounded close iris; --q only keeps it turning.
    The zoom (scale, fade) is the CSS on .lp-field, unchanged.
 
    Mouse: grab the hero and drag to turn the form (the automatic drift keeps its own clock, the hand adds
    an offset, a flick glides); without a button the form leans a little towards the pointer. Touch is left
    alone on purpose, so the page scrolls exactly as before.
 
-   Cost, because this page must stay light: about 1300 sprites copied from a pre-rendered sheet (no text is
+   Cost, because this page must stay light: about 1300 glyph sprites copied from a pre-rendered sheet (no text is
    laid out per frame), at most ~30 frames a second while it drifts, one frame per scroll frame while --q
    moves, and nothing at all while the hero is closed, zoomed away, off screen or the tab is hidden.
-   Decorative only: the wrapper is aria-hidden. Technique: docs/GLYPH_SOLID_3D_HANDOFF.md. */
+   Decorative only: the wrapper is aria-hidden. */
 
 const GLYPHS = "BELLFLOWMARKETSESSION";
 const NG = GLYPHS.length;
-const COUNT = 1320; /* glyphs flow from the session-bell shell into the policy forms */
-const RING_N = 330; /* characters per ring of the gyro; the last 330 are its core */
-const BELL_RIM_N = 120; /* a crisp open lip keeps the session bell silhouette distinct from a sphere */
+const COUNT = 1320; /* glyphs flow from the session dial into the policy forms */
 const PALETTE: readonly (readonly [number, number, number])[] = [
   [240, 238, 232], /* chalk: verified state */
   [174, 178, 181], /* silver: session signal */
@@ -63,10 +61,7 @@ const ease = (lp: number) => (lp < 0.5 ? 4 * lp * lp * lp : 1 - Math.pow(-2 * lp
 interface Model {
   a: Float32Array; /* form A positions (static) */
   palA: Uint8Array;
-  th0: Float32Array; /* form B: the angle each ring point starts at */
-  rad: Float32Array; /* ... its distance from the ring's axis */
-  off: Float32Array; /* ... and its offset along it (the ring is three thin strands) */
-  palB: Uint8Array;
+  fee: HeroForm; /* form B: three broad, solid fee tiers */
   pair: Uint16Array; /* the point of form B that point i of form A turns into */
   glyph: Uint8Array;
   delay: Float32Array;
@@ -81,60 +76,63 @@ interface Model {
 
 function buildModel(): Model {
   const a = new Float32Array(COUNT * 3);
-  /* A BELL session sculpture: a flared market-bell shell with three pronounced helical ribs.
-     It keeps GYEVO's rich character mesh, but changes the silhouette and internal rhythm completely. */
+  /* A market-session dial: a dense face, a thick turned bezel, three session tracks and a compact spindle.
+     It reads as a timing instrument rather than a serving dome or a wire globe. */
+  const faceEnd = Math.floor(COUNT * 0.65);
+  const bezelEnd = Math.floor(COUNT * 0.82);
+  const laneEnd = Math.floor(COUNT * 0.91);
+  const tickEnd = Math.floor(COUNT * 0.98);
   for (let i = 0; i < COUNT; i++) {
-    const onRim = i < BELL_RIM_N;
-    const shellIndex = i - BELL_RIM_N;
-    const shellCount = COUNT - BELL_RIM_N;
-    const y = onRim
-      ? -0.88 + Math.sin(i * TAU / BELL_RIM_N * 3) * 0.018
-      : 1 - ((shellIndex + 0.5) * 2) / shellCount;
-    const longitude = onRim ? i * TAU / BELL_RIM_N : shellIndex * 2.399963229728653;
-    const t = (y + 1) * 0.5;
-    const dome = Math.pow(1 - t, 0.48);
-    const rim = 0.1 + 0.72 * dome + Math.sin(Math.PI * t) * 0.1;
-    const shoulder = Math.max(0, 1 - Math.abs(t - 0.72) / 0.22) * 0.08;
-    const flute = 1 + Math.cos(longitude * 3 + t * 3.4) * 0.11 * Math.sin(Math.PI * t);
-    const radius = onRim ? 0.9 + Math.cos(longitude * 3) * 0.022 : (rim + shoulder) * flute;
     const o = i * 3;
-    a[o] = Math.cos(longitude) * radius;
-    /* Canvas-space Y points down: invert the lathe axis so the flared bell mouth sits below its crown. */
-    a[o + 1] = onRim ? -y : -y * 0.88 + Math.sin(longitude * 3 + t * 6) * 0.025;
-    a[o + 2] = Math.sin(longitude) * radius;
-  }
-
-  /* form B: ring points are (angle, radius, offset); the core is a small sphere, kept in the same arrays */
-  const th0 = new Float32Array(COUNT);
-  const rad = new Float32Array(COUNT);
-  const off = new Float32Array(COUNT);
-  const ringR = [0.98, 0.84, 0.7];
-  for (let i = 0; i < COUNT; i++) {
-    if (i < RING_N * 3) {
-      const g = (i / RING_N) | 0;
-      const k = i % RING_N;
-      const s = k % 3;
-      th0[i] = ((k / 3) | 0) / (RING_N / 3) * TAU + s * 0.5 + g * 1.3;
-      rad[i] = ringR[g] + (s - 1) * 0.045;
-      off[i] = (s - 1) * 0.045;
+    if (i < faceEnd) {
+      const u = i / faceEnd;
+      const radius = 0.88 * Math.sqrt(u);
+      const angle = i * 2.399963229728653;
+      a[o] = Math.cos(angle) * radius;
+      a[o + 1] = Math.sin(angle) * radius;
+      a[o + 2] = 0.035 - radius * radius * 0.045;
+    } else if (i < bezelEnd) {
+      const j = i - faceEnd;
+      const angle = j * TAU / (bezelEnd - faceEnd);
+      const depth = ((j % 5) / 4 - 0.5) * 0.24;
+      const radius = 0.94 + Math.sin(angle * 12) * 0.008;
+      a[o] = Math.cos(angle) * radius;
+      a[o + 1] = Math.sin(angle) * radius;
+      a[o + 2] = depth;
+    } else if (i < laneEnd) {
+      const j = i - bezelEnd;
+      const lane = Math.min(2, Math.floor(j / ((laneEnd - bezelEnd) / 3)));
+      const local = j % Math.ceil((laneEnd - bezelEnd) / 3);
+      const angle = local * 2.399963229728653 + lane * 0.24;
+      const radius = [0.72, 0.57, 0.42][lane];
+      a[o] = Math.cos(angle) * radius;
+      a[o + 1] = Math.sin(angle) * radius;
+      a[o + 2] = 0.075;
+    } else if (i < tickEnd) {
+      const j = i - laneEnd;
+      const group = Math.floor(j / Math.ceil((tickEnd - laneEnd) / 12));
+      const local = j % Math.ceil((tickEnd - laneEnd) / 12);
+      const angle = group * TAU / 12;
+      const radius = 0.82 + local * 0.009;
+      a[o] = Math.cos(angle) * radius;
+      a[o + 1] = Math.sin(angle) * radius;
+      a[o + 2] = 0.1;
     } else {
-      const j = i - RING_N * 3;
-      const y = 1 - ((j + 0.5) * 2) / RING_N;
-      th0[i] = j * 2.399963229728653; /* golden angle */
-      rad[i] = 0.3 * Math.sqrt(1 - y * y);
-      off[i] = 0.3 * y;
+      const j = i - tickEnd;
+      const y = 1 - ((j + 0.5) * 2) / (COUNT - tickEnd);
+      const angle = j * 2.399963229728653;
+      const radius = 0.16 * Math.sqrt(1 - y * y);
+      a[o] = Math.cos(angle) * radius;
+      a[o + 1] = y * 0.16;
+      a[o + 2] = 0.13 + Math.sin(angle) * radius;
     }
   }
 
+  const fee = buildFeeStack(COUNT);
   const palA = new Uint8Array(COUNT);
-  const palB = new Uint8Array(COUNT);
   for (let i = 0; i < COUNT; i++) {
-    const sessionHeight = i < BELL_RIM_N ? -0.88 : 1 - (((i - BELL_RIM_N) + 0.5) * 2) / (COUNT - BELL_RIM_N);
-    const onSessionLane = Math.min(Math.abs(sessionHeight - 0.5), Math.abs(sessionHeight), Math.abs(sessionHeight + 0.52)) < 0.028;
-    palA[i] = i < BELL_RIM_N || onSessionLane ? 4 : rnd(i * 3) > 0.94 ? 2 : rnd(i * 5 + 1) > 0.55 ? 1 : 0;
-    const g = (i / RING_N) | 0;
-    const v = rnd(i * 7 + 2);
-    palB[i] = g === 0 ? (v > 0.2 ? 0 : 1) : g === 1 ? (v > 0.9 ? 4 : 2) : g === 2 ? (v > 0.45 ? 3 : 1) : v > 0.2 ? 2 : 4;
+    const onInstrumentMark = i >= faceEnd;
+    palA[i] = onInstrumentMark ? 4 : rnd(i * 3) > 0.94 ? 2 : rnd(i * 5 + 1) > 0.55 ? 1 : 0;
   }
 
   /* Pair the points by where they are, not by their number: both forms are sorted by azimuth around the
@@ -144,7 +142,7 @@ function buildModel(): Model {
   const keyOf = (x: number, y: number, z: number) => Math.floor(((Math.atan2(z, x) + Math.PI) / TAU) * 18) * 10 + clamp01((y + 1.2) / 2.4);
   const keyA = Float32Array.from({ length: COUNT }, (_, i) => keyOf(a[i * 3], a[i * 3 + 1], a[i * 3 + 2]));
   const keyB = Float32Array.from({ length: COUNT }, (_, i) => {
-    posB({ th0, rad, off }, i, 0, tmp);
+    fee.pos(i, 0, tmp);
     return keyOf(tmp[0], tmp[1], tmp[2]);
   });
   const byA = Array.from({ length: COUNT }, (_, i) => i).sort((p, q) => keyA[p] - keyA[q]);
@@ -165,16 +163,13 @@ function buildModel(): Model {
     for (let n = 0; n < COUNT; n++) out[sf[n]] = st[n];
     return out;
   };
-  const pairBC = pairOf((i, o) => posB({ th0, rad, off }, i, 0, o), (i, o) => gate.pos(i, 0, o));
+  const pairBC = pairOf((i, o) => fee.pos(i, 0, o), (i, o) => gate.pos(i, 0, o));
   const pairCD = pairOf((i, o) => gate.pos(i, 0, o), (i, o) => close.pos(i, 0, o));
 
   return {
     a,
     palA,
-    th0,
-    rad,
-    off,
-    palB,
+    fee,
     pair,
     glyph: Uint8Array.from({ length: COUNT }, (_, i) => (i * 11 + 3) % NG),
     delay: Float32Array.from({ length: COUNT }, (_, i) => rnd(i + 0.5) * SPREAD),
@@ -186,40 +181,6 @@ function buildModel(): Model {
     delayC: Float32Array.from({ length: COUNT }, (_, i) => rnd(i * 1.3 + 41.5) * SPREAD),
     delayD: Float32Array.from({ length: COUNT }, (_, i) => rnd(i * 1.9 + 77.5) * SPREAD),
   };
-}
-
-/* form B at time t: three rings that tilt about different axes, and a core that turns */
-const W0 = 0.42;
-const W1 = -0.33;
-const W2 = 0.27;
-function posB(M: Pick<Model, "th0" | "rad" | "off">, i: number, t: number, out: Float32Array) {
-  const th = M.th0[i];
-  if (i >= RING_N * 3) {
-    const x = Math.cos(th + t * 0.8) * M.rad[i];
-    const z = Math.sin(th + t * 0.8) * M.rad[i];
-    out[0] = x; out[1] = M.off[i]; out[2] = z;
-    return;
-  }
-  const g = (i / RING_N) | 0;
-  const a = th + t * (g === 1 ? -0.5 : 0.5);
-  const lx = Math.cos(a) * M.rad[i];
-  const ly = Math.sin(a) * M.rad[i];
-  const lz = M.off[i];
-  if (g === 0) { /* a ring in the XY plane, tipped about Y */
-    const w = 0.2 + t * W0;
-    const c = Math.cos(w), s = Math.sin(w);
-    out[0] = lx * c + lz * s; out[1] = ly; out[2] = -lx * s + lz * c;
-  } else if (g === 1) { /* a ring in the YZ plane, tipped about Z */
-    const w = 1.1 + t * W1;
-    const c = Math.cos(w), s = Math.sin(w);
-    const wx = lz, wy = lx, wz = ly;
-    out[0] = wx * c - wy * s; out[1] = wx * s + wy * c; out[2] = wz;
-  } else { /* a ring in the ZX plane, tipped about X */
-    const w = 2.2 + t * W2;
-    const c = Math.cos(w), s = Math.sin(w);
-    const wx = ly, wy = lz, wz = lx;
-    out[0] = wx; out[1] = wy * c - wz * s; out[2] = wy * s + wz * c;
-  }
 }
 
 export function GlyphField() {
@@ -248,7 +209,7 @@ export function GlyphField() {
     const order = new Uint16Array(COUNT).map((_, i) => i);
 
     let dpr = 1;
-    let cs = 20; /* atlas cell, device px */
+    let cs = 20; /* glyph cell, device px */
     let atlas: HTMLCanvasElement | null = null;
     let fontFamily = "ui-monospace, monospace";
     let inView = false;
@@ -289,7 +250,7 @@ export function GlyphField() {
       if (fam) fontFamily = fam;
     }
 
-    /* every character in every colour, drawn once */
+    /* Pre-render every glyph in each palette tone so no text layout runs during the scroll animation. */
     function buildAtlas() {
       cs = Math.max(12, Math.round(20 * dpr));
       atlas = document.createElement("canvas");
@@ -387,9 +348,9 @@ export function GlyphField() {
             toPal = M.close.pal(iD, t);
             ld = clamp01((mD - M.delayD[i]) / (1 - SPREAD));
           } else {
-            posB(M, iB, t, cur);
+            M.fee.pos(iB, t, cur);
             M.gate.pos(iC, t, cur2);
-            fromPal = M.palB[iB];
+            fromPal = M.fee.pal(iB, t);
             toPal = M.gate.pal(iC, t);
             ld = clamp01((mC - M.delayC[i]) / (1 - SPREAD));
           }
@@ -409,17 +370,17 @@ export function GlyphField() {
           }
         } else if (lp > 0) {
           const bi = M.pair[i];
-          posB(M, bi, t, cur);
+          M.fee.pos(bi, t, cur);
           if (lp >= 1) {
             x = cur[0]; y = cur[1]; z = cur[2];
-            pal = M.palB[bi];
+            pal = M.fee.pal(bi, t);
           } else {
             const e = ease(lp);
             const arc = Math.sin(Math.PI * e);
             x += (cur[0] - x) * e + M.jit[o] * arc;
             y += (cur[1] - y) * e + M.jit[o + 1] * arc;
             z += (cur[2] - z) * e + M.jit[o + 2] * arc;
-            if (e >= 0.5) pal = M.palB[bi];
+            if (e >= 0.5) pal = M.fee.pal(bi, t);
           }
         }
         sc[i] = pal;
@@ -600,7 +561,6 @@ export function GlyphField() {
       <div className="lp-field" ref={wrapRef} aria-hidden="true">
         <canvas className="lp-form" ref={cvRef} />
       </div>
-      <p className="lp-drag-hint" aria-hidden="true">Drag to turn · scroll to change</p>
     </>
   );
 }

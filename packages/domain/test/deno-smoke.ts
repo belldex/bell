@@ -131,6 +131,8 @@ Deno.test('Deno round-trips the CreateRequest ABI vector', async () => {
       poolClass: 0, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
       tradeCap: ['1000', '2000'], windowCap: ['4000', '8000'], closureCap: ['500', '1000'],
       policyId: `0x${'c'.repeat(64)}`,
+      referenceAdapter0: '0x0000000000000000000000000000000000000000',
+      referenceAdapter1: '0x0000000000000000000000000000000000000000',
     },
     salt: `0x${'d'.repeat(64)}`, nonce: '7', deadline: '1790000000', recipient: addr(10),
     sqrtPriceX96: '79228162514264337593543950336', tickLower: -120, tickUpper: 120,

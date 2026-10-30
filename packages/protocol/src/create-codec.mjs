@@ -31,6 +31,8 @@ export const POOL_CONFIG_COMPONENTS = Object.freeze([
   { name: 'windowCap', type: 'uint128[2]' },
   { name: 'closureCap', type: 'uint128[2]' },
   { name: 'policyId', type: 'bytes32' },
+  { name: 'referenceAdapter0', type: 'address' },
+  { name: 'referenceAdapter1', type: 'address' },
 ]);
 
 export const CREATE_REQUEST_COMPONENTS = Object.freeze([
@@ -114,6 +116,8 @@ function normalizePoolConfig(config) {
     calendarRegistry: config.calendarRegistry.toLowerCase(),
     safetyController: config.safetyController.toLowerCase(),
     treasuryAdapter: (config.treasuryAdapter ?? ZERO_ADDRESS).toLowerCase(),
+    referenceAdapter0: (config.referenceAdapter0 ?? ZERO_ADDRESS).toLowerCase(),
+    referenceAdapter1: (config.referenceAdapter1 ?? ZERO_ADDRESS).toLowerCase(),
     poolClass: config.poolClass,
     liquidityMode: config.liquidityMode,
     referenceMode: config.referenceMode,
@@ -161,6 +165,7 @@ function normalizeDecoded(request) {
     treasuryAdapter: c[10].toLowerCase(),
     poolClass: Number(c[11]), liquidityMode: Number(c[12]), referenceMode: Number(c[13]), tickSpacing: Number(c[14]),
     tradeCap: c[15].map(String), windowCap: c[16].map(String), closureCap: c[17].map(String), policyId: c[18],
+    referenceAdapter0: c[19].toLowerCase(), referenceAdapter1: c[20].toLowerCase(),
   };
   return {
     config,

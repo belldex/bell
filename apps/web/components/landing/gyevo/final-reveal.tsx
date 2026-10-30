@@ -106,8 +106,27 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <span>{appName}</span>
               </Link>
               <p>
-                BELL is a Uniswap v4 hook and liquidity policy for tokenized-stock pools. It sets base LP fees and flow limits from verified market state. Current evidence is testnet-only; rehearsal assets are synthetic, and SESSION_ONLY does not promise independent counterasset price protection.
+                Tokenized-stock pools with session-based fees and limits. Testnet only; synthetic assets; no independent counterasset price protection.
               </p>
+              <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
+                <span className="lp-ecosystem__item">
+                  <span
+                    className="lp-ecosystem__logo lp-ecosystem__logo--robinhood"
+                    aria-hidden="true"
+                    style={{ ["--logo-src" as string]: 'url("/landing/partners/robinhood.svg")' }}
+                  />
+                  <span className="lp-ecosystem__suffix">Chain</span>
+                </span>
+                <span className="lp-ecosystem__divider" aria-hidden="true" />
+                <span className="lp-ecosystem__item">
+                  <span
+                    className="lp-ecosystem__logo lp-ecosystem__logo--uniswap"
+                    aria-hidden="true"
+                    style={{ ["--logo-src" as string]: 'url("/landing/partners/uniswap.svg")' }}
+                  />
+                  <span className="lp-ecosystem__suffix">v4</span>
+                </span>
+              </div>
             </div>
             <nav aria-label="Protocol">
               <h2>Protocol</h2>
@@ -133,6 +152,9 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <li>
                   <Link href="/protocol">Docs</Link>
                 </li>
+                <li>
+                  <Link href="/#facts">Testnet snapshot</Link>
+                </li>
               </ul>
             </nav>
             <nav aria-label="BELL policy">
@@ -145,17 +167,16 @@ export function FinalReveal({ appName }: { appName: string }) {
             </nav>
           </div>
           <p className="lp-legal">
-            <span>Robinhood Chain Testnet · 46630</span>
             <span>Unaudited · No mainnet deployment</span>
           </p>
-          <span
-            className="lp-word-out"
-            aria-hidden="true"
-            style={{ ["--chars" as string]: appName.length }}
-          >
-            {appName}
-          </span>
         </div>
+        <span
+          className="lp-word-out"
+          aria-hidden="true"
+          style={{ ["--chars" as string]: "Bourse-Event Liquidity Layer".length }}
+        >
+          BOURSE-EVENT LIQUIDITY LAYER
+        </span>
       </footer>
     </>
   );

@@ -10,15 +10,26 @@ import { scrollToId } from "./smooth-scroll";
 const SECTIONS = [
   { id: "idea", label: "Why BELL", desc: "The market problem BELL is built around." },
   { id: "how", label: "How it works", desc: "The checks every swap must pass." },
-  { id: "market-rhythm", label: "Market rhythm", desc: "Fees follow verified market sessions." },
-  { id: "risk-policy", label: "Risk policy", desc: "Flow caps and clear halt conditions." },
-  { id: "planned-close", label: "Planned close", desc: "A bounded path through scheduled closure." },
+  { id: "policy-overview", label: "Market hours", desc: "Why each verified session changes the rules." },
+  { id: "operating-policy", label: "Operating policy", desc: "Session fees, swap limits and planned closes." },
   { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
   { id: "roadmap", label: "Readiness", desc: "What has been rehearsed and what remains." },
-  { id: "facts-title", label: "Testnet status", desc: "Deployment and rehearsal snapshot; not live-updating." },
+  { id: "facts", label: "Testnet status", desc: "Deployment and rehearsal snapshot; not live-updating." },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
+const SCROLL_SECTIONS = ["idea", "how", "policy-overview", "operating-policy", "sessions", "roadmap", "facts"] as const;
+
+function sectionAtReadingLine(): SectionId | null {
+  const line = window.innerHeight * 0.4;
+  let current: SectionId | null = null;
+  for (const id of SCROLL_SECTIONS) {
+    const section = document.getElementById(id);
+    if (section && section.getBoundingClientRect().top <= line) current = id;
+    else if (section) break;
+  }
+  return current;
+}
 
 export function LandingNav({ appName }: { appName: string }) {
   const [open, setOpen] = useState(false);
@@ -26,27 +37,24 @@ export function LandingNav({ appName }: { appName: string }) {
 
   /* Sync the active chapter with both the pinned story and the regular content sections. */
   useEffect(() => {
-    setActive(getFeature());
-    const unsubscribe = subscribeFeature(setActive);
-    const sectionIds = ["how", "sessions", "roadmap"] as const;
-    const sections: Element[] = [
-      ...sectionIds.map((id) => document.getElementById(id)).filter((section): section is HTMLElement => !!section),
-    ];
-    const facts = document.querySelector(".lp-facts");
-    if (facts) sections.push(facts);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const current = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (current) setActive((current.target as HTMLElement).id === "" ? "facts-title" : (current.target as HTMLElement).id as SectionId);
-      },
-      { rootMargin: "-28% 0px -58% 0px", threshold: [0, 0.15, 0.3, 0.5] },
-    );
-    sections.forEach((section) => { if (section) observer.observe(section); });
+    let raf = 0;
+    const syncFromScroll = () => {
+      raf = 0;
+      if (!getFeature()) setActive(sectionAtReadingLine());
+    };
+    const scheduleSync = () => {
+      if (!raf) raf = requestAnimationFrame(syncFromScroll);
+    };
+    const feature = getFeature();
+    setActive(feature ? "operating-policy" : sectionAtReadingLine());
+    const unsubscribe = subscribeFeature((feature) => setActive(feature ? "operating-policy" : sectionAtReadingLine()));
+    window.addEventListener("scroll", scheduleSync, { passive: true });
+    window.addEventListener("resize", scheduleSync, { passive: true });
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       unsubscribe();
-      observer.disconnect();
+      window.removeEventListener("scroll", scheduleSync);
+      window.removeEventListener("resize", scheduleSync);
     };
   }, []);
 

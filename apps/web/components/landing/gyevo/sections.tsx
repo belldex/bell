@@ -1,6 +1,8 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { Activity, ArrowRight, BadgeCheck, CalendarClock, CalendarDays, CircleCheck, CircleX, Gauge, Percent, Radio, ShieldCheck } from "lucide-react";
 import { Arrow } from "./arrow";
+import { SessionFeeCurve } from "./session-fee-curve";
 
 const ROBINHOOD_TESTNET_CHAIN_ID = 46630;
 
@@ -147,50 +149,58 @@ export function PathSection() {
 
 /* Session fees and operating conditions: distinct, documented BELL sessions. */
 const SESSIONS = [
-  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Active stock stream and regular-session data required." },
-  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Supported extended-hours feed; tighter limits." },
-  { name: "After-hours", code: "POST", rate: "0.30%", note: "Supported extended-hours feed; tighter limits." },
-  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Supported overnight feed; smallest active-session limits." },
-  { name: "Scheduled close", code: "CLOSED", rate: "1.00%", note: "Valid closure context, historical anchor and bounded episode budget." },
+  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Supported extended-hours feed · tighter limits" },
+  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Healthy stock stream · regular session" },
+  { name: "After-hours", code: "POST", rate: "0.30%", note: "Supported extended-hours feed · tighter limits" },
+  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Healthy feed · smallest active-session limits" },
+  { name: "Scheduled close", code: "CLOSED", rate: "1.00%", note: "Proven close · historical anchor · finite budget" },
 ] as const;
 
 export function SessionSection() {
   return (
     <section className="lp-sec lp-lend" id="sessions" aria-labelledby="lending-title">
       <div className="lp-wrap lp-lend__wrap">
-        <div className="lp-lend__copy">
+        <header className="lp-lend__intro">
+          <div className="lp-lend__title">
           <Eyebrow n="" ac="blue">Fees follow the session</Eyebrow>
           <h2 className="lp-h2" id="lending-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-            A market clock. <em className="o">A fee curve.</em>
+            One market day. <em className="o">Five fee states.</em>
           </h2>
-          <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            BELL&apos;s base LP fee and gross-flow limits follow the verified exchange session. Temporary reopen, corporate-action and repricing guards can tighten the effective policy; unsupported or uncertain states halt swaps.
-          </p>
-          <p className="lp-lend__fine" data-lp-reveal style={{ ["--i" as string]: 3 }}>
-            Base LP fees—not quotes or live-data guarantees. PRE, POST and OVERNIGHT need supported, healthy feeds; unknown or stale states halt swaps. Rolling limits recover as old swaps age out; a closure budget stays fixed until a verified reopen.
-          </p>
-          <div className="lp-lend__cta" data-lp-reveal style={{ ["--i" as string]: 4 }}>
-            <Link className="lp-btn lp-btn--primary" href="/pools">Explore pools <Arrow /></Link>
-            <Link className="lp-btn lp-btn--ghost" href="/protocol">Read protocol policy</Link>
           </div>
-        </div>
+          <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
+            BELL verifies the exchange session and stock feed before a swap. That state sets the pool&apos;s base LP fee and flow limits; stale or unsupported data stops execution.
+          </p>
+        </header>
 
-        <figure className="lp-lend__board" data-lp-reveal="right" style={{ ["--i" as string]: 2 }}>
+        <figure className="lp-lend__board" data-lp-reveal="up" style={{ ["--i" as string]: 2 }}>
           <figcaption className="lp-lend__cap">
-            <span>BELL base LP fees</span>
-            <span>Policy examples · not live pool data</span>
+            <span>Base LP fee by verified session</span>
+            <span>Illustrative policy · not live pool data</span>
           </figcaption>
+          <div className="lp-lend__plot">
+            <SessionFeeCurve />
+          </div>
           <ol className="lp-lend__acts">
             {SESSIONS.map((s) => (
               <li key={s.code} data-proof={s.code === "CLOSED" ? "true" : "false"}>
-                <span className="lp-lend__idx" aria-hidden="true">{s.code}</span>
+                <span className="lp-lend__idx">{s.code}</span>
                 <span className="lp-lend__act"><b>{s.name}</b><small>{s.note}</small></span>
                 <span className="lp-lend__gate">{s.rate}</span>
               </li>
             ))}
           </ol>
-          <p className="lp-lend__foot"><span>UNKNOWN</span>Unverified session or unexpected stale data means no swap.</p>
+          <p className="lp-lend__foot"><span>UNKNOWN</span><span>Unverified session or stale stock data halts swaps.</span></p>
         </figure>
+
+        <footer className="lp-lend__bottom">
+          <p className="lp-lend__fine" data-lp-reveal style={{ ["--i" as string]: 3 }}>
+            Base fees are policy examples, not live quotes. Reopen, corporate-action and repricing guards can tighten the effective policy. Rolling limits recover as swaps age out; a scheduled-close budget stays fixed until a verified reopen.
+          </p>
+          <div className="lp-lend__cta" data-lp-reveal style={{ ["--i" as string]: 4 }}>
+            <Link className="lp-btn lp-btn--primary" href="/pools">Explore pools <Arrow /></Link>
+            <Link className="lp-btn lp-btn--ghost" href="/protocol">Read protocol policy</Link>
+          </div>
+        </footer>
       </div>
     </section>
   );
@@ -212,7 +222,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "REGULAR",
+    n: "TESTNET",
     name: "Testnet rehearsal",
     status: "done",
     items: [
@@ -232,7 +242,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "HELD",
+    n: "PRICE GUARD",
     name: "PRICE_GUARDED profile",
     status: "blocked",
     items: [
@@ -242,7 +252,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "PENDING",
+    n: "PRODUCTION",
     name: "Production readiness",
     status: "future",
     items: [
@@ -273,30 +283,32 @@ export function RoadmapSection() {
           The rehearsal is evidence, <em className="o">not a release.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          One earlier REGULAR-session pool completed a successful swap on Robinhood Chain Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). It is historical rehearsal evidence—not proof that the current asset has a tradable pool or that feeds are live now.
+          An earlier REGULAR pool completed a swap on Robinhood Chain Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). That confirms a past rehearsal—not current asset availability, live feeds, or production readiness.
         </p>
 
-        {/* the route: solid where the work is done or live, dotted where it is not. Decorative; the list below says the same in words. */}
+        {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
         <div className="lp-road__map" data-lp-rail aria-hidden="true">
           <svg className="lp-road__svg lp-road__svg--todo" viewBox="0 0 1000 120" preserveAspectRatio="none" focusable="false">
             <path d={FUTURE_ROUTE} />
           </svg>
           <svg className="lp-road__svg lp-road__svg--signal" viewBox="0 0 1000 120" preserveAspectRatio="none" focusable="false">
             <path d={FUTURE_ROUTE} pathLength="1000" />
+            <rect className="lp-road__cursor" x={NODE_X(LAST_LIVE) - 5.5} y={NODE_Y(LAST_LIVE) - 5.5} width="11" height="11" rx="1" />
           </svg>
           <svg className="lp-road__svg lp-road__svg--done" viewBox="0 0 1000 120" preserveAspectRatio="none" focusable="false">
             <path d={`M0 ${NODE_Y(0)} L${NODE_X(0)} ${NODE_Y(0)} ${route(0, LAST_LIVE).replace(/^M[^C]*/, "")}`} />
           </svg>
           {PHASES.map((ph, i) => (
-            <span className="lp-road__node" data-status={ph.status} key={ph.n} style={{ ["--x" as string]: NODE_X(i) / 10, ["--y" as string]: (NODE_Y(i) / 120) * 100 }}>
-              {ph.status === "done" ? "✓" : ph.n}
-            </span>
+            <Fragment key={ph.n}>
+              <span className="lp-road__node" aria-hidden="true" data-status={ph.status} data-phase-index={i} style={{ ["--x" as string]: NODE_X(i) / 10, ["--y" as string]: (NODE_Y(i) / 120) * 100 }} />
+              <span className="lp-road__label" aria-hidden="true" data-side={i % 2 ? "above" : "below"} style={{ ["--x" as string]: NODE_X(i) / 10, ["--y" as string]: (NODE_Y(i) / 120) * 100 }}>{ph.n}</span>
+            </Fragment>
           ))}
         </div>
 
         <ol className="lp-road__list">
           {PHASES.map((ph, i) => (
-            <li className="lp-phase" data-status={ph.status} key={ph.n} data-spot data-lp-reveal style={{ ["--i" as string]: i + 1 }}>
+            <li className="lp-phase" data-status={ph.status} data-phase-index={i} key={ph.n} data-spot data-lp-reveal style={{ ["--i" as string]: i + 1 }}>
               <p className="lp-phase__top">
                 <span className="lp-phase__n">{ph.name}</span>
                 <span className="lp-chip" data-tone={ph.status}><i aria-hidden="true" />{STATUS_LABEL[ph.status]}</span>
@@ -306,7 +318,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-        <p className="lp-lead">The protocol stack is deployed on testnet; mainnet is not deployed. PRICE_GUARDED is blocked until a reference pair is admitted. Production use still requires security review, data rights and operational readiness.</p>
+        <p className="lp-road__summary"><span>Production gate</span>The protocol stack is testnet-only; mainnet is not deployed. PRICE_GUARDED awaits an admitted reference pair. Production also requires security review, data rights and operational controls.</p>
       </div>
     </section>
   );
@@ -315,12 +327,19 @@ export function RoadmapSection() {
 /* --------------------------------------------------------------- facts */
 export function FactsSection() {
   return (
-    <section className="lp-sec lp-facts" aria-labelledby="facts-title">
+    <section className="lp-sec lp-facts" id="facts" aria-labelledby="facts-title">
       <div className="lp-wrap">
-        <p className="lp-eyebrow lp-facts__title" id="facts-title" data-lp-reveal>
-          <i aria-hidden="true" />
-          Testnet snapshot · verified 29 Oct 2026, 03:40 UTC · not live-updating
-        </p>
+        <header className="lp-facts__head" data-lp-reveal>
+          <div className="lp-facts__title">
+            <p className="lp-facts__eyebrow">Protocol status</p>
+            <h2 className="lp-facts__headline" id="facts-title">Testnet snapshot</h2>
+          </div>
+          <div className="lp-facts__stamp">
+            <span className="lp-facts__stamp-label">Verified at</span>
+            <time dateTime="2026-10-29T03:40:00Z"><span>29 Oct 2026</span><strong>03:40 UTC</strong></time>
+            <span className="lp-facts__stamp-note">Static record · not live-updating</span>
+          </div>
+        </header>
         <dl className="lp-facts__grid" data-lp-reveal>
           <div className="lp-fact" data-spot><dt>Verified rehearsal</dt><dd>Historical REGULAR swap · earlier testnet pool</dd></div>
           <div className="lp-fact" data-spot><dt>Current asset</dt><dd>Pool and swap not yet verified</dd></div>

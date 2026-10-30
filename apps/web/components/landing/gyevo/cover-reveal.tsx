@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { Activity, CalendarClock, CalendarDays, Gauge, Percent } from "lucide-react";
+import { Activity, ArrowDown, CalendarClock, CalendarDays, Gauge, MousePointer2, Percent } from "lucide-react";
 import { Arrow } from "./arrow";
 import { createCipherSculpture } from "./cipher-sculpture";
 import { createGlobeSculpture } from "./globe-sculpture";
@@ -14,8 +14,8 @@ import { scrollToId } from "./smooth-scroll";
    cipher-sculpture.ts), and phase 2, the hero, was behind them all along. After a short hold the camera
    pushes into the headline: it zooms in until the hero is gone, and the next section rises in behind it.
 
-   Behind the claim a wireframe network globe turns slowly (globe-sculpture.ts) with the dot at its core; the
-   same scroll that cuts the dot into slabs is a camera move toward it, so the white and the hero are one
+   Behind the claim, three market-session lanes turn around a timing signal (globe-sculpture.ts); the
+   same scroll that opens the claim carries the camera through that policy sculpture, so the white and hero are one
    space, not two screens.
 
    The cover is a tall runway with a sticky stage. Scroll position becomes a handful of
@@ -275,7 +275,7 @@ export function CoverReveal({ tagline }: Props) {
   }, []);
 
   return (
-    <section className="lp-cover" ref={coverRef} aria-label="Introduction">
+    <section className="lp-cover" id="overview" ref={coverRef} aria-label="Introduction">
       <div className="lp-stage" ref={stageRef}>
         {/* ---- Phase 1: the claim ---- */}
         <div className="lp-p1">
@@ -306,35 +306,19 @@ export function CoverReveal({ tagline }: Props) {
             {/* One left-aligned column, centred as a block. Everything in it zooms together when the camera pushes in. */}
             <div className="lp-hero__col">
               <p className="lp-badge">
-                <i aria-hidden="true" />
-                <span>
-                  BELL · UNISWAP V4 HOOK
-                </span>
-                <span>Robinhood Chain testnet</span>
-                <span>Synthetic rehearsal assets · unaudited</span>
+                <CalendarClock aria-hidden="true" />
+                <span>Session-aware liquidity</span>
+                <span className="lp-badge__detail">for tokenized stocks</span>
               </p>
               <h2 className="lp-h">
-                {/* the first words are the original headline, untouched; the other three overlay it, one at a time, as the picture changes form */}
+                {/* Each scroll chapter keeps its headline to two deliberate lines. */}
                 <span
                   className="lp-story__t lp-story__g"
                   data-story-i={0}
                   data-story-kind="head"
                 >
-                  <span className="lp-h__line lp-h__l1">
-                    <span className="lp-h__in">
-                  The session sets the fee.
-                    </span>
-                  </span>
-                  <span className="lp-h__line lp-h__l2">
-                    <span className="lp-h__in">
-                      Limits bound the flow.
-                    </span>
-                  </span>
-                  <span className="lp-h__line lp-h__l3">
-                    <span className="lp-h__in">
-                    Unverified? Swaps stop.
-                    </span>
-                  </span>
+                  <span className="lp-h__line lp-h__l1"><span className="lp-h__in">Session fees.</span></span>
+                  <span className="lp-h__line lp-h__l2"><span className="lp-h__in">Bounded swaps.</span></span>
                 </span>
                 <span
                   className="lp-story__t lp-story__t--over"
@@ -377,7 +361,7 @@ export function CoverReveal({ tagline }: Props) {
                   </span>
                   <span className="lp-h__line lp-h__l2">
                     <span className="lp-h__in">
-                      The exception stays <b className="lp-h__public">bounded.</b>
+                      <b className="lp-h__public">Close stays finite.</b>
                     </span>
                   </span>
                 </span>
@@ -438,7 +422,9 @@ export function CoverReveal({ tagline }: Props) {
           </div>
 
           <p className="lp-drag-hint" aria-hidden="true">
-            Scroll to move · drag to inspect
+            <span><ArrowDown /> Scroll to follow the session</span>
+            <span className="lp-drag-hint__divider" />
+            <span><MousePointer2 /> Drag to turn</span>
           </p>
           <div className="lp-dot" aria-hidden="true" />
         </div>

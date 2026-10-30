@@ -1,6 +1,6 @@
-/* BELL's session globe: a fine market-data shell with three moving session lanes, five named
-   checkpoints and a small clock instrument inside. Scrolling carries the camera through the globe
-   and into the hero; it is a BELL market mechanism, not a credential network.
+/* BELL's market-session sculpture: a fine market-data shell with three moving session lanes, five named
+   checkpoints and a small clock instrument inside. Scrolling carries the camera through the sculpture
+   and into the hero; it is a BELL market mechanism, not a globe or credential network.
 
    What makes the inside read as inside: the layers are drawn back to front and a pale veil is laid over
    everything that is behind the near side of the shell, so the far mesh, the second shell and the core sit
@@ -207,6 +207,10 @@ const SESSION_LANES = [
   { rx: 0.66, rz: 0.54, y: 0, tilt: -0.36 },
   { rx: 0.86, rz: 0.7, y: -0.82, tilt: 0.42 },
 ] as const;
+const CLOCK_HANDS = [
+  { offset: 0, speed: 0.16, scroll: Math.PI * 1.7, length: 1, width: 3.6, alpha: 1 },
+  { offset: 1.15, speed: 0.015, scroll: 0.42, length: 0.58, width: 2.6, alpha: 0.86 },
+] as const;
 
 /* scratch space reused every frame, so drawing allocates nothing */
 const ringX = new Float32Array(RING_SEGS);
@@ -225,6 +229,8 @@ const octX = new Float32Array(6);
 const octY = new Float32Array(6);
 const octZ = new Float32Array(6);
 const octOk = new Uint8Array(6);
+const clockStart = new Float32Array(3);
+const clockEnd = new Float32Array(3);
 
 export type GlobeSculpture = {
   resize: (slot: HTMLElement) => void;
@@ -723,17 +729,6 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       }
       ctx.stroke();
 
-      /* A clock hand turns inside the market mesh and follows the same scroll camera. */
-      const clockAngle = -Math.PI * 0.5 + secs * 0.16 + p * Math.PI * 1.7;
-      const clockR = coreR * 0.76 * f / Math.max(0.4, cz);
-      ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(0.78 * coreA).toFixed(3)})`;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(clockAngle) * clockR, cy + Math.sin(clockAngle) * clockR);
-      ctx.stroke();
-      ctx.fillStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${coreA.toFixed(3)})`;
-      ctx.beginPath(); ctx.arc(cx, cy, 2.8, 0, Math.PI * 2); ctx.fill();
     }
 
     /* ===== 5. the veil: everything drawn so far is behind the near side of the shell ===== */
@@ -755,6 +750,95 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     drawNodes(outer, 1, CHARCOAL[0], CHARCOAL[1], CHARCOAL[2], fade, 1.2);
     for (let ri = 0; ri < RINGS.length; ri++) strokeRing(ringFront[ri], 0.34 * ringA);
     for (let ri = 0; ri < SESSION_LANES.length; ri++) strokeLane(laneFront[ri], 0.92, 1.8);
+
+    /* Clock hands ride the three existing session lanes; no additional dial geometry is drawn. */
+    const drawClock = () => {
+      const clockA = fade;
+      if (clockA <= 0.02) return;
+      const clockTint = smooth(0.08, 0.48, p);
+      const clockR = Math.round(lerp(CHARCOAL[0], BURGUNDY[0], clockTint));
+      const clockG = Math.round(lerp(CHARCOAL[1], BURGUNDY[1], clockTint));
+      const clockB = Math.round(lerp(CHARCOAL[2], BURGUNDY[2], clockTint));
+
+      ctx.lineCap = "round";
+      for (let ringIndex = 0; ringIndex < SESSION_LANES.length; ringIndex++) {
+        const clockLane = SESSION_LANES[ringIndex];
+        const laneCt = Math.cos(clockLane.tilt);
+        const laneSt = Math.sin(clockLane.tilt);
+        const projectClockPoint = (angle: number, radius: number, out: Float32Array) => {
+          const z = Math.sin(angle) * clockLane.rz * radius;
+          rotate(
+            Math.cos(angle) * clockLane.rx * radius * laneScale,
+            (clockLane.y * laneCt - z * laneSt) * laneScale,
+            (clockLane.y * laneSt + z * laneCt) * laneScale,
+            tmp,
+          );
+          const depth = cz - tmp[2];
+          if (depth < 0.28) return false;
+          const projection = f / depth;
+          out[0] = cx + tmp[0] * projection;
+          out[1] = cy - tmp[1] * projection;
+          out[2] = tmp[2];
+          return true;
+        };
+
+        if (!projectClockPoint(0, 0, clockStart)) continue;
+        const frontSegments = laneFront[ringIndex];
+        const backSegments = laneBack[ringIndex];
+        let sumX = 0;
+        let sumY = 0;
+        let pointCount = 0;
+        for (let i = 0; i < frontSegments.length; i += 4) {
+          sumX += frontSegments[i] + frontSegments[i + 2];
+          sumY += frontSegments[i + 1] + frontSegments[i + 3];
+          pointCount += 2;
+        }
+        for (let i = 0; i < backSegments.length; i += 4) {
+          sumX += backSegments[i] + backSegments[i + 2];
+          sumY += backSegments[i + 1] + backSegments[i + 3];
+          pointCount += 2;
+        }
+        const handPivotX = pointCount ? sumX / pointCount : clockStart[0];
+        const handPivotY = pointCount ? sumY / pointCount : clockStart[1];
+        const ringWeight = ringIndex === 1 ? 1 : 0.62;
+        const surfaceOpacity = (z: number) => clockA * ringWeight * lerp(0.34, 0.92, smooth(-0.08, 0.08, z));
+        const handPivotAlpha = surfaceOpacity(clockStart[2]);
+
+        /* Keep ticks on the main lane only; the two supporting lanes stay visually quiet. */
+        if (ringIndex === 1) {
+          ctx.lineWidth = 1.5;
+          for (let i = 0; i < 4; i++) {
+            const tickAngle = (i / 4) * Math.PI * 2;
+            if (!projectClockPoint(tickAngle, 0.94, clockStart) || !projectClockPoint(tickAngle, 1, clockEnd)) continue;
+            const tickAlpha = surfaceOpacity((clockStart[2] + clockEnd[2]) * 0.5) * 0.78;
+            ctx.strokeStyle = `rgba(${clockR},${clockG},${clockB},${tickAlpha.toFixed(3)})`;
+            ctx.beginPath();
+            ctx.moveTo(clockStart[0], clockStart[1]);
+            ctx.lineTo(clockEnd[0], clockEnd[1]);
+            ctx.stroke();
+          }
+        }
+
+        for (const hand of CLOCK_HANDS) {
+          const angle = -Math.PI * 0.5 + (ringIndex - 1) * 0.62 + hand.offset + secs * hand.speed + p * hand.scroll;
+          if (!projectClockPoint(angle, hand.length, clockEnd)) continue;
+          ctx.lineWidth = hand.width * (ringIndex === 1 ? 1 : 0.76);
+          const handGradient = ctx.createLinearGradient(handPivotX, handPivotY, clockEnd[0], clockEnd[1]);
+          handGradient.addColorStop(0, `rgba(${clockR},${clockG},${clockB},${(handPivotAlpha * hand.alpha).toFixed(3)})`);
+          handGradient.addColorStop(1, `rgba(${clockR},${clockG},${clockB},${(surfaceOpacity(clockEnd[2]) * hand.alpha).toFixed(3)})`);
+          ctx.strokeStyle = handGradient;
+          ctx.beginPath();
+          ctx.moveTo(handPivotX, handPivotY);
+          ctx.lineTo(clockEnd[0], clockEnd[1]);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = `rgba(${clockR},${clockG},${clockB},${handPivotAlpha.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(handPivotX, handPivotY, ringIndex === 1 ? 6 : 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
 
     /* verified nodes and their hex labels */
     {
@@ -880,6 +964,9 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       ctx.restore();
     }
     ctx.globalCompositeOperation = "source-over";
+
+    /* The clock is the final surface pass, so the cover's text clearing cannot erase it. */
+    drawClock();
 
     if (!ready) {
       ready = true;

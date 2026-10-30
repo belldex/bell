@@ -20,6 +20,11 @@ export function LandingEffects() {
     const fine = window.matchMedia("(pointer: fine)").matches;
     const roadMap = root.querySelector<HTMLElement>(".lp-road__map");
     const roadSignal = root.querySelector<SVGPathElement>(".lp-road__svg--signal path");
+    const roadCursor = root.querySelector<SVGRectElement>(".lp-road__cursor");
+    const roadNodes = Array.from(root.querySelectorAll<HTMLElement>(".lp-road__node"));
+    const roadLabels = Array.from(root.querySelectorAll<HTMLElement>(".lp-road__label"));
+    const roadPhases = Array.from(root.querySelectorAll<HTMLElement>(".lp-phase"));
+    const lastVerified = Math.max(0, roadPhases.reduce((last, phase, i) => phase.dataset.status === "done" || phase.dataset.status === "live" ? i : last, 0));
 
     /* Scrub the roadmap highlight against the map's viewport travel, so it can
        move forward and backward with the user's scroll and finish at the last node. */
@@ -34,6 +39,17 @@ export function LandingEffects() {
       const progress = Math.max(0, Math.min(1, (start - top) / (start - end)));
       roadSignal.style.strokeDashoffset = String(1000 * (1 - progress));
       roadSignal.style.opacity = progress === 0 ? "0" : String(Math.min(0.95, progress * 5));
+      if (roadCursor) {
+        const point = roadSignal.getPointAtLength(roadSignal.getTotalLength() * progress);
+        roadCursor.setAttribute("x", (point.x - 5.5).toFixed(2));
+        roadCursor.setAttribute("y", (point.y - 5.5).toFixed(2));
+        roadCursor.style.opacity = progress === 0 ? "0" : "1";
+      }
+      const active = Math.round(lastVerified + (roadPhases.length - lastVerified - 1) * progress);
+      roadMap.dataset.activePhase = String(active);
+      roadNodes.forEach((node, i) => { node.dataset.current = i === active ? "true" : "false"; });
+      roadLabels.forEach((label, i) => { label.dataset.current = i === active ? "true" : "false"; });
+      roadPhases.forEach((phase, i) => { phase.dataset.current = i === active ? "true" : "false"; });
     };
     const scheduleRoadProgress = () => {
       if (!roadRaf) roadRaf = requestAnimationFrame(updateRoadProgress);

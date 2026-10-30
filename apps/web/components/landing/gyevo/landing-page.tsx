@@ -22,7 +22,7 @@ export function LandingPage() {
       <LandingNav appName="BELL" />
 
       <main className="lp-curtain" id="lp-content">
-        <CoverReveal tagline="Tokenized stocks. Rules follow the market." />
+        <CoverReveal tagline="Tokenized stocks. Market rules adapt." />
         <IdeaScene />
         <PathSection />
         <FeatureStory />

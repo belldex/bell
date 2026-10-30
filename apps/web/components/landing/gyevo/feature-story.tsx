@@ -303,7 +303,7 @@ export function FeatureStory() {
         </div>
       </section>
 
-      <section className="lp-fx" data-mode={mode} aria-label="BELL market rhythm, risk policy and planned close">
+      <section className="lp-fx" id="operating-policy" data-mode={mode} aria-label="BELL operating policy">
         <div className="lp-fx__runway" ref={runwayRef}>
           <div className="lp-fx__stage">
             <div className="lp-fx__top">
