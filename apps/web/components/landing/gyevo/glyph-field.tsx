@@ -28,11 +28,11 @@ const GLYPHS = "BELLFLOWMARKETSESSION";
 const NG = GLYPHS.length;
 const COUNT = 1320; /* glyphs flow from the session dial into the policy forms */
 const PALETTE: readonly (readonly [number, number, number])[] = [
-  [240, 238, 232], /* chalk: verified state */
-  [174, 178, 181], /* silver: session signal */
-  [174, 178, 181], /* metallic glint */
-  [99, 104, 109], /* graphite depth */
-  [226, 226, 220], /* pale silver edge */
+  [238, 236, 229], /* talc: verified state */
+  [183, 180, 173], /* warm stone: session signal */
+  [220, 215, 204], /* pale talc: metallic glint */
+  [73, 70, 65], /* warm carbon depth */
+  [238, 236, 229], /* talc edge */
 ];
 const FRAME_MS = 40; /* ~25 frames a second while it drifts; the turn is slow, so it still looks smooth */
 const Q_GONE = 0.8; /* the zoom has faded the field out completely by here (see .lp-field), so there is nothing to draw */

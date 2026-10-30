@@ -193,6 +193,41 @@ contract PriceGuardedCreationTest {
         require(factory.nonces(address(this)) == 1, "nonce");
     }
 
+    function testOneFactoryCanCreateSessionOnlyAndPriceGuardedProfiles() external {
+        // Deploy one factory from a neutral SESSION_ONLY profile, then use the same factory to
+        // create both classes. Pool class/reference adapters are pool-specific, not factory-wide.
+        PoolConfig memory session = request.config;
+        session.poolClass = uint8(PoolClass.SESSION_ONLY);
+        session.referenceAdapter0 = address(0);
+        session.referenceAdapter1 = address(0);
+        _redeploy(session);
+        bytes32 sharedFactoryProfile = factory.profileHash();
+
+        PoolConfig memory guarded = session;
+        guarded.poolClass = uint8(PoolClass.PRICE_GUARDED);
+        guarded.referenceAdapter0 = address(token0) < address(token1) ? address(stockAdapter) : address(counterAdapter);
+        guarded.referenceAdapter1 = address(token0) < address(token1) ? address(counterAdapter) : address(stockAdapter);
+        request.config = guarded;
+        request.nonce = 0;
+        request.salt = _mine(request);
+        CreateResult memory guardedPool = factory.createAndSeed(request);
+        require(BellHook(guardedPool.hook).state().lifecycle == uint8(Lifecycle.LIVE), "guarded pool not live");
+
+        request.config = session;
+        request.nonce = 1;
+        request.salt = _mine(request);
+        token0.mint(address(this), 10_000_000); token1.mint(address(this), 10_000_000); usdg.mint(address(this), 49e6);
+        CreateResult memory sessionPool = factory.createAndSeed(request);
+        require(BellHook(sessionPool.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session pool not live");
+        require(factory.profileHash() == sharedFactoryProfile, "factory profile changed by per-pool class/adapters");
+    }
+
+    function _profileHash(PoolConfig memory c) internal pure returns (bytes32) {
+        c.token0 = address(0); c.token1 = address(0); c.asset0 = bytes32(0); c.asset1 = bytes32(0);
+        c.poolClass = 0; c.referenceAdapter0 = address(0); c.referenceAdapter1 = address(0);
+        return keccak256(abi.encode(c));
+    }
+
     function testPriceGuardedOutOfBandInitialPriceReverts() external {
         // +10% on sqrt (+21% on price) is far outside the 200 bps band but inside the tick range.
         request.sqrtPriceX96 = uint160(uint256(request.sqrtPriceX96) * 11 / 10);

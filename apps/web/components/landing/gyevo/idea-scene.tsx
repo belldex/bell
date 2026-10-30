@@ -143,12 +143,12 @@ export function IdeaScene() {
       <div className="lp-idea-pin">
         <div className="lp-wrap lp-idea" data-live={live ? "1" : "0"} inert={!live}>
           <div className="lp-idea__copy">
-            <p className="lp-eyebrow lp-ie" style={{ ["--ac" as string]: "var(--lp-public)" }}>
+            <p className="lp-eyebrow lp-ie">
               <i aria-hidden="true" />
               A MARKET WITH A CLOCK
             </p>
             <h2 className="lp-h2 lp-ie" id="idea-title">
-              Market hours change. <em>Pool rules adapt.</em>
+              Market hours change. <em className="o">Pool rules adapt.</em>
             </h2>
             <p className="lp-lead lp-ie">
               BELL provides liquidity pools for tokenized stocks. Regular hours, extended trading and scheduled closures carry different data quality and liquidity risks.

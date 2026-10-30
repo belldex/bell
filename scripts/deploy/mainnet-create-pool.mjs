@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Create and seed the first mainnet BELL pool.
+ * Create and seed one requested mainnet BELL pool pair.
  *
  * Differences from the testnet script that matter on mainnet:
  *  - the seed is real value: WETH and a real stock token, plus a real service fee
@@ -12,7 +12,7 @@
  * in the keeper, because it is a one-shot operation that needs the deployer nonce.
  *
  *   node scripts/deploy/mainnet-create-pool.mjs            # preflight + simulate only
- *   node scripts/deploy/mainnet-create-pool.mjs --broadcast
+ *   node scripts/deploy/mainnet-create-pool.mjs --stock=AAPL --counterasset=WETH --broadcast
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, parseAbi, decodeEventLog } from 'viem';
@@ -23,7 +23,6 @@ import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, resolvePoo
 import { isPoolCreatePreflightReady } from './keeper-price-config.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
-const EVIDENCE_PATH = 'evidence/deploy/mainnet-4663-pool.json';
 
 function loadEnv(text) {
   const env = {};
@@ -45,6 +44,9 @@ const manifest = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'u
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) throw new Error(`manifest chainId is ${manifest.chainId}`);
 const adapters = JSON.parse(readFileSync('evidence/deploy/mainnet-4663-stock-adapters.json', 'utf8'));
 const assetQueue = JSON.parse(readFileSync('evidence/deploy/mainnet-4663-asset-queue.json', 'utf8'));
+const references = existsSync('evidence/deploy/mainnet-4663-reference-adapters.json')
+  ? JSON.parse(readFileSync('evidence/deploy/mainnet-4663-reference-adapters.json', 'utf8'))
+  : null;
 if (assetQueue.activationPending) {
   throw new Error('asset admission is still pending; run mainnet-admit-assets.mjs activate first');
 }
@@ -70,19 +72,45 @@ const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32 assetId) view returns ((bytes32 assetId, uint16 year, uint32 index, uint64 start, uint64 end, uint8 phase, bytes32 provenanceHash))',
 ]);
 
-const stockAssetId = assetQueue.stock?.descriptorId
-  ?? Object.values(assetQueue.stocks ?? {})[0]?.descriptorId
-  ?? null;
-const wethAssetId = assetQueue.weth.descriptorId;
-const stockSymbol = assetQueue.stock?.descriptorId
-  ? null
-  : Object.keys(assetQueue.stocks ?? {})[0] ?? null;
+const stockArg = process.argv.find((a) => a.startsWith('--stock='))?.slice('--stock='.length)?.toUpperCase() ?? null;
+const pairCounter = (process.argv.find((a) => a.startsWith('--counterasset='))?.slice('--counterasset='.length) ?? 'WETH').toUpperCase();
+const stockSymbol = stockArg ?? Object.keys(assetQueue.stocks ?? {})[0] ?? null;
+if (!stockSymbol) throw new Error('no admitted stock assets in queue evidence; admit candidates first');
+const counterIsStock = pairCounter !== 'WETH' && pairCounter !== 'USDG';
+const stockEntry = stockSymbol ? assetQueue.stocks?.[stockSymbol] : assetQueue.stock;
+const stockAssetId = stockEntry?.descriptorId ?? null;
 const stockAdapters = stockSymbol
   ? (adapters.assets?.[stockSymbol] ?? null)
   : adapters;
+if (!stockAdapters || !stockAssetId) throw new Error(`no admitted adapter/descriptor for stock ${stockSymbol ?? '(unknown)'}`);
+const pairEntry = pairCounter === 'USDG'
+  ? assetQueue.usdg
+  : pairCounter === 'WETH'
+    ? assetQueue.weth
+    : assetQueue.stocks?.[pairCounter] ?? null;
+const pairToken = pairCounter === 'USDG'
+  ? manifest.feeToken
+  : pairCounter === 'WETH'
+    ? manifest.weth
+    : pairEntry?.token ?? null;
+const pairAssetId = pairEntry?.descriptorId ?? null;
+if (!pairToken || !pairAssetId) throw new Error(`unsupported or unadmitted counterasset ${pairCounter}`);
+if (assetQueue.activationPending) throw new Error('asset activation is pending; finish mainnet-admit-assets activate before pool creation');
+const pairAdapters = pairRequestedAsStock ? adapters.assets?.[pairCounter] : null;
+if (pairRequestedAsStock && !pairAdapters) throw new Error(`counter stock ${pairCounter} has no adapter evidence`);
+if (pairToken.toLowerCase() === stockAdapters.stockToken.toLowerCase()) {
+  throw new Error('pool pair tokens must be distinct');
+}
+const refMap = references?.adapters ?? references?.feeds ?? {};
+const stockReferenceAdapter = refMap[`${stockSymbol}/USD`]?.adapter ?? null;
+const pairReferenceKey = `${pairCounter}/USD`;
+const counterReferenceAdapter = refMap[pairReferenceKey]?.adapter ?? null;
 
-const poolClass = Number(process.env.BELL_POOL_CLASS || 1);
+const poolClass = Number(env.BELL_POOL_CLASS || 1);
 if (![0, 1].includes(poolClass)) throw new Error('BELL_POOL_CLASS must be 0 (PRICE_GUARDED) or 1 (SESSION_ONLY)');
+const EVIDENCE_PATH = `evidence/deploy/mainnet-4663-pool-${stockSymbol}-${pairCounter}-${poolClass}.json`;
+const referenceAdapterA = poolClass === 0 ? stockReferenceAdapter : undefined;
+const referenceAdapterB = poolClass === 0 ? counterReferenceAdapter : undefined;
 
 // The factory compares keccak256(config-without-tokens) against the immutable profileHash it was
 // deployed with. policyId survives that hash, so a mismatch here is InvalidConfiguration on chain.
@@ -94,13 +122,21 @@ const deployedProfileHash = await publicClient.readContract({
   functionName: 'profileHash',
 });
 
+const tokenA = stockAdapters.stockToken;
+const assetA = stockAssetId;
+const tokenB = pairToken;
+const assetB = pairAssetId;
+const amountAMax = BigInt(env.BELL_MAINNET_STOCK_SEED_WEI || 10n ** 18n);
+const amountBMax = pairCounter === 'WETH'
+  ? BigInt(env.BELL_MAINNET_WETH_SEED_WEI || 2n * 10n ** 15n)
+  : pairCounter === 'USDG'
+    ? BigInt(env.BELL_MAINNET_USDG_SEED_WEI || 2n * 10n ** 6n)
+    : BigInt(env.BELL_MAINNET_COUNTER_STOCK_SEED_WEI || 10n ** 18n);
+
 const config = resolvePoolConfig({
-  weth: manifest.weth,
-  wethAssetId,
-  stock: stockstockAdapters.stockToken,
-  stockAssetId,
-  wethMax: BigInt(env.BELL_MAINNET_WETH_SEED_WEI || 2n * 10n ** 15n),
-  stockMax: BigInt(env.BELL_MAINNET_STOCK_SEED_WEI || 10n ** 18n),
+  tokenA, assetA, tokenB, assetB,
+  amountAMax, amountBMax,
+  referenceAdapterA, referenceAdapterB,
   poolManager: manifest.poolManager,
   positionManager: manifest.positionManager,
   factory: manifest.poolFactory,
@@ -109,9 +145,15 @@ const config = resolvePoolConfig({
   safetyController: manifest.safetyController,
   policyId: env.BELL_POLICY_ID || 'bell-mainnet-v1',
   poolClass,
-  referenceAdapter0: env.BELL_MAINNET_REFERENCE_ADAPTER_0,
-  referenceAdapter1: env.BELL_MAINNET_REFERENCE_ADAPTER_1,
 });
+
+if (pairRequestedAsStock && poolClass === 1) {
+  throw new Error('SESSION_ONLY supports one stock plus one unpriced non-stock token; stock/stock requires PRICE_GUARDED');
+}
+
+if (poolClass === 0 && (!referenceAdapterA || !referenceAdapterB)) {
+  throw new Error(`PRICE_GUARDED requires deployed references for ${stockSymbol}/USD and ${pairCounter}/USD; deploy reference stack first`);
+}
 
 // Verify the derived profile hash matches the deployed factory before spending gas. This is the
 // only cheap way to catch a policy-id or tick-spacing mismatch.
@@ -125,28 +167,42 @@ if (derivedProfileHash !== deployedProfileHash) {
 console.log(`Factory profile hash matches: ${deployedProfileHash}`);
 
 // 1. The calendar must have a live interval; without one the hook has no phase and cannot open.
-const interval = await publicClient.readContract({
-  address: manifest.calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [stockAssetId],
-});
-if (interval.assetId.toLowerCase() !== stockAssetId.toLowerCase()) {
-  throw new Error('no live calendar interval for the stock asset; run mainnet-calendar.mjs activate-interval');
+const pairIsStock = Boolean(pairEntry?.isStock ?? counterIsStock);
+const pairStockAssetId = config.asset0.toLowerCase() === stockAssetId.toLowerCase()
+  ? config.asset1
+  : config.asset0;
+const stockAssetIdByToken = config.token0.toLowerCase() === stockAdapters.stockToken.toLowerCase() ? config.asset0 : config.asset1;
+const stockAssetIds = pairIsStock ? [stockAssetIdByToken, pairStockAssetId] : [stockAssetIdByToken];
+const intervals = await Promise.all(stockAssetIds.map((id) => publicClient.readContract({
+  address: manifest.calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [id],
+})));
+for (const [index, id] of stockAssetIds.entries()) {
+  if (intervals[index].assetId.toLowerCase() !== id.toLowerCase()) {
+    throw new Error(`no live calendar interval for stock asset ${id}; activate its calendar first`);
+  }
+  console.log(`Calendar ${id}: phase ${intervals[index].phase} until ${new Date(Number(intervals[index].end) * 1000).toISOString()}`);
 }
-console.log(`Calendar interval: phase ${interval.phase} until ${new Date(Number(interval.end) * 1000).toISOString()}`);
 
 // 2. Health must already be ready. Pool creation does not create health; it consumes it.
 const health = await publicClient.readContract({
-  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [stockAssetId],
+  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [stockAssetIdByToken],
 });
+const pairHealth = pairIsStock ? await publicClient.readContract({
+  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [pairStockAssetId],
+}) : null;
 const now = Number((await publicClient.getBlock()).timestamp);
 console.log(`Health: ready=${health.ready} reasons=${health.reasonBits} validUntil=${health.validUntil}`);
 if (!isPoolCreatePreflightReady(health, now)) {
   throw new Error('stock health is not ready; the keeper must publish a fresh report first');
 }
+if (pairHealth && !isPoolCreatePreflightReady(pairHealth, now)) {
+  throw new Error(`${pairCounter} stock health is not ready; keeper must publish a fresh report first`);
+}
 
 // 3. Balance and allowance preflight, so a failed seed cannot burn gas on approvals only.
-const [wethBalance, stockBalance, nativeBalance, feeBalance, serviceFee, feeDecimals] = await Promise.all([
-  publicClient.readContract({ address: manifest.weth, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
-  publicClient.readContract({ address: stockAdapters.stockToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
+  const [tokenABalance, tokenBBalance, nativeBalance, feeBalance, serviceFee, feeDecimals] = await Promise.all([
+  publicClient.readContract({ address: tokenA, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
+  publicClient.readContract({ address: tokenB, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.getBalance({ address: account.address }),
   publicClient.readContract({ address: manifest.feeToken, abi: ERC20, functionName: 'balanceOf', args: [account.address] }),
   publicClient.readContract({ address: manifest.poolFactory, abi: parseAbi(['function serviceFee() view returns (uint128)']), functionName: 'serviceFee' }),
@@ -154,13 +210,16 @@ const [wethBalance, stockBalance, nativeBalance, feeBalance, serviceFee, feeDeci
 ]);
 const funding = checkSeedFunding({
   token0: config.token0,
+  tokenA,
+  tokenB,
+  tokenABalance: tokenA.toLowerCase() === manifest.feeToken.toLowerCase() ? feeBalance : tokenABalance,
+  tokenBBalance: tokenB.toLowerCase() === manifest.feeToken.toLowerCase() ? feeBalance : tokenBBalance,
   weth: manifest.weth,
   amountMax: config.amountMax,
-  wethBalance,
-  stockBalance,
   nativeBalance,
   nativeGasReserve: BigInt(env.BELL_MAINNET_GAS_RESERVE_WEI || 5_000_000_000_000_000n),
   feeBalance,
+  feeToken: manifest.feeToken,
   serviceFee,
   wrapNativeForWeth: true,
 });
@@ -175,21 +234,27 @@ if (!broadcast) {
     mode: 'PREFLIGHT_ONLY',
     chainId,
     stockAssetId,
-    wethAssetId,
+    pairAssetId,
+    stockSymbol,
+    counterasset: pairCounter,
     token0: config.token0,
     token1: config.token1,
     amountMax: config.amountMax.map(String),
     policyId: config.policyId,
     health: { ready: health.ready, validUntil: Number(health.validUntil) },
-    calendarPhase: Number(interval.phase),
+    calendarPhases: intervals.map((it) => Number(it.phase)),
   }, null, 2));
-  console.log('Re-run with --broadcast to approve and create the pool.');
+  console.log('Plan mode only. Re-run with explicit pair args and --broadcast to authorize transactions.');
   process.exit(0);
 }
 
+if (!process.argv.some((a) => a.startsWith('--stock=')) || !process.argv.some((a) => a.startsWith('--counterasset='))) {
+  throw new Error('broadcast requires explicit --stock=<symbol> and --counterasset=<WETH|USDG|stock symbol>');
+}
+
 // 4. Approvals.
-console.log('Approving WETH, stock, and fee token to the factory...');
-for (const token of [manifest.weth, stockAdapters.stockToken, manifest.feeToken]) {
+console.log(`Approving ${stockSymbol}, ${pairCounter}, and fee token to the factory...`);
+for (const token of [...new Set([tokenA, tokenB, manifest.feeToken])]) {
   const hash = await walletClient.writeContract({
     address: token, abi: ERC20, functionName: 'approve', args: [manifest.poolFactory, 10n ** 24n],
   });
@@ -299,6 +364,9 @@ const evidence = {
   token1: config.token1,
   asset0: config.asset0,
   asset1: config.asset1,
+  stockSymbol,
+  counterasset: pairCounter,
+  poolClass,
   amountMax: config.amountMax.map(String),
   policyId: config.policyId,
   serviceFee: serviceFee.toString(),

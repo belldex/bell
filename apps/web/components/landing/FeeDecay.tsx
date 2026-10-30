@@ -148,8 +148,8 @@ export function FeeDecay() {
             <defs>
               <clipPath id="reveal"><rect x="0" y="0" width={clipW} height={H} /></clipPath>
               <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#3CE6FF" stopOpacity="0.35" />
-                <stop offset="1" stopColor="#3CE6FF" stopOpacity="0" />
+                <stop offset="0" stopColor="#C7444F" stopOpacity="0.35" />
+                <stop offset="1" stopColor="#C7444F" stopOpacity="0" />
               </linearGradient>
             </defs>
             {[0, 2500, 5000, 7500, 10000].map((u) => (

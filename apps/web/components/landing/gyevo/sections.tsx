@@ -8,9 +8,9 @@ const ROBINHOOD_TESTNET_CHAIN_ID = 46630;
 
 /* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
 
-function Eyebrow({ n, children, ac }: { n: string; children: string; ac?: "blue" | "orange" }) {
+function Eyebrow({ children }: { children: string }) {
   return (
-    <p className="lp-eyebrow" data-lp-reveal style={{ ["--ac" as string]: ac === "blue" ? "var(--lp-public)" : "var(--lp-accent)" }}>
+    <p className="lp-eyebrow" data-lp-reveal>
       <i aria-hidden="true" />
       {children}
     </p>
@@ -103,7 +103,7 @@ export function PathSection() {
   return (
     <section className="lp-sec" id="how" aria-labelledby="how-title">
       <div className="lp-wrap">
-        <Eyebrow n="">Inside one BELL swap</Eyebrow>
+          <Eyebrow>Inside one BELL swap</Eyebrow>
         <div className="lp-how-head">
           <h2 className="lp-h2" id="how-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
             From market signal <em className="o">to swap decision.</em>
@@ -162,7 +162,7 @@ export function SessionSection() {
       <div className="lp-wrap lp-lend__wrap">
         <header className="lp-lend__intro">
           <div className="lp-lend__title">
-          <Eyebrow n="" ac="blue">Fees follow the session</Eyebrow>
+          <Eyebrow>Fees follow the session</Eyebrow>
           <h2 className="lp-h2" id="lending-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
             One market day. <em className="o">Five fee states.</em>
           </h2>
@@ -278,7 +278,7 @@ export function RoadmapSection() {
   return (
     <section className="lp-sec lp-road" id="roadmap" aria-labelledby="road-title">
       <div className="lp-wrap">
-        <Eyebrow n="" ac="blue">Status, without the gloss</Eyebrow>
+        <Eyebrow>Status, without the gloss</Eyebrow>
         <h2 className="lp-h2" id="road-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
           The rehearsal is evidence, <em className="o">not a release.</em>
         </h2>

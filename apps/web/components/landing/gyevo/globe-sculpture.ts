@@ -16,8 +16,8 @@
    batched into a few alpha levels (a handful of strokes per frame), it idles at 30 fps, stops entirely
    once the plates have covered it, and draws a single still under reduced motion. */
 
-const CHARCOAL = [52, 55, 59] as const;
-const BURGUNDY = [174, 178, 181] as const; /* BELL silver highlight */
+const CHARCOAL = [41, 39, 37] as const;
+const POPPY = [199, 68, 79] as const; /* BELL poppy accent */
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const smooth = (a: number, b: number, x: number) => {
@@ -537,10 +537,10 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       }
     };
 
-    /* the line colour: charcoal, going toward burgundy as the camera enters the private side */
-    const lr = Math.round(lerp(CHARCOAL[0], BURGUNDY[0], privateTint * 0.75));
-    const lg = Math.round(lerp(CHARCOAL[1], BURGUNDY[1], privateTint * 0.75));
-    const lb = Math.round(lerp(CHARCOAL[2], BURGUNDY[2], privateTint * 0.75));
+    /* the line colour: charcoal, picking up poppy as the camera enters the private side */
+    const lr = Math.round(lerp(CHARCOAL[0], POPPY[0], privateTint * 0.75));
+    const lg = Math.round(lerp(CHARCOAL[1], POPPY[1], privateTint * 0.75));
+    const lb = Math.round(lerp(CHARCOAL[2], POPPY[2], privateTint * 0.75));
 
     place(outer, 1, sep, 1.15);
     place(mid, MID_R, sep * 0.55, 0.6);
@@ -668,9 +668,9 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     for (let ri = 0; ri < RINGS.length; ri++) strokeRing(ringBack[ri], 0.1 * ringA);
     for (let ri = 0; ri < SESSION_LANES.length; ri++) strokeLane(laneBack[ri], 0.34, 1.1);
 
-    /* ===== 3. the second shell, softer and more burgundy ===== */
-    strokeEdges(mid, 2, BURGUNDY[0], BURGUNDY[1], BURGUNDY[2], A_MID, 0.6);
-    drawNodes(mid, 2, BURGUNDY[0], BURGUNDY[1], BURGUNDY[2], fade * (1 - smooth(0.5, 0.9, p)) * 1.1, 1.3);
+    /* ===== 3. the second shell, softer and poppy-tinted ===== */
+    strokeEdges(mid, 2, POPPY[0], POPPY[1], POPPY[2], A_MID, 0.6);
+    drawNodes(mid, 2, POPPY[0], POPPY[1], POPPY[2], fade * (1 - smooth(0.5, 0.9, p)) * 1.1, 1.3);
 
     /* ===== 4. the core: the sealed value's own lattice, counter-turning, rising as the camera arrives ===== */
     const coreR = 0.5 + smooth(0, 0.7, p) * 0.2;
@@ -693,13 +693,13 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       for (const [a, b] of ICO_EDGES) {
         if (!coreOk[a] || !coreOk[b]) continue;
         const depth = clamp01(((coreZ[a] + coreZ[b]) * 0.5 + coreR) / (2 * coreR));
-        ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${((0.45 + 0.5 * depth) * coreA).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${((0.45 + 0.5 * depth) * coreA).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(coreX[a], coreY[a]);
         ctx.lineTo(coreX[b], coreY[b]);
         ctx.stroke();
       }
-      ctx.fillStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(0.85 * coreA).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${(0.85 * coreA).toFixed(3)})`;
       for (let i = 0; i < ICO.length; i++) {
         if (!coreOk[i]) continue;
         ctx.fillRect(coreX[i] - 1.3, coreY[i] - 1.3, 2.6, 2.6);
@@ -720,7 +720,7 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
         octZ[i] = tmp[2];
       }
       ctx.lineWidth = 0.8;
-      ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(0.6 * coreA).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${(0.6 * coreA).toFixed(3)})`;
       ctx.beginPath();
       for (const [a, b] of OCT_EDGES) {
         if (!octOk[a] || !octOk[b]) continue;
@@ -736,9 +736,9 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     if (veil > 0.01 && cz > 1.2) {
       const rs = f / Math.sqrt(cz * cz - 1);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rs * 1.02);
-      g.addColorStop(0, `rgba(255,255,255,${veil.toFixed(3)})`);
-      g.addColorStop(0.72, `rgba(255,255,255,${(veil * 0.82).toFixed(3)})`);
-      g.addColorStop(1, "rgba(255,255,255,0)");
+      g.addColorStop(0, `rgba(238,236,229,${veil.toFixed(3)})`);
+      g.addColorStop(0.72, `rgba(238,236,229,${(veil * 0.82).toFixed(3)})`);
+      g.addColorStop(1, "rgba(238,236,229,0)");
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(cx, cy, rs * 1.02, 0, Math.PI * 2);
@@ -756,9 +756,9 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
       const clockA = fade;
       if (clockA <= 0.02) return;
       const clockTint = smooth(0.08, 0.48, p);
-      const clockR = Math.round(lerp(CHARCOAL[0], BURGUNDY[0], clockTint));
-      const clockG = Math.round(lerp(CHARCOAL[1], BURGUNDY[1], clockTint));
-      const clockB = Math.round(lerp(CHARCOAL[2], BURGUNDY[2], clockTint));
+      const clockR = Math.round(lerp(CHARCOAL[0], POPPY[0], clockTint));
+      const clockG = Math.round(lerp(CHARCOAL[1], POPPY[1], clockTint));
+      const clockB = Math.round(lerp(CHARCOAL[2], POPPY[2], clockTint));
 
       ctx.lineCap = "round";
       for (let ringIndex = 0; ringIndex < SESSION_LANES.length; ringIndex++) {
@@ -854,10 +854,10 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
         const al = (0.25 + 0.75 * depth) * near[i] * fade;
         if (al < 0.03) continue;
         const s = 2.6 + depth * 2;
-        ctx.fillStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(al * 0.95).toFixed(3)})`;
+        ctx.fillStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${(al * 0.95).toFixed(3)})`;
         ctx.fillRect(px - s / 2, sy[i] - s / 2, s, s);
         if (labelOn > 0.02 && depth > 0.58 && k % 2 === 0) {
-          ctx.fillStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(al * labelOn * 0.9).toFixed(3)})`;
+          ctx.fillStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${(al * labelOn * 0.9).toFixed(3)})`;
           ctx.fillText(labelOf[k], px + s + 3, sy[i] - 3);
         }
       }
@@ -892,10 +892,10 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
               const glow = dist >= 0 && dist < 0.3 ? 1 - dist / 0.3 : 0;
               const al = (0.12 + 0.88 * depth * depth) * arcLife;
               if (glow > 0) {
-                ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${Math.min(1, al * (0.4 + 1.1 * glow)).toFixed(3)})`;
+                ctx.strokeStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${Math.min(1, al * (0.4 + 1.1 * glow)).toFixed(3)})`;
                 ctx.lineWidth = 1 + glow * 0.8;
               } else {
-                ctx.strokeStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${(al * 0.26).toFixed(3)})`;
+                ctx.strokeStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${(al * 0.26).toFixed(3)})`;
                 ctx.lineWidth = 0.7;
               }
               ctx.beginPath();
@@ -939,7 +939,7 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
           const k = f / d;
           const depth = clamp01((tmp[2] + 1.8) / 3.6);
           const s = (tr === 0 ? 4 : 3 - tr * 0.5) * (0.7 + 0.5 * depth);
-          ctx.fillStyle = `rgba(${BURGUNDY[0]},${BURGUNDY[1]},${BURGUNDY[2]},${((tr === 0 ? 0.95 : 0.4 / tr) * ringA * (0.4 + 0.6 * depth)).toFixed(3)})`;
+          ctx.fillStyle = `rgba(${POPPY[0]},${POPPY[1]},${POPPY[2]},${((tr === 0 ? 0.95 : 0.4 / tr) * ringA * (0.4 + 0.6 * depth)).toFixed(3)})`;
           ctx.fillRect(cx + tmp[0] * k - s / 2, cy - tmp[1] * k - s / 2, s, s);
         }
       }

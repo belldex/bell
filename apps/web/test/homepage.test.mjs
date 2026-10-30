@@ -36,7 +36,7 @@ test('the 3D scene is a genuine Three.js port with the reference pose system', a
   assert.match(scene, /prefers-reduced-motion/);
   assert.match(scene, /\.dispose\(\)/, 'must clean up');
   // BELL design tokens, not the reference's palette
-  assert.match(scene, /3CE6FF/, 'hot accent must be BELL ion cyan');
+  assert.match(scene, /C7444F/, 'hot accent must use the BELL poppy palette');
   assert.doesNotMatch(scene, /FF5A1F/, 'reference orange must not leak');
 });
 
@@ -348,7 +348,7 @@ test('app visual tokens avoid fallback font cycles and excessive card glow', asy
 test('landing and app share BELL palette and the canonical mark favicon', async () => {
   const css = await read('../app/globals.css');
   const layout = await read('../app/layout.tsx');
-  assert.match(css, /--bell-orange:\s*#37d7e8/i, 'landing accent should use the same BELL cyan as app');
+  assert.match(css, /--color-ion:\s*#C7444F/i, 'landing and app should share the BELL poppy accent');
   assert.match(layout, /icon:\s*'\/bell-mark\.svg'/, 'browser icon should be the shared bell mark');
   const fs = await import('node:fs/promises');
   const mark = await fs.readFile(new URL('../public/bell-mark.svg', import.meta.url), 'utf8');

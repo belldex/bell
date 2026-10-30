@@ -77,11 +77,13 @@ contract DeployTestnet {
         Roles memory roles = _roles(isMainnet, deployer);
         address feeToken = _feeToken(isMainnet);
 
-        uint8 poolClass = uint8(vm.envOr("BELL_POOL_CLASS", vm.envOr("TESTNET_POOL_CLASS", uint256(1))));
-        require(poolClass == 1, "only SESSION_ONLY is enabled; PRICE_GUARDED stays blocked");
+        // Factory deployment profile is neutral and supports both per-pool classes. BELL_POOL_CLASS
+        // remains a validated legacy setting only; new pool requests choose their own class.
+        uint8 requestedPoolClass = uint8(vm.envOr("BELL_POOL_CLASS", vm.envOr("TESTNET_POOL_CLASS", uint256(1))));
+        require(requestedPoolClass <= 1, "BELL_POOL_CLASS must be 0 PRICE_GUARDED or 1 SESSION_ONLY");
 
         vm.startBroadcast(pk);
-        d = _deploy(deployer, roles, feeToken, poolClass, isMainnet);
+        d = _deploy(deployer, roles, feeToken, isMainnet);
         vm.stopBroadcast();
 
         _writeManifest(d, deployer, roles.treasury, roles.recipient, feeToken, isMainnet);
@@ -138,7 +140,7 @@ contract DeployTestnet {
     }
 
     function _deploy(
-        address deployer, Roles memory roles, address feeToken, uint8 poolClass, bool isMainnet
+        address deployer, Roles memory roles, address feeToken, bool isMainnet
     ) private returns (Deployment memory d) {
         // Governance latency is a deployment parameter, not a network property. It defaults to 0 so
         // a launch can go live in one block; raise it with BELL_GOVERNANCE_DELAY_SECONDS once the
@@ -173,13 +175,13 @@ contract DeployTestnet {
             futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle
         ));
         d.poolFactory = address(new BellPoolFactory(
-            _profile(d, futureFactory, poolClass), BellHookDeployer(d.hookDeployer), feeToken, roles.recipient
+            _profile(d, futureFactory), BellHookDeployer(d.hookDeployer), feeToken, roles.recipient
         ));
         require(d.poolFactory == futureFactory, "factory address prediction mismatch");
         d.router = address(new BellRouter(IPoolManager(d.poolManager), d.weth));
     }
 
-    function _profile(Deployment memory d, address futureFactory, uint8 poolClass)
+    function _profile(Deployment memory d, address futureFactory)
         private
         view
         returns (PoolConfig memory)
@@ -189,7 +191,7 @@ contract DeployTestnet {
             poolManager: d.poolManager, positionManager: d.positionManager, factory: futureFactory,
             assetRegistry: d.assetRegistry, calendarRegistry: d.calendarRegistry,
             safetyController: d.safetyController, treasuryAdapter: address(0),
-            poolClass: poolClass, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
+            poolClass: 1, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
             tradeCap: [uint128(10), uint128(10)], windowCap: [uint128(100), uint128(100)],
             closureCap: [uint128(1), uint128(1)],
             policyId: keccak256(bytes(vm.envOr("BELL_POLICY_ID", string("bell-testnet-v1")))),

@@ -244,7 +244,7 @@ export function BellClock() {
               </filter>
             </defs>
             <circle cx={CX} cy={CY} r="276" fill="none" stroke="var(--color-line)" strokeWidth="1" />
-            <circle cx={CX} cy={CY} r="168" fill="rgb(10 14 20 / 0.7)" stroke="var(--color-line)" />
+            <circle cx={CX} cy={CY} r="168" fill="rgb(23 23 23 / 0.7)" stroke="var(--color-line)" />
             {SEGMENTS.map((s) => (
               <path key={`${s.phase}-${s.from}`} d={arc(s.from, s.to, 232)} fill="none" strokeWidth="30" strokeLinecap="butt"
                 stroke={PHASE_META[s.phase].css} opacity={!weekend && view.phase === s.phase ? 1 : 0.28}

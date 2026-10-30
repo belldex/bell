@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /* The hero's previous background (no longer used; the hero now shows glyph-field.tsx): two clouds of characters. The one above the headline is public data
-   (white and blue); the one below it is private data (accent). Neither is a picture or a logo:
+   (talc); the one below it is private data (poppy accent). Neither is a picture or a logo:
    each cloud is the part of a slowly moving noise field that rises above a per-cell threshold,
    so the shapes come out of the animation itself, drift, breathe and never repeat.
 
@@ -22,9 +22,9 @@ import { useEffect, useRef } from "react";
 const GLYPHS = "0123456789ABCDEF";
 const NG = GLYPHS.length;
 const RGB: readonly (readonly [number, number, number])[] = [
-  [240, 238, 232], /* 0  chalk */
-  [174, 178, 181], /* 1  silver */
-  [198, 201, 204], /* 2  cool gray */
+  [238, 236, 229], /* 0  talc */
+  [183, 180, 173], /* 1  warm stone */
+  [133, 129, 119], /* 2  muted carbon */
 ];
 const ALPHA = [0.34, 0.58, 0.82, 1] as const; /* four tone levels, darkest at the edge of a cloud */
 const TICK_MS = 110;
@@ -198,7 +198,7 @@ export function GlyphClouds() {
         const v = c.getContext("2d");
         if (!v) return;
         for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) v.drawImage(img, i * tw, j * th, tw, th);
-        v.fillStyle = "rgba(6,9,18,.08)"; /* barely darker: the cloth keeps its colour */
+        v.fillStyle = "rgba(23,23,23,.08)"; /* barely darker: the cloth keeps its colour */
         v.fillRect(0, 0, c.width, c.height);
         veil = c;
         tileW = tw;
@@ -445,7 +445,7 @@ export function GlyphClouds() {
           ctx!.drawImage(veil, x % tileW, y % tileH, cw, ch, x, y, cw, ch);
           ctx!.globalAlpha = 1;
         } else {
-          ctx!.fillStyle = `rgba(12,18,36,${alpha.toFixed(2)})`;
+          ctx!.fillStyle = `rgba(23,23,23,${alpha.toFixed(2)})`;
           ctx!.fillRect(x, y, cw, ch);
         }
         return;

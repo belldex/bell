@@ -73,7 +73,7 @@ function drawBand(
   traceRing(ctx, cx, cy + depth * radius * 0.08, rx, ry, tilt, start, end);
   ctx.lineWidth = thickness;
   ctx.lineCap = "round";
-  ctx.strokeStyle = `rgba(15,16,17,${(0.7 + open * 0.2) * alpha})`;
+  ctx.strokeStyle = `rgba(23,23,23,${(0.7 + open * 0.2) * alpha})`;
   ctx.shadowColor = "rgba(0,0,0,.58)";
   ctx.shadowBlur = thickness * 1.4;
   ctx.stroke();
@@ -82,7 +82,7 @@ function drawBand(
   ctx.beginPath();
   traceRing(ctx, cx, cy + depth * radius * 0.08, rx, ry, tilt, start, end);
   ctx.lineWidth = Math.max(0.8, thickness * 0.13);
-  ctx.strokeStyle = `rgba(232,231,225,${(0.22 + open * 0.44) * alpha})`;
+  ctx.strokeStyle = `rgba(238,236,229,${(0.22 + open * 0.44) * alpha})`;
   ctx.stroke();
 
   /* Three engraved breaks make each ring feel like a session instrument, not a generic orbit. */
@@ -94,7 +94,7 @@ function drawBand(
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.lineWidth = Math.max(0.8, dpr * 1.1);
-    ctx.strokeStyle = `rgba(245,244,239,${(0.28 + open * 0.38) * alpha})`;
+    ctx.strokeStyle = `rgba(238,236,229,${(0.28 + open * 0.38) * alpha})`;
     ctx.stroke();
   }
 }
@@ -161,7 +161,7 @@ export function createCipherSculpture(canvas: HTMLCanvasElement) {
         ctx.moveTo(outer.x, outer.y);
         ctx.lineTo(inner.x, inner.y);
         ctx.lineWidth = Math.max(0.7, dpr * 0.9);
-        ctx.strokeStyle = `rgba(226,225,220,${spokeAlpha})`;
+        ctx.strokeStyle = `rgba(238,236,229,${spokeAlpha})`;
         ctx.stroke();
       }
     }
@@ -170,15 +170,15 @@ export function createCipherSculpture(canvas: HTMLCanvasElement) {
     const core = Math.max(1.5, reach * (0.1 + (1 - unfold) * 0.05));
     const pulse = 0.72 + Math.sin(v * 8 * Math.PI) * 0.12;
     const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, core * 2.8);
-    glow.addColorStop(0, `rgba(240,238,232,${0.26 * pulse * sculptureFade})`);
-    glow.addColorStop(1, "rgba(240,238,232,0)");
+    glow.addColorStop(0, `rgba(238,236,229,${0.26 * pulse * sculptureFade})`);
+    glow.addColorStop(1, "rgba(238,236,229,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(cx, cy, core * 2.8, 0, TAU);
     ctx.fill();
     ctx.beginPath();
     ctx.arc(cx, cy, core * 0.12, 0, TAU);
-    ctx.fillStyle = `rgba(245,244,239,${0.72 * pulse * sculptureFade})`;
+    ctx.fillStyle = `rgba(238,236,229,${0.72 * pulse * sculptureFade})`;
     ctx.fill();
 
     /* The clipped hero opens through the same faceted instrument, not a circular or slab-shaped mask. */

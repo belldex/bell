@@ -42,27 +42,31 @@ function resolveReferenceAdapter(value, name) {
   return value.toLowerCase();
 }
 
-/**
- * Order a WETH/stock pair canonically, keeping every assetId attached to its own token.
- * `asset0` follows `token0`; it is never assigned by position in the input.
- */
-export function sortPoolTokens({ weth, wethAssetId, stock, stockAssetId }) {
-  const wethAddress = requireAddress(weth, 'weth');
-  const stockAddress = requireAddress(stock, 'stock');
-  const wethId = requireAssetId(wethAssetId, 'wethAssetId');
-  const stockId = requireAssetId(stockAssetId, 'stockAssetId');
-  if (wethAddress === stockAddress) throw new Error('pool tokens must be distinct');
+/** Canonicalize any admitted token pair; each asset ID and price adapter follows its token. */
+export function sortPoolTokens({
+  tokenA, assetA, tokenB, assetB,
+  referenceAdapterA,
+  referenceAdapterB,
+}) {
+  const addressA = requireAddress(tokenA, 'tokenA');
+  const addressB = requireAddress(tokenB, 'tokenB');
+  const idA = requireAssetId(assetA, 'assetA');
+  const idB = requireAssetId(assetB, 'assetB');
+  if (addressA === addressB) throw new Error('pool tokens must be distinct');
 
-  return wethAddress < stockAddress
-    ? { token0: wethAddress, asset0: wethId, token1: stockAddress, asset1: stockId }
-    : { token0: stockAddress, asset0: stockId, token1: wethAddress, asset1: wethId };
+  const refA = resolveReferenceAdapter(referenceAdapterA, 'referenceAdapterA');
+  const refB = resolveReferenceAdapter(referenceAdapterB, 'referenceAdapterB');
+
+  return addressA < addressB
+    ? { token0: addressA, asset0: idA, referenceAdapter0: refA, token1: addressB, asset1: idB, referenceAdapter1: refB }
+    : { token0: addressB, asset0: idB, referenceAdapter0: refB, token1: addressA, asset1: idA, referenceAdapter1: refA };
 }
 
 /** Build the factory config, the Uniswap key, and the seed amounts for a mainnet pool. */
 export function resolvePoolConfig(input) {
   const {
-    weth, wethAssetId, stock, stockAssetId,
-    wethMax, stockMax,
+    tokenA, assetA, tokenB, assetB,
+    amountAMax, amountBMax,
     poolManager, positionManager, factory, assetRegistry, calendarRegistry, safetyController,
     policyId = 'bell-mainnet-v1',
     tickSpacing = 60,
@@ -72,12 +76,22 @@ export function resolvePoolConfig(input) {
     poolClass = 1, // SESSION_ONLY by default; 0 = PRICE_GUARDED (requires both reference adapters)
   } = input;
 
-  const sorted = sortPoolTokens({ weth, wethAssetId, stock, stockAssetId });
-  const wethAmount = requirePositive(wethMax, 'wethMax');
-  const stockAmount = requirePositive(stockMax, 'stockMax');
+  const sorted = sortPoolTokens({
+    tokenA, assetA, tokenB, assetB,
+    referenceAdapterA: input.referenceAdapterA,
+    referenceAdapterB: input.referenceAdapterB,
+  });
+  if (poolClass === 0 && (sorted.referenceAdapter0 === ZERO_ADDRESS || sorted.referenceAdapter1 === ZERO_ADDRESS)) {
+    throw new Error('PRICE_GUARDED requires a nonzero reference adapter for both pool tokens');
+  }
+  if (poolClass === 1 && (sorted.referenceAdapter0 !== ZERO_ADDRESS || sorted.referenceAdapter1 !== ZERO_ADDRESS)) {
+    throw new Error('SESSION_ONLY must not configure price reference adapters');
+  }
+  const amountA = requirePositive(amountAMax, 'amountAMax');
+  const amountB = requirePositive(amountBMax, 'amountBMax');
 
-  const wethIsToken0 = sorted.token0 === requireAddress(weth, 'weth');
-  const amountMax = wethIsToken0 ? [wethAmount, stockAmount] : [stockAmount, wethAmount];
+  const tokenAIsToken0 = sorted.token0 === requireAddress(tokenA, 'tokenA');
+  const amountMax = tokenAIsToken0 ? [amountA, amountB] : [amountB, amountA];
 
   if (![0, 1].includes(poolClass)) throw new RangeError('poolClass must be 0 (PRICE_GUARDED) or 1 (SESSION_ONLY)');
 
@@ -108,8 +122,8 @@ export function resolvePoolConfig(input) {
     // Chainlink reference adapters per pool side (token0/token1 order). Zero means "no reference
     // on this side"; the factory rejects any non-zero adapter on SESSION_ONLY pools, and
     // PRICE_GUARDED requires both to be set with an in-band initial price.
-    referenceAdapter0: resolveReferenceAdapter(input.referenceAdapter0, 'referenceAdapter0'),
-    referenceAdapter1: resolveReferenceAdapter(input.referenceAdapter1, 'referenceAdapter1'),
+    referenceAdapter0: sorted.referenceAdapter0,
+    referenceAdapter1: sorted.referenceAdapter1,
   };
 
   return Object.freeze({
@@ -172,6 +186,12 @@ export function deriveProfileHash(config) {
     token1: ZERO_ADDRESS,
     asset0: `0x${'0'.repeat(64)}`,
     asset1: `0x${'0'.repeat(64)}`,
+    // Pool class and reference adapters are per-pool risk choices. A single immutable factory
+    // profile must be able to create both SESSION_ONLY and PRICE_GUARDED pools with pair-specific
+    // feed adapters; the hook config hash still pins them per created pool.
+    poolClass: 0,
+    referenceAdapter0: ZERO_ADDRESS,
+    referenceAdapter1: ZERO_ADDRESS,
   };
   return keccak256(encodeAbiParameters(
     [{
@@ -200,25 +220,38 @@ export function checkSeedFunding({
   token0,
   weth,
   amountMax,
+  tokenA,
+  tokenB,
+  tokenABalance,
+  tokenBBalance,
   wethBalance,
   stockBalance,
   nativeBalance,
   nativeGasReserve = 0n,
   feeBalance,
+  feeToken,
   serviceFee,
   wrapNativeForWeth = false,
 } = {}) {
   if (!Array.isArray(amountMax) || amountMax.length !== 2 || amountMax.some((x) => typeof x !== 'bigint' || x < 0n)) {
     throw new TypeError('amountMax must be a two-element non-negative bigint array');
   }
-  for (const [name, value] of Object.entries({ wethBalance, stockBalance, nativeBalance, nativeGasReserve, feeBalance, serviceFee })) {
+  const generic = tokenA !== undefined || tokenB !== undefined;
+  const effectiveBalances = generic
+    ? { tokenABalance, tokenBBalance }
+    : { wethBalance, stockBalance };
+  for (const [name, value] of Object.entries({ ...effectiveBalances, nativeBalance, nativeGasReserve, feeBalance, serviceFee })) {
     if (typeof value !== 'bigint' || value < 0n) throw new TypeError(`${name} must be a non-negative bigint`);
   }
-  const wethIndex = token0?.toLowerCase() === weth?.toLowerCase() ? 0 : 1;
-  const stockIndex = 1 - wethIndex;
-  const requiredWeth = amountMax[wethIndex];
-  const requiredStock = amountMax[stockIndex];
-  const wethShortfall = requiredWeth > wethBalance ? requiredWeth - wethBalance : 0n;
+  const indexOf = (token) => token0?.toLowerCase() === token?.toLowerCase() ? 0 : 1;
+  const wethIsPairToken = generic && (tokenA?.toLowerCase() === weth?.toLowerCase() || tokenB?.toLowerCase() === weth?.toLowerCase());
+  const requiredWeth = weth && (!generic || wethIsPairToken) ? amountMax[indexOf(weth)] : 0n;
+  const wethFunds = generic
+    ? (tokenA?.toLowerCase() === weth?.toLowerCase() ? tokenABalance : tokenB?.toLowerCase() === weth?.toLowerCase() ? tokenBBalance : 0n)
+    : wethBalance;
+  const wethShortfall = !generic || wethIsPairToken
+    ? (requiredWeth > wethFunds ? requiredWeth - wethFunds : 0n)
+    : 0n;
   const nativeToWrap = wrapNativeForWeth ? wethShortfall : 0n;
   const nativeAfterWrap = nativeBalance > nativeToWrap ? nativeBalance - nativeToWrap : 0n;
   const shortfalls = [];
@@ -230,7 +263,34 @@ export function checkSeedFunding({
   if (wrapNativeForWeth && nativeBalance >= nativeToWrap && nativeAfterWrap < nativeGasReserve) {
     shortfalls.push(`native ETH after wrap ${nativeAfterWrap} < gas reserve ${nativeGasReserve}`);
   }
-  if (stockBalance < requiredStock) shortfalls.push(`stock ${stockBalance} < ${requiredStock}`);
-  if (feeBalance < serviceFee) shortfalls.push(`fee token ${feeBalance} < ${serviceFee}`);
+  if (generic) {
+    const requiredA = amountMax[indexOf(tokenA)];
+    const requiredB = amountMax[indexOf(tokenB)];
+    if (tokenABalance < requiredA && (!wethIsPairToken || tokenA?.toLowerCase() !== weth?.toLowerCase())
+      && tokenA?.toLowerCase() !== feeToken?.toLowerCase()) {
+      shortfalls.push(`token ${tokenA} balance ${tokenABalance} < ${requiredA}`);
+    }
+    if (tokenBBalance < requiredB && (!wethIsPairToken || tokenB?.toLowerCase() !== weth?.toLowerCase())
+      && tokenB?.toLowerCase() !== feeToken?.toLowerCase()) {
+      shortfalls.push(`token ${tokenB} balance ${tokenBBalance} < ${requiredB}`);
+    }
+  } else {
+    const stockIndex = 1 - indexOf(weth);
+    const requiredStock = amountMax[stockIndex];
+    if (stockBalance < requiredStock) shortfalls.push(`stock ${stockBalance} < ${requiredStock}`);
+  }
+  const feeSeed = generic && feeToken
+    ? (tokenA?.toLowerCase() === feeToken.toLowerCase() ? amountMax[indexOf(tokenA)]
+      : tokenB?.toLowerCase() === feeToken.toLowerCase() ? amountMax[indexOf(tokenB)] : 0n)
+    : 0n;
+  if (feeSeed > 0n) {
+    const feeTokenLegBalance = tokenA?.toLowerCase() === feeToken.toLowerCase() ? tokenABalance : tokenBBalance;
+    if (feeTokenLegBalance < feeSeed) shortfalls.push(`fee token seed balance ${feeTokenLegBalance} < ${feeSeed}`);
+  }
+  if (feeBalance < serviceFee + feeSeed) {
+    shortfalls.push(feeSeed > 0n
+      ? `fee token ${feeBalance} < service fee ${serviceFee} + seed ${feeSeed}`
+      : `fee token ${feeBalance} < ${serviceFee}`);
+  }
   return Object.freeze({ shortfalls: Object.freeze(shortfalls), nativeToWrap, nativeAfterWrap });
 }

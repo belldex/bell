@@ -65,6 +65,7 @@ if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
 }
 const registryAddress = manifest.assetRegistry;
 const wethAddress = manifest.weth;
+const usdgAddress = manifest.feeToken;
 
 const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
@@ -171,7 +172,10 @@ if (command === 'status') {
     address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [wethAddress],
   });
   const out = { chainId, chainTime: now, chainTimeIso: new Date(now * 1000).toISOString(), registryAddress, wethDescriptorId: wethId, state };
-  for (const key of ['weth', 'stock']) {
+  out.usdgDescriptorId = await publicClient.readContract({
+    address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [usdgAddress],
+  });
+  for (const key of ['weth', 'usdg']) {
     const operationId = state?.[key]?.operationId;
     if (!operationId) continue;
     const op = await publicClient.readContract({
@@ -184,6 +188,17 @@ if (command === 'status') {
       etaIso: new Date(Number(eta) * 1000).toISOString(),
       expiry: Number(expiry),
       expiryIso: new Date(Number(expiry) * 1000).toISOString(),
+      executableNow: now >= Number(eta) && now <= Number(expiry),
+    };
+  }
+  for (const [symbol, entry] of Object.entries(state?.stocks ?? {})) {
+    if (!entry.operationId) continue;
+    const op = await publicClient.readContract({
+      address: registryAddress, abi: REGISTRY_ABI, functionName: 'operation', args: [entry.operationId],
+    });
+    const [, , eta, expiry, status] = op;
+    out[`stock:${symbol}Operation`] = {
+      status: STATUS[Number(status)] ?? Number(status), eta: Number(eta), expiry: Number(expiry),
       executableNow: now >= Number(eta) && now <= Number(expiry),
     };
   }
@@ -204,6 +219,11 @@ if (command === 'status') {
     : await queueAsset({ label: 'WETH', token: wethAddress, isStock: false, capabilityMask: 0, adapters: {} });
 
   state.weth = { ...weth, token: wethAddress };
+  console.log('\n=== USDG counterasset ===');
+  const usdg = state.usdg?.operationId || state.usdg?.alreadyActive
+    ? state.usdg
+    : await queueAsset({ label: 'USDG', token: usdgAddress, isStock: false, capabilityMask: 0, adapters: {} });
+  state.usdg = { ...usdg, token: usdgAddress };
   const queuedStocks = {};
   for (const symbol of stocks) {
     const perSymbol = adapters.assets[symbol];
@@ -231,7 +251,7 @@ if (command === 'status') {
     writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
   }
 
-  const allEtas = [weth.eta, ...Object.values(queuedStocks).map((s) => s.eta)].filter((v) => Number.isSafeInteger(v));
+  const allEtas = [weth.eta, usdg.eta, ...Object.values(queuedStocks).map((s) => s.eta)].filter((v) => Number.isSafeInteger(v));
   const eta = allEtas.length ? Math.max(...allEtas) : now;
   state.chainId = chainId;
   state.registryAddress = registryAddress;
@@ -241,6 +261,7 @@ if (command === 'status') {
   writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
   writeFileSync(QUEUE_PATH, `${JSON.stringify({
     weth: { token: wethAddress, descriptorId: weth.descriptorId, isStock: false },
+    usdg: { token: usdgAddress, descriptorId: usdg.descriptorId, isStock: false },
     stocks: Object.fromEntries(Object.entries(queuedStocks).map(([symbol, s]) => [symbol, {
       symbol,
       token: s.token,
@@ -253,16 +274,19 @@ if (command === 'status') {
     registryAddress,
     chainId,
     admittedAt: new Date().toISOString(),
-    activationPending: true,
+    activationPending: [weth, usdg, ...Object.values(queuedStocks)].some((entry) => Boolean(entry.operationId)),
   }, null, 2)}\n`);
-  console.log(`\nQueued ${Object.keys(queuedStocks).length} stock assets + WETH. Activate at or after ${new Date(eta * 1000).toISOString()}.`);
+  console.log(`\nQueued ${Object.keys(queuedStocks).length} stock assets + WETH + USDG. Activate at or after ${new Date(eta * 1000).toISOString()}.`);
 } else if (command === 'activate') {
   const state = readJson(STATE_PATH);
   if (!state) throw new Error('no asset state; run `queue` first');
 
   // Activate every pending operation: WETH plus each queued stock. Zero governance delay means
   // activation can follow immediately; each step is idempotent and re-read on-chain status.
-  const entries = [['weth', state.weth], ...Object.entries(state.stocks ?? {})];
+  const entries = [
+    ['weth', state.weth], ['usdg', state.usdg],
+    ...Object.entries(state.stocks ?? {}).map(([symbol, entry]) => [`stock:${symbol}`, entry]),
+  ];
   for (const [key, entry] of entries) {
     if (!entry?.operationId) {
       if (entry?.alreadyActive || entry?.descriptorId) {
@@ -306,14 +330,17 @@ if (command === 'status') {
       address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [entry.token],
     });
     if (key === 'weth') state.weth = { ...entry, descriptorId, active: true };
+    else if (key === 'usdg') state.usdg = { ...entry, descriptorId, active: true };
     else {
-      state.stocks = { ...(state.stocks ?? {}), [key]: { ...entry, descriptorId, active: true } };
+      const symbol = key.slice('stock:'.length);
+      state.stocks = { ...(state.stocks ?? {}), [symbol]: { ...entry, descriptorId, active: true } };
     }
     console.log(`${key}: descriptor active ${descriptorId}`);
   }
 
   const queue = readJson(QUEUE_PATH);
   queue.weth.descriptorId = state.weth.descriptorId;
+  queue.usdg = { ...(queue.usdg ?? {}), ...state.usdg, token: usdgAddress, descriptorId: state.usdg.descriptorId, isStock: false };
   for (const [symbol, entry] of Object.entries(state.stocks ?? {})) {
     queue.stocks = { ...(queue.stocks ?? {}), [symbol]: { ...(queue.stocks?.[symbol] ?? {}), descriptorId: entry.descriptorId } };
   }
@@ -321,7 +348,7 @@ if (command === 'status') {
   queue.activatedAt = new Date().toISOString();
   writeFileSync(QUEUE_PATH, `${JSON.stringify(queue, null, 2)}\n`);
   writeFileSync(STATE_PATH, `${JSON.stringify({ ...state, stage: 'ACTIVE', activatedAt: now }, null, 2)}\n`);
-  console.log('WETH and all stock descriptors are ACTIVE on mainnet.');
+  console.log('WETH, USDG and all stock descriptors are ACTIVE on mainnet.');
 } else {
   console.error(`Unknown command "${command}". Use status | queue | activate`);
   process.exit(1);

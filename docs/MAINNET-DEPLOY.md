@@ -177,7 +177,30 @@ The calendar is a 60-day US-Eastern PRE/REGULAR/CLOSED partition built from real
 (04:00 / 09:30 / 16:00 ET), so DST is handled. Weekdays only: there is no holiday table, and the
 keeper's source-freshness check is what stops trading on a holiday.
 
-## 7. Create the first pool
+## 7. Deploy reference adapters and create product pools
+
+Deploy the read-only Chainlink references (the default is plan-only), then select the requested
+stock/counterasset pair for each pool invocation:
+
+```bash
+pnpm mainnet:reference-stack
+pnpm mainnet:reference-stack:broadcast
+pnpm mainnet:pool -- --stock=AAPL --counterasset=USDG
+pnpm mainnet:pool -- --stock=TSLA --counterasset=WETH
+```
+
+Set `BELL_POOL_CLASS=0` for PRICE_GUARDED; it requires a live reference adapter for both assets.
+Set `BELL_POOL_CLASS=1` for SESSION_ONLY; references are deliberately omitted. `--stock` accepts
+every admitted candidate symbol. `--counterasset` accepts WETH, USDG, or another admitted stock.
+Each pool writes pair-specific evidence to `mainnet-4663-pool-<stock>-<counterasset>-<class>.json`.
+USDG is admitted as a priced counterasset before using PRICE_GUARDED; a plain token admission is
+not an oracle. Pool creation checks both stock health reports for stock/stock pairs and verifies
+that balances cover the seed and, where the seed token is USDG, the 49-USDG service fee too.
+
+For actual first-use deployment, every state-changing command still needs `--broadcast` and a
+separate operator authorization. The commands above intentionally do not broadcast.
+
+## 8. Create the first pool
 
 The keeper must already be publishing — pool creation consumes health, it does not create it.
 
@@ -192,7 +215,7 @@ stock / fee-token balance, or a derived profile hash that does not match the dep
 Hook salt mining is CPU-bound (up to 200k keccak attempts) and stays here rather than in the keeper,
 because it needs the deployer nonce and runs once.
 
-## 8. Swap through the router, then accept
+## 9. Swap through the router, then accept
 
 ```bash
 pnpm mainnet:swap -- --zeroForOne=true --amount=1000000000000000 --minAmountOut=<output-token-base-units>
@@ -211,7 +234,8 @@ PoolManager still owned by the deployer.
 
 ## Deliberate limits
 
-- `PRICE_GUARDED` (pool class 0) is unreachable. Only `SESSION_ONLY` pools can be created.
+- Full-product pool creation requires redeploying the updated protocol stack after the `PoolConfig`
+  profile change; the already-live old factory cannot accept the new profile layout.
 - The deployed liquidity profile is PUBLIC (`liquidityMode=0`, `treasuryAdapter=0`); the
   `TREASURY_ONLY` path has no live deployment.
 - The keeper must be pointed at `evidence/deploy/mainnet-4663.json` separately. This repo does not

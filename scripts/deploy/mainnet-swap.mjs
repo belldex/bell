@@ -16,7 +16,12 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { buildMainnetSwapRequest, resolveSwapLegs } from './mainnet-swap-request.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
-const EVIDENCE_PATH = 'evidence/deploy/mainnet-4663-swap.json';
+const stockArg = process.argv.find((a) => a.startsWith('--stock='))?.slice(8)?.toUpperCase() ?? null;
+const counterArg = process.argv.find((a) => a.startsWith('--counterasset='))?.slice(15)?.toUpperCase() ?? 'WETH';
+const swapBroadcast = process.argv.includes('--broadcast');
+if (swapBroadcast && (!stockArg || !process.argv.some((a) => a.startsWith('--counterasset=')))) {
+  throw new Error('broadcast requires explicit --stock and --counterasset arguments');
+}
 
 function loadEnv(text) {
   const env = {};
@@ -38,7 +43,8 @@ const pk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
 if (!rpcUrl || !pk) throw new Error('RH_MAINNET_RPC_PRIMARY and a deployer key are required');
 
 const manifest = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8'));
-const pool = JSON.parse(readFileSync('evidence/deploy/mainnet-4663-pool.json', 'utf8'));
+const pool = JSON.parse(readFileSync(`evidence/deploy/mainnet-4663-pool-${stockArg ?? 'AAPL'}-${counterArg}-${env.BELL_POOL_CLASS || '1'}.json`, 'utf8'));
+const EVIDENCE_PATH = `evidence/deploy/mainnet-4663-swap-${pool.stockSymbol ?? stockArg ?? 'AAPL'}-${pool.counterasset ?? counterArg}.json`;
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) throw new Error('manifest chainId mismatch');
 
 const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
@@ -83,6 +89,7 @@ const minAmountOutArg = arg('minAmountOut', null);
 if (!minAmountOutArg) throw new Error('--minAmountOut is required in output-token base units');
 const minAmountOut = BigInt(minAmountOutArg);
 if (minAmountOut <= 0n) throw new Error('--minAmountOut must be a positive integer');
+const broadcast = swapBroadcast;
 
 const block = await publicClient.getBlock();
 const configHash = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'configHash' });
@@ -109,8 +116,25 @@ const beforeOut = await publicClient.readContract({ address: legs.tokenOut, abi:
 const bucketsBefore = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'buckets' });
 
 if (!useNativeInput) {
-  const allowance = await publicClient.readContract({ address: legs.tokenIn, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
-  if (allowance < amount) throw new Error(`insufficient ${legs.tokenIn} balance: ${allowance} < ${amount}`);
+  const balance = await publicClient.readContract({ address: legs.tokenIn, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
+  if (balance < amount) throw new Error(`insufficient ${legs.tokenIn} balance: ${balance} < ${amount}`);
+}
+
+if (!broadcast) {
+  const simulation = await publicClient.simulateContract({
+    address: manifest.router,
+    abi: ROUTER_ABI,
+    functionName: 'swap',
+    args: [request],
+    account,
+    value: useNativeInput ? amount : 0n,
+  });
+  console.log(JSON.stringify({ mode: 'PLAN_ONLY', chainId, stock: pool.stockSymbol, counterasset: pool.counterasset, poolId: pool.poolId, amount: amount.toString(), minAmountOut: minAmountOut.toString(), simulatedResult: simulation.result?.map?.(String) ?? null }, null, 2));
+  console.log('No transaction sent. Add --broadcast to authorize the swap transaction.');
+  process.exit(0);
+}
+
+if (!useNativeInput) {
   const approveHash = await walletClient.writeContract({
     address: legs.tokenIn, abi: ERC20, functionName: 'approve', args: [manifest.router, maxUint256],
   });

@@ -165,11 +165,11 @@ export function WeekendEpisode() {
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Stock reference is live until the close, then frozen at an anchor with a widened band while swaps spend a fixed budget.">
             <defs>
               <linearGradient id="bandfill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#9FB0C7" stopOpacity="0.16" />
-                <stop offset="1" stopColor="#9FB0C7" stopOpacity="0.04" />
+                <stop offset="0" stopColor="#C98686" stopOpacity="0.16" />
+                <stop offset="1" stopColor="#C98686" stopOpacity="0.04" />
               </linearGradient>
             </defs>
-            <rect x={X(CLOSE_X)} y="10" width={W - PAD - X(CLOSE_X)} height={H - 60} fill="rgb(159 176 199 / 0.04)" />
+            <rect x={X(CLOSE_X)} y="10" width={W - PAD - X(CLOSE_X)} height={H - 60} fill="rgb(199 68 79 / 0.04)" />
             <line x1={X(CLOSE_X)} x2={X(CLOSE_X)} y1="10" y2={H - 50} stroke="var(--color-line-strong)" strokeDasharray="3 5" />
             <text x={X(CLOSE_X) + 8} y="26" className="num" fontSize="11" fill="var(--color-dim)">FRI 16:00 ET · CLOSE</text>
 
@@ -178,7 +178,7 @@ export function WeekendEpisode() {
             {/* band + anchor */}
             {frozen && (
               <g opacity={frozenLen}>
-                <rect x={X(CLOSE_X)} y={Y(ANCHOR + BAND)} width={(W - PAD - X(CLOSE_X)) * frozenLen} height={Y(ANCHOR - BAND) - Y(ANCHOR + BAND)} fill="url(#bandfill)" stroke="rgb(159 176 199 / .35)" strokeDasharray="4 5" />
+                <rect x={X(CLOSE_X)} y={Y(ANCHOR + BAND)} width={(W - PAD - X(CLOSE_X)) * frozenLen} height={Y(ANCHOR - BAND) - Y(ANCHOR + BAND)} fill="url(#bandfill)" stroke="rgb(199 68 79 / .35)" strokeDasharray="4 5" />
                 <line x1={X(CLOSE_X)} x2={X(CLOSE_X) + (W - PAD - X(CLOSE_X)) * frozenLen} y1={Y(ANCHOR)} y2={Y(ANCHOR)} stroke="var(--color-phase-closed)" strokeWidth="2.5" strokeDasharray="1 7" strokeLinecap="round" />
               </g>
             )}

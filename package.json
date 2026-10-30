@@ -58,6 +58,8 @@
     "mainnet:calendar:activate-root": "node scripts/deploy/mainnet-calendar.mjs activate-root",
     "mainnet:calendar:activate-interval": "node scripts/deploy/mainnet-calendar.mjs activate-interval",
     "mainnet:calendar:status": "node scripts/deploy/mainnet-calendar.mjs status",
+    "mainnet:reference-stack": "node scripts/deploy/mainnet-reference-stack.mjs",
+    "mainnet:reference-stack:broadcast": "node scripts/deploy/mainnet-reference-stack.mjs --broadcast",
     "mainnet:pool": "node scripts/deploy/mainnet-create-pool.mjs",
     "mainnet:pool:broadcast": "node scripts/deploy/mainnet-create-pool.mjs --broadcast",
     "mainnet:swap": "node scripts/deploy/mainnet-swap.mjs",

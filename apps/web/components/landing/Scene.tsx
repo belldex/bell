@@ -215,8 +215,8 @@ export default function Scene() {
         uFar: { value: 44 },
         uDim: { value: 1 },
         uTime: { value: 0 },
-        uInk: { value: new THREE.Color('#E8EEF7') },
-        uHot: { value: new THREE.Color('#3CE6FF') },
+        uInk: { value: new THREE.Color('#EEECE5') },
+        uHot: { value: new THREE.Color('#C7444F') },
       },
     });
 

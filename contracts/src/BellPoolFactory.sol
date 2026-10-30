@@ -289,6 +289,12 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
 
     function _profileHash(PoolConfig memory c) private pure returns (bytes32) {
         c.token0 = address(0); c.token1 = address(0); c.asset0 = bytes32(0); c.asset1 = bytes32(0);
+        // Pool class and reference adapters are per-pool choices. The factory's deployment
+        // profile must permit the complete product matrix; each hook's configHash and request hash
+        // still bind these values to its own pool instance.
+        c.poolClass = 0;
+        c.referenceAdapter0 = address(0);
+        c.referenceAdapter1 = address(0);
         return keccak256(abi.encode(c));
     }
 }

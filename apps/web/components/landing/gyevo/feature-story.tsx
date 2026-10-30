@@ -259,12 +259,12 @@ export function FeatureStory() {
       <section className="lp-sec lp-fx-intro" id="policy-overview" aria-labelledby="trust-title">
         <div className="lp-wrap">
           <div className="lp-fx-intro__copy">
-            <p className="lp-eyebrow" data-lp-reveal style={{ ["--ac" as string]: "var(--lp-public)" }}>
+            <p className="lp-eyebrow" data-lp-reveal>
               <i aria-hidden="true" />
               Designed for changing market hours
             </p>
             <h2 className="lp-h2" id="trust-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-              A market clock. <em>A different rule at every hour.</em>
+              A market clock. <em className="o">A different rule at every hour.</em>
             </h2>
             <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
               Before a swap, BELL verifies the exchange session and stock feed. That state sets the pool&apos;s base fee and flow limits; stale or unsupported data stops execution.

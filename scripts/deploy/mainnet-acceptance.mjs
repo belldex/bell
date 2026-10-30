@@ -44,8 +44,23 @@ if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 const manifest = readJson('evidence/deploy/mainnet-4663.json');
 const adapters = readJson('evidence/deploy/mainnet-4663-stock-adapters.json');
 const assetQueue = readJson('evidence/deploy/mainnet-4663-asset-queue.json');
-const pool = readJson('evidence/deploy/mainnet-4663-pool.json');
-const swap = readJson('evidence/deploy/mainnet-4663-swap.json');
+const stockSymbol = process.argv.find((a) => a.startsWith('--stock='))?.slice(8)?.toUpperCase()
+  ?? Object.keys(assetQueue.stocks ?? {})[0];
+const poolClass = env.BELL_POOL_CLASS || '1';
+const counterasset = process.argv.find((a) => a.startsWith('--counterasset='))?.slice(15)?.toUpperCase() ?? 'WETH';
+const pool = readJson(`evidence/deploy/mainnet-4663-pool-${stockSymbol}-${counterasset}-${poolClass}.json`);
+const swap = readJson(`evidence/deploy/mainnet-4663-swap-${stockSymbol}-${counterasset}.json`);
+const stockAdapters = adapters.assets?.[stockSymbol];
+const stockAsset = assetQueue.stocks?.[stockSymbol];
+if (!stockAdapters || !stockAsset) throw new Error(`missing active stock adapter/descriptor evidence for ${stockSymbol}`);
+const pairAsset = counterasset === 'WETH' ? assetQueue.weth
+  : counterasset === 'USDG' ? assetQueue.usdg
+    : assetQueue.stocks?.[counterasset];
+const pairToken = counterasset === 'WETH' ? manifest.weth
+  : counterasset === 'USDG' ? manifest.feeToken
+    : pairAsset?.token;
+if (!pairAsset?.descriptorId || !pairToken) throw new Error(`missing active ${counterasset} descriptor evidence`);
+const pairIsStock = Boolean(pairAsset.isStock);
 
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) throw new Error(`manifest chainId is ${manifest.chainId}`);
 
@@ -79,11 +94,11 @@ const CONTRACTS = {
   feeToken: manifest.feeToken,
 };
 const EXTRA = {
-  stockToken: adapters.stockToken,
+  stockToken: stockAdapters.stockToken,
   verifier: adapters.verifier,
-  directAdapter: adapters.directAdapter,
-  regularAdapter: adapters.regularAdapter,
-  extendedAdapter: adapters.extendedAdapter,
+  directAdapter: stockAdapters.directAdapter,
+  regularAdapter: stockAdapters.regularAdapter,
+  extendedAdapter: stockAdapters.extendedAdapter,
   livePoolHook: pool.hook,
 };
 for (const [name, address] of [...Object.entries(CONTRACTS), ...Object.entries(EXTRA)]) {
@@ -144,7 +159,11 @@ const REG_ABI = parseAbi([
 ]);
 for (const [label, token, expectedIsStock, expectedId] of [
   ['weth', manifest.weth, false, assetQueue.weth.descriptorId],
-  ['stock', adapters.stockToken, true, assetQueue.stock.descriptorId],
+  ['usdg', manifest.feeToken, false, assetQueue.usdg?.descriptorId],
+  ['stock', stockAdapters.stockToken, true, stockAsset.descriptorId],
+  ...(pairToken.toLowerCase() === stockAdapters.stockToken.toLowerCase()
+    ? []
+    : [['counterasset', pairToken, pairIsStock, pairAsset.descriptorId]]),
 ]) {
   const id = await c.readContract({ address: manifest.assetRegistry, abi: REG_ABI, functionName: 'descriptorIdForToken', args: [token] });
   check(`admitted:${label}`, id !== Z && id.toLowerCase() === expectedId.toLowerCase(), id);
@@ -153,8 +172,9 @@ for (const [label, token, expectedIsStock, expectedId] of [
     check(`descriptor:${label}.token`, String(d.token).toLowerCase() === token.toLowerCase(), d.token);
     check(`descriptor:${label}.isStock`, d.isStock === expectedIsStock, String(d.isStock));
     if (expectedIsStock) {
-      check('descriptor:stock.directAdapter', String(d.tokenPriceAdapter).toLowerCase() === adapters.directAdapter.toLowerCase(), d.tokenPriceAdapter);
-      check('descriptor:stock.regularAdapter', String(d.regularAdapter).toLowerCase() === adapters.regularAdapter.toLowerCase(), d.regularAdapter);
+      const expectedAdapters = label === 'counterasset' ? adapters.assets?.[counterasset] : stockAdapters;
+      check(`descriptor:${label}.directAdapter`, String(d.tokenPriceAdapter).toLowerCase() === expectedAdapters.directAdapter.toLowerCase(), d.tokenPriceAdapter);
+      check(`descriptor:${label}.regularAdapter`, String(d.regularAdapter).toLowerCase() === expectedAdapters.regularAdapter.toLowerCase(), d.regularAdapter);
     }
   }
 }
@@ -163,38 +183,54 @@ for (const [label, token, expectedIsStock, expectedId] of [
 const CAL_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId, uint16 year, uint32 index, uint64 start, uint64 end, uint8 phase, bytes32 provenanceHash))',
 ]);
-const interval = await c.readContract({
-  address: manifest.calendarRegistry, abi: CAL_ABI, functionName: 'currentInterval', args: [assetQueue.stock.descriptorId],
-});
-check('calendar.assetMatches', String(interval.assetId).toLowerCase() === assetQueue.stock.descriptorId.toLowerCase(), interval.assetId);
-check('calendar.activeNow', Number(interval.start) <= now && now < Number(interval.end), `${interval.start}..${interval.end} vs ${now}`);
-
-// 6. Session health and the report behind it.
 const SESSION_ABI = parseAbi([
   'function health(bytes32) view returns ((bool ready, uint256 reasonBits, uint64 healthySince, uint64 validUntil, uint64 baselineObservation, uint64 latestObservation))',
   'function latestSample(bytes32, uint8) view returns ((bytes32 descriptorId, bytes32 feedId, uint8 phase, uint128 price18, uint64 observedAt, uint64 inputAt, uint64 validFrom, uint64 expiresAt, uint64 validUntil, bytes32 reportHash))',
 ]);
+const interval = await c.readContract({
+  address: manifest.calendarRegistry, abi: CAL_ABI, functionName: 'currentInterval', args: [stockAsset.descriptorId],
+});
+check('calendar.assetMatches', String(interval.assetId).toLowerCase() === stockAsset.descriptorId.toLowerCase(), interval.assetId);
+check('calendar.activeNow', Number(interval.start) <= now && now < Number(interval.end), `${interval.start}..${interval.end} vs ${now}`);
+let pairStockInterval = null;
+if (pairIsStock) {
+  pairStockInterval = await c.readContract({
+    address: manifest.calendarRegistry, abi: CAL_ABI, functionName: 'currentInterval', args: [pairAsset.descriptorId],
+  });
+  check('calendar.counterStockAssetMatches', String(pairStockInterval.assetId).toLowerCase() === pairAsset.descriptorId.toLowerCase(), pairStockInterval.assetId);
+  check('calendar.counterStockActiveNow', Number(pairStockInterval.start) <= now && now < Number(pairStockInterval.end), `${pairStockInterval.start}..${pairStockInterval.end} vs ${now}`);
+}
+// 6. Session health and the report behind it.
 const health = await c.readContract({
-  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [assetQueue.stock.descriptorId],
+  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [stockAsset.descriptorId],
 });
 check('health.hasEverBeenReady', health.ready || Number(health.healthySince) > 0, `ready=${health.ready}`);
 check('health.noBlockingReasons', Number(health.reasonBits) === 0, String(health.reasonBits));
 check('health.hasObservation', Number(health.latestObservation) > 0, String(health.latestObservation));
+const pairHealth = pairIsStock ? await c.readContract({
+    address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [pairAsset.descriptorId],
+  }) : null;
+if (pairHealth) {
+  check('health.counterStockReady', pairHealth.ready && Number(pairHealth.reasonBits) === 0 && Number(pairHealth.validUntil) > now,
+    `ready=${pairHealth.ready} reasons=${pairHealth.reasonBits} validUntil=${pairHealth.validUntil}`);
+}
 
-const sample = await c.readContract({
-  address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'latestSample',
-  args: [assetQueue.stock.descriptorId, Number(interval.phase)],
-});
-check('report.exists', sample.reportHash !== Z, 'reportHash');
-check('report.priceNonZero', sample.price18 > 0n, String(sample.price18));
-check('report.phaseMatchesCalendar', Number(sample.phase) === Number(interval.phase), `${sample.phase} vs ${interval.phase}`);
-check('report.freshness', now - Number(sample.observedAt) < 3600, `${now - Number(sample.observedAt)}s old`);
+for (const [label, id, marketInterval] of [['stock', stockAsset.descriptorId, interval], ...(pairHealth ? [['counterStock', pairAsset.descriptorId, pairStockInterval]] : [])]) {
+  const sample = await c.readContract({
+    address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'latestSample',
+    args: [id, Number(marketInterval.phase)],
+  });
+  check(`report:${label}.exists`, sample.reportHash !== Z, 'reportHash');
+  check(`report:${label}.priceNonZero`, sample.price18 > 0n, String(sample.price18));
+  check(`report:${label}.phaseMatchesCalendar`, Number(sample.phase) === Number(marketInterval.phase), `${sample.phase} vs ${marketInterval.phase}`);
+  check(`report:${label}.freshness`, now - Number(sample.observedAt) < 3600, `${now - Number(sample.observedAt)}s old`);
+}
 
 // 7. Hook state and policy.
 const HOOK_ABI = parseAbi([
   'function poolKey() view returns ((address currency0, address currency1, uint24 fee, int24 tickSpacing, address hooks))',
   'function configHash() view returns (bytes32)',
-  'function config() view returns ((address token0, address token1, bytes32 asset0, bytes32 asset1, address poolManager, address positionManager, address factory, address assetRegistry, address calendarRegistry, address safetyController, address treasuryAdapter, uint8 poolClass, uint8 liquidityMode, uint8 referenceMode, int24 tickSpacing, uint128[2] tradeCap, uint128[2] windowCap, uint128[2] closureCap, bytes32 policyId))',
+  'function config() view returns ((address token0, address token1, bytes32 asset0, bytes32 asset1, address poolManager, address positionManager, address factory, address assetRegistry, address calendarRegistry, address safetyController, address treasuryAdapter, uint8 poolClass, uint8 liquidityMode, uint8 referenceMode, int24 tickSpacing, uint128[2] tradeCap, uint128[2] windowCap, uint128[2] closureCap, bytes32 policyId, address referenceAdapter0, address referenceAdapter1))',
   'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] a, uint128[2] b, uint128[2] c, uint128[2] d, uint128[2] e, uint64 f, uint64 g, bytes32 h, bytes32 i))',
   'function state() view returns ((uint8 lifecycle, uint8 mode, bool closedLatched, uint64 closureNonce, uint64 reopenCandidateAt, uint64 oldValidUntil, uint64[2] reopenBaseObservations, uint64[2] lastOpenObservations, uint64 pauseNonce, uint64 bellStart, uint64 corporateUntil))',
   'function buckets() view returns ((uint64 epoch, uint128[2] currentGross, uint128[2] previousGross))',
@@ -272,7 +308,7 @@ check('poolManager.ownershipHandedOver',
 // 11. Honest reporting of what this run cannot prove.
 const rightsVerified = adapters.rightsVerified === true;
 console.log(`\nNOTE: stock token rights/entitlements are ${rightsVerified ? 'recorded as verified' : 'NOT VERIFIED by this run'}.`);
-console.log('NOTE: PRICE_GUARDED remains blocked; this pool is SESSION_ONLY.');
+console.log(`NOTE: pool class is ${pool.poolClass === 0 ? 'PRICE_GUARDED' : 'SESSION_ONLY'}; see pool evidence and live hook config.`);
 
 console.log(`\n${checks.length} checks run.\n`);
 for (const { name, ok, detail } of checks) {

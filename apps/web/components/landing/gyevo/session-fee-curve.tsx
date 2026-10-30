@@ -58,8 +58,8 @@ export function SessionFeeCurve() {
       <desc id="fee-chart-desc">The base fee changes by session: pre-market 0.30 percent, regular 0.05 percent, after-hours 0.30 percent, overnight 0.50 percent, and scheduled close 1.00 percent.</desc>
       <defs>
         <linearGradient id="fee-area" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#e5e5e2" stopOpacity=".2" />
-          <stop offset="1" stopColor="#e5e5e2" stopOpacity="0" />
+          <stop offset="0" stopColor="#EEECE5" stopOpacity=".2" />
+          <stop offset="1" stopColor="#EEECE5" stopOpacity="0" />
         </linearGradient>
       </defs>
       <g className="lp-lend__grid" aria-hidden="true">

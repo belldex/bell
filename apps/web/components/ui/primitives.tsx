@@ -13,7 +13,7 @@ const sizes = {
   lg: 'h-12 px-7 text-base rounded-xl font-semibold',
 } as const;
 const variants: Record<Variant, string> = {
-  primary: 'border border-ion-soft bg-ion-soft text-bg-0 hover:bg-[#f4f5ef] font-semibold',
+  primary: 'border border-ion-soft bg-ion-soft text-bg-0 hover:bg-[#EEECE5] font-semibold',
   ghost: 'text-muted hover:text-ink hover:bg-white/5',
   outline: 'border border-line-strong text-ink hover:border-ion/60 hover:bg-ion/5 hover:text-ion',
 };

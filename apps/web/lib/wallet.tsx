@@ -149,8 +149,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         <RainbowKitProvider
           initialChain={robinhoodMainnet}
           theme={darkTheme({
-            accentColor: '#aeb7b9',
-            accentColorForeground: '#101416',
+            accentColor: '#C7444F',
+            accentColorForeground: '#EEECE5',
             borderRadius: 'small',
             fontStack: 'system',
             overlayBlur: 'small',
