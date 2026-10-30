@@ -84,7 +84,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             Know the session. <em>Respect the limits.</em>
           </h2>
           <p className="lp-final__lead">
-            Browse tokenized-stock pools, inspect their policy class, and see how BELL handles sessions, swap limits and missing market data.
+            Mainnet contracts, signed quotes and wallet-based pool creation are live. The directory is still empty: no pool, seeded liquidity or Mainnet swap has been created yet.
           </p>
           <div className="lp-actions">
             <Link className="lp-btn lp-btn--primary" href="/pools">
@@ -92,6 +92,9 @@ export function FinalReveal({ appName }: { appName: string }) {
             </Link>
             <Link className="lp-btn lp-btn--ghost" href="/protocol">
               Review risk policy
+            </Link>
+            <Link className="lp-btn lp-btn--ghost" href="/create">
+              Create pool
             </Link>
           </div>
         </div>
@@ -108,7 +111,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
-                Tokenized-stock pools with session-based fees and limits. Testnet only; synthetic assets; no independent counterasset price protection.
+                Mainnet session-aware pools for admitted AAPL, NVDA, and TSLA assets. No pool has been seeded yet; SESSION_ONLY has no independent counterasset price protection.
               </p>
               <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
                 <span className="lp-ecosystem__item">
@@ -134,6 +137,7 @@ export function FinalReveal({ appName }: { appName: string }) {
               <h2>Protocol</h2>
               <ul>
                 <li><Link href="/pools">Pool directory</Link></li>
+                <li><Link href="/positions">Your positions</Link></li>
                 <li>
                   <Link href="/protocol">Protocol</Link>
                 </li>
@@ -155,7 +159,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                   <Link href="/protocol">Docs</Link>
                 </li>
                 <li>
-                  <Link href="/#facts">Testnet snapshot</Link>
+                  <Link href="/#facts">Mainnet snapshot</Link>
                 </li>
                 <li>
                   <a className="lp-footer-x" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer">
@@ -174,7 +178,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             </nav>
           </div>
           <p className="lp-legal">
-            <span>Unaudited · No mainnet deployment</span>
+            <span>Mainnet contracts deployed · No live pool · Independent audit incomplete</span>
           </p>
         </div>
         <span

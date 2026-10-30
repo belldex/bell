@@ -31,11 +31,11 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
   policy evaluation was moved to `BellPolicyOracle` to fit within EIP-170.
 - **PRICE_GUARDED has independent reference adapters deployed**, but pool creation still needs current
   session health and explicit seed amounts. The matrix planner shows which pairs are ready or blocked.
-- The Cloudflare Worker is deployed in pull mode: public signed quote bundles and onchain pool discovery
-  are live. It does not run a periodic transaction loop. `/pools` currently returns an empty directory
-  because no pool has been created.
-- The frontend reads live pool state and has the wallet approval and router swap flow. A live mainnet pool
-  must be created and seeded before a mainnet swap can run.
+- The Cloudflare Worker is deployed in pull mode: public signed quote bundles, onchain pool discovery,
+  and wallet PositionManager NFT discovery are available. It does not run a periodic transaction loop.
+  `/pools` is empty because no pool has been created.
+- The frontend has wallet flows for pool creation and seeding, swaps, and direct PositionManager add,
+  in-kind removal, and fee collection. A live mainnet pool must be created and seeded before a swap can run.
 
 ## Structure
 
@@ -43,7 +43,7 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
 contracts/          Solidity: hook, registry, factory, router, adapter, treasury, library
 packages/domain/    State machine, budget, policy, indexing, keeper logic (runtime-neutral)
 packages/protocol/  Codec, ABI, calendar, Yahoo attestations, testnet status
-apps/web/           Next.js UI (read-only on testnet; does not submit transactions)
+apps/web/           Next.js UI for Mainnet pool creation, swaps, liquidity positions and policy status
 workers/keeper-b/   Cloudflare Durable Object keeper
 supabase/           Migrations, RLS, edge functions
 scripts/            discovery / deploy / evidence / calendar / tooling

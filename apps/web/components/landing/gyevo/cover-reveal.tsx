@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            BELL is a Uniswap v4 liquidity protocol for tokenized-stock pools. It sets LP fees and swap limits from verified market sessions, then halts swaps when required stock data is stale or uncertain.
+            BELL is a Uniswap v4 liquidity protocol for tokenized-stock pools on Robinhood Chain Mainnet. Create and seed a pool from your wallet; swaps require fresh signed stock data and an existing liquidity pool.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -424,8 +424,8 @@ export function CoverReveal({ tagline }: Props) {
                   </span>
                 </p>
                 <div className="lp-actions">
-                  <Link className="lp-btn lp-btn--primary" href="/pools">
-                    Open app
+                  <Link className="lp-btn lp-btn--primary" href="/create">
+                    Create a pool
                     <Arrow />
                   </Link>
                   <a
@@ -438,7 +438,7 @@ export function CoverReveal({ tagline }: Props) {
                   >
                     Trace a swap
                   </a>
-                  <span className="lp-ca"><span className="lp-ca__label">BELL</span><span className="lp-ca__address">Testnet preview</span></span>
+                  <span className="lp-ca"><span className="lp-ca__label">BELL</span><span className="lp-ca__address">Robinhood Chain · 4663</span></span>
                 </div>
               </div>
             </div>

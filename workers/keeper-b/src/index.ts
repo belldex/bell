@@ -212,6 +212,31 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   return { chainId, blockNumber: String(blockNumber), pools };
 }
 
+/** Candidate PositionManager NFTs transferred to an owner since the deployment block. */
+export async function runPositionCandidates(env, owner, { client } = {}) {
+  if (!/^0x[0-9a-f]{40}$/i.test(owner) || /^0x0{40}$/i.test(owner)) throw quoteError('invalid owner address', 400);
+  const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
+  const manager = env.BELL_POSITION_MANAGER;
+  if (!rpcUrl || !manager) throw quoteError('position directory is not configured', 503);
+  const chain = client ?? createPublicClient({ transport: http(rpcUrl) });
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
+  if (await chain.getChainId() !== expectedChainId) throw quoteError('wrong chain for position directory', 503);
+  const latest = await chain.getBlockNumber();
+  const start = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
+  const ownerTopic = `0x${owner.slice(2).toLowerCase().padStart(64, '0')}`;
+  const selector = toEventSelector(parseAbiItem('event Transfer(address indexed from,address indexed to,uint256 indexed tokenId)'));
+  const ranges: Array<[bigint, bigint]> = [];
+  for (let from = start; from <= latest; from += 20_000n) ranges.push([from, from + 19_999n < latest ? from + 19_999n : latest]);
+  const chunks = await Promise.all(ranges.map(([fromBlock, toBlock]) => chain.request({ method: 'eth_getLogs', params: [{
+    address: manager, fromBlock: toHex(fromBlock), toBlock: toHex(toBlock), topics: [selector, null, ownerTopic],
+  }] } as any)));
+  const candidates = new Set<string>();
+  for (const chunk of chunks) for (const log of Array.isArray(chunk) ? chunk : []) {
+    if (log.topics?.[3]) candidates.add(BigInt(log.topics[3]).toString());
+  }
+  return { chainId: expectedChainId, owner: owner.toLowerCase(), blockNumber: latest.toString(), tokenIds: [...candidates] };
+}
+
 /** Runs one keeper tick. Exported so it can be exercised without Cloudflare bindings. */
 export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
   if (env.BELL_ORACLE_MODE === 'pull') return { status: 'skipped', reason: 'scheduled transactions disabled in pull mode' };
@@ -385,7 +410,7 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const isPublicRead = ['/quote', '/pools'].includes(url.pathname);
+    const isPublicRead = ['/quote', '/pools', '/positions'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -401,6 +426,15 @@ const worker = {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);
         console.error('pool directory failed', error?.name ?? 'Error', detail);
         return cors(json({ error: 'Live pool discovery is temporarily unavailable' }, error.status || 503));
+      }
+    }
+    if (url.pathname === '/positions') {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      try { return cors(json(await runPositionCandidates(env, url.searchParams.get('owner') || ''))); }
+      catch (error) {
+        const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 200);
+        console.error('position directory failed', error?.name ?? 'Error', detail);
+        return cors(json({ error: error?.status === 400 ? detail : 'Live position discovery is temporarily unavailable' }, error.status || 503));
       }
     }
     if (url.pathname === '/quote') {

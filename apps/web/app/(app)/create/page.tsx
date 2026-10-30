@@ -1,359 +1,208 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { isAddress, parseUnits, formatUnits } from 'viem';
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
-import { Button, ClassBadge } from '@/components/ui/primitives';
+import { formatUnits, parseUnits, type Address } from 'viem';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, ExternalLink, LoaderCircle, Lock, Wallet } from 'lucide-react';
+import { Button } from '@/components/ui/primitives';
 import { TokenPair } from '@/components/ui/TokenLogo';
-import { LogoSelect } from '@/components/ui/LogoSelect';
 import { cn } from '@/lib/format';
-import { nowWeekMinuteET, phaseAtWeekMinute, SERVICE_FEE_USDG, HOOK_PERMISSION_MASK } from '@/lib/policy';
-import { useWallet } from '@/lib/wallet';
+import { makeClients, useWallet } from '@/lib/wallet';
+import { MAINNET } from '@/lib/mainnet-live';
+import { availablePoolClasses, createMainnetPool, MAINNET_ASSET_OPTIONS, type CreateStage, type CreateResult } from '@/lib/mainnet-create-flow';
 
-interface Tok { symbol: string; decimals: number; usd: number; stock: boolean }
-const STOCKS: Tok[] = [
-  { symbol: 'AAPL', decimals: 18, usd: 215.4, stock: true },
-  { symbol: 'TSLA', decimals: 18, usd: 219.8, stock: true },
-  { symbol: 'NVDA', decimals: 18, usd: 138.2, stock: true },
-  { symbol: 'AMZN', decimals: 18, usd: 196.4, stock: true },
-  { symbol: 'MSFT', decimals: 18, usd: 421.1, stock: true },
-  { symbol: 'PLTR', decimals: 18, usd: 74.5, stock: true },
-];
-const QUOTES: Tok[] = [
-  { symbol: 'USDG', decimals: 6, usd: 1, stock: false },
-  { symbol: 'WETH', decimals: 18, usd: 2950, stock: false },
-];
-const CUSTOM = 'CUSTOM';
-const STEPS = ['Pair', 'Mode', 'Seed & price', 'Caps', 'Review'] as const;
+const STEPS = ['Pair', 'Pool class', 'Seed', 'Review & create'] as const;
+const STAGE_LABELS: Record<string, string> = {
+  preflight: 'Mainnet checks', prepared: 'Preflight', wrap: 'Wrap WETH', approve: 'Token approval',
+  health: 'Fresh market health', create: 'Create and seed', complete: 'Complete',
+};
+const inputCls = 'num h-12 w-full border border-line bg-bg-1 px-4 text-ink outline-none focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion';
+const classes = { 0: 'PRICE_GUARDED', 1: 'SESSION_ONLY' } as const;
 
-const num = (s: string) => { const n = parseFloat(s); return isFinite(n) && n > 0 ? n : 0; };
-const raw = (s: string, d: number): bigint => { try { return parseUnits(s || '0', d); } catch { return 0n; } };
-const fmtUnits = (v: bigint, d: number) => { const t = formatUnits(v, d); const [w, f = ''] = t.split('.'); return `${w.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${f ? '.' + f.slice(0, 6).replace(/0+$/, '') : ''}`.replace(/\.$/, ''); };
-
-function Field({ id, label, hint, error, children }: { id?: string; label: string; hint?: string; error?: string | false; children: React.ReactNode }) {
-  return (
-    <div>
-      <label id={id ? `${id}-label` : undefined} htmlFor={id} className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">{label}</label>
-      <div className="mt-2">{children}</div>
-      {error ? <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs text-down"><AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />{error}</p> : hint ? <p className="mt-1.5 text-xs text-dim">{hint}</p> : null}
-    </div>
-  );
+function decimalsFor(symbol: string) { return symbol === 'USDG' ? 6 : 18; }
+function amountRaw(value: string, symbol: string) {
+  try { return parseUnits(value || '0', decimalsFor(symbol)); } catch { return 0n; }
 }
-const inputCls = 'num h-11 w-full rounded-none border border-line bg-surface px-4 text-ink text-sm outline-none transition-colors placeholder:text-dim focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion';
+function amountLabel(raw: bigint, symbol: string) {
+  const text = formatUnits(raw, decimalsFor(symbol));
+  const [whole, fraction] = text.split('.');
+  return `${whole}${fraction ? `.${fraction.slice(0, 6).replace(/0+$/, '')}` : ''}`;
+}
 
 export default function CreatePage() {
   const wallet = useWallet();
   const [step, setStep] = useState(0);
-  const [stockSym, setStockSym] = useState('AAPL');
-  const [counter, setCounter] = useState('USDG');
-  const [customAddr, setCustomAddr] = useState('');
-  const [customDec, setCustomDec] = useState('18');
-  const [customSym, setCustomSym] = useState('TOKEN');
-  const [secondary, setSecondary] = useState(false);
-  const [seedStock, setSeedStock] = useState('10');
-  const [seedCounter, setSeedCounter] = useState('2154');
-  const [ackPrice, setAckPrice] = useState(false);
-  const [caps, setCaps] = useState({ tS: '1', wS: '4', cS: '1', tC: '250', wC: '1000', cC: '200' });
-  const [ackAll, setAckAll] = useState({ klass: false, caps: false, seed: false });
-  const [phaseNow, setPhaseNow] = useState<string>('N/A');
+  const [stockSymbol, setStockSymbol] = useState('AAPL');
+  const [counterSymbol, setCounterSymbol] = useState('USDG');
+  const [poolClass, setPoolClass] = useState<0 | 1>(0);
+  const [seedStock, setSeedStock] = useState('0.05');
+  const [seedCounter, setSeedCounter] = useState('20');
+  const [wrapWeth, setWrapWeth] = useState(false);
+  const [ackRisk, setAckRisk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [stage, setStage] = useState<CreateStage | null>(null);
+  const [history, setHistory] = useState<CreateStage[]>([]);
+  const [result, setResult] = useState<CreateResult | null>(null);
+  const [feeLabel, setFeeLabel] = useState('Read from factory before signing');
+  const [gasPrice, setGasPrice] = useState('');
 
-  useEffect(() => { setPhaseNow(phaseAtWeekMinute(nowWeekMinuteET())); }, []);
+  const stockOptions = MAINNET_ASSET_OPTIONS.filter((asset) => asset.isStock);
+  const counterOptions = MAINNET_ASSET_OPTIONS.filter((asset) => asset.symbol !== stockSymbol);
+  const allowedClasses = useMemo(() => {
+    try { return availablePoolClasses(stockSymbol, counterSymbol); } catch { return []; }
+  }, [stockSymbol, counterSymbol]);
+  const stock = MAINNET_ASSET_OPTIONS.find((asset) => asset.symbol === stockSymbol)!;
+  const counter = MAINNET_ASSET_OPTIONS.find((asset) => asset.symbol === counterSymbol)!;
+  const rawStock = amountRaw(seedStock, stockSymbol);
+  const rawCounter = amountRaw(seedCounter, counterSymbol);
+  const price = rawStock > 0n ? Number(seedCounter) / Number(seedStock) : 0;
 
-  const stock = STOCKS.find((s) => s.symbol === stockSym)!;
-  const isCustom = counter === CUSTOM;
-  const counterTok: Tok = isCustom
-    ? { symbol: customSym || 'TOKEN', decimals: Math.min(18, Math.max(0, parseInt(customDec) || 0)), usd: 0, stock: false }
-    : [...QUOTES, ...STOCKS].find((t) => t.symbol === counter)!;
-  const sameAsset = !isCustom && counter === stockSym;
-  const poolClass = isCustom ? 'SESSION_ONLY' : 'PRICE_GUARDED';
-  const addrOk = !isCustom || isAddress(customAddr);
+  useEffect(() => {
+    if (allowedClasses.length && !allowedClasses.includes(poolClass)) setPoolClass(allowedClasses[0] as 0 | 1);
+  }, [allowedClasses, poolClass]);
 
-  // seed + price
-  const refRatio = isCustom ? null : stock.usd / counterTok.usd; // counter units per 1 stock
-  const sS = num(seedStock), sC = num(seedCounter);
-  const implied = sS > 0 ? sC / sS : 0;
-  const devBps = refRatio && implied ? Math.round(((implied - refRatio) / refRatio) * 10_000) : null;
-  const inBand = devBps === null ? null : Math.abs(devBps) <= 200;
-  const tickRaw = implied > 0 ? Math.log(implied) / Math.log(1.0001) : 0;
-  const tick = Math.floor(tickRaw / 60) * 60;
-
-  const seedRawS = raw(seedStock, stock.decimals);
-  const seedRawC = raw(seedCounter, counterTok.decimals);
-  const maxCS = seedRawS / 10n; // C <= 10% of seed, rounded down
-  const maxCC = seedRawC / 10n;
-  const T = { s: raw(caps.tS, stock.decimals), c: raw(caps.tC, counterTok.decimals) };
-  const Wv = { s: raw(caps.wS, stock.decimals), c: raw(caps.wC, counterTok.decimals) };
-  const Cv = { s: raw(caps.cS, stock.decimals), c: raw(caps.cC, counterTok.decimals) };
-  const capErr = (t: bigint, w: bigint, c: bigint, max: bigint): string | false => {
-    if (t <= 0n || w <= 0n || c <= 0n) return 'All caps must be positive';
-    if (t > w) return 'Per-trade cap T must be ≤ rolling budget W';
-    const m2 = t * 2n < w ? t * 2n : w;
-    if (c > m2) return 'Closure budget C must be ≤ min(2T, W)';
-    if (c > max) return `C must be ≤ 10% of the seeded amount (${fmtUnits(max, 0)} raw floor)`;
-    return false;
-  };
-  const errS = capErr(T.s, Wv.s, Cv.s, maxCS);
-  const errC = capErr(T.c, Wv.c, Cv.c, maxCC);
-
-  const marketUnhealthy = poolClass === 'PRICE_GUARDED' && phaseNow === 'CLOSED';
+  useEffect(() => {
+    if (!wallet.account || !window.ethereum || wallet.wrongChain) { setFeeLabel('Connect to Robinhood Chain to read'); return; }
+    let active = true;
+    const { publicClient } = makeClients(window.ethereum);
+    Promise.all([
+      publicClient.readContract({ address: MAINNET.factory, abi: [{ type: 'function', name: 'serviceFee', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint128' }] }], functionName: 'serviceFee' }),
+      publicClient.readContract({ address: MAINNET.factory, abi: [{ type: 'function', name: 'serviceRecipient', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] }], functionName: 'serviceRecipient' }),
+      publicClient.getGasPrice(),
+    ]).then(([fee, recipient, gas]) => {
+      if (!active) return;
+      setFeeLabel(`${formatUnits(fee as bigint, 6)} USDG → ${recipient}`);
+      setGasPrice(`${formatUnits(gas as bigint, 18)} ETH/gas unit`);
+    }).catch(() => { if (active) setFeeLabel('Fee read unavailable; create preflight will stop'); });
+    return () => { active = false; };
+  }, [wallet.account, wallet.chainId, wallet.wrongChain]);
 
   const stepOk = [
-    !sameAsset && addrOk && (counter !== CUSTOM || customSym.length > 0),
-    true,
-    sS > 0 && sC > 0 && (poolClass === 'PRICE_GUARDED' ? inBand === true : ackPrice),
-    !errS && !errC,
-    ackAll.klass && ackAll.caps && ackAll.seed && !marketUnhealthy,
+    Boolean(stock && counter && stockSymbol !== counterSymbol && allowedClasses.length),
+    allowedClasses.includes(poolClass),
+    rawStock > 0n && rawCounter > 0n,
+    Boolean(wallet.account && !wallet.wrongChain && ackRisk),
   ];
 
-  const recipient = wallet.account ?? 'Connect wallet';
+  const startCreate = async () => {
+    if (!window.ethereum || !wallet.account) { await wallet.connect(); return; }
+    if (wallet.wrongChain) { await wallet.switchChain(4663); return; }
+    if (!stepOk[3]) return;
+    setBusy(true); setError(''); setStage(null); setHistory([]); setResult(null);
+    try {
+      const created = await createMainnetPool({
+        provider: window.ethereum,
+        account: wallet.account as Address,
+        selection: { stockSymbol, counterSymbol, poolClass, amountStock: rawStock, amountCounter: rawCounter, wrapWeth },
+        onStage: (next) => {
+          setStage(next);
+          setHistory((old) => [...old, next]);
+        },
+      });
+      setResult(created);
+    } catch (cause) {
+      const failure = cause as Error & { shortMessage?: string };
+      setError(failure.shortMessage ?? failure.message ?? 'Pool creation stopped');
+    } finally { setBusy(false); }
+  };
 
-  const request = [
-    ['chainId', wallet.chainId ? String(wallet.chainId) : '4663'],
-    ['pair', `${stock.symbol} / ${counterTok.symbol}${isCustom && isAddress(customAddr) ? ` (${customAddr.slice(0, 8)}…)` : ''}`],
-    ['class', poolClass],
-    ['price / anchor mode', poolClass === 'SESSION_ONLY' ? 'none (no counter reference)' : secondary ? 'SECONDARY_REFERENCE' : 'FROZEN_CLOSE'],
-    ['liquidityMode', 'PUBLIC'],
-    ['dynamic fee / spacing', '0x800000 / 60'],
-    ['hook permission mask', HOOK_PERMISSION_MASK],
-    [`T (${stock.symbol})`, `${fmtUnits(T.s, 0)} raw`],
-    [`W (${stock.symbol})`, `${fmtUnits(Wv.s, 0)} raw`],
-    [`C (${stock.symbol})`, `${fmtUnits(Cv.s, 0)} raw`],
-    [`T (${counterTok.symbol})`, `${fmtUnits(T.c, 0)} raw`],
-    [`W (${counterTok.symbol})`, `${fmtUnits(Wv.c, 0)} raw`],
-    [`C (${counterTok.symbol})`, `${fmtUnits(Cv.c, 0)} raw`],
-    ['seed', `${seedStock} ${stock.symbol} + ${seedCounter} ${counterTok.symbol}`],
-    ['initial price tick', `${tick} (full range, spacing 60)`],
-    ['position recipient', recipient],
-    ['service fee', `${SERVICE_FEE_USDG} USDG → service recipient`],
-    ['deadline', '≤ 120 s after signing'],
-  ];
+  return <div className="mx-auto w-full max-w-[920px]">
+    <header className="max-w-3xl">
+      <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create · Robinhood Chain Mainnet</p>
+      <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Create and seed a live pool.</h1>
+      <p className="mt-3 text-sm leading-relaxed text-muted">Only admitted assets can proceed. The app checks the live factory, reads reference prices, gets signed quote bundles, updates health, simulates the exact request, then asks your wallet to create and seed.</p>
+    </header>
 
-  return (
-    <div className="w-full">
-      <header className="max-w-[760px]">
-        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create preview</p>
-        <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
-          Preview a new pool configuration.
-        </h1>
-        <p className="mt-3 text-base text-muted">
-          This wizard previews pair, class, reference mode, seed ratio and raw-unit caps for Robinhood Chain mainnet. Pool creation is unavailable until asset admission and a verified mainnet market are in place; no transaction is submitted here.
-        </p>
-      </header>
+    <ol className="mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
+      {STEPS.map((label, index) => <li key={label} className="flex items-center gap-2">
+        <button type="button" disabled={index > step || busy} onClick={() => setStep(index)} aria-current={index === step ? 'step' : undefined} className={cn('min-h-10 whitespace-nowrap border px-3 font-mono text-[10px] uppercase tracking-[0.08em]', index === step ? 'border-ion/60 bg-ion/10 text-ion' : index < step ? 'border-line text-ink' : 'border-line text-dim opacity-60')}>
+          {index < step ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true"/> : null}{label}
+        </button>{index < STEPS.length - 1 && <span className="h-px w-5 bg-line" aria-hidden="true"/>}
+      </li>)}
+    </ol>
 
-      <ol className="app-create-steps mt-8 flex items-center gap-2 overflow-x-auto scroll-hide" aria-label="Progress">
-        {STEPS.map((s, i) => (
-            <li key={s} className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={i > step}
-              onClick={() => setStep(i)}
-              aria-current={i === step ? 'step' : undefined}
-              className={cn(
-                'inline-flex min-h-10 items-center gap-2 rounded-none border px-3.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-all whitespace-nowrap',
-                i === step
-                  ? 'border-ion/60 bg-ion/15 text-ion shadow-[0_0_12px_-3px_var(--color-ion)]'
-                  : i < step
-                  ? 'border-line text-ink hover:border-line-strong'
-                  : 'border-line text-dim opacity-60'
-              )}
-            >
-              {i < step && <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
-              {s}
-            </button>
-            {i < STEPS.length - 1 && <span className="h-px w-5 bg-line" aria-hidden="true" />}
-          </li>
-        ))}
-      </ol>
+    <section className="mt-6 border border-line bg-surface/75 p-5 sm:p-8">
+      {step === 0 && <div className="space-y-6">
+        <div className="flex items-center gap-4 border-b border-line pb-5"><TokenPair symbols={[stockSymbol, counterSymbol]} size={32}/><div><p className="font-mono text-[10px] uppercase text-dim">Selected pair</p><p className="mt-1 text-lg text-ink">{stockSymbol} / {counterSymbol}</p></div></div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">Stock token<select className={`${inputCls} mt-2`} value={stockSymbol} onChange={(event) => { setStockSymbol(event.target.value); if (event.target.value === counterSymbol) setCounterSymbol(event.target.value === 'AAPL' ? 'USDG' : 'AAPL'); }}>
+            {stockOptions.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · admitted stock</option>)}
+          </select></label>
+          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">Counterasset<select className={`${inputCls} mt-2`} value={counterSymbol} onChange={(event) => setCounterSymbol(event.target.value)}>
+            {counterOptions.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · {asset.isStock ? 'admitted stock' : 'admitted token'}</option>)}
+          </select></label>
+        </div>
+        <div className="border border-line bg-bg-1 p-4"><p className="font-mono text-[10px] uppercase text-muted">Live asset set</p><p className="mt-2 text-sm text-ink">{MAINNET_ASSET_OPTIONS.map((asset) => asset.symbol).join(' · ')}</p><p className="mt-2 text-xs text-dim">Token addresses and descriptor IDs are rechecked against the Mainnet AssetRegistry before any approval.</p></div>
+      </div>}
 
-      <div key={step} className="app-create-stage glass mt-6 rounded-none border border-line bg-surface/75 p-6 sm:p-8">
-        {step === 0 && (
-          <>
-          <div className="app-pair-preview mb-7 flex items-center gap-4 border-b border-line pb-5">
-            <TokenPair symbols={[stock.symbol, counterTok.symbol]} size={32} />
-            <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Selected pair</p>
-              <p className="mt-1 text-lg font-medium tracking-tight text-ink">{stock.symbol}<span className="px-2 text-dim">/</span>{counterTok.symbol}</p>
-            </div>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field id="create-stock-token" label="Canonical Stock Token" hint="Only reviewed canonical Robinhood Stock Tokens can anchor a pool.">
-              <LogoSelect
-                id="create-stock-token"
-                labelId="create-stock-token-label"
-                value={stockSym}
-                onChange={setStockSym}
-                options={STOCKS.map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Stock token', symbols: [token.symbol] }))}
-              />
-            </Field>
-            <Field id="create-counterasset" label="Counterasset" error={sameAsset && 'Counterasset must differ from the stock token'}>
-              <LogoSelect
-                id="create-counterasset"
-                labelId="create-counterasset-label"
-                value={counter}
-                onChange={setCounter}
-                options={[
-                  ...QUOTES.map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Reference asset', symbols: [token.symbol] })),
-                  ...STOCKS.filter((token) => token.symbol !== stockSym).map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Stock token', symbols: [token.symbol] })),
-                  { value: CUSTOM, label: 'Custom token address…', detail: 'Session only' },
-                ]}
-              />
-            </Field>
-            {isCustom && (
-              <>
-                <div className="sm:col-span-2">
-                  <Field label="Token contract address" error={customAddr.length > 0 && !isAddress(customAddr) && 'Not a valid EVM address'} hint="Unknown tokens enter intake. No special treatment for any token, including $BELL, and no launch wallet is ever requested.">
-                    <input value={customAddr} onChange={(e) => setCustomAddr(e.target.value.trim())} placeholder="0x…" spellCheck={false} className={inputCls} />
-                  </Field>
-                </div>
-                <Field label="Symbol (display)"><input value={customSym} onChange={(e) => setCustomSym(e.target.value.toUpperCase().slice(0, 10))} className={inputCls} /></Field>
-                <Field label="Decimals (verified at intake)"><input value={customDec} inputMode="numeric" onChange={(e) => setCustomDec(e.target.value.replace(/\D/g, '').slice(0, 2))} className={inputCls} /></Field>
-                <div className="sm:col-span-2 rounded-none border border-line bg-bg-1/70 p-4">
-                  <p className="text-sm font-medium text-ink">Intake required before deployment</p>
-                  <ul className="app-intake-list mt-3 grid gap-x-6 sm:grid-cols-2">
-                    {['Nonzero code & stable decimals 0–18', 'Actual debit/credit equals nominal on official route', 'No fee-on-transfer, rebase or reflect behavior', 'Proxy / admin / blacklist capabilities disclosed', 'Approval semantics (zero-first if needed)', 'Position can be redeemed in-kind'].map((t) => (
-                      <li key={t} className="border-t border-line py-2.5 text-sm text-muted">{t}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-3 text-xs text-dim">These checks run against the chain once contracts and the intake endpoint exist. Nothing is marked as passed in preview.</p>
-                </div>
-              </>
-            )}
-          </div>
-          </>
-        )}
+      {step === 1 && <div className="space-y-5">
+        <h2 className="font-display text-3xl text-ink">Choose the permanent pool class.</h2>
+        <p className="text-sm leading-relaxed text-muted">Pool class cannot be changed after creation. Choose only among options supported by both selected assets and their live reference adapters.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([0, 1] as const).filter((value) => allowedClasses.includes(value)).map((value) => <button key={value} type="button" aria-pressed={poolClass === value} onClick={() => setPoolClass(value)} className={cn('border p-5 text-left', poolClass === value ? 'border-ion/60 bg-ion/[0.06]' : 'border-line')}>
+            <span className="font-mono text-[10px] uppercase text-ion">{classes[value]}</span><span className="mt-2 block text-sm text-ink">{value === 0 ? 'Independent reference guard' : 'Session rules only'}</span><span className="mt-2 block text-xs leading-relaxed text-muted">{value === 0 ? 'Both assets need a live Chainlink reference; the factory checks the opening price against the reference band.' : 'Exactly one stock leg. The opening price comes from your seed ratio and has no independent counterasset price protection.'}</span>
+          </button>)}
+          {allowedClasses.length === 0 && <p role="alert" className="border border-down/30 p-4 text-sm text-down">No pool class is supported for this pair on the deployed Mainnet factory.</p>}
+        </div>
+        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries no independent counterasset price protection. The displayed seed ratio is the opening price.</p>}
+        {poolClass === 0 && <p className="border border-line bg-bg-1 p-4 text-sm text-muted">Opening price uses current onchain reference adapter values. The factory will reject stale feeds or a price outside its configured band.</p>}
+      </div>}
 
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <ClassBadge poolClass={poolClass} />
-              <span className="text-sm text-muted">Locked at deployment. It never changes through an admin toggle.</span>
-            </div>
-            {poolClass === 'SESSION_ONLY' ? (
-              <p className="rounded-none border border-warn/30 bg-warn/5 p-4 text-sm font-medium text-warn">Session controls only; no independent price protection for the counterasset.</p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ModeCard active={!secondary} onClick={() => setSecondary(false)} title="FROZEN_CLOSE (default)" body="Closed stock uses its captured close anchor; the counterasset stays live. No extra dependency." />
-              <ModeCard active={secondary} onClick={() => setSecondary(true)} title="SECONDARY_REFERENCE" body="Only if a 24/7 feed for this same canonical token is proven. If it fails, the pool halts and never falls back." />
-              </div>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ModeCard active title="PUBLIC liquidity" body="Noncustodial positions via PositionManager. The position NFT is minted to you." />
-              <div className="rounded-none border border-line p-4 opacity-55" aria-disabled="true">
-                <p className="flex items-center gap-2 text-sm font-medium text-ink"><Lock className="h-4 w-4" aria-hidden="true" /> TREASURY_ONLY</p>
-                <p className="mt-1.5 text-sm text-muted">Reserved for project-owned pilot pools. Not available to creators.</p>
-              </div>
-            </div>
-          </div>
-        )}
+      {step === 2 && <div className="space-y-6">
+        <h2 className="font-display text-3xl text-ink">Set the maximum seed amounts.</h2>
+        <p className="text-sm leading-relaxed text-muted">The factory pulls no more than these amounts, then refunds unused amounts in the same transaction. Token decimals are verified from the live contracts before signing.</p>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{stockSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedStock} onChange={(event) => setSeedStock(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedStock, stockSymbol).toString()} base units</span></label>
+          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{counterSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedCounter} onChange={(event) => setSeedCounter(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedCounter, counterSymbol).toString()} base units</span></label>
+        </div>
+        <div className="grid gap-4 border border-line bg-bg-1 p-4 sm:grid-cols-3"><Metric label="Seed ratio" value={`${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} / ${stockSymbol}`} note={poolClass === 0 ? 'Guarded opening price is derived from live references' : 'Used as the SESSION_ONLY opening price'}/><Metric label="Factory service fee" value={feeLabel} note="Live factory getter; seed is charged separately"/><Metric label="Current gas quote" value={gasPrice || 'Read from wallet RPC during preflight'} note="Final create gas is estimated after simulation"/></div>
+        {counterSymbol === 'WETH' && <label className="flex items-start gap-3 border border-line p-4 text-sm text-muted"><input type="checkbox" checked={wrapWeth} onChange={(event) => setWrapWeth(event.target.checked)} className="mt-1 accent-ion"/>If my WETH balance is short, allow the app to ask my wallet to wrap only the exact ETH shortfall into WETH. Gas is additional.</label>}
+        <p className="border border-line p-4 text-xs leading-relaxed text-dim">The deployed factory profile fixes pool flow caps. They are checked live and cannot be customized in this creation request. Fee and seed approvals are limited to the exact required amounts.</p>
+      </div>}
 
-        {step === 2 && (
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field label={`Seed ${stock.symbol}`}><input className={inputCls} inputMode="decimal" value={seedStock} onChange={(e) => setSeedStock(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
-            <Field label={`Seed ${counterTok.symbol}`}><input className={inputCls} inputMode="decimal" value={seedCounter} onChange={(e) => setSeedCounter(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
-            <div className="sm:col-span-2 grid gap-4 rounded-none border border-line bg-bg-1/70 p-5 sm:grid-cols-3">
-              <Metric label="Initial price" value={implied ? `${implied.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${counterTok.symbol}` : 'N/A'} sub={`per 1 ${stock.symbol}`} />
-              <Metric label="Initial tick" value={implied ? String(tick) : 'N/A'} sub="full range · spacing 60" />
-              {poolClass === 'PRICE_GUARDED' ? (
-                <Metric label="Vs reference" value={devBps === null ? 'N/A' : `${devBps > 0 ? '+' : ''}${(devBps / 100).toFixed(2)}%`} sub={inBand ? 'inside ±2% band' : 'must be inside ±2%'} tone={inBand ? 'ok' : 'bad'} />
-              ) : (
-                <Metric label="Reference" value="None" sub="creator-approved price" />
-              )}
-            </div>
-            {poolClass === 'SESSION_ONLY' && (
-              <label className="sm:col-span-2 flex cursor-pointer items-start gap-3 rounded-none border border-warn/30 bg-warn/5 p-4 text-sm text-warn">
-                <input type="checkbox" checked={ackPrice} onChange={(e) => setAckPrice(e.target.checked)} className="mt-0.5 h-4 w-4 accent-ion" />
-                I understand the initial price is my own decision. It is not validated by any oracle.
-              </label>
-            )}
-            {marketUnhealthy && <p role="alert" className="sm:col-span-2 text-sm text-warn">Price-guarded pools can only be created while the stock market is open and data is healthy. Scheduled phase now: {phaseNow}.</p>}
-          </div>
-        )}
+      {step === 3 && <div className="space-y-6">
+        <h2 className="font-display text-3xl text-ink">Review every wallet transaction.</h2>
+        <dl className="divide-y divide-line border-y border-line">
+          <ReviewRow label="Network" value={`Robinhood Chain Mainnet · ${MAINNET.chainId}`}/>
+          <ReviewRow label="Pair" value={`${stockSymbol} / ${counterSymbol}`}/>
+          <ReviewRow label="Pool class" value={classes[poolClass]}/>
+          <ReviewRow label="Maximum seed" value={`${amountLabel(rawStock, stockSymbol)} ${stockSymbol} + ${amountLabel(rawCounter, counterSymbol)} ${counterSymbol}`}/>
+          <ReviewRow label="Service fee" value={feeLabel}/>
+          <ReviewRow label="Position recipient" value={wallet.account ?? 'Connect wallet'}/>
+          <ReviewRow label="Initial price" value={poolClass === 0 ? 'Live onchain references; checked by factory' : `${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} per ${stockSymbol} from seed ratio`}/>
+          <ReviewRow label="Approval spender" value={MAINNET.factory}/>
+        </dl>
+        <div className="space-y-3 text-sm text-muted">
+          <p>Depending on balances and allowances, your wallet may ask you to confirm WETH wrapping, exact token approvals, one fresh health update, and the final atomic create-and-seed transaction.</p>
+          <label className="flex cursor-pointer items-start gap-3 border border-warn/30 bg-warn/5 p-4"><input type="checkbox" checked={ackRisk} onChange={(event) => setAckRisk(event.target.checked)} className="mt-1 accent-ion"/><span>I understand the pool class is permanent, seed tokens can be lost, the factory service fee is paid separately, and the position NFT will be minted to my connected wallet.</span></label>
+        </div>
+      </div>}
 
-        {step === 3 && (
-          <div className="grid gap-8 sm:grid-cols-2">
-            <CapGroup sym={stock.symbol} dec={stock.decimals} caps={[caps.tS, caps.wS, caps.cS]} set={(i, v) => setCaps((c) => ({ ...c, [['tS', 'wS', 'cS'][i]]: v }))} err={errS} max={maxCS} />
-            <CapGroup sym={counterTok.symbol} dec={counterTok.decimals} caps={[caps.tC, caps.wC, caps.cC]} set={(i, v) => setCaps((c) => ({ ...c, [['tC', 'wC', 'cC'][i]]: v }))} err={errC} max={maxCC} />
-            <p className="sm:col-span-2 text-xs leading-relaxed text-dim">Caps are fixed raw token units, never USD. T ≤ W, C ≤ min(2T, W) and C ≤ 10% of what you actually seed. Adding liquidity later does not raise them. They bound flow; they do not insure value.</p>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div>
-            <div className="flex flex-wrap items-center gap-3"><ClassBadge poolClass={poolClass} /><span className="text-sm text-muted">Exactly what the factory will receive</span></div>
-            <dl className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-              {request.map(([k, v]) => (
-                <div key={k} className="flex items-baseline justify-between gap-4 border-b border-line/70 pb-2">
-                  <dt className="text-xs uppercase tracking-[0.12em] text-dim">{k}</dt>
-                  <dd className="num truncate text-right text-sm text-ink" title={v}>{v}</dd>
-                </div>
-              ))}
-              <div className="flex items-baseline justify-between gap-4 border-b border-line/70 pb-2">
-                <dt className="text-xs uppercase tracking-[0.12em] text-dim">predicted hook / PoolId</dt>
-                <dd className="text-right text-sm text-dim">from factory preview</dd>
-              </div>
-            </dl>
-            <div className="mt-6 space-y-3">
-              {([
-                ['klass', poolClass === 'PRICE_GUARDED' ? 'I understand the class is permanent and protection applies only inside the reference band.' : 'I understand there is no independent price protection for the counterasset.'],
-                ['caps', 'I understand caps are fixed raw units that bound flow and do not insure my liquidity.'],
-                ['seed', `I will pay ${SERVICE_FEE_USDG} USDG plus my seed. Fee, deploy, initialize and seed succeed or fail together.`],
-              ] as const).map(([k, t]) => (
-                <label key={k} className="flex cursor-pointer items-start gap-3 text-sm text-muted">
-                  <input type="checkbox" checked={ackAll[k]} onChange={(e) => setAckAll((a) => ({ ...a, [k]: e.target.checked }))} className="mt-0.5 h-4 w-4 accent-ion" />
-                  {t}
-                </label>
-              ))}
-            </div>
-            {marketUnhealthy && <p role="alert" className="mt-4 text-sm text-warn">Creation blocked: stock market is closed (scheduled phase {phaseNow}). Price-guarded pools bootstrap only on healthy active data.</p>}
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button size="lg" disabled aria-disabled="true">
-                <Lock className="h-4 w-4" aria-hidden="true" /> Create unavailable: no live factory flow
-              </Button>
-              <span className="text-xs text-dim">This is a configuration preview. It sends no transaction and does not create a pool.</span>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
-          <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back</Button>
-          {step < STEPS.length - 1 && <Button onClick={() => setStep((s) => s + 1)} disabled={!stepOk[step]}>Continue <ArrowRight className="h-4 w-4" aria-hidden="true" /></Button>}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
+        <Button variant="ghost" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || busy}><ArrowLeft className="h-4 w-4"/> Back</Button>
+        <div className="flex flex-wrap gap-2">
+          {step < STEPS.length - 1 && <Button onClick={() => setStep((current) => current + 1)} disabled={!stepOk[step] || busy}>Continue <ArrowRight className="h-4 w-4"/></Button>}
+          {step === STEPS.length - 1 && <button type="button" onClick={() => void startCreate()} disabled={busy || !stepOk[3]} className="inline-flex min-h-11 items-center gap-2 bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 disabled:opacity-50">{busy ? <><LoaderCircle className="h-4 w-4 animate-spin"/>{stage?.message ?? 'Working…'}</> : wallet.status !== 'connected' ? <><Wallet className="h-4 w-4"/>Connect wallet</> : wallet.wrongChain ? 'Switch to Mainnet' : 'Create and seed pool'}</button>}
         </div>
       </div>
-    </div>
-  );
+    </section>
+
+    {wallet.wrongChain && <p role="alert" className="mt-4 border border-warn/30 bg-warn/5 p-4 text-sm text-warn">Switch your wallet to Robinhood Chain Mainnet (4663) to continue.</p>}
+    {wallet.error && <p role="alert" className="mt-4 text-sm text-down">{wallet.error}</p>}
+    {error && <p role="alert" className="mt-4 flex items-start gap-2 border border-down/30 bg-down/5 p-4 text-sm text-down"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0"/>{error}</p>}
+
+    {(stage || history.length > 0) && <section className="mt-5 border border-line bg-surface/50 p-5" aria-live="polite"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Transaction progress</h2><ol className="mt-4 space-y-3">{history.map((item, index) => <li key={`${item.key}-${index}`} className="border-t border-line pt-3"><p className="text-sm text-ink">{STAGE_LABELS[item.key] ?? item.key}: {item.message}</p>{item.hash && <a className="mt-1 inline-flex items-center gap-1 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${item.hash}`} target="_blank" rel="noreferrer">View transaction <ExternalLink className="h-3 w-3"/></a>}</li>)}</ol></section>}
+
+    {result && <section className="mt-5 border border-up/30 bg-up/5 p-6"><p className="font-mono text-xs uppercase text-up">Pool deployed and seeded</p><p className="mt-2 break-all font-mono text-xs text-ink">Hook {result.hook}</p><p className="mt-1 break-all font-mono text-xs text-dim">Pool ID {result.poolId}</p><p className="mt-2 text-sm text-muted">Position NFT #{result.tokenId} is owned by {wallet.account}. Seed used: {amountLabel(result.principal[0], result.token0.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol)} {result.token0.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol} and {amountLabel(result.principal[1], result.token1.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol)} {result.token1.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol}.</p><div className="mt-4 flex flex-wrap gap-4"><Link className="text-sm text-ion underline" href={`/pool?hook=${result.hook}`}>Open live pool</Link><a className="inline-flex items-center gap-1 text-sm text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${result.createHash}`} target="_blank" rel="noreferrer">View creation transaction <ExternalLink className="h-3 w-3"/></a></div></section>}
+
+    <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-dim"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0"/>No private key leaves your wallet. The quote Worker returns signed data only. Pool creation, report updates, and approvals are visible Mainnet transactions that require your wallet confirmation.</p>
+  </div>;
 }
 
-function ModeCard({ active, onClick, title, body }: { active: boolean; onClick?: () => void; title: string; body: string }) {
-  const Tag = onClick ? 'button' : 'div';
-  return (
-    <Tag type={onClick ? 'button' : undefined} onClick={onClick} aria-pressed={onClick ? active : undefined} className={cn('rounded-none border p-4 text-left transition-colors', active ? 'border-ion/50 bg-ion/[0.07]' : 'border-line hover:border-line-strong')}>
-      <p className="text-sm font-medium text-ink">{title}</p>
-      <p className="mt-1.5 text-sm text-muted">{body}</p>
-    </Tag>
-  );
+function Metric({ label, value, note }: { label: string; value: string; note: string }) {
+  return <div className="min-w-0"><p className="font-mono text-[10px] uppercase text-dim">{label}</p><p className="mt-2 break-words text-sm text-ink">{value}</p><p className="mt-1 text-xs text-dim">{note}</p></div>;
 }
-
-function Metric({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: 'ok' | 'bad' }) {
-  return (
-    <div>
-      <p className="text-[0.66rem] uppercase tracking-[0.14em] text-dim">{label}</p>
-      <p className={cn('num mt-1 text-xl', tone === 'ok' ? 'text-up' : tone === 'bad' ? 'text-down' : 'text-ink')}>{value}</p>
-      {sub && <p className="text-xs text-dim">{sub}</p>}
-    </div>
-  );
-}
-
-function CapGroup({ sym, dec, caps, set, err, max }: { sym: string; dec: number; caps: [string, string, string]; set: (i: number, v: string) => void; err: string | false; max: bigint }) {
-  const labels = ['Per-trade T', 'Rolling W (300 s)', 'Closure episode C'];
-  return (
-    <fieldset className="space-y-4">
-      <legend className="mb-1 font-display text-3xl text-ink">{sym}</legend>
-      {labels.map((l, i) => (
-        <Field key={l} label={`${l} · ${sym}`} hint={i === 2 ? `Max ≈ ${fmtUnits(max, dec)} ${sym} (10% of seed)` : undefined}>
-          <input className={inputCls} inputMode="decimal" value={caps[i]} onChange={(e) => set(i, e.target.value.replace(/[^0-9.]/g, ''))} />
-        </Field>
-      ))}
-      {err && <p role="alert" className="flex items-start gap-1.5 text-xs text-down"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />{err}</p>}
-    </fieldset>
-  );
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex flex-wrap justify-between gap-3 py-3"><dt className="font-mono text-[10px] uppercase text-dim">{label}</dt><dd className="break-all text-right text-sm text-ink">{value}</dd></div>;
 }

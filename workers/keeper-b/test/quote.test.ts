@@ -162,4 +162,12 @@ describe('read-only pull quote bundles', () => {
       expect(await unavailable.json()).toEqual({ error: 'Live pool discovery is temporarily unavailable' });
     } finally { vi.unstubAllGlobals(); }
   });
+  it('serves wallet NFT discovery with CORS and validates the owner', async () => {
+    const invalid = await worker.fetch(new Request('https://bell.test/positions?owner=bad', { headers: { origin: 'https://bell.exchange' } }), env);
+    expect(invalid.status).toBe(400);
+    expect(invalid.headers.get('access-control-allow-origin')).toBe('*');
+    expect(await invalid.json()).toEqual({ error: 'invalid owner address' });
+    const options = await worker.fetch(new Request('https://bell.test/positions', { method: 'OPTIONS' }), env);
+    expect(options.status).toBe(204);
+  });
 });

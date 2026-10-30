@@ -16,7 +16,7 @@ const SECTIONS = [
   { id: "operating-policy", label: "Operating policy", desc: "Session fees, swap limits and planned closes." },
   { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
   { id: "roadmap", label: "Readiness", desc: "What has been rehearsed and what remains." },
-  { id: "facts", label: "Testnet status", desc: "Deployment and rehearsal snapshot; not live-updating." },
+  { id: "facts", label: "Mainnet status", desc: "Static deployment and pool snapshot; not live-updating." },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];

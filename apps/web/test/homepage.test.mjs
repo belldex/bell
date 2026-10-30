@@ -11,6 +11,24 @@ test('landing route composes the current BELL landing page without redirecting',
   assert.doesNotMatch(page, /window\.location\.(replace|assign)|templates\/v4market/);
 });
 
+test('served landing and legal copy describe Mainnet and enabled wallet flows truthfully', async () => {
+  const landing = await read('../components/landing/gyevo/sections.tsx');
+  const footer = await read('../components/landing/gyevo/final-reveal.tsx');
+  const nav = await read('../components/landing/gyevo/landing-nav.tsx');
+  const cover = await read('../components/landing/gyevo/cover-reveal.tsx');
+  const terms = await read('../app/(app)/terms/page.tsx');
+  const privacy = await read('../app/(app)/privacy/page.tsx');
+  const publicCopy = [landing, footer, nav, cover, terms, privacy].join('\n');
+  for (const obsolete of [/Testnet only/i, /Testnet snapshot/i, /No protocol deployment/i, /sample pools/i, /No swap or pool creation transaction is enabled/i, /no Mainnet deployment/i]) {
+    assert.doesNotMatch(publicCopy, obsolete);
+  }
+  assert.match(landing, /No Mainnet pool|no pool has been created/i);
+  assert.match(landing, /Worker/i);
+  assert.match(footer, /Create pool/i);
+  assert.match(terms, /wallet/i);
+  assert.match(privacy, /quote/i);
+});
+
 test('copied template build artifacts are absent', async () => {
   for (const path of [
     '../public/templates/v4market/index.html',
@@ -78,20 +96,48 @@ test('swap approval and BellRouter transaction wait for confirmed receipts', asy
 
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
   const worker = await read('../../../workers/keeper-b/src/index.ts');
-  assert.match(worker, /\['\/quote', '\/pools'\]/);
+  assert.match(worker, /\['\/quote', '\/pools', '\/positions'\]/);
   assert.match(worker, /access-control-allow-origin', '\*'/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /BELL_POOL_FACTORY/);
   assert.match(worker, /toEventSelector\(POOL_CREATED_EVENT\)/);
+  assert.match(worker, /runPositionCandidates/);
+  assert.match(worker, /BELL_POSITION_MANAGER/);
 });
 
-test('unavailable create and position flows do not fake transaction success', async () => {
+test('pool creation is wired to the wallet, live Registry, approvals, factory simulation and receipt', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  const flow = await read('../lib/mainnet-create-flow.ts');
+  const helpers = await read('../lib/mainnet-create-helpers.mjs');
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.match(create, /createMainnetPool\(/);
+  assert.match(create, /Create and seed pool/);
+  assert.doesNotMatch(create, /Create unavailable/);
+  assert.match(flow, /applyPoolOracleUpdates/);
+  assert.match(flow, /functionName: 'approve'/);
+  assert.match(flow, /functionName: 'createAndSeed'/);
+  assert.match(flow, /simulateContract/);
+  assert.match(flow, /waitForTransactionReceipt/);
+  assert.match(flow, /PoolCreated/);
+  assert.match(flow, /ownerOf/);
+  assert.match(helpers, /resolveAdmittedPair/);
+  assert.match(helpers, /EXPECTED_HOOK_FLAGS = 0x2cc0n/);
+  assert.doesNotMatch(create, /Illustrative|fake|sample price/i);
+  assert.match(positions, /readLivePools\(\)/);
+  assert.match(positions, /getPositionLiquidity/);
+  assert.match(positions, /buildPublicLpTransaction/);
+  assert.match(positions, /ownerOf/);
+  assert.match(positions, /Remove in-kind/);
+  assert.match(positions, /Collect fees/);
+});
+
+test('obsolete static create flow does not return', async () => {
   const create = await read('../app/(app)/create/page.tsx');
   const positions = await read('../app/(app)/positions/page.tsx');
-  assert.match(create, /Preview|unavailable/i);
   assert.doesNotMatch(create, /setTimeout\(\(\) => setDone\('ok'\)/);
-  assert.match(positions, /Preview only|sample position|No live position NFT loaded/i);
-  assert.doesNotMatch(positions, /setCollected\(true\)|Simulate remove/);
+  assert.match(positions, /readLivePools\(\)/);
+  assert.match(positions, /waitForTransactionReceipt/);
+  assert.match(positions, /No BELL positions in this wallet/);
 });
 
 test('legal and protocol pages resolve from the shared app navigation', async () => {

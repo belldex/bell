@@ -4,7 +4,7 @@ import { Activity, ArrowRight, BadgeCheck, CalendarClock, CalendarDays, CircleCh
 import { Arrow } from "./arrow";
 import { SessionFeeCurve } from "./session-fee-curve";
 
-const ROBINHOOD_TESTNET_CHAIN_ID = 46630;
+const ROBINHOOD_MAINNET_CHAIN_ID = 4663;
 
 /* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
 
@@ -208,7 +208,7 @@ export function SessionSection() {
 
 /* Current status, clearly separating rehearsal from production readiness. */
 type PhaseStatus = "done" | "live" | "wip" | "blocked" | "future";
-const STATUS_LABEL: Record<PhaseStatus, string> = { done: "Rehearsed", live: "Testnet", wip: "Rehearsal pending", blocked: "Blocked", future: "Pending" };
+const STATUS_LABEL: Record<PhaseStatus, string> = { done: "Rehearsed", live: "Live", wip: "In progress", blocked: "Blocked", future: "Pending" };
 
 const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: readonly string[] }[] = [
   {
@@ -222,7 +222,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "TESTNET",
+    n: "REHEARSAL",
     name: "Testnet rehearsal",
     status: "done",
     items: [
@@ -232,33 +232,33 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     ],
   },
   {
-    n: "COVERAGE",
-    name: "Broader session rehearsal",
-    status: "wip",
+    n: "MAINNET",
+    name: "Mainnet contracts",
+    status: "live",
     items: [
-      "Extended-hours and overnight coverage still need broader rehearsal",
-      "The current asset testnet pool has not been verified",
-      "Every session requires a healthy supported feed; unexpected states halt",
+      "Protocol contracts and AAPL, NVDA, and TSLA adapters are deployed on Robinhood Chain 4663",
+      "USDG and WETH are admitted counterassets; no pool or liquidity has been created",
+      "Every pool still requires fresh signed reports and a successful create-and-seed transaction",
     ],
   },
   {
-    n: "PRICE GUARD",
-    name: "PRICE_GUARDED profile",
-    status: "blocked",
+    n: "PULL DATA",
+    name: "Signed quotes, pool and position discovery",
+    status: "live",
     items: [
-      "Blocked until an independent reference pair is admitted",
-      "No price-protection badge or guarantee is currently available",
-      "SESSION_ONLY has no independent price protection for its counterasset",
+      "Public signed quote bundles, pool discovery and wallet position reads are available",
+      "Mainnet pull mode does not run periodic onchain report transactions",
+      "Yahoo source data rights are not verified; independent audit is not complete",
     ],
   },
   {
-    n: "PRODUCTION",
-    name: "Production readiness",
+    n: "LIQUIDITY",
+    name: "First live pool",
     status: "future",
     items: [
-      "Mainnet has not been touched",
-      "Independent security review has not been completed",
-      "Data rights, operations and production controls remain prerequisites",
+      "No Mainnet pool, seeded position, or completed Mainnet swap exists yet",
+      "The wallet-connected create flow is ready; it has not been used to seed a pool yet",
+      "Session-only pools carry no independent counterasset price protection",
     ],
   },
 ];
@@ -280,10 +280,10 @@ export function RoadmapSection() {
       <div className="lp-wrap">
         <Eyebrow>Status, without the gloss</Eyebrow>
         <h2 className="lp-h2" id="road-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-          The rehearsal is evidence, <em className="o">not a release.</em>
+          Contracts are deployed. <em className="o">Liquidity is not.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          An earlier REGULAR pool completed a swap on Robinhood Chain Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). That confirms a past rehearsal, not current asset availability, live feeds, or production readiness.
+          The Mainnet protocol and quote service are live on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}), but the factory has no pools yet. There is no seeded liquidity or completed Mainnet swap.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -318,7 +318,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-        <p className="lp-road__summary"><span>Production gate</span>The protocol stack is testnet-only; mainnet is not deployed. PRICE_GUARDED awaits an admitted reference pair. Production also requires security review, data rights and operational controls.</p>
+        <p className="lp-road__summary"><span>Current state</span>Contracts and the signed-quote Worker are deployed. The pool directory is empty; data rights and independent security review remain unverified.</p>
       </div>
     </section>
   );
@@ -332,22 +332,24 @@ export function FactsSection() {
         <header className="lp-facts__head" data-lp-reveal>
           <div className="lp-facts__title">
             <p className="lp-facts__eyebrow">Protocol status</p>
-            <h2 className="lp-facts__headline" id="facts-title">Testnet snapshot</h2>
+            <h2 className="lp-facts__headline" id="facts-title">Mainnet snapshot</h2>
           </div>
           <div className="lp-facts__stamp">
             <span className="lp-facts__stamp-label">Verified at</span>
-            <time dateTime="2026-10-29T03:40:00Z"><span>29 Oct 2026</span><strong>03:40 UTC</strong></time>
+            <time dateTime="2026-10-30T15:54:00Z"><span>30 Oct 2026</span><strong>15:54 UTC</strong></time>
             <span className="lp-facts__stamp-note">Static record · not live-updating</span>
           </div>
         </header>
         <dl className="lp-facts__grid" data-lp-reveal>
-          <div className="lp-fact" data-spot><dt>Verified rehearsal</dt><dd>Historical REGULAR swap · earlier testnet pool</dd></div>
-          <div className="lp-fact" data-spot><dt>Current asset</dt><dd>Pool and swap not yet verified</dd></div>
-          <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Testnet · {ROBINHOOD_TESTNET_CHAIN_ID}</dd></div>
-          <div className="lp-fact" data-spot><dt>Mainnet</dt><dd>No protocol deployment</dd></div>
-          <div className="lp-fact" data-spot><dt>PRICE_GUARDED</dt><dd>Blocked · no admitted reference</dd></div>
+          <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
+          <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
+          <div className="lp-fact" data-spot><dt>Quote service</dt><dd>Live · pull mode · no periodic report transactions</dd></div>
+          <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty · no Mainnet pool or liquidity yet</dd></div>
+          <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>Data rights</dt><dd>Yahoo source rights are not verified</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not completed</dd></div>
-          <div className="lp-fact" data-spot><dt>Rehearsal token</dt><dd>Synthetic fixture · not an official Robinhood stock token</dd></div>
+          <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
           <div className="lp-fact" data-spot><dt>SESSION_ONLY</dt><dd>Session controls; no independent counterasset price protection</dd></div>
         </dl>
       </div>
