@@ -147,7 +147,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="app-sidebar__section-label">Network</p>
               <div className="app-sidebar__network-card">
                 <span className="app-sidebar__network-label">Workspace target</span>
-                <b>Robinhood Chain</b>
+                <span className="app-sidebar__network-brand" role="img" aria-label="Robinhood Chain">
+                  <span className="app-sidebar__network-logo" aria-hidden="true" />
+                  <b aria-hidden="true">Chain</b>
+                </span>
                 <span>Mainnet · Chain 4663</span>
               </div>
               <a className="app-sidebar__reference" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>

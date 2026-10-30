@@ -5,6 +5,7 @@ import { isAddress, parseUnits, formatUnits } from 'viem';
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Lock } from 'lucide-react';
 import { Button, ClassBadge } from '@/components/ui/primitives';
 import { TokenPair } from '@/components/ui/TokenLogo';
+import { LogoSelect } from '@/components/ui/LogoSelect';
 import { cn } from '@/lib/format';
 import { nowWeekMinuteET, phaseAtWeekMinute, SERVICE_FEE_USDG, HOOK_PERMISSION_MASK } from '@/lib/policy';
 import { useWallet } from '@/lib/wallet';
@@ -29,10 +30,10 @@ const num = (s: string) => { const n = parseFloat(s); return isFinite(n) && n > 
 const raw = (s: string, d: number): bigint => { try { return parseUnits(s || '0', d); } catch { return 0n; } };
 const fmtUnits = (v: bigint, d: number) => { const t = formatUnits(v, d); const [w, f = ''] = t.split('.'); return `${w.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${f ? '.' + f.slice(0, 6).replace(/0+$/, '') : ''}`.replace(/\.$/, ''); };
 
-function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string | false; children: React.ReactNode }) {
+function Field({ id, label, hint, error, children }: { id?: string; label: string; hint?: string; error?: string | false; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">{label}</label>
+      <label id={id ? `${id}-label` : undefined} htmlFor={id} className="text-[0.7rem] uppercase tracking-[0.16em] text-dim">{label}</label>
       <div className="mt-2">{children}</div>
       {error ? <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs text-down"><AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />{error}</p> : hint ? <p className="mt-1.5 text-xs text-dim">{hint}</p> : null}
     </div>
@@ -54,7 +55,7 @@ export default function CreatePage() {
   const [ackPrice, setAckPrice] = useState(false);
   const [caps, setCaps] = useState({ tS: '1', wS: '4', cS: '1', tC: '250', wC: '1000', cC: '200' });
   const [ackAll, setAckAll] = useState({ klass: false, caps: false, seed: false });
-  const [phaseNow, setPhaseNow] = useState<string>('—');
+  const [phaseNow, setPhaseNow] = useState<string>('N/A');
 
   useEffect(() => { setPhaseNow(phaseAtWeekMinute(nowWeekMinuteET())); }, []);
 
@@ -104,7 +105,7 @@ export default function CreatePage() {
     ackAll.klass && ackAll.caps && ackAll.seed && !marketUnhealthy,
   ];
 
-  const recipient = wallet.account ?? '— connect wallet —';
+  const recipient = wallet.account ?? 'Connect wallet';
 
   const request = [
     ['chainId', wallet.chainId ? String(wallet.chainId) : '4663'],
@@ -175,19 +176,27 @@ export default function CreatePage() {
             </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
-            <Field label="Canonical Stock Token" hint="Only reviewed canonical Robinhood Stock Tokens can anchor a pool.">
-              <select value={stockSym} onChange={(e) => setStockSym(e.target.value)} className={inputCls}>
-                {STOCKS.map((s) => <option key={s.symbol}>{s.symbol}</option>)}
-              </select>
+            <Field id="create-stock-token" label="Canonical Stock Token" hint="Only reviewed canonical Robinhood Stock Tokens can anchor a pool.">
+              <LogoSelect
+                id="create-stock-token"
+                labelId="create-stock-token-label"
+                value={stockSym}
+                onChange={setStockSym}
+                options={STOCKS.map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Stock token', symbols: [token.symbol] }))}
+              />
             </Field>
-            <Field label="Counterasset" error={sameAsset && 'Counterasset must differ from the stock token'}>
-              <select value={counter} onChange={(e) => setCounter(e.target.value)} className={inputCls}>
-                <optgroup label="Price source available">
-                  {QUOTES.map((s) => <option key={s.symbol}>{s.symbol}</option>)}
-                  {STOCKS.filter((s) => s.symbol !== stockSym).map((s) => <option key={s.symbol}>{s.symbol}</option>)}
-                </optgroup>
-                <optgroup label="Any ERC-20 (session only)"><option value={CUSTOM}>Custom token address…</option></optgroup>
-              </select>
+            <Field id="create-counterasset" label="Counterasset" error={sameAsset && 'Counterasset must differ from the stock token'}>
+              <LogoSelect
+                id="create-counterasset"
+                labelId="create-counterasset-label"
+                value={counter}
+                onChange={setCounter}
+                options={[
+                  ...QUOTES.map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Reference asset', symbols: [token.symbol] })),
+                  ...STOCKS.filter((token) => token.symbol !== stockSym).map((token) => ({ value: token.symbol, label: token.symbol, detail: 'Stock token', symbols: [token.symbol] })),
+                  { value: CUSTOM, label: 'Custom token address…', detail: 'Session only' },
+                ]}
+              />
             </Field>
             {isCustom && (
               <>
@@ -224,7 +233,7 @@ export default function CreatePage() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 <ModeCard active={!secondary} onClick={() => setSecondary(false)} title="FROZEN_CLOSE (default)" body="Closed stock uses its captured close anchor; the counterasset stays live. No extra dependency." />
-                <ModeCard active={secondary} onClick={() => setSecondary(true)} title="SECONDARY_REFERENCE" body="Only if a 24/7 feed for this same canonical token is proven. If it fails the pool halts — it never falls back." />
+              <ModeCard active={secondary} onClick={() => setSecondary(true)} title="SECONDARY_REFERENCE" body="Only if a 24/7 feed for this same canonical token is proven. If it fails, the pool halts and never falls back." />
               </div>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
@@ -242,10 +251,10 @@ export default function CreatePage() {
             <Field label={`Seed ${stock.symbol}`}><input className={inputCls} inputMode="decimal" value={seedStock} onChange={(e) => setSeedStock(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
             <Field label={`Seed ${counterTok.symbol}`}><input className={inputCls} inputMode="decimal" value={seedCounter} onChange={(e) => setSeedCounter(e.target.value.replace(/[^0-9.]/g, ''))} /></Field>
             <div className="sm:col-span-2 grid gap-4 rounded-none border border-line bg-bg-1/70 p-5 sm:grid-cols-3">
-              <Metric label="Initial price" value={implied ? `${implied.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${counterTok.symbol}` : '—'} sub={`per 1 ${stock.symbol}`} />
-              <Metric label="Initial tick" value={implied ? String(tick) : '—'} sub="full range · spacing 60" />
+              <Metric label="Initial price" value={implied ? `${implied.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${counterTok.symbol}` : 'N/A'} sub={`per 1 ${stock.symbol}`} />
+              <Metric label="Initial tick" value={implied ? String(tick) : 'N/A'} sub="full range · spacing 60" />
               {poolClass === 'PRICE_GUARDED' ? (
-                <Metric label="Vs reference" value={devBps === null ? '—' : `${devBps > 0 ? '+' : ''}${(devBps / 100).toFixed(2)}%`} sub={inBand ? 'inside ±2% band' : 'must be inside ±2%'} tone={inBand ? 'ok' : 'bad'} />
+                <Metric label="Vs reference" value={devBps === null ? 'N/A' : `${devBps > 0 ? '+' : ''}${(devBps / 100).toFixed(2)}%`} sub={inBand ? 'inside ±2% band' : 'must be inside ±2%'} tone={inBand ? 'ok' : 'bad'} />
               ) : (
                 <Metric label="Reference" value="None" sub="creator-approved price" />
               )}
@@ -298,7 +307,7 @@ export default function CreatePage() {
             {marketUnhealthy && <p role="alert" className="mt-4 text-sm text-warn">Creation blocked: stock market is closed (scheduled phase {phaseNow}). Price-guarded pools bootstrap only on healthy active data.</p>}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button size="lg" disabled aria-disabled="true">
-                <Lock className="h-4 w-4" aria-hidden="true" /> Create unavailable — no live factory flow
+                <Lock className="h-4 w-4" aria-hidden="true" /> Create unavailable: no live factory flow
               </Button>
               <span className="text-xs text-dim">This is a configuration preview. It sends no transaction and does not create a pool.</span>
             </div>

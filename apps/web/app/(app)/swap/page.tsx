@@ -3,9 +3,10 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { parseUnits } from 'viem';
-import { AlertTriangle, ArrowDownUp, ChevronDown, Info, RefreshCw, Timer } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, Info, RefreshCw, Timer } from 'lucide-react';
 import { ClassBadge, PhaseBadge } from '@/components/ui/primitives';
 import { TokenLogo } from '@/components/ui/TokenLogo';
+import { LogoSelect } from '@/components/ui/LogoSelect';
 import { BudgetBar } from '@/components/policy/BudgetBar';
 import { POOLS, getPool, type CurrencyBudget, type PoolPolicy } from '@/lib/fixtures';
 import { cn, formatRaw, remaining } from '@/lib/format';
@@ -24,7 +25,7 @@ const RATE: Record<string, { stock: string; price: number }> = {
 const QUOTE_TTL = 30;
 
 function fmt(n: number): string {
-  if (!isFinite(n)) return '—';
+  if (!isFinite(n)) return 'N/A';
   const abs = Math.abs(n);
   const d = abs >= 1000 ? 2 : abs >= 1 ? 4 : abs >= 0.01 ? 6 : 8;
   return n.toLocaleString('en-US', { maximumFractionDigits: d });
@@ -150,7 +151,7 @@ function SwapInner() {
         <span className="text-muted">These fixture amounts and quotes do not reach the router.</span>
       </div>
       <div className="grid items-start gap-8 lg:grid-cols-2">
-      {/* Preview form — never submits; the live policy panel is a separate onchain reader. */}
+      {/* Preview form; it never submits a transaction. */}
       <section aria-label="Preview swap inputs" className="glass rounded-none border border-line bg-surface/75 p-6 sm:p-7">
         <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
           <div>
@@ -161,13 +162,20 @@ function SwapInner() {
         </div>
 
         <div className="mt-5">
-          <label htmlFor="pool-select" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Pool fixture</label>
-          <div className="relative mt-2">
-            <select id="pool-select" value={poolId} onChange={(e) => setPoolId(e.target.value)} className="h-12 w-full appearance-none rounded-none border border-line bg-bg-1 px-4 pr-10 text-ink outline-none transition-colors focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion">
-              {swappable.map((p) => <option key={p.id} value={p.id}>{p.pair.join(' / ')} · {p.poolClass === 'PRICE_GUARDED' ? 'Price guarded' : 'Session only'}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-dim" aria-hidden="true" />
-          </div>
+          <label id="pool-select-label" htmlFor="pool-select" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Pool fixture</label>
+          <LogoSelect
+            id="pool-select"
+            labelId="pool-select-label"
+            value={poolId}
+            onChange={setPoolId}
+            className="mt-2"
+            options={swappable.map((item) => ({
+              value: item.id,
+              label: item.pair.join(' / '),
+              detail: item.poolClass === 'PRICE_GUARDED' ? 'Price guarded' : 'Session only',
+              symbols: item.pair,
+            }))}
+          />
         </div>
 
         <div className="mt-4 inline-flex rounded-none border border-line bg-bg-1/70 p-1" role="radiogroup" aria-label="Amount type">
@@ -224,11 +232,11 @@ function SwapInner() {
 
           <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
             <Row label="Pool fee" value={feePercent(pool.effectiveFeeUnits)} sub={quote ? `${fmt(quote.feeAmount)} ${inB.symbol}` : undefined} />
-            <Row label="Price impact" value={quote ? `${(quote.impactBps / 100).toFixed(2)}%` : '—'} sub="estimated" />
-            <Row label={mode === 'in' ? 'Min received' : 'Max paid'} value={quote ? `${fmt(mode === 'in' ? quote.minOut : quote.maxIn)} ${mode === 'in' ? outB.symbol : inB.symbol}` : '—'} sub={`slippage ${slip}%`} />
+            <Row label="Price impact" value={quote ? `${(quote.impactBps / 100).toFixed(2)}%` : 'N/A'} sub="estimated" />
+            <Row label={mode === 'in' ? 'Min received' : 'Max paid'} value={quote ? `${fmt(mode === 'in' ? quote.minOut : quote.maxIn)} ${mode === 'in' ? outB.symbol : inB.symbol}` : 'N/A'} sub={`slippage ${slip}%`} />
             <Row label="Data source" value={pool.legs.map((l) => `${l.symbol} ${l.source === 'FROZEN' ? 'frozen' : l.source === 'LIVE' ? 'live' : 'n/a'}`).join(' · ')} sub={pool.legs[0].anchorAgeSec !== null ? `anchor ${Math.round(pool.legs[0].anchorAgeSec / 3600)} h old` : pool.legs[0].ageSec !== null ? `${pool.legs[0].ageSec}s old` : undefined} />
             <Row label="Per-trade limit" value={lim ? `${formatRaw(String(lim.perTrade), inB.decimals)} ${inB.symbol}` : 'halted'} />
-            <Row label="Closure nonce" value={pool.closureNonce ?? '—'} sub={pool.poolPhase === 'CLOSED' ? 'episode active' : 'no closure'} />
+            <Row label="Closure nonce" value={pool.closureNonce ?? 'N/A'} sub={pool.poolPhase === 'CLOSED' ? 'episode active' : 'no closure'} />
           </dl>
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -250,7 +258,7 @@ function SwapInner() {
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
             <div className={cn('h-full rounded-full transition-[width] duration-500', expired ? 'bg-down' : 'bg-ion')} style={{ width: `${(left / QUOTE_TTL) * 100}%` }} />
           </div>
-          <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Fixture preview expired. Refresh to recalculate.' : stale ? 'Inputs changed — recalculating preview…' : `Fixture calculation refreshed ${Math.ceil(left)} s ago · not an executable quote`}</p>
+          <p className="num mt-2 text-sm text-muted" role="status">{expired ? 'Fixture preview expired. Refresh to recalculate.' : stale ? 'Inputs changed, recalculating preview…' : `Fixture calculation refreshed ${Math.ceil(left)} s ago · not an executable quote`}</p>
         </div>
       </aside>
       </div>
