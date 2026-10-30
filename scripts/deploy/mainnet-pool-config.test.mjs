@@ -76,6 +76,33 @@ test('the default policy id is a mainnet id, not the testnet one', () => {
   assert.ok(!/testnet/i.test(config.policyId));
 });
 
+test('derives the SESSION_ONLY opening price from seed amounts instead of a raw 1:1 ratio', async () => {
+  const poolConfigModule = await import('./mainnet-pool-config.mjs');
+  assert.equal(typeof poolConfigModule.deriveTickBounds, 'function');
+  assert.equal(typeof poolConfigModule.deriveSqrtPriceFromAmounts, 'function');
+  const q96 = 1n << 96n;
+  const oneToOne = poolConfigModule.deriveTickBounds({ sqrtPriceX96: q96, tickSpacing: 60, halfWidth: 6000 });
+  assert.deepEqual(oneToOne, { tickLower: -6000, tickUpper: 6000, currentTick: 0 });
+
+  const stockPerEth = poolConfigModule.deriveInitialSqrtPrice({
+    price0_18: 2238n * 10n ** 18n,
+    price1_18: 343n * 10n ** 18n,
+  });
+  const priced = poolConfigModule.deriveTickBounds({ sqrtPriceX96: stockPerEth, tickSpacing: 60, halfWidth: 6000 });
+  assert.ok(priced.currentTick > 10_000, 'WETH/AAPL ratio must not be treated as 1:1');
+  assert.ok(priced.tickLower < priced.currentTick && priced.tickUpper > priced.currentTick);
+  assert.equal(priced.tickLower % 60, 0);
+  assert.equal(priced.tickUpper % 60, 0);
+
+  const seedRatio = poolConfigModule.deriveSqrtPriceFromAmounts({
+    amount0: 20_000_000n,
+    amount1: 57_300_000_000_000_000n,
+  });
+  const impliedRawRatio = (seedRatio * seedRatio * 20_000_000n) >> 192n;
+  assert.ok(impliedRawRatio <= 57_300_000_000_000_000n);
+  assert.ok(seedRatio > q96, 'USDG/AAPL seed ratio must not open at a raw 1:1 price');
+});
+
 test('a zero seed amount is rejected before it reaches the factory', () => {
   assert.throws(
     () => resolvePoolConfig({
@@ -228,6 +255,26 @@ test('SESSION_ONLY meme/stock pair does not require counterasset WETH funding', 
   assert.equal(result.nativeToWrap, 0n);
 });
 
+test('no WETH wrapping does not reject a low native balance when WETH is not in the pair', () => {
+  const result = checkSeedFunding({
+    token0: STOCK,
+    tokenA: STOCK,
+    tokenB: '0x00000000000000000000000000000000000000dd',
+    tokenABalance: 10n,
+    tokenBBalance: 10n,
+    amountMax: [10n, 10n],
+    nativeBalance: 1n,
+    nativeGasReserve: 5n,
+    feeBalance: 10n,
+    feeToken: '0x00000000000000000000000000000000000000ee',
+    serviceFee: 1n,
+    weth: WETH,
+    wethBalance: 0n,
+    wrapNativeForWeth: true,
+  });
+  assert.deepEqual(result.shortfalls, []);
+});
+
 test('deriveInitialSqrtPrice is monotonic in the price ratio', async () => {
   const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
   const low = deriveInitialSqrtPrice({ price0_18: 100n * 10n ** 18n, price1_18: 1n * 10n ** 18n });
@@ -275,4 +322,61 @@ test('resolvePoolConfig supports poolClass 0 with both reference adapters', asyn
   assert.equal(config.config.poolClass, 0);
   assert.equal(config.config.referenceAdapter0, config.token0 === WETH ? '0x00000000000000000000000000000000000000d1' : '0x00000000000000000000000000000000000000d2');
   assert.equal(config.config.referenceAdapter1, config.token1 === WETH ? '0x00000000000000000000000000000000000000d1' : '0x00000000000000000000000000000000000000d2');
+});
+
+test('PRICE_GUARDED requires references and SESSION_ONLY rejects reference claims', () => {
+  const base = {
+    tokenA: WETH, assetA: WETH_ASSET, tokenB: STOCK, assetB: STOCK_ASSET,
+    amountAMax: 1n, amountBMax: 1n, ...WIRING,
+  };
+  assert.throws(() => resolvePoolConfig({ ...base, poolClass: 0 }), /both pool tokens/);
+  assert.throws(() => resolvePoolConfig({
+    ...base,
+    referenceAdapterA: '0x00000000000000000000000000000000000000d1',
+  }), /SESSION_ONLY/);
+});
+
+test('PRICE_GUARDED resolves both token sides and produces the raw-order seed ratio inputs', async () => {
+  const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
+  const usdg = '0x00000000000000000000000000000000000000aa';
+  const stock = '0x00000000000000000000000000000000000000bb';
+  const resolved = resolvePoolConfig({
+    tokenA: usdg,
+    assetA: WETH_ASSET,
+    tokenB: stock,
+    assetB: STOCK_ASSET,
+    amountAMax: 500n * 10n ** 6n,
+    amountBMax: 500n * 10n ** 18n,
+    poolClass: 0,
+    referenceAdapterA: '0x00000000000000000000000000000000000000d1',
+    referenceAdapterB: '0x00000000000000000000000000000000000000d2',
+    ...WIRING,
+  });
+  assert.equal(resolved.config.referenceAdapter0, '0x00000000000000000000000000000000000000d1');
+  assert.equal(resolved.config.referenceAdapter1, '0x00000000000000000000000000000000000000d2');
+  assert.deepEqual(resolved.amountMax, [500n * 10n ** 6n, 500n * 10n ** 18n]);
+  assert.ok(deriveInitialSqrtPrice({
+    price0_18: 1n * 10n ** 18n,
+    price1_18: 350n * 10n ** 18n,
+    decimals0: 6,
+    decimals1: 18,
+  }) > 0n);
+});
+
+test('USDG pool seeding checks token balance, service fee, and WETH wrapping independently', () => {
+  const usdg = '0x00000000000000000000000000000000000000ee';
+  const result = checkSeedFunding({
+    token0: usdg,
+    tokenA: usdg,
+    tokenB: STOCK,
+    amountMax: [20n, 5n],
+    tokenABalance: 60n,
+    tokenBBalance: 5n,
+    nativeBalance: 10n,
+    feeBalance: 70n,
+    feeToken: usdg,
+    serviceFee: 49n,
+    weth: WETH,
+  });
+  assert.deepEqual(result.shortfalls, []);
 });

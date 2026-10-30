@@ -1,5 +1,57 @@
 # Runbook: Keeper A/B, Nonces, and Watchdog (M09, M12-03/M12-04)
 
+## BELL Mainnet pull quote service (2026-10-30)
+
+Mainnet Worker config uses `BELL_ORACLE_MODE=pull`. `GET /quote?symbol=AAPL`, `NVDA`, or `TSLA`
+checks the current onchain calendar and report high-water marks, fetches a fresh phase-matched Yahoo
+quote, and returns reporter-signed direct and stream samples. Cloudflare fetches Yahoo's chart JSON
+through its Translate relay because direct Yahoo chart hosts time out from the Worker network. The
+same parser enforces ticker, USD currency, observation age, and market phase before signing. It never
+submits a transaction. Responses are `no-store` and CORS-readable by the static app; repeated requests
+reuse the same still-fresh bundle until chain state consumes that observation. The quote route needs
+`BELL_RPC_URL` and `YAHOO_REPORTER_PRIVATE_KEY` Wrangler secrets. The pool directory uses
+`RH_MAINNET_RPC_SECONDARY` (and archive RPC as its fallback) for event logs.
+
+`GET /pools` serves the public Mainnet directory and live hook policy for the app. It uses the Mainnet
+secondary RPC for bounded parallel `eth_getLogs` queries, then verifies each discovered hook's config,
+token metadata, and policy against chain reads. If the directory RPC is unavailable, it returns an error
+instead of reporting a fabricated empty directory. The UI can also read factory logs directly through
+the connected wallet's provider. At the latest verification, the endpoint succeeds and returns no pools.
+
+Pull mode disables `/tick`, `/ensure-alarm`, and existing DO alarms. It needs no funded transaction
+relayer. The reporter key is still required because Yahoo itself does not sign these quotes; BELL's
+configured reporter attests to them. Testnet push mode remains separate and continues to use the
+existing alarm path.
+
+The caller submits updates through the pull-enabled SessionRegistry/Hook. A swap may carry the complete
+stock-leg set for its pool. `prepareOracleUpdates` stores a first recovery observation without a swap;
+send another fresh observation at least 60 seconds later to release recovery. Each observation must
+still be younger than 120 seconds. Optional close-anchor capture is caller-funded in the last five
+minutes before the scheduled close. If no call captures it in that window, closed-session swaps remain
+blocked. This contract code is local only until the new immutable stack and pools are deployed.
+
+The local client entry point is `pnpm mainnet:prepare-oracles -- --stock=AAPL --counterasset=USDG
+--quote-url=https://<quote-service>`. Without `--hook` it primes the new SessionRegistry before pool
+creation; with `--hook=<pool-hook>` it commits an existing pool's recovery checkpoint. Stock/stock
+pairs fetch both stock symbols. Simulation is the default, and a write requires both
+`--broadcast --i-authorize-spend`; simulation alone persists nothing. Repeat stale-pool preparation
+with a new quote and advanced observation at least 60 seconds later. Optional
+`--close-boundary-hash` and `--counter-close-boundary-hash` accept caller-selected canonical CLOSED
+leaf hashes only during the five-minute capture window. `BELL_QUOTE_SERVICE_URL` is the quote URL
+fallback for both the prepare and swap commands. The Worker receives no wallet key.
+
+Config commands:
+
+```bash
+pnpm mainnet:keeper-config        # preview evidence-derived Mainnet vars
+pnpm mainnet:keeper-config:write  # local wrangler.jsonc edit only
+```
+
+These commands never deploy Worker code or write chain state. Do not set a transaction key for Mainnet
+pull mode.
+
+---
+
 ## Liveness
 - Keeper B: one active alarm per DO; a per-minute cron calls lightweight ensureAlarm, while heavy work runs in the DO (M09-05).
 - The next alarm is persisted BEFORE I/O; the constructor does not delay an earlier alarm.

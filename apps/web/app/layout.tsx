@@ -20,7 +20,7 @@ const pixel = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bell.exchange'),
-  title: { default: 'BELL — Market-aware liquidity for tokenized stocks', template: '%s · BELL' },
+  title: { default: 'BELL: Market-aware liquidity for tokenized stocks', template: '%s · BELL' },
   description:
     'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
   icons: {
@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     apple: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
   },
   openGraph: {
-    title: 'BELL — Market-aware liquidity for tokenized stocks',
+    title: 'BELL: Market-aware liquidity for tokenized stocks',
     description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BELL — Market-aware liquidity for tokenized stocks',
+    title: 'BELL: Market-aware liquidity for tokenized stocks',
     description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
     images: ['/assets/hero-bell.jpg'],
   },

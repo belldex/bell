@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchYahooChartQuote, parseYahooChartQuote } from '../src/yahoo-quote.mjs';
+import { fetchYahooChartQuote, parseYahooChartQuote, YAHOO_REQUEST_TIMEOUT_MS } from '../src/yahoo-quote.mjs';
 
 function chartFixture(overrides = {}) {
   return {
@@ -62,6 +62,7 @@ test('maps premarket and postmarket intervals without calling them regular sessi
 });
 
 test('fetches the public Yahoo chart endpoint without an API key and parses its real response', async () => {
+  assert.equal(YAHOO_REQUEST_TIMEOUT_MS, 10_000);
   let requestedUrl;
   const response = new Response(JSON.stringify(chartFixture()), { status: 200 });
   const quote = await fetchYahooChartQuote('AAPL', {
@@ -73,6 +74,61 @@ test('fetches the public Yahoo chart endpoint without an API key and parses its 
   assert.equal(requestedUrl.searchParams.get('range'), '1d');
   assert.equal(quote.priceRaw18, '343140000000000000000');
   assert.equal(quote.sourceSigned, false);
+});
+
+test('falls back to Yahoo query2 when query1 transport fails', async () => {
+  const hosts = [];
+  const quote = await fetchYahooChartQuote('AAPL', {
+    fetchImpl: async (url) => {
+      hosts.push(new URL(url).hostname);
+      if (hosts.length === 1) throw new Error('network unavailable');
+      return new Response(JSON.stringify(chartFixture()), { status: 200 });
+    },
+    nowSeconds: 2600,
+  });
+  assert.deepEqual(hosts, ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']);
+  assert.equal(quote.priceRaw18, '343140000000000000000');
+});
+
+test('uses Yahoo through the Cloudflare reachable Translate relay and validates returned quote data', async () => {
+  let requestedUrl;
+  const quote = await fetchYahooChartQuote('AAPL', {
+    preferProxy: true,
+    fetchImpl: async (url) => { requestedUrl = new URL(url); return new Response(JSON.stringify(chartFixture())); },
+    nowSeconds: 2600,
+  });
+  assert.equal(requestedUrl.hostname, 'query1-finance-yahoo-com.translate.goog');
+  assert.equal(requestedUrl.searchParams.get('_x_tr_tl'), 'en');
+  assert.equal(quote.priceRaw18, '343140000000000000000');
+});
+
+test('falls back to Yahoo Reader relay only when Translate relay is unavailable', async () => {
+  const hosts = [];
+  const envelope = { data: {
+    finalUrl: 'https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1m&includePrePost=true',
+    httpStatus: 200, content: JSON.stringify(chartFixture()),
+  } };
+  const quote = await fetchYahooChartQuote('AAPL', {
+    preferProxy: true,
+    fetchImpl: async (url) => {
+      hosts.push(new URL(url).hostname);
+      if (hosts.length === 1) return new Response('', { status: 429 });
+      return new Response(JSON.stringify(envelope));
+    },
+    nowSeconds: 2600,
+  });
+  assert.deepEqual(hosts, ['query1-finance-yahoo-com.translate.goog', 'r.jina.ai']);
+  assert.equal(quote.priceRaw18, '343140000000000000000');
+});
+
+test('rejects a mismatched Yahoo Reader relay target', async () => {
+  await assert.rejects(() => fetchYahooChartQuote('AAPL', {
+    preferProxy: true,
+    fetchImpl: async (url) => new URL(url).hostname.endsWith('.translate.goog')
+      ? new Response('', { status: 429 })
+      : new Response(JSON.stringify({ data: { finalUrl: 'https://evil.example/v8/finance/chart/AAPL', httpStatus: 200, content: JSON.stringify(chartFixture()) } })),
+    nowSeconds: 2600,
+  }), /untrusted/);
 });
 
 test('surfaces provider HTTP errors instead of fabricating a quote', async () => {

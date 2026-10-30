@@ -117,7 +117,7 @@ contract BellRouter is IUnlockCallback {
                 amountSpecified: specified,
                 sqrtPriceLimitX96: r.sqrtPriceLimitX96
             }),
-            abi.encode(payer, requestHash)
+            abi.encode(payer, requestHash, r.oracleUpdates)
         );
 
         (uint128 amountIn, uint128 amountOut) = _processDelta(delta, r.zeroForOne, r.exactInput, r.limitAmount);

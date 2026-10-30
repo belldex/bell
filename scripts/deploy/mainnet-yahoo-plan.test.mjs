@@ -28,6 +28,17 @@ test('plan-only predicts the verifier CREATE address from deployer and current n
   assert.match(plan.wires[0].sourceConfigHash, /^0x[0-9a-f]{64}$/);
 });
 
+test('multi-stock adapter CREATE addresses consume one globally sequential nonce sequence', async () => {
+  const { getContractAddress } = await import('viem');
+  const deployer = '0x00000000000000000000000000000000000000aa';
+  const verifierNonce = 20n;
+  const adapterAddresses = Array.from({ length: 9 }, (_, index) =>
+    getContractAddress({ from: deployer, nonce: verifierNonce + 1n + BigInt(index) }));
+  assert.equal(new Set(adapterAddresses.map((a) => a.toLowerCase())).size, 9);
+  assert.notEqual(adapterAddresses[0], adapterAddresses[3]);
+  assert.notEqual(adapterAddresses[3], adapterAddresses[6]);
+});
+
 test('wire hashes are built against the verifier address that will actually be deployed', () => {
   const account = privateKeyToAccount(PRIVATE_KEY);
   const predicted = getContractAddress({ from: account.address, nonce: 3n });

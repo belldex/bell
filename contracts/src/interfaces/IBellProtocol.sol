@@ -14,6 +14,7 @@ import {
     PolicyView,
     CreateRequest,
     CreateResult,
+    OraclePullUpdate,
     SwapRequest
 } from "../types/ProtocolTypes.sol";
 
@@ -29,7 +30,14 @@ interface IAssetRegistry {
 }
 
 interface ISessionRegistry {
+    function applyPoolOracleUpdates(bytes32 asset0, bytes32 asset1, bytes calldata payload, bool swapEnvelope) external;
     function submitReports(bytes32 assetId, bytes[] calldata reports) external;
+    function refreshStockWithReports(
+        bytes32 assetId,
+        SourceSample calldata directSample,
+        bytes calldata directSignature,
+        bytes[] calldata reports
+    ) external returns (uint256 reasons);
     function refreshHealth(bytes32 assetId) external returns (uint256 reasons);
     function health(bytes32 assetId) external view returns (HealthView memory);
     function captureClose(bytes32 assetId, bytes32 boundaryHash) external returns (Anchor memory);
@@ -63,6 +71,7 @@ interface IBellHook {
     function poolId() external view returns (bytes32);
     function apiVersion() external view returns (uint32);
     function refreshState() external returns (PolicyView memory);
+    function prepareOracleUpdates(OraclePullUpdate[] calldata updates) external returns (PolicyView memory);
     function getPolicy() external view returns (PolicyView memory);
     function state() external view returns (PoolState memory);
     function buckets() external view returns (Buckets memory);

@@ -1,0 +1,23 @@
+{
+  "chainId": 4663,
+  "assetId": "0xd27cb247e5dc8bd78412c70f8e11ae5a9de354690f57eb921f5e7fe9ac712ea4",
+  "calendarRegistry": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+  "rootOperationId": "0x5b82628fdb925f317e4ff8b88ed1639efa779052628da1be33aeb11eb480ac8a",
+  "root": "0x9810629319aa9712e5e38494ae6f4fa44bc3bdf071f421bf679d2512d9497520",
+  "datasetHash": "0x145dc215772f94c9e06bf9de9b3a48137c9e914ad1147e379f467057e1696e65",
+  "leafCount": 127,
+  "year": 2026,
+  "coverageStart": 1793359857,
+  "coverageEnd": 1798543857,
+  "queuedAt": 1793359557,
+  "queuedTxHash": "0xb8cad43faedad8f43ce2c96aeff436da66e99f08e1ba246e92662e1a7a366c74",
+  "queuedBlock": 101690616,
+  "eta": 1793359557,
+  "expiry": 1793964357,
+  "stage": "INTERVAL_ACTIVE",
+  "assetLabel": "TSLA",
+  "updatedAt": "2026-10-30T11:33:40.394Z",
+  "rootActivatedAt": 1793359561,
+  "intervalActivatedAt": 1793360019,
+  "activePhase": 1
+}

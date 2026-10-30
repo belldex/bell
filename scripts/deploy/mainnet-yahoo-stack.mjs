@@ -14,7 +14,7 @@
  *   node scripts/deploy/mainnet-yahoo-stack.mjs --broadcast
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { createPublicClient, createWalletClient, http, keccak256 } from 'viem';
+import { createPublicClient, createWalletClient, encodeDeployData, formatEther, getContractAddress, http, keccak256 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import YahooVerifierArtifact from '../../contracts/out/YahooSourceVerifier.sol/YahooSourceVerifier.json' with { type: 'json' };
 import YahooAdapterArtifact from '../../contracts/out/YahooAttestedSourceAdapter.sol/YahooAttestedSourceAdapter.json' with { type: 'json' };
@@ -33,6 +33,12 @@ function loadEnv(text) {
 }
 
 const env = loadEnv(readFileSync('.env', 'utf8'));
+for (const name of ['BELL_MAINNET_SYMBOLS', 'BELL_MAINNET_SYMBOL']) {
+  if (process.env[name] !== undefined) env[name] = process.env[name];
+}
+for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI']) {
+  if (process.env[name] !== undefined) env[name] = process.env[name];
+}
 const rpcUrl = env.RH_MAINNET_RPC_PRIMARY;
 const pk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
 // Multi-asset: every documented candidate is deployed, not a single BELL_MAINNET_SYMBOL choice.
@@ -42,6 +48,8 @@ if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 if (!pk) throw new Error('RH_MAINNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required');
 
 const broadcast = process.argv.includes('--broadcast');
+const authorizeSpend = process.argv.includes('--i-authorize-spend');
+if (broadcast && !authorizeSpend) throw new Error('Yahoo deployment requires --i-authorize-spend in addition to --broadcast');
 const nonceOffsetArg = process.argv.find((arg) => arg.startsWith('--nonce-offset='))?.slice('--nonce-offset='.length);
 const nonceOffset = nonceOffsetArg === undefined ? 0n : BigInt(nonceOffsetArg);
 if (nonceOffset < 0n) throw new Error('--nonce-offset must be a non-negative integer');
@@ -106,6 +114,52 @@ const plans = selectedAssets.map((asset) => ({
     reporter,
   }),
 }));
+if (broadcast && nonceOffset !== 0n) throw new Error('--nonce-offset is plan-only; broadcast uses live nonce');
+const adapterAddressByKey = new Map();
+let nextAdapterNonce = deployerNonce + 1n;
+for (const { asset, plan } of plans) {
+  for (const { key } of plan.wires) {
+    adapterAddressByKey.set(`${asset.symbol}:${key}`, getContractAddress({ from: account.address, nonce: nextAdapterNonce }));
+    nextAdapterNonce += 1n;
+  }
+}
+
+const deploySpecs = [
+  { label: 'YahooSourceVerifier', abi: YahooVerifierArtifact.abi, bytecode: YahooVerifierArtifact.bytecode.object, args: [reporter] },
+  ...plans.flatMap(({ asset, plan }) => plan.wires.map(({ scope, wire, sourceConfigHash }) => ({
+    label: `${asset.symbol}:${scope}`,
+    abi: YahooAdapterArtifact.abi,
+    bytecode: YahooAdapterArtifact.bytecode.object,
+    args: [plan.verifierAddress, sourceConfigHash, scope === 0 ? `0x${'00'.repeat(32)}` : wire.feedId, scope, scope === 0, scope === 0 ? '0x0000000000000000000000000000000000000000' : asset.token],
+  }))),
+];
+const gasPrice = await publicClient.getGasPrice();
+const deploymentEstimates = [];
+for (const spec of deploySpecs) {
+  if (spec.label !== 'YahooSourceVerifier') {
+    deploymentEstimates.push({ label: spec.label, gas: null, cost: null, estimateStatus: 'requires verifier deployed at predicted address' });
+    continue;
+  }
+      const data = encodeDeployData({ abi: spec.abi, bytecode: spec.bytecode, args: spec.args });
+  const gas = spec.label === 'YahooSourceVerifier' ? await publicClient.estimateGas({ account: account.address, data }) : null;
+  if (gas === null) {
+    deploymentEstimates.push({ label: spec.label, gas: null, cost: null, estimateStatus: 'verifier runtime required; estimate after verifier broadcast' });
+    continue;
+  }
+  deploymentEstimates.push({ label: spec.label, gas, cost: gas * gasPrice, estimateStatus: 'estimated' });
+}
+const knownEstimatedGasWei = deploymentEstimates.reduce((sum, item) => sum + (item.cost ?? 0n), 0n);
+const deployerBalance = await publicClient.getBalance({ address: account.address });
+const retainedGasReserve = BigInt(env.BELL_MAINNET_GAS_RESERVE_WEI || 5_000_000_000_000_000n);
+if (broadcast && deployerBalance < retainedGasReserve) throw new Error(`deployer balance ${formatEther(deployerBalance)} ETH is below retained reserve ${formatEther(retainedGasReserve)} ETH before Yahoo deployment`);
+const predictedAddresses = plans.flatMap(({ plan }) => [
+  plan.verifierAddress,
+  ...plan.wires.map(({ key }) => adapterAddressByKey.get(`${plan.symbol}:${key}`)).filter(Boolean),
+]);
+for (const address of new Set(predictedAddresses)) {
+  const code = await publicClient.getBytecode({ address });
+  if (code && code !== '0x') throw new Error(`predicted Yahoo CREATE address ${address} already has code; reconcile live nonce and deployment evidence before continuing`);
+}
 
 if (!broadcast) {
   console.log(JSON.stringify({
@@ -120,6 +174,11 @@ if (!broadcast) {
     verifierAddress: plans[0].plan.verifierAddress,
     verifierAddressSource: plans[0].plan.verifierAddressSource,
     verifierCodeHash,
+    deploymentGas: deploymentEstimates.map(({ label, gas, cost, estimateStatus }) => ({ label, gas: gas?.toString() ?? null, costWei: cost?.toString() ?? null, estimateStatus })),
+    knownEstimatedGasWei: knownEstimatedGasWei.toString(),
+    note: 'Adapter gas is estimated after verifier deployment because constructors require verifier code at the predicted address.',
+    deployerBalanceWei: deployerBalance.toString(),
+    retainedGasReserveWei: retainedGasReserve.toString(),
     assets: plans.map(({ asset, plan }) => ({
       symbol: asset.symbol,
       token: asset.token,
@@ -132,8 +191,16 @@ if (!broadcast) {
       })),
     })),
   }, null, 2));
-  console.log('Re-run with --broadcast to deploy one verifier at the predicted address, then every asset adapter set.');
+  console.log('Plan only. Re-run with --broadcast --i-authorize-spend to deploy the verifier and all selected asset adapter sets.');
   process.exit(0);
+}
+
+const verifierDeployGas = deploymentEstimates.find((item) => item.label === 'YahooSourceVerifier')?.gas;
+if (verifierDeployGas !== undefined && verifierDeployGas !== null) {
+  const verifierDeploymentCost = verifierDeployGas * gasPrice;
+  if (deployerBalance < verifierDeploymentCost + retainedGasReserve) {
+    throw new Error(`deployer cannot fund Yahoo verifier while preserving reserve: balance=${formatEther(deployerBalance)} verifier=${formatEther(verifierDeploymentCost)} reserve=${formatEther(retainedGasReserve)} ETH`);
+  }
 }
 
 // 1. One verifier for all assets, pinned to the reporter that will sign quotes. It must land at
@@ -156,6 +223,23 @@ if (verifierOnchainCodeHash !== verifierCodeHash) {
 }
 console.log(`  verifier: ${verifier} (tx ${verifierHash})`);
 
+const adapterGasPrice = await publicClient.getGasPrice();
+let remainingAdapterEstimate = 0n;
+for (const { asset, plan } of plans) {
+  for (const { scope, wire, sourceConfigHash } of plan.wires) {
+    const adapterData = encodeDeployData({
+      abi: YahooAdapterArtifact.abi,
+      bytecode: YahooAdapterArtifact.bytecode.object,
+      args: [verifier, sourceConfigHash, scope === 0 ? `0x${'00'.repeat(32)}` : wire.feedId, scope, scope === 0, scope === 0 ? '0x0000000000000000000000000000000000000000' : asset.token],
+    });
+    const gas = await publicClient.estimateGas({ account: account.address, data: adapterData });
+    remainingAdapterEstimate += gas * adapterGasPrice;
+  }
+}
+const postVerifierBalance = await publicClient.getBalance({ address: account.address });
+if (postVerifierBalance < remainingAdapterEstimate + retainedGasReserve) {
+  throw new Error(`post-verifier balance ${formatEther(postVerifierBalance)} ETH cannot fund remaining adapters ${formatEther(remainingAdapterEstimate)} + reserve ${formatEther(retainedGasReserve)} ETH; halt before adapter broadcasts`);
+}
 // 2. Adapters per asset, each pinned to its own token and wire hash.
 const deployedBySymbol = {};
 for (const { asset, plan } of plans) {
@@ -176,7 +260,10 @@ for (const { asset, plan } of plans) {
       ],
     });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== 'success') throw new Error(`${asset.symbol} ${label} adapter deploy reverted`);
+    const expectedAdapter = adapterAddressByKey.get(`${asset.symbol}:${key}`);
+    if (receipt.status !== 'success' || receipt.contractAddress?.toLowerCase() !== expectedAdapter?.toLowerCase()) {
+      throw new Error(`${asset.symbol} ${label}: adapter deployed at ${receipt.contractAddress}, expected ${expectedAdapter}; refuse further deployments`);
+    }
 
     const abi = YahooAdapterArtifact.abi;
     const [onchainWire, onchainFeed, onchainVerifier, onchainToken] = await Promise.all([
@@ -189,6 +276,22 @@ for (const { asset, plan } of plans) {
     if (onchainFeed !== wire.feedId) throw new Error(`${asset.symbol} ${label}: feedId mismatch`);
     if (onchainVerifier.toLowerCase() !== verifier.toLowerCase()) throw new Error(`${asset.symbol} ${label}: verifier mismatch`);
     if (!direct && onchainToken.toLowerCase() !== asset.token.toLowerCase()) throw new Error(`${asset.symbol} ${label}: stockToken mismatch`);
+
+    const adapterCodeHash = keccak256(await publicClient.getBytecode({ address: receipt.contractAddress }));
+    const activeEvidence = existsSync(EVIDENCE_PATH) ? JSON.parse(readFileSync(EVIDENCE_PATH, 'utf8')) : {};
+    const activeAssets = { ...(activeEvidence.assets ?? {}), [asset.symbol]: {
+      symbol: asset.symbol,
+      stockToken: asset.token,
+      capabilityMask: 0b1110,
+      ...(activeEvidence.assets?.[asset.symbol] ?? {}),
+      [key]: wire,
+      [`${key}Hash`]: sourceConfigHash,
+      [`${label}Adapter`]: receipt.contractAddress,
+      [`${label}CodeHash`]: adapterCodeHash,
+      transactionHash: hash,
+      blockNumber: Number(receipt.blockNumber),
+    } };
+    writeFileSync(EVIDENCE_PATH, `${JSON.stringify({ ...activeEvidence, chainId, verifier, verifierCodeHash, reporter, assets: activeAssets, deployedAt: new Date().toISOString(), rightsVerified: false }, null, 2)}\n`);
 
     deployed[key] = wire;
     deployed[`${key}Hash`] = sourceConfigHash;

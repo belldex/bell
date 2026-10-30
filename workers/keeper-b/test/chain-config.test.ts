@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { privateKeyToAccount } from 'viem/accounts';
 
 /**
  * The keeper used to hardcode testnet 46630 and RH_TESTNET_RPC_PRIMARY. That made a mainnet
@@ -8,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
  * These tests exercise the configuration surface without touching the network. viem is mocked so
  * the client reports whatever chain id the test chooses.
  */
-const rpcUrl = vi.hoisted(() => ({ value: '' }));
+const rpcUrl = vi.hoisted(() => ({ value: '', walletAccounts: [] as string[] }));
 
 vi.mock('viem', async () => {
   const actual = await vi.importActual('viem');
@@ -23,7 +24,10 @@ vi.mock('viem', async () => {
         },
       };
     },
-    createWalletClient: () => ({ writeContract: async () => '0x' }),
+    createWalletClient: ({ account }) => {
+      rpcUrl.walletAccounts.push(account.address);
+      return { writeContract: async () => '0x' };
+    },
     http: (url) => ({ url }),
   };
 });
@@ -66,7 +70,34 @@ describe('keeper chain and RPC configuration', () => {
       ...BASE_ENV,
       BELL_RPC_URL: 'https://rpc.test',
       BELL_EXPECTED_CHAIN_ID: '4663',
+      BELL_TRANSACTION_PRIVATE_KEY: '0x8b3a350cf5c34c9194ca3a545d68b7bb316989793cd56d75a5f6c7a0b9f6a2f4',
     });
+  });
+
+  it('uses a separately configured transaction signer while retaining the Yahoo reporter signer', async () => {
+    setChain(4663);
+    rpcUrl.walletAccounts.length = 0;
+    const transactionKey = '0x8b3a350cf5c34c9194ca3a545d68b7bb316989793cd56d75a5f6c7a0b9f6a2f4';
+    const result = await runTick({
+      ...BASE_ENV,
+      BELL_RPC_URL: 'https://rpc.mainnet',
+      BELL_EXPECTED_CHAIN_ID: '4663',
+      BELL_TRANSACTION_PRIVATE_KEY: transactionKey,
+    });
+    expect(result.status).toBe('failed');
+    expect(rpcUrl.walletAccounts).toHaveLength(1);
+    expect(rpcUrl.walletAccounts[0]).toBe(privateKeyToAccount(transactionKey).address);
+  });
+
+  it('requires a dedicated transaction signer on mainnet', async () => {
+    setChain(4663);
+    const result = await runTick({
+      ...BASE_ENV,
+      BELL_RPC_URL: 'https://rpc.mainnet',
+      BELL_EXPECTED_CHAIN_ID: '4663',
+    });
+    expect(result.status).toBe('skipped');
+    expect(result.reason).toMatch(/BELL_TRANSACTION_PRIVATE_KEY/);
   });
 
   it('still rejects a chain that does not match the configured expectation', async () => {

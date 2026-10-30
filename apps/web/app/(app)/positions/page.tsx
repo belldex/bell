@@ -51,7 +51,7 @@ function PositionCard({ p }: { p: PositionPreview }) {
         <p className="mt-4 flex items-start gap-2 rounded-none border border-ion/25 bg-ion/[0.06] px-4 py-3 text-sm text-ink/90"><LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" />{p.note}</p>
       )}
 
-      <p className="mt-4 text-xs text-dim">Sample position only — no position NFT has been read from this wallet. {pool.poolClass === 'SESSION_ONLY' ? 'Shown in raw token units only — there is no USD NAV for this class.' : 'Valuation uses the pool reference and is labelled frozen when the stock is closed.'}</p>
+      <p className="mt-4 text-xs text-dim">Sample position only. No position NFT has been read from this wallet. {pool.poolClass === 'SESSION_ONLY' ? 'Shown in raw token units only, with no USD NAV for this class.' : 'Valuation uses the pool reference and is labelled frozen when the stock is closed.'}</p>
 
       <div className="mt-5 flex flex-wrap gap-2.5">
         <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')} aria-expanded={mode === 'add'} title="Show why add is unavailable"><Plus className="h-4 w-4" aria-hidden="true" /> Add info</Button>
@@ -124,7 +124,7 @@ export default function PositionsPage() {
               <li>Find your position’s <span className="num text-ink">tokenId</span> (the NFT in your wallet).</li>
               <li>Call <span className="num text-ink">modifyLiquidities(unlockData, deadline)</span> with <span className="num text-ink">DECREASE_LIQUIDITY</span> for your full liquidity, followed by <span className="num text-ink">TAKE_PAIR</span> to your address.</li>
               <li>BELL’s hook has no remove callbacks, so this path needs no oracle, calendar or budget.</li>
-              <li>Token issuers, the chain or core can still restrict transfers — BELL cannot override those.</li>
+              <li>Token issuers, the chain or core can still restrict transfers. BELL cannot override those restrictions.</li>
             </ol>
             <p className="text-dim">Contract addresses will be listed in the signed deployment manifest once deployed.</p>
           </div>

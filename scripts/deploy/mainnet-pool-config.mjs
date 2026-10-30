@@ -11,6 +11,9 @@ import { encodeAbiParameters, keccak256, stringToHex } from 'viem';
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 const BYTES32 = /^0x[0-9a-fA-F]{64}$/;
+const Q96 = 1n << 96n;
+const MIN_TICK = -887272;
+const MAX_TICK = 887272;
 function requireAddress(value, name) {
   if (typeof value !== 'string' || !ADDRESS.test(value) || value.toLowerCase() === ZERO_ADDRESS) {
     throw new TypeError(`${name} must be a nonzero EVM address`);
@@ -172,6 +175,42 @@ export function deriveInitialSqrtPrice({ price0_18, price1_18, decimals0 = 18, d
   return lo;
 }
 
+/** Derive raw token1-per-token0 from the requested seed ratio for SESSION_ONLY pools. */
+export function deriveSqrtPriceFromAmounts({ amount0, amount1 }) {
+  requirePositive(amount0, 'amount0');
+  requirePositive(amount1, 'amount1');
+  const scaled = amount1 << 192n;
+  let lo = 0n;
+  let hi = 1n << 160n;
+  while (lo < hi) {
+    const mid = (lo + hi + 1n) / 2n;
+    if (mid * mid <= scaled / amount0) lo = mid; else hi = mid - 1n;
+  }
+  return lo;
+}
+
+/**
+ * Choose a tick range centered on the actual initial sqrt price. The calculation only selects a
+ * wide LP range; the contract still checks the exact sqrt price against the resulting tick bounds.
+ */
+export function deriveTickBounds({ sqrtPriceX96, tickSpacing = 60, halfWidth = 6000 }) {
+  if (typeof sqrtPriceX96 !== 'bigint' || sqrtPriceX96 <= 0n || sqrtPriceX96 >= (1n << 160n)) {
+    throw new RangeError('sqrtPriceX96 must be a positive uint160');
+  }
+  if (!Number.isSafeInteger(tickSpacing) || tickSpacing <= 0) throw new RangeError('tickSpacing must be a positive integer');
+  if (!Number.isSafeInteger(halfWidth) || halfWidth < tickSpacing) throw new RangeError('halfWidth must be at least one tick spacing');
+
+  const sqrtRatio = Number(sqrtPriceX96) / Number(Q96);
+  const approximateTick = Math.floor((2 * Math.log(sqrtRatio)) / Math.log(1.0001));
+  const currentTick = Math.max(MIN_TICK, Math.min(MAX_TICK, approximateTick));
+  const floorToSpacing = (tick) => Math.floor(tick / tickSpacing) * tickSpacing;
+  const ceilToSpacing = (tick) => Math.ceil(tick / tickSpacing) * tickSpacing;
+  const tickLower = Math.max(ceilToSpacing(MIN_TICK), floorToSpacing(currentTick - halfWidth));
+  const tickUpper = Math.min(floorToSpacing(MAX_TICK), ceilToSpacing(currentTick + halfWidth));
+  if (tickLower >= tickUpper) throw new RangeError('tick range is empty at this price and spacing');
+  return { tickLower, tickUpper, currentTick };
+}
+
 /**
  * Reproduce `BellPoolFactory._profileHash`.
  *
@@ -260,7 +299,7 @@ export function checkSeedFunding({
       ? `native ETH ${nativeBalance} < WETH shortfall ${wethShortfall}`
       : `WETH ${wethBalance} < ${requiredWeth}`);
   }
-  if (wrapNativeForWeth && nativeBalance >= nativeToWrap && nativeAfterWrap < nativeGasReserve) {
+  if (wrapNativeForWeth && nativeToWrap > 0n && nativeBalance >= nativeToWrap && nativeAfterWrap < nativeGasReserve) {
     shortfalls.push(`native ETH after wrap ${nativeAfterWrap} < gas reserve ${nativeGasReserve}`);
   }
   if (generic) {

@@ -1,0 +1,23 @@
+{
+  "chainId": 4663,
+  "assetId": "0x8e97a37fa9d2684dedac1d226186e1946afbe60a68e8ccf362d8e288c845ff4c",
+  "calendarRegistry": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+  "rootOperationId": "0x3a05a3d58174d5bb0b320fbf5b08df8abc8fc42dbfe8747ae62e63629f5e485e",
+  "root": "0xde6b0060ffd7b550f52e0a82be05e3c611b040a947ea36adee43032dbdfd137d",
+  "datasetHash": "0xa57329b84be760d6acac6f1ed7093808036ec6b5da6578cd7793bc54714ae7a2",
+  "leafCount": 127,
+  "year": 2026,
+  "coverageStart": 1793359841,
+  "coverageEnd": 1798543841,
+  "queuedAt": 1793359541,
+  "queuedTxHash": "0x47dffb9036be4aac3a60a168af35679d964065e5edae9d5fbcfc98322e40370f",
+  "queuedBlock": 101690458,
+  "eta": 1793359541,
+  "expiry": 1793964341,
+  "stage": "INTERVAL_ACTIVE",
+  "assetLabel": "AAPL",
+  "updatedAt": "2026-10-30T11:33:31.320Z",
+  "rootActivatedAt": 1793359546,
+  "intervalActivatedAt": 1793360010,
+  "activePhase": 1
+}

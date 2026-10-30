@@ -40,7 +40,7 @@ contract GuardStubAggregator is AggregatorV3Interface {
     constructor(int256 a, uint8 d) {
         answer = a;
         dec = d;
-        updatedAt = 1;
+        updatedAt = block.timestamp;
     }
 
     function setBroken(bool value) external { broken = value; }
@@ -114,7 +114,7 @@ contract PriceGuardedCreationTest {
     address internal constant SERVICE = address(0xFEE);
 
     function setUp() external {
-        vm.warp(10000);
+        vm.warp(100_000);
         manager = new PoolManager(address(this));
         permit2 = new GuardPermit2();
         positions = new PositionManager(manager, IAllowanceTransfer(address(permit2)), 100000, IPositionDescriptor(address(0)), IWETH9(address(0)));
@@ -142,8 +142,8 @@ contract PriceGuardedCreationTest {
         require(address(factory) == future, "factory prediction");
         _admit(c.asset0, address(token0), true);
         _admit(c.asset1, address(token1), false);
-        calendar.setLeaf(CalendarLeaf(c.asset0, 2026, 0, 9000, 20000, 2, keccak256("fixture")));
-        request = CreateRequest(c, bytes32(0), 0, 10100, RECIPIENT, _sqrtForPrice1e18(), -6000, 6000, 1000000,
+        calendar.setLeaf(CalendarLeaf(c.asset0, 2026, 0, 90_000, 200_000, 2, keccak256("fixture")));
+        request = CreateRequest(c, bytes32(0), 0, 100_100, RECIPIENT, _sqrtForPrice1e18(), -6000, 6000, 1000000,
             [uint128(10_000_000), uint128(10_000_000)], 49e6);
         request.salt = _mine(request);
         token0.mint(address(this), 10_000_000); token1.mint(address(this), 10_000_000); usdg.mint(address(this), 1e9);
@@ -190,6 +190,18 @@ contract PriceGuardedCreationTest {
         PolicyView memory policy = BellHook(r.hook).getPolicy();
         require(policy.referencePrice18[0] == 350_73393114 * 1e10, "stock reference missing");
         require(policy.referencePrice18[1] == 350_73393114 * 1e10, "counter reference missing");
+        require(factory.nonces(address(this)) == 1, "nonce");
+    }
+
+    function testPriceGuardedUnpricedCounterassetUsesReferenceWithoutSessionHealth() external {
+        // A regular priced counterasset (e.g. USDG) gets its independent price from the
+        // PoolConfig Chainlink adapter. It must not need a stock-session health report.
+        bytes32 counterAssetId = request.config.asset0 == bytes32(uint256(1))
+            ? request.config.asset1
+            : request.config.asset0;
+        sessions.setHealth(counterAssetId, HealthView(false, 1, 0, 0, 0, 0));
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "guarded priced-counter pool not live");
         require(factory.nonces(address(this)) == 1, "nonce");
     }
 
@@ -352,6 +364,6 @@ contract PriceGuardedCreationTest {
     function _admit(bytes32 id, address token, bool stock) private {
         assets.admit(token, id);
         assets.setDescriptor(AssetDescriptor(id, token, stock, 6, stock ? 0x1e : 0, address(0), address(0), address(0), address(0), address(0), token.codehash, bytes32(uint256(1)), bytes32(uint256(1))));
-        sessions.setHealth(id, HealthView(true, 0, 9000, 11000, 9900, 9950));
+        sessions.setHealth(id, HealthView(true, 0, 90_000, 200_000, 99_900, 99_950));
     }
 }

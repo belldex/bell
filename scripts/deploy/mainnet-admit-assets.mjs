@@ -51,6 +51,9 @@ function loadEnv(text) {
 }
 
 const env = loadEnv(readFileSync('.env', 'utf8'));
+for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI', 'BELL_CAPABILITY_MASK']) {
+  if (process.env[name] !== undefined) env[name] = process.env[name];
+}
 const rpcUrl = env.RH_MAINNET_RPC_PRIMARY;
 const pk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
 if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
@@ -71,6 +74,18 @@ const account = privateKeyToAccount(pk.startsWith('0x') ? pk : `0x${pk}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
 const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
 
+const authorization = process.argv.includes('--i-authorize-spend');
+const currentCommand = process.argv[2] ?? 'status';
+const writesRequested = currentCommand === 'queue' || currentCommand === 'activate';
+if (writesRequested && !authorization) {
+  throw new Error(`${currentCommand} sends transactions; append --i-authorize-spend after reviewing the listed assets/operations`);
+}
+if (writesRequested) {
+  const balance = await publicClient.getBalance({ address: account.address });
+  const reserve = BigInt(env.BELL_MAINNET_GAS_RESERVE_WEI || 5_000_000_000_000_000n);
+  if (balance < reserve) throw new Error(`deployer balance ${balance} is below retained gas reserve ${reserve}`);
+}
+
 const chainId = await publicClient.getChainId();
 if (chainId !== MAINNET_CHAIN_ID) throw new Error(`Wrong chain ${chainId}; expected ${MAINNET_CHAIN_ID}`);
 
@@ -83,6 +98,7 @@ function readJson(path, fallback = null) {
 
 async function simulateAndSend(request, label) {
   await publicClient.simulateContract({ ...request, account });
+  if (!authorization) throw new Error(`${label} simulated only; pass --i-authorize-spend to broadcast`);
   const hash = await walletClient.writeContract(request);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== 'success') throw new Error(`${label} reverted: ${hash}`);
@@ -164,10 +180,19 @@ async function queueAsset({ label, token, isStock, capabilityMask, adapters, sou
   };
 }
 
+async function hasPendingOperation(entry) {
+  if (!entry?.operationId) return false;
+  const [, , , expiry, status] = await publicClient.readContract({
+    address: registryAddress, abi: REGISTRY_ABI, functionName: 'operation', args: [entry.operationId],
+  });
+  return Number(status) === 1 && now <= Number(expiry);
+}
+
 const command = process.argv[2] ?? 'status';
 
 if (command === 'status') {
-  const state = readJson(STATE_PATH);
+  const saved = readJson(STATE_PATH);
+  const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerCase() ? saved : null;
   const wethId = await publicClient.readContract({
     address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [wethAddress],
   });
@@ -211,16 +236,29 @@ if (command === 'status') {
   const configured = JSON.parse(readFileSync('config/assets/candidates.mainnet.json', 'utf8'));
   // Every documented candidate stock is admitted, not a single configured symbol.
   const stocks = configured.assets.map((a) => a.symbol);
-  const state = readJson(STATE_PATH) ?? { chainId, registryAddress };
+const saved = readJson(STATE_PATH);
+const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerCase()
+  ? saved : { chainId, registryAddress, stocks: {} };
+  state.stocks = state.stocks ?? {};
+  const configuredStock = Object.fromEntries(configured.assets.map((asset) => [asset.symbol, asset]));
+  for (const [symbol, saved] of Object.entries(state.stocks)) {
+    if (!configuredStock[symbol] || saved.active || saved.alreadyActive) continue;
+    const descriptorId = await publicClient.readContract({
+      address: registryAddress, abi: REGISTRY_ABI, functionName: 'descriptorIdForToken', args: [saved.token],
+    });
+    if (descriptorId !== ZERO32) {
+      state.stocks[symbol] = { ...saved, descriptorId, alreadyActive: true, recoveredOnchain: true };
+    }
+  }
 
   console.log('=== WETH counterasset ===');
-  const weth = state.weth?.operationId || state.weth?.alreadyActive
+  const weth = state.weth?.alreadyActive || await hasPendingOperation(state.weth)
     ? state.weth
     : await queueAsset({ label: 'WETH', token: wethAddress, isStock: false, capabilityMask: 0, adapters: {} });
 
   state.weth = { ...weth, token: wethAddress };
   console.log('\n=== USDG counterasset ===');
-  const usdg = state.usdg?.operationId || state.usdg?.alreadyActive
+  const usdg = state.usdg?.alreadyActive || await hasPendingOperation(state.usdg)
     ? state.usdg
     : await queueAsset({ label: 'USDG', token: usdgAddress, isStock: false, capabilityMask: 0, adapters: {} });
   state.usdg = { ...usdg, token: usdgAddress };
@@ -229,7 +267,7 @@ if (command === 'status') {
     const perSymbol = adapters.assets[symbol];
     if (!perSymbol) throw new Error(`${symbol}: no adapter evidence in mainnet-4663-stock-adapters.json`);
     console.log(`\n=== Stock asset ${symbol} ===`);
-    const stock = state.stocks?.[symbol]?.operationId
+    const stock = state.stocks?.[symbol]?.alreadyActive || await hasPendingOperation(state.stocks?.[symbol])
       ? state.stocks[symbol]
       : await queueAsset({
         label: symbol,
@@ -237,7 +275,7 @@ if (command === 'status') {
         isStock: true,
         // PRE | REGULAR | POST per the brief's session scope; Yahoo has no overnight feed, so
         // OVERNIGHT capability is deliberately not requested (fail-closed rather than unbacked).
-        capabilityMask: Number(process.env.BELL_CAPABILITY_MASK || perSymbol.capabilityMask || 0b1110),
+        capabilityMask: Number(env.BELL_CAPABILITY_MASK || perSymbol.capabilityMask || 0b1110),
         adapters: {
           tokenPrice: perSymbol.directAdapter,
           regular: perSymbol.regularAdapter,
@@ -262,6 +300,7 @@ if (command === 'status') {
   writeFileSync(QUEUE_PATH, `${JSON.stringify({
     weth: { token: wethAddress, descriptorId: weth.descriptorId, isStock: false },
     usdg: { token: usdgAddress, descriptorId: usdg.descriptorId, isStock: false },
+    counterassets: {},
     stocks: Object.fromEntries(Object.entries(queuedStocks).map(([symbol, s]) => [symbol, {
       symbol,
       token: s.token,
@@ -341,6 +380,7 @@ if (command === 'status') {
   const queue = readJson(QUEUE_PATH);
   queue.weth.descriptorId = state.weth.descriptorId;
   queue.usdg = { ...(queue.usdg ?? {}), ...state.usdg, token: usdgAddress, descriptorId: state.usdg.descriptorId, isStock: false };
+  queue.counterassets = queue.counterassets ?? {};
   for (const [symbol, entry] of Object.entries(state.stocks ?? {})) {
     queue.stocks = { ...(queue.stocks ?? {}), [symbol]: { ...(queue.stocks?.[symbol] ?? {}), descriptorId: entry.descriptorId } };
   }

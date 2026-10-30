@@ -7,18 +7,16 @@ const label = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) 
 
 export function MainnetStatusBanner() {
   return (
-    <section className="border border-line bg-surface/70 px-4 py-4 sm:px-5" aria-label="Mainnet deployment status">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Robinhood Chain · Mainnet</p>
-          <p className="mt-1 text-sm text-ink">Protocol contracts are deployed on chain 4663.</p>
-        </div>
-        <a className="font-mono text-[10px] uppercase tracking-[0.1em] text-ion underline-offset-4 hover:underline" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Open explorer ↗</a>
+    <section className="app-mainnet-status" aria-label="Mainnet deployment status">
+      <div className="app-mainnet-status__headline">
+        <p>Robinhood Chain <span>·</span> Mainnet</p>
+        <strong>Protocol contracts deployed <span>4663</span></strong>
       </div>
-      <p className="mt-3 max-w-3xl text-xs leading-relaxed text-muted">Mainnet asset admission and an active pool are not verified yet. Swap execution and pool creation stay unavailable; preview values below are illustrative only.</p>
-      <details className="group mt-3">
-        <summary className="w-fit cursor-pointer font-mono text-[10px] uppercase tracking-[0.1em] text-dim hover:text-ink">Deployed contract addresses</summary>
-        <dl className="mt-3 grid gap-x-5 gap-y-2 border-t border-line pt-3 sm:grid-cols-2 lg:grid-cols-3">
+      <p className="app-mainnet-status__disclosure">Asset admission and an active pool are unverified. Swap execution and pool creation remain unavailable; values below are illustrative.</p>
+      <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
+      <details className="app-mainnet-status__contracts">
+        <summary>Contract addresses</summary>
+        <dl>
           {contracts.map(([key, address]) => (
             <div key={key} className="min-w-0">
               <dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">{label(key)}</dt>

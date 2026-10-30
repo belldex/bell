@@ -1,6 +1,46 @@
-# BELL — Current State (trace 2026-10-28, REGULAR rehearsal on Robinhood testnet)
+# BELL — Current State (Mainnet snapshot 2026-10-30)
 
 Single source of truth. Every claim is backed by a transaction or on-chain state.
+
+## Mainnet snapshot — Robinhood Chain 4663
+
+The 11-contract protocol stack is deployed and verified at block `101806323` (manifest hash
+`0xf4a8e9cd8baeca87530d7ab52b45c58dd2bff08123f1097e5348f06dd46a3bb4`). The Yahoo verifier and
+AAPL/NVDA/TSLA adapters, Chainlink reference adapters, WETH/USDG and all three stock admissions, and
+their calendars are active. See `evidence/deploy/mainnet-4663.json`,
+`evidence/deploy/mainnet-4663-verification.json`, and related evidence files.
+
+The Cloudflare pull Worker is deployed at `https://bell-keeper-b.asysyifaq25.workers.dev` (version
+`95f67f44-6146-4ffa-b76b-7a4ef1c627e4`). `/quote?symbol=AAPL|NVDA|TSLA` returns fresh, signed
+bundles with `Cache-Control: no-store` and public CORS. Cloudflare reaches Yahoo's chart JSON through
+Google Translate's relay because direct Yahoo requests time out from the Worker network. The bundle
+still passes the existing symbol, currency, phase, observation-age, and onchain high-water checks.
+The `/pools` endpoint now scans `PoolCreated` logs using the Mainnet secondary RPC in bounded parallel
+ranges, then reads hook config and live policy. It returned HTTP 200 with an empty pool list at block
+`101837321`; no live pool has been created yet. The app displays that real empty state and falls back
+to the connected wallet's RPC if the public directory is unavailable.
+
+One AAPL/USDG Registry priming transaction succeeded at block `101803796`
+(`0xaa2c998387269271d1d3ac1f2902b0947c5a83153a45663b91819be9a84b2935`). Health expires after
+120 seconds, so it needs a fresh prepare close to pool creation. No pool or swap exists yet.
+
+The selected seed is `0.0573 AAPL` plus `20 USDG`. The deployer wallet
+`0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399` currently holds `0 AAPL` and `0 USDG`; the factory's
+service fee is another `49 USDG`, for `69 USDG` total in the deployer wallet at creation. The configured
+service recipient is `0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc` (the user says they control this
+wallet). Deployer ETH was `0.005822831982808` at the last balance check. The seed preflight and create
+script now derive the opening price from the sorted seed ratio and use the mined Hook salt in their
+simulation.
+
+The web `/pools`, `/pool`, and `/swap` routes now use the Mainnet factory/policy API, signed quote
+bundles, wallet token balance/allowance reads, token approval, BellRouter simulation, and transaction
+receipt/explorer links. The static UI is built successfully. A live swap cannot be completed until
+factory event discovery works and a Mainnet pool has been created and seeded. The signed pull design
+and implementation details are in `docs/superpowers/specs/2026-10-30-pull-oracle-design.md`.
+
+---
+
+## Testnet history — REGULAR rehearsal trace 2026-10-28
 
 **The latest REGULAR rehearsal pool was created, received one swap, and passed acceptance 82/82.** The
 price came from a fresh Yahoo REGULAR quote through the regular adapter; the asset/token is a rehearsal
@@ -22,8 +62,8 @@ health write is simulated before broadcast and read back from chain afterwards.
   `BellRouter`, and displays the result. It appears only when `NEXT_PUBLIC_BELL_LIVE_HOOK` is set.
 - 355 forge tests, 298 node:test tests, and all gates passing.
 
-Still blocked: Mainnet (funding required), PRICE_GUARDED (an admitted reference is required), treasury
-handover (the address is still a burn address), and the keeper is not yet installed in Supabase cron.
+This historical testnet snapshot does not describe the current Mainnet state. The testnet keeper remains
+separate from the Cloudflare Mainnet Worker. Treasury handover is still outstanding.
 
 ---
 

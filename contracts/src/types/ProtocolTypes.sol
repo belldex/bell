@@ -207,6 +207,14 @@ struct CreateResult {
     uint128[2] seedPrincipal;
 }
 
+struct OraclePullUpdate {
+    bytes32 assetId;
+    SourceSample directSample;
+    bytes directSignature;
+    bytes[] reports;
+    bytes32 closeBoundaryHash;
+}
+
 struct SwapRequest {
     address hook;
     bool zeroForOne;
@@ -221,6 +229,7 @@ struct SwapRequest {
     bool wrapInput;
     bool unwrapOutput;
     bool unwrapRefund;
+    OraclePullUpdate[] oracleUpdates;
 }
 
 library ReasonBits {

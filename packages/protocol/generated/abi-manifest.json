@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "43d4f7685d8845306ed51adfd69abe9349dbb6d1278271349507d639d9b5d7fd",
+  "abiSha256": "bbe491421e2724393316d10bc4a58e488237383e3ed2a0a5424ed0e450f58020",
   "interfaces": {
     "AggregatorV3Interface": [
       {
@@ -1431,6 +1431,186 @@
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "assetId",
+                "type": "bytes32"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "bytes32",
+                    "name": "descriptorId",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "feedId",
+                    "type": "bytes32"
+                  },
+                  {
+                    "internalType": "uint8",
+                    "name": "phase",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "uint128",
+                    "name": "price18",
+                    "type": "uint128"
+                  },
+                  {
+                    "internalType": "uint64",
+                    "name": "observedAt",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "uint64",
+                    "name": "inputAt",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "uint64",
+                    "name": "validFrom",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "uint64",
+                    "name": "expiresAt",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "uint64",
+                    "name": "validUntil",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "reportHash",
+                    "type": "bytes32"
+                  }
+                ],
+                "internalType": "struct SourceSample",
+                "name": "directSample",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes",
+                "name": "directSignature",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes[]",
+                "name": "reports",
+                "type": "bytes[]"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "closeBoundaryHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct OraclePullUpdate[]",
+            "name": "updates",
+            "type": "tuple[]"
+          }
+        ],
+        "name": "prepareOracleUpdates",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "canSwap",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "mode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint16",
+                "name": "flags",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "reasonBits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint24",
+                "name": "lpFeeUnits",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "bandBps",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveTradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveWindowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "rollingRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "referencePrice18",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "configHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "stateHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PolicyView",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
         "inputs": [],
         "name": "refreshState",
         "outputs": [
@@ -2113,6 +2293,90 @@
                 "internalType": "bool",
                 "name": "unwrapRefund",
                 "type": "bool"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "bytes32",
+                    "name": "assetId",
+                    "type": "bytes32"
+                  },
+                  {
+                    "components": [
+                      {
+                        "internalType": "bytes32",
+                        "name": "descriptorId",
+                        "type": "bytes32"
+                      },
+                      {
+                        "internalType": "bytes32",
+                        "name": "feedId",
+                        "type": "bytes32"
+                      },
+                      {
+                        "internalType": "uint8",
+                        "name": "phase",
+                        "type": "uint8"
+                      },
+                      {
+                        "internalType": "uint128",
+                        "name": "price18",
+                        "type": "uint128"
+                      },
+                      {
+                        "internalType": "uint64",
+                        "name": "observedAt",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "uint64",
+                        "name": "inputAt",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "uint64",
+                        "name": "validFrom",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "uint64",
+                        "name": "expiresAt",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "uint64",
+                        "name": "validUntil",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "bytes32",
+                        "name": "reportHash",
+                        "type": "bytes32"
+                      }
+                    ],
+                    "internalType": "struct SourceSample",
+                    "name": "directSample",
+                    "type": "tuple"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "directSignature",
+                    "type": "bytes"
+                  },
+                  {
+                    "internalType": "bytes[]",
+                    "name": "reports",
+                    "type": "bytes[]"
+                  },
+                  {
+                    "internalType": "bytes32",
+                    "name": "closeBoundaryHash",
+                    "type": "bytes32"
+                  }
+                ],
+                "internalType": "struct OraclePullUpdate[]",
+                "name": "oracleUpdates",
+                "type": "tuple[]"
               }
             ],
             "internalType": "struct SwapRequest",
@@ -2860,6 +3124,34 @@
         "inputs": [
           {
             "internalType": "bytes32",
+            "name": "asset0",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "asset1",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "payload",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bool",
+            "name": "swapEnvelope",
+            "type": "bool"
+          }
+        ],
+        "name": "applyPoolOracleUpdates",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
             "name": "assetId",
             "type": "bytes32"
           },
@@ -3134,6 +3426,92 @@
           }
         ],
         "name": "refreshHealth",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "reasons",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "assetId",
+            "type": "bytes32"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "descriptorId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "feedId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint128",
+                "name": "price18",
+                "type": "uint128"
+              },
+              {
+                "internalType": "uint64",
+                "name": "observedAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "inputAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validFrom",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "expiresAt",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "reportHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct SourceSample",
+            "name": "directSample",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes",
+            "name": "directSignature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes[]",
+            "name": "reports",
+            "type": "bytes[]"
+          }
+        ],
+        "name": "refreshStockWithReports",
         "outputs": [
           {
             "internalType": "uint256",

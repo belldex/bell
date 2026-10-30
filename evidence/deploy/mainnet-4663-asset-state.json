@@ -1,0 +1,59 @@
+{
+  "chainId": 4663,
+  "registryAddress": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
+  "stocks": {
+    "AAPL": {
+      "descriptorId": "0x85cffee2c6ba44ec5e3e78ca6eba5bb87215a1bda3195519b39129adb58ec464",
+      "operationId": "0xbdccf8afb95b921103193f597e9ac4cee76a9f438abf9a16e2bdda219f9288d8",
+      "eta": 1793370265,
+      "txHash": "0x16b5165b4e76ee49544b391222a3f4097f756b39715ea0ba4e2d98b4c2b3fab2",
+      "alreadyActive": false,
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "symbol": "AAPL",
+      "active": true
+    },
+    "NVDA": {
+      "descriptorId": "0x692223932c2ef5a8b382af4bf489f90605973d72a301322d1678f853a8c26ffa",
+      "operationId": "0xa34891a196b63e6daab4a2788f6143a79d651b1da2bd4544808fe96ea0d8fd5e",
+      "eta": 1793370266,
+      "txHash": "0xd4f91be2a333f82d1f9600f0225bce20be0d44030c47197691be75d8011919c7",
+      "alreadyActive": false,
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "symbol": "NVDA",
+      "active": true
+    },
+    "TSLA": {
+      "descriptorId": "0xbeee032cf51af23c9be2a1354c48a3612921fbbdcabed6fb1e750fb23f3608b6",
+      "operationId": "0xc7364360222aa622c80d41c4e89fea014ef306a2318622043a18279be11520dc",
+      "eta": 1793370267,
+      "txHash": "0x4a4cdd36767478627e5a00651c69fb2aaefbc15bc35e93a469373559965b5351",
+      "alreadyActive": false,
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "symbol": "TSLA",
+      "active": true
+    }
+  },
+  "weth": {
+    "descriptorId": "0x97ee8f8dffff3c09ee5b72aeabc111f64385e66e447d860bd9b9677c788b5d58",
+    "operationId": "0xa68f9553f2b29ca3bb60d57095d1820890a0f9a775982a07b624b4aae384ef22",
+    "eta": 1793370263,
+    "txHash": "0x039c55e639da41e2bbc7ffa23f6cefb13be85cd336b21a488f6c43fa73d8dbac",
+    "alreadyActive": false,
+    "token": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+    "active": true
+  },
+  "usdg": {
+    "descriptorId": "0xcbb99b58d6eec6885449965262a1f4372f95e2b26ca874ca5ae3a30a277dd864",
+    "operationId": "0xac4ac6323dd721b770144fda6ad61fe5e17ce657daf6c7fc134dcd67b7bf67fa",
+    "eta": 1793370264,
+    "txHash": "0x32cc1404f6ac7a2ba5fb157878527054ed046855b15160d83e9b8fbfe9ba1918",
+    "alreadyActive": false,
+    "token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+    "active": true
+  },
+  "queuedAt": 1793370262,
+  "eta": 1793370267,
+  "expiry": 1793975067,
+  "stage": "ACTIVE",
+  "activatedAt": 1793370273
+}

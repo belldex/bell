@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {AssetDescriptor, SourceWire, SourceSample, HealthView, Anchor, CalendarLeaf, ReasonBits} from "../types/ProtocolTypes.sol";
-import {ISessionRegistry} from "../interfaces/IBellProtocol.sol";
+import {AssetDescriptor, SourceWire, SourceSample, HealthView, Anchor, CalendarLeaf, ReasonBits, OraclePullUpdate} from "../types/ProtocolTypes.sol";
+import {IYahooAttestedSourceAdapter} from "../interfaces/IYahooSourceVerifier.sol";
+import {ISessionRegistry, IAssetRegistry} from "../interfaces/IBellProtocol.sol";
 import {IBellEvents, IBellErrors} from "../interfaces/ProtocolEvents.sol";
 import {PolicyConstants} from "../libraries/PolicyConstants.sol";
 import {SourceConfigHash} from "../libraries/SourceConfigHash.sol";
@@ -32,6 +33,63 @@ interface ISessionReporterTokenStatus {
 interface ISessionCalendar {
     function currentInterval(bytes32 assetId) external view returns (CalendarLeaf memory);
     function nextInterval(bytes32 assetId) external view returns (CalendarLeaf memory);
+}
+
+/// @dev Shared implementation of SessionRegistry's permissionless pool-scoped pull transport.
+/// Internal library code is compiled into the registry; it introduces no deployment or mutable wiring.
+library PoolOracleUpdates {
+    error ContextMismatch();
+
+    function applyPayload(
+        IAssetRegistry assets, ISessionRegistry registry, bytes32 asset0, bytes32 asset1,
+        bytes calldata payload, bool swapEnvelope
+    ) internal {
+        OraclePullUpdate[] memory updates;
+        if (swapEnvelope) {
+            // Reject the old two-word envelope and caller-supplied policy/reference tuples explicitly.
+            if (payload.length < 128) revert ContextMismatch();
+            uint256 payerWord;
+            uint256 updatesOffset;
+            assembly ("memory-safe") {
+                payerWord := calldataload(payload.offset)
+                updatesOffset := calldataload(add(payload.offset, 64))
+            }
+            if (payerWord >> 160 != 0 || updatesOffset != 96) revert ContextMismatch();
+            (address payer, bytes32 requestHash, OraclePullUpdate[] memory decoded) =
+                abi.decode(payload, (address, bytes32, OraclePullUpdate[]));
+            if (keccak256(payload) != keccak256(abi.encode(payer, requestHash, decoded))) revert ContextMismatch();
+            updates = decoded;
+            if (updates.length == 0) return;
+        } else {
+            updates = abi.decode(payload, (OraclePullUpdate[]));
+        }
+        _apply(assets, registry, asset0, asset1, updates);
+    }
+
+    function _apply(
+        IAssetRegistry assets, ISessionRegistry registry, bytes32 asset0, bytes32 asset1,
+        OraclePullUpdate[] memory updates
+    ) private {
+        AssetDescriptor memory descriptor0 = assets.descriptor(asset0);
+        AssetDescriptor memory descriptor1 = assets.descriptor(asset1);
+        uint8 stockMask = (descriptor0.isStock ? uint8(1) : uint8(0))
+            | (descriptor1.isStock ? uint8(2) : uint8(0));
+        uint256 requiredCount = (descriptor0.isStock ? 1 : 0) + (descriptor1.isStock ? 1 : 0);
+        if (requiredCount == 0 || updates.length != requiredCount) revert ContextMismatch();
+        uint8 seen;
+        for (uint256 i; i < updates.length; ++i) {
+            bytes32 assetId = updates[i].assetId;
+            uint8 leg = assetId == asset0 ? 1 : assetId == asset1 ? 2 : 0;
+            if (leg == 0 || (stockMask & leg) == 0 || (seen & leg) != 0) revert ContextMismatch();
+            seen |= leg;
+        }
+        if (seen != stockMask) revert ContextMismatch();
+        for (uint256 i; i < updates.length; ++i) {
+            OraclePullUpdate memory update = updates[i];
+            registry.refreshStockWithReports(update.assetId, update.directSample, update.directSignature, update.reports);
+            if (update.closeBoundaryHash != bytes32(0)) registry.captureClose(update.assetId, update.closeBoundaryHash);
+        }
+    }
 }
 
 contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
@@ -80,7 +138,33 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
         _stockTokenStatusAdapter = new StockTokenStatusAdapter();
     }
 
+    /// @notice Decode and apply exactly the stock legs supplied by a pool's immutable hook.
+    /// All constituent refresh/capture methods remain permissionless and retain their own validation.
+    function applyPoolOracleUpdates(bytes32 asset0, bytes32 asset1, bytes calldata payload, bool swapEnvelope)
+        external override
+    {
+        PoolOracleUpdates.applyPayload(IAssetRegistry(address(assetRegistry)), ISessionRegistry(address(this)), asset0, asset1, payload, swapEnvelope);
+    }
+
     function submitReports(bytes32 assetId, bytes[] calldata reports) external override nonReentrant {
+        _submitReports(assetId, reports);
+    }
+
+    function refreshStockWithReports(
+        bytes32 assetId,
+        SourceSample calldata directSample,
+        bytes calldata directSignature,
+        bytes[] calldata reports
+    ) external override nonReentrant returns (uint256 reasons) {
+        AssetDescriptor memory descriptor_ = assetRegistry.descriptor(assetId);
+        if (assetId == ZERO32 || !descriptor_.isStock || descriptor_.id != assetId) revert BadConfig(bytes32("STOCK_ASSET"));
+        IYahooAttestedSourceAdapter(descriptor_.tokenPriceAdapter).publishDirect(directSample, directSignature);
+        _submitReports(assetId, reports);
+        SourceWire[] memory wires = abi.decode(assetRegistry.sourceConfig(assetId), (SourceWire[]));
+        return _refreshStock(assetId, descriptor_, wires);
+    }
+
+    function _submitReports(bytes32 assetId, bytes[] calldata reports) private {
         if (assetId == ZERO32 || reports.length == 0 || reports.length > PolicyConstants.MAX_REPORTS_PER_BATCH) {
             revert BadReport(ZERO32, 1);
         }

@@ -1,100 +1,40 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { RotateCcw, Search } from 'lucide-react';
-import { PoolCard } from '@/components/policy/PoolCard';
-import { POOLS } from '@/lib/fixtures';
-import { cn } from '@/lib/format';
-
-type ClassFilter = 'ALL' | 'PRICE_GUARDED' | 'SESSION_ONLY';
-type StateFilter = 'ALL' | 'OPEN' | 'CLOSED' | 'HALTED';
-
-function Segmented<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: Array<{ v: T; l: string }> }) {
-  return (
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap rounded-none border border-line bg-surface/70 p-1">
-      {options.map((o) => (
-        <button
-          key={o.v}
-          type="button"
-          role="radio"
-          aria-checked={value === o.v}
-          onClick={() => onChange(o.v)}
-          className={cn(
-            'min-h-10 rounded-none px-3 font-mono text-[11px] uppercase tracking-[0.08em] transition-all',
-            value === o.v
-              ? 'bg-ion/15 text-ion shadow-[0_0_12px_-3px_var(--color-ion)]'
-              : 'text-muted hover:text-ink'
-          )}
-        >
-          {o.l}
-        </button>
-      ))}
-    </div>
-  );
-}
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, RefreshCw } from 'lucide-react';
+import { readLivePools, type LivePool } from '@/lib/mainnet-live';
 
 export default function PoolsPage() {
-  const [q, setQ] = useState('');
-  const [cls, setCls] = useState<ClassFilter>('ALL');
-  const [state, setState] = useState<StateFilter>('ALL');
+  const [pools, setPools] = useState<LivePool[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    readLivePools().then((items) => { if (active) { setPools(items); setError(null); } })
+      .catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not read Mainnet pools'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [revision]);
 
-  const list = useMemo(
-    () =>
-      POOLS.filter((p) => {
-        if (cls !== 'ALL' && p.poolClass !== cls) return false;
-        if (state === 'HALTED' && p.canSwap) return false;
-        if (state === 'CLOSED' && p.poolPhase !== 'CLOSED') return false;
-        if (state === 'OPEN' && (!p.canSwap || p.poolPhase === 'CLOSED')) return false;
-        if (q && !p.pair.join(' ').toLowerCase().includes(q.toLowerCase())) return false;
-        return true;
-      }),
-    [q, cls, state],
-  );
-  const filtersActive = Boolean(q.trim()) || cls !== 'ALL' || state !== 'ALL';
-  const clearFilters = () => { setQ(''); setCls('ALL'); setState('ALL'); };
-
-  return (
-    <div className="app-pools-page">
-      <header className="max-w-3xl border-b border-line pb-7">
-        <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Robinhood Chain</p>
-        <h1 className="mt-3 max-w-[720px] font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">
-          Explore pools and review trading limits.
-        </h1>
-        <p className="mt-3 text-base text-muted">
-          Review policy state, session phase and flow budgets before opening a pool. Live contract state and example pool data are kept separate.
-        </p>
-      </header>
-
-      <section className="mt-9" aria-labelledby="example-pools-title">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 id="example-pools-title" className="font-display text-2xl font-medium tracking-tight text-ink">Example pools</h2>
-            <p className="mt-1.5 text-sm text-muted">Preview data only · no transactions can be sent from these rows.</p>
-          </div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim" role="status" aria-live="polite">{list.length} of {POOLS.length} examples</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 border-y border-line py-4">
-          <label className="app-search-field glass flex min-h-12 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-sm">
-            <Search className="h-4 w-4 text-dim" aria-hidden="true" />
-            <span className="sr-only">Search pairs</span>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="app-search-field__input w-full bg-transparent font-mono text-sm text-ink placeholder:text-dim" />
-          </label>
-          <Segmented<ClassFilter> label="Class" value={cls} onChange={setCls} options={[{ v: 'ALL', l: 'All' }, { v: 'PRICE_GUARDED', l: 'Price guarded' }, { v: 'SESSION_ONLY', l: 'Session only' }]} />
-          <Segmented<StateFilter> label="State" value={state} onChange={setState} options={[{ v: 'ALL', l: 'Any state' }, { v: 'OPEN', l: 'Open' }, { v: 'CLOSED', l: 'Closed' }, { v: 'HALTED', l: 'Halted' }]} />
-          {filtersActive && <button type="button" className="app-filter-clear" onClick={clearFilters}><RotateCcw size={13} aria-hidden="true" /> Clear filters</button>}
-        </div>
-
-        {list.length === 0 ? (
-          <div className="mt-6 border border-line p-8 text-center text-sm text-muted" role="status">
-            <p>No example pools match these filters.</p>
-            {filtersActive && <button type="button" className="app-filter-clear mt-4" onClick={clearFilters}><RotateCcw size={13} aria-hidden="true" /> Reset search and filters</button>}
-          </div>
-        ) : (
-          <ul className="app-pool-grid mt-5">
-            {list.map((p) => <li key={p.id}><PoolCard pool={p} /></li>)}
-          </ul>
-        )}
-      </section>
-    </div>
-  );
+  return <div className="app-pools-page mx-auto max-w-[1200px]">
+    <header className="max-w-3xl border-b border-line pb-7">
+      <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Robinhood Chain</p>
+      <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Live pools from Mainnet.</h1>
+      <p className="mt-3 text-base text-muted">Pool addresses, pairs, and trading policy are read from the deployed BELL factory and hooks.</p>
+      <button type="button" onClick={() => setRevision((v) => v + 1)} className="mt-5 inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted hover:text-ion"><RefreshCw size={14} /> Refresh onchain state</button>
+    </header>
+    {loading && <p className="mt-8 text-sm text-muted" role="status">Reading Robinhood Chain…</p>}
+    {error && <div className="mt-8 border border-down/40 bg-down/5 p-5 text-sm text-down" role="alert">Could not read live pools: {error}</div>}
+    {!loading && !error && pools.length === 0 && <div className="mt-8 border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">No Mainnet pools yet</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">The factory has no PoolCreated events after deployment. When a pool is created, it will appear here from chain state automatically. No sample markets are shown as live.</p></div>}
+    <ul className="mt-7 grid gap-4 md:grid-cols-2">
+      {pools.map((pool) => <li key={pool.hook} className="border border-line bg-surface/60 p-5">
+        <div className="flex items-start justify-between gap-3"><div><p className="font-display text-2xl text-ink">{pool.legs[0].symbol} / {pool.legs[1].symbol}</p><p className="mt-1 font-mono text-[10px] text-dim">Hook {pool.hook}</p></div><span className={`border px-2 py-1 font-mono text-[10px] uppercase ${pool.policy.canSwap ? 'border-ion/40 text-ion' : 'border-warn/40 text-warn'}`}>{pool.policy.canSwap ? 'Tradable' : 'Blocked by policy'}</span></div>
+        <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-line pt-4 text-sm"><div><dt className="text-xs text-dim">Mode</dt><dd className="mt-1 text-ink">{['Halted', 'Active', 'Closed', 'Recovering', 'Setup'][pool.policy.mode] ?? `Mode ${pool.policy.mode}`}</dd></div><div><dt className="text-xs text-dim">Fee</dt><dd className="mt-1 text-ink">{(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%</dd></div></dl>
+        <Link href={`/pool?hook=${pool.hook}`} className="mt-5 inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted hover:text-ink">Pool details</Link><Link href={`/swap?hook=${pool.hook}`} className="ml-2 inline-flex min-h-10 items-center gap-2 border border-ion/40 px-3 font-mono text-xs uppercase text-ion hover:bg-ion/10">Open live swap <ArrowUpRight size={14} /></Link>
+      </li>)}
+    </ul>
+  </div>;
 }

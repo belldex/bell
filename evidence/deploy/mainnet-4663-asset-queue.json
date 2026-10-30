@@ -1,0 +1,52 @@
+{
+  "weth": {
+    "token": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+    "descriptorId": "0x97ee8f8dffff3c09ee5b72aeabc111f64385e66e447d860bd9b9677c788b5d58",
+    "isStock": false
+  },
+  "usdg": {
+    "token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+    "descriptorId": "0xcbb99b58d6eec6885449965262a1f4372f95e2b26ca874ca5ae3a30a277dd864",
+    "isStock": false,
+    "operationId": "0xac4ac6323dd721b770144fda6ad61fe5e17ce657daf6c7fc134dcd67b7bf67fa",
+    "eta": 1793370264,
+    "txHash": "0x32cc1404f6ac7a2ba5fb157878527054ed046855b15160d83e9b8fbfe9ba1918",
+    "alreadyActive": false,
+    "active": true
+  },
+  "counterassets": {},
+  "stocks": {
+    "AAPL": {
+      "symbol": "AAPL",
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "descriptorId": "0x85cffee2c6ba44ec5e3e78ca6eba5bb87215a1bda3195519b39129adb58ec464",
+      "isStock": true,
+      "directAdapter": "0xe6d4df58fa30718c9f8829c78195a7d5672be0b3",
+      "regularAdapter": "0x01cc7bbc4e015298b280237cb050afd873ae28c7",
+      "extendedAdapter": "0x8acbae7fc346a37e2059def357cd2fff23515619"
+    },
+    "NVDA": {
+      "symbol": "NVDA",
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "descriptorId": "0x692223932c2ef5a8b382af4bf489f90605973d72a301322d1678f853a8c26ffa",
+      "isStock": true,
+      "directAdapter": "0xe7bf28de1433e6846b1aeae2cba4f3ff7ae4e399",
+      "regularAdapter": "0xb7c3f37242277c141ef611baaead1badcf46da4b",
+      "extendedAdapter": "0x49ec6ff967df4c4e3f44f9701de492eb4873e906"
+    },
+    "TSLA": {
+      "symbol": "TSLA",
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "descriptorId": "0xbeee032cf51af23c9be2a1354c48a3612921fbbdcabed6fb1e750fb23f3608b6",
+      "isStock": true,
+      "directAdapter": "0x380794a04158a90dcf2a14366258c5373d57aa59",
+      "regularAdapter": "0xb6e9e15d688cc9a5baac0afd7f0982a6665893dc",
+      "extendedAdapter": "0x74fd92c92062e81e22f7f5ca868952cf00225588"
+    }
+  },
+  "registryAddress": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
+  "chainId": 4663,
+  "admittedAt": "2026-10-30T14:24:26.610Z",
+  "activationPending": false,
+  "activatedAt": "2026-10-30T14:24:38.634Z"
+}

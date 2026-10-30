@@ -1,426 +1,101 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, constants, readFile } from 'node:fs/promises';
 
-const read = (p) => readFile(new URL(p, import.meta.url), 'utf8');
+const read = (path) => readFile(new URL(path, import.meta.url), 'utf8');
 
-test('landing is a real Next page that renders BELL components — not a redirect to static HTML', async () => {
+test('landing route composes the current BELL landing page without redirecting', async () => {
   const page = await read('../app/page.tsx');
-  assert.doesNotMatch(page, /window\.location\.(replace|assign)/, 'must not redirect');
-  assert.doesNotMatch(page, /templates\/v4market/, 'must not reference the copied template build');
-  assert.match(page, /from '@\/components\/landing/, 'must compose landing components');
+  assert.match(page, /LandingPage/);
+  assert.match(page, /@\/components\/landing\/gyevo\/landing-page/);
+  assert.doesNotMatch(page, /window\.location\.(replace|assign)|templates\/v4market/);
 });
 
-test('the copied template build and helper scripts are deleted from the repo', async () => {
-  const { access, constants } = await import('node:fs/promises');
-  const gone = [
+test('copied template build artifacts are absent', async () => {
+  for (const path of [
     '../public/templates/v4market/index.html',
     '../public/templates/bell/index.html',
     '../public/v4market-source/index.html',
     '../../scripts/tooling/adapt-v4market-landing.mjs',
-  ];
-  for (const path of gone) {
-    await assert.rejects(
-      access(new URL(path, import.meta.url), constants.F_OK),
-      { code: 'ENOENT' },
-      `${path} must be deleted`,
-    );
+  ]) {
+    await assert.rejects(access(new URL(path, import.meta.url), constants.F_OK), { code: 'ENOENT' });
   }
 });
 
-test('the 3D scene is a genuine Three.js port with the reference pose system', async () => {
-  const scene = await read('../components/landing/Scene.tsx');
-  assert.match(scene, /from 'three'/);
-  assert.match(scene, /InstancedMesh/);
-  assert.match(scene, /getBoundingClientRect\(\)\.top/);
-  assert.match(scene, /prefers-reduced-motion/);
-  assert.match(scene, /\.dispose\(\)/, 'must clean up');
-  // BELL design tokens, not the reference's palette
-  assert.match(scene, /C7444F/, 'hot accent must use the BELL poppy palette');
-  assert.doesNotMatch(scene, /FF5A1F/, 'reference orange must not leak');
-});
-
-test('hero is pinned to the first viewport with the reference 301px top offset', async () => {
-  const page = await read('../app/page.tsx');
-  // Reference: .hero-inner { height:100vh; padding-top:301px } inside 200vh .hero —
-  // the headline is ON SCREEN at load; the extra 100vh below is pure scroll runway.
-  assert.match(page, /pt-\[301px\]/, 'hero inner must pad 301px from the top like the reference');
-  assert.match(page, /h-screen/, 'hero inner must be exactly 100vh tall');
-  assert.match(page, /max-w-\[1034px\]/, 'hero inner max-width 1034px');
-});
-
-test('landing has all 10 source sections in their correct scroll poses and order', async () => {
-  const page = await read('../app/page.tsx');
-  const sourceOrder = [
-    'data-pose="0"', 'data-pose="1"', 'data-pose="2"', 'data-pose="3"',
-    'data-pose="4"', 'data-pose="5"', 'data-pose="6"', 'data-pose="7"',
-    'data-pose="8"', 'data-pose="8"',
-  ];
-  const positions = sourceOrder.map((token) => page.indexOf(token));
-  assert.ok(positions.every((p) => p >= 0), 'all ten section pose markers exist');
-  assert.deepEqual(positions, [...positions].sort((a, b) => a - b), 'section order matches source');
-  for (const title of [
-    'One immutable policy per pool',
-    'Every swap follows the policy',
-    'BELL policy',
-    'Pool classes',
-    'Weekend-safe by construction',
-    'Recovery and exit',
-    'Session fees by market state',
-    'A policy for every pool',
-    'Explore BELL by design.',
-  ]) assert.ok(page.includes(title), `section copy ${title} exists`);
-  assert.match(page, /bell-v4-valley\.webp/);
-  assert.match(page, /bell-v4-canyon\.webp/);
-  assert.match(page, /bell-v4-beaver-bank\.webp/);
-});
-
-test('custom navbar uses working direct route/anchor links and accessible disclosure controls', async () => {
-  const nav = await read('../components/landing/SiteNav.tsx');
-  assert.match(nav, /aria-expanded=\{open === index\}/);
-  assert.match(nav, /aria-controls=/);
-  assert.match(nav, /Escape/);
-  assert.match(nav, /onMouseEnter=\{\(\) => setOpen\(index\)\}/);
-  assert.match(nav, /\/pools/);
-  assert.match(nav, /\/swap/);
-  assert.match(nav, /\/create/);
-  assert.match(nav, /\/positions/);
-  assert.doesNotMatch(nav, /onMouseLeave=\{\(\) => setOpen\(null\)\}/);
-});
-
-test('nav and footer mirror the reference layout with BELL wording', async () => {
-  const nav = await read('../components/landing/SiteNav.tsx');
-  // Reference header: 58px muted ticker bar, mono 12px links, dropdown slab.
-  assert.match(nav, /gap-20 whitespace-nowrap/, 'ticker bar-track present');
-  assert.match(nav, /h-\[58px\]/, 'ticker bar 58px tall');
-  assert.match(nav, /font-mono/, 'nav uses mono type');
-  assert.match(nav, /h-\[575px\]/, 'dropdown slab present');
-
-  const footer = await read('../components/landing/Footer.tsx');
-  assert.match(footer, /grid-cols-4/, 'footer 4-column groups');
-  assert.match(footer, /gdpr/, 'gdpr disclosure line present');
-  assert.match(footer, /<Logo/, 'footer uses the shared BELL brand component');
-});
-
-test('story sections use reference measurements (36px h2, glass cards, 7 poses)', async () => {
-  const page = await read('../app/page.tsx');
-  assert.match(page, /text-\[36px\]/, 'h2 36px like reference');
-  assert.match(page, /backdrop-blur/, 'cards keep the glass blur');
-  assert.match(page, /data-pose="6"/, 'poses 0..6 present');
-});
-
-test('hero typography matches the reference scale (94px kinetic headline, centered 200vh hero)', async () => {
-  const page = await read('../app/page.tsx');
-  // Reference hero: 200vh scroll runway, centered flex column, 94px/94px headline
-  // with -0.04em tracking, 24px hero line, fade-up reveals.
-  assert.match(page, /min-h-\[200vh\]/, 'hero must keep the 200vh scroll runway');
-  const title = await read('../components/landing/KineticTitle.tsx');
-  assert.match(title, /text-\[94px\]/, 'headline must be 94px like the reference');
-  assert.match(title, /tracking-\[-0\.04em\]/, 'headline tracking -0.04em');
-  assert.match(title, /leading-\[94px\]/, 'headline line-height 94px');
-  const reveal = await read('../components/landing/Reveal.tsx');
-  assert.match(reveal, /translateY|translate-y/, 'reveal must move, not just fade');
-});
-
-test('landing sections follow the reference arc with BELL content and tokens', async () => {
-  const page = await read('../app/page.tsx');
-  for (const marker of ['data-pose="0"', 'data-pose="7"', 'KineticTitle', 'AnimatedRows', 'SiteNav', 'LandingFooter']) {
-    assert.ok(page.includes(marker), `page must contain ${marker}`);
-  }
-  // BELL disclosure lives in the ticker bar + footer now
-  const nav = await read('../components/landing/SiteNav.tsx');
-  assert.match(nav, /Production swaps are not enabled/);
-  assert.match(nav, /Mainnet release has not been approved/);
-  // No v4market vocabulary
-  assert.doesNotMatch(page + nav, /v4 Marketplace|Uniswap v4 hooks|Pons coin|V4M/i);
-});
-
-test('landing styling uses the BELL design system, not a copied stylesheet', async () => {
-  await assert.rejects(read('../app/landing.css'), { code: 'ENOENT' }, 'copied landing.css must be deleted');
-  const page = await read('../app/page.tsx');
-  assert.match(page, /className=/, 'must use BELL classes');
-});
-
-test('homepage keeps honest testnet-rehearsal claims', async () => {
-  const combined = await read('../app/page.tsx');
-  const overclaims = [/production swaps are live/i, /mainnet is live/i, /audited and ready/i];
-  for (const pattern of overclaims) assert.doesNotMatch(combined, pattern);
-});
-
-test('swap screen still gates on onchain policy', async () => {
-  const swap = await read('../app/(app)/swap/page.tsx');
-  const panel = await read('../components/swap/LiveSwapPanel.tsx');
-  assert.match(panel, /functionName: 'swap'/);
-  assert.match(panel, /readLivePool/);
-  assert.match(panel, /pool\.canSwap/);
-});
-
-test('all app routes use a Bloomberg-style left sidebar with working BELL navigation', async () => {
+test('app shell exposes wallet, Mainnet status, accessible navigation and live app routes', async () => {
   const shell = await read('../components/app/AppShell.tsx');
-  for (const path of ['/pools', '/swap', '/create', '/positions', '/protocol']) {
-    assert.ok(shell.includes(`href: '${path}'`), `navigation must contain ${path}`);
-  }
-  assert.match(shell, /fixed[^\n]*left-0[^\n]*w-\[280px\]/);
-  assert.match(shell, /function TerminalClock/);
-  assert.match(shell, /mobileOpen/);
-  assert.doesNotMatch(shell, /App \(mobile\)/, 'mobile uses the sidebar drawer, not bottom nav');
-  assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
+  for (const path of ['/pools', '/swap', '/create', '/positions', '/protocol']) assert.ok(shell.includes(`href: '${path}'`));
   assert.match(shell, /WalletButton/);
-  assert.match(shell, /TestnetBanner/);
-  assert.doesNotMatch(shell, /templates\/v4market/);
-});
-
-test('preview UI never claims fake creation or position actions succeeded', async () => {
-  const create = await read('../app/(app)/create/page.tsx');
-  const positions = await read('../app/(app)/positions/page.tsx');
-  assert.doesNotMatch(create, /setTimeout\(\(\) => setDone\('ok'\)/);
-  assert.doesNotMatch(create, /Simulated create \(preview\)/);
-  assert.doesNotMatch(positions, /onClick=\{\(\) => setCollected\(true\)\}/);
-  assert.doesNotMatch(positions, /Simulate remove/);
-  assert.match(create, /Preview|unavailable/i);
-  assert.match(positions, /Preview only|not connected|not available/i);
-});
-
-test('pool directory distinguishes preview fixtures from live chain state', async () => {
-  const pools = await read('../app/(app)/pools/page.tsx');
-  assert.match(pools, /preview fixtures/i);
-  assert.doesNotMatch(pools, /no pool exists on testnet yet/i);
-  assert.match(pools, /testnet|onchain/i);
-});
-
-test('create wizard cannot claim a pool was created by a timer', async () => {
-  const create = await read('../app/(app)/create/page.tsx');
-  assert.doesNotMatch(create, /window\.setTimeout\(\(\) => setDone\('ok'\)/);
-  assert.doesNotMatch(create, /Simulated create \(preview\)/);
-  assert.match(create, /Preview only|No live factory|not enabled|no live factory flow/i);
-});
-
-test('positions do not pretend sample NFTs can add, remove, or collect', async () => {
-  const positions = await read('../app/(app)/positions/page.tsx');
-  assert.doesNotMatch(positions, /onClick=\{\(\) => setCollected\(true\)\}/);
-  assert.doesNotMatch(positions, /Simulate remove/);
-  assert.match(positions, /Preview only|sample position/i);
-});
-
-test('five app routes retain route-specific behavior while sharing the app shell', async () => {
-  const shell = await read('../components/app/AppShell.tsx');
-  for (const route of ['/pools', '/swap', '/create', '/positions']) {
-    assert.ok(shell.includes(`href: '${route}'`), `app navigation has ${route}`);
-  }
-  assert.match(shell, /WalletButton/);
-  assert.match(shell, /TestnetBanner/);
-  assert.match(shell, /aria-current/);
-});
-
-test('navigation destinations all resolve to implemented BELL pages', async () => {
-  const routes = [
-    '../app/(app)/pools/page.tsx',
-    '../app/(app)/pool/page.tsx',
-    '../app/(app)/create/page.tsx',
-    '../app/(app)/swap/page.tsx',
-    '../app/(app)/positions/page.tsx',
-  ];
-  for (const route of routes) assert.ok((await read(route)).length > 0, `${route} exists`);
-  const appShell = await read('../components/app/AppShell.tsx');
-  const landingNav = await read('../components/landing/SiteNav.tsx');
-  assert.doesNotMatch(`${appShell}\n${landingNav}`, /templates\/v4market/);
-});
-
-test('all five app pages share the reference mono labels, hard-edged panels, and BELL palette', async () => {
-  const pages = [
-    '../app/(app)/pools/page.tsx',
-    '../app/(app)/pool/page.tsx',
-    '../app/(app)/create/page.tsx',
-    '../app/(app)/swap/page.tsx',
-    '../app/(app)/positions/page.tsx',
-  ];
-  for (const route of pages) {
-    const source = await read(route);
-    assert.match(source, /font-mono/, `${route} needs reference mono labels`);
-    assert.match(source, /rounded-none|rounded-xl|rounded-2xl/, `${route} needs structured panels`);
-    assert.match(source, /text-ion|bg-ion/, `${route} must retain BELL accent`);
-  }
-});
-
-test('protocol and legal links land on implemented pages', async () => {
-  for (const path of ['protocol', 'privacy', 'terms', 'cookies']) {
-    const page = await read(`../app/(app)/${path}/page.tsx`);
-    assert.match(page, /export default/);
-  }
-});
-
-test('pool cards and position fixtures are visibly preview-only', async () => {
-  const card = await read('../components/policy/PoolCard.tsx');
-  assert.match(card, /Preview fixture · not onchain/);
-  const detail = await read('../app/(app)/pool/page.tsx');
-  assert.match(detail, /sample policy fixture/);
-  assert.match(detail, /Fixture only/);
-  const positions = await read('../app/(app)/positions/page.tsx');
-  assert.match(positions, /Sample position only/);
-  assert.match(positions, /no position NFT has been read/);
-});
-
-test('swap fixture controls never lead into a fake submit timeline', async () => {
-  const swap = await read('../app/(app)/swap/page.tsx');
-  assert.doesNotMatch(swap, /setStage\('(provisional|confirmed)'/);
-  assert.match(swap, /No executable fixture quote/);
-  assert.match(swap, /Preview only/);
-});
-
-test('deployed rehearsal hook is read onchain with explicit evidence address, never inferred from fixtures', async () => {
-  const panel = await read('../components/swap/LiveSwapPanel.tsx');
-  assert.match(panel, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0/i);
-  assert.match(panel, /readLivePool\(/);
-  assert.match(panel, /wallet\.chainId === TESTNET\.chainId/);
-  assert.match(panel, /Connect wallet to read the live policy/);
-  assert.doesNotMatch(panel, /http\(\)/, 'must not create a public client without an RPC URL');
-  assert.match(panel, /if \(!current\.canSwap/, 'must re-check policy immediately before transaction');
-  assert.match(panel, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0|deployed rehearsal hook/i);
-});
-
-test('pool directory exposes the deployed rehearsal policy separately from fixture cards', async () => {
-  const pools = await read('../app/(app)/pools/page.tsx');
-  assert.match(pools, /RehearsalPoolCard/);
-  const liveCard = await read('../components/policy/RehearsalPoolCard.tsx');
-  assert.match(liveCard, /readLivePool/);
-  assert.match(liveCard, /0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0/i);
-  assert.match(liveCard, /0xd32bb2cef93c6d9a612f362cfccc20c2549e4bf73887e6bf8cd0fb778413b82b/i);
-  assert.match(liveCard, /144308842/);
-  assert.match(liveCard, /wallet\.chainId|wallet\.status/);
-  assert.match(liveCard, /reasonBits/);
-  assert.match(liveCard, /Preview fixture/);
-});
-
-test('fixture pool details do not borrow the deployed WETH/AAPL hook identity', async () => {
-  const detail = await read('../app/(app)/pool/page.tsx');
-  assert.doesNotMatch(detail, /549f0C6657d9E39a034f7524E501D218B2c6acc0/i);
-  assert.match(detail, /fixture.*not executable|Preview fixture/i);
-});
-
-test('mobile app navigation has 44px targets and all routes, while current route semantics remain', async () => {
-  const shell = await read('../components/app/AppShell.tsx');
-  assert.match(shell, /min-h-12/);
-  assert.match(shell, /aria-label="Terminal app navigation"/);
-  assert.match(shell, /aria-current=\{active \? 'page' : undefined\}/);
-  assert.match(shell, /href: '\/protocol'/);
-});
-
-test('landing and app use one shared BELL mark component', async () => {
-  const appLogo = await read('../components/ui/Logo.tsx');
-  const landingNav = await read('../components/landing/SiteNav.tsx');
-  assert.match(appLogo, /export function LogoMark/);
-  const landingFooter = await read('../components/landing/Footer.tsx');
-  assert.match(landingNav, /<Logo/);
-  assert.match(landingFooter, /<Logo/);
-  assert.doesNotMatch(landingNav, /<svg viewBox="0 0 24 24"/, 'landing nav must not invent a second mark');
-  assert.doesNotMatch(landingFooter, /<svg viewBox="0 0 24 24"/, 'landing footer must not invent a second mark');
-});
-
-test('wallet entry uses RainbowKit and preserves Robinhood mainnet/testnet chains', async () => {
-  const pkg = JSON.parse(await read('../package.json'));
-  const wallet = await read('../components/wallet/WalletButton.tsx');
-  const provider = await read('../lib/wallet.tsx');
-  assert.ok(pkg.dependencies['@rainbow-me/rainbowkit'], 'RainbowKit installed');
-  assert.match(wallet, /ConnectButton/);
-  assert.match(wallet, /ConnectButton\.Custom/);
-  assert.match(wallet, /openConnectModal/);
-  assert.match(wallet, /min-h-11/);
-  assert.match(wallet, /@rainbow-me\/rainbowkit\/components/);
-  assert.match(provider, /@rainbow-me\/rainbowkit\/components/);
-  assert.match(provider, /RainbowKitProvider/);
-  assert.match(provider, /connectors:\s*\[injected\(/);
-  assert.match(provider, /createConfig/);
-  assert.doesNotMatch(provider, /@rainbow-me\/rainbowkit\/wallets/, 'avoid the all-wallet barrel and its unrelated optional SDK imports');
-  assert.match(provider, /4663/);
-  assert.match(provider, /46630/);
-  assert.match(provider, /https:\/\/rpc\.mainnet\.chain\.robinhood\.com/);
-  assert.match(provider, /https:\/\/rpc\.testnet\.chain\.robinhood\.com/);
-});
-
-test('app visual tokens avoid fallback font cycles and excessive card glow', async () => {
-  const css = await read('../app/globals.css');
-  assert.match(css, /--font-display:\s*var\(--font-instrument\)/);
-  assert.match(css, /--font-mono:\s*var\(--font-geist-mono\)/);
-  assert.doesNotMatch(css, /--font-sans:\s*var\(--font-sans\)/);
-  assert.match(css, /\.app-page/);
-});
-
-test('landing and app share BELL palette and the canonical mark favicon', async () => {
-  const css = await read('../app/globals.css');
-  const layout = await read('../app/layout.tsx');
-  assert.match(css, /--color-ion:\s*#C7444F/i, 'landing and app should share the BELL poppy accent');
-  assert.match(layout, /icon:\s*'\/bell-mark\.svg'/, 'browser icon should be the shared bell mark');
-  const fs = await import('node:fs/promises');
-  const mark = await fs.readFile(new URL('../public/bell-mark.svg', import.meta.url), 'utf8');
-  assert.match(mark, /viewBox="0 0 32 32"/);
-  assert.match(mark, /<title>BELL<\/title>/);
-});
-
-test('swap preview does not invite wallet connection when live swap is unavailable', async () => {
-  const swap = await read('../app/(app)/swap/page.tsx');
-  assert.match(swap, /wallet\.status !== 'connected'\) return \{ label: 'Connect wallet', action: undefined, disabled: true \}/);
-  assert.match(swap, /No executable fixture quote/);
-});
-
-test('app routes share a consistent reference-width content rail and body contrast tokens', async () => {
-  const shell = await read('../components/app/AppShell.tsx');
-  assert.match(shell, /max-w-\[1440px\]/, 'header, main, footer share 1440px rail');
-  assert.doesNotMatch(shell, /max-w-6xl/, 'avoid narrower mismatched footer/content rail');
-  for (const path of ['../app/(app)/pools/page.tsx', '../app/(app)/pool/page.tsx', '../app/(app)/create/page.tsx', '../app/(app)/swap/page.tsx', '../app/(app)/positions/page.tsx']) {
-    const page = await read(path);
-    assert.match(page, /text-muted|text-ink/, `${path} uses semantic readable text colors`);
-  }
-});
-
-test('AppShell exposes a working mobile menu, closes it on route navigation, and returns focusable routes', async () => {
-  const shell = await read('../components/app/AppShell.tsx');
+  assert.match(shell, /MainnetStatusBanner/);
+  assert.match(shell, /aria-current=\{isActive\(href\) \? 'page' : undefined\}/);
   assert.match(shell, /mobileOpen/);
-  assert.match(shell, /aria-expanded/);
-  assert.match(shell, /setMobileOpen\(false\)/);
   assert.match(shell, /Escape/);
-  assert.match(shell, /\/privacy|\/terms|\/cookies/);
 });
 
-test('landing desktop dropdown remains on a visible hit-testable layer when activated', async () => {
-  const nav = await read('../components/landing/SiteNav.tsx');
-  assert.match(nav, /onClick=\{\(\) => setOpen\(open === index \? null : index\)\}/);
-  assert.doesNotMatch(nav, /onMouseLeave=\{\(\) => setOpen\(null\)\}/, 'pointer movement into menu must not close it');
-  assert.match(nav, /z-40/, 'dropdown must be above fixed scene/content');
-  assert.doesNotMatch(nav, /z-\[-1\]/, 'negative stacking layer hides menu behind scene');
-  assert.match(nav, /backgroundColor:\s*'var\(--color-surface\)'/, 'open slab needs an explicit opaque BELL surface');
-  assert.match(nav, /aria-expanded=\{open === index\}/, 'menu state is exposed accessibly');
+test('live pool directory reads the Worker API and has an honest empty state', async () => {
+  const pools = await read('../app/(app)/pools/page.tsx');
+  const adapter = await read('../lib/mainnet-live.ts');
+  assert.match(pools, /readLivePools\(/);
+  assert.match(pools, /No Mainnet pools yet/);
+  assert.match(pools, /Pool details/);
+  assert.match(adapter, /replace\(\/\\\/quote\$\/.*\/pools/);
+  assert.match(adapter, /Number\(body\.chainId\) !== MAINNET\.chainId/);
+  assert.match(adapter, /client\.getLogs/);
+  assert.match(adapter, /functionName: 'getPolicy'/);
+  assert.doesNotMatch(pools, /from ['"]@\/lib\/fixtures/);
 });
 
-test('landing content has readable scrim and stays above the animated scene', async () => {
-  const page = await read('../app/page.tsx');
-  assert.match(page, /from-bg-0\/|bg-bg-0\/|bg-black\//, 'hero content needs a readable contrast surface over 3D');
-  assert.match(page, /relative z-10/, 'copy must stack above scene');
-  assert.match(page, /text-shadow:0_0_24px/, 'large title needs contrast against the block scene');
+test('pool detail is resolved from Mainnet events and links to the selected live swap', async () => {
+  const detail = await read('../app/(app)/pool/page.tsx');
+  assert.match(detail, /readLivePools\(/);
+  assert.match(detail, /Pool not found on Mainnet/);
+  assert.match(detail, /swap\?hook=\$\{pool\.hook\}/);
+  assert.match(detail, /getPolicy|policy\./);
+  assert.doesNotMatch(detail, /from ['"]@\/lib\/fixtures/);
 });
 
-test('position preview cards have working info disclosures but no fake write controls', async () => {
-  const positions = await read('../app/(app)/positions/page.tsx');
-  assert.match(positions, /setMode\(mode === 'remove'/);
-  assert.match(positions, /setMode\(mode === 'add'/);
-  assert.match(positions, /No live position NFT loaded/);
-  assert.doesNotMatch(positions, /setCollected\(|setRemoved\(/);
-});
-
-test('create wizard remains navigable through all five preview steps and final action is explicitly unavailable', async () => {
-  const create = await read('../app/(app)/create/page.tsx');
-  assert.match(create, /const STEPS = \['Pair', 'Mode', 'Seed & price', 'Caps', 'Review'\]/);
-  assert.match(create, /setStep\(\(s\) => s \+ 1\)/);
-  assert.match(create, /setStep\(\(s\) => Math\.max\(0, s - 1\)\)/);
-  assert.match(create, /Create unavailable — no live factory flow/);
-  assert.doesNotMatch(create, /setTimeout/);
-});
-
-test('swap preview controls recalculate locally and all selections are keyboard/touch accessible', async () => {
+test('swap gets signed stock bundles and verifies the bundle belongs to each pool asset', async () => {
   const swap = await read('../app/(app)/swap/page.tsx');
-  assert.match(swap, /setFlip\(/);
-  assert.match(swap, /setMode\(/);
-  assert.match(swap, /setSlip\(/);
-  assert.match(swap, /setQuote\(compute\(\)\)/);
-  assert.match(swap, /min-h-10/);
-  assert.doesNotMatch(swap, /setStage\('(provisional|confirmed)'/);
+  assert.match(swap, /MAINNET\.quoteUrl/);
+  assert.match(swap, /body\.assetId\?\.toLowerCase\(\)/);
+  assert.match(swap, /oracleUpdate\(body\)/);
+  const adapter = await read('../lib/mainnet-live.ts');
+  assert.match(adapter, /directSignature: bundle\.directSignature/);
+  assert.match(swap, /simulateContract/);
+  assert.doesNotMatch(swap, /const RATE:|Illustrative quote|Preview only/);
+});
+
+test('swap approval and BellRouter transaction wait for confirmed receipts', async () => {
+  const swap = await read('../app/(app)/swap/page.tsx');
+  assert.match(swap, /functionName: 'approve'/);
+  assert.match(swap, /functionName: 'swap'/);
+  assert.match(swap, /waitForTransactionReceipt/);
+  assert.match(swap, /receipt\.status !== 'success'/);
+  assert.match(swap, /robinhoodchain\.blockscout\.com\/tx/);
+  assert.match(swap, /expectedConfigHash: pool\.configHash/);
+  assert.match(swap, /limitAmount: quote\.minOut/);
+});
+
+test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
+  const worker = await read('../../../workers/keeper-b/src/index.ts');
+  assert.match(worker, /\['\/quote', '\/pools'\]/);
+  assert.match(worker, /access-control-allow-origin', '\*'/);
+  assert.match(worker, /'cache-control': 'no-store'/);
+  assert.match(worker, /BELL_POOL_FACTORY/);
+  assert.match(worker, /toEventSelector\(POOL_CREATED_EVENT\)/);
+});
+
+test('unavailable create and position flows do not fake transaction success', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  const positions = await read('../app/(app)/positions/page.tsx');
+  assert.match(create, /Preview|unavailable/i);
+  assert.doesNotMatch(create, /setTimeout\(\(\) => setDone\('ok'\)/);
+  assert.match(positions, /Preview only|sample position|No live position NFT loaded/i);
+  assert.doesNotMatch(positions, /setCollected\(true\)|Simulate remove/);
+});
+
+test('legal and protocol pages resolve from the shared app navigation', async () => {
+  for (const path of ['protocol', 'privacy', 'terms', 'cookies']) {
+    assert.match(await read(`../app/(app)/${path}/page.tsx`), /export default/);
+  }
 });

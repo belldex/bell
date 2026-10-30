@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {PoolOracleUpdates} from "../../../src/registries/SessionRegistry.sol";
+import {IAssetRegistry, ISessionRegistry} from "../../../src/interfaces/IBellProtocol.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {SafetyController} from "../../../src/SafetyController.sol";
@@ -12,6 +14,7 @@ import {
     CalendarLeaf,
     Anchor,
     SourceSample,
+    OraclePullUpdate,
     PoolConfig,
     PoolState,
     Buckets,
@@ -214,6 +217,38 @@ contract MockSessionRegistry {
     mapping(bytes32 assetId => HealthView health) private _health;
     bool public revertReads;
     bool public malformedReads;
+    mapping(bytes32 => bytes32) public pullPayloadHash;
+    mapping(bytes32 => bytes32) public capturedBoundary;
+    bytes32 public allowedBoundary;
+    IAssetRegistry private pullAssets;
+
+    function setPullAssets(IAssetRegistry assets_) external { pullAssets = assets_; }
+
+    function applyPoolOracleUpdates(bytes32 asset0, bytes32 asset1, bytes calldata payload, bool swapEnvelope) external {
+        PoolOracleUpdates.applyPayload(pullAssets, ISessionRegistry(address(this)), asset0, asset1, payload, swapEnvelope);
+    }
+
+    function setAllowedBoundary(bytes32 boundary) external { allowedBoundary = boundary; }
+
+    function refreshStockWithReports(bytes32 assetId, SourceSample calldata sample, bytes calldata signature, bytes[] calldata reports)
+        external returns (uint256)
+    {
+        require(signature.length != 0 && reports.length != 0, "invalid signed bundle");
+        pullPayloadHash[assetId] = keccak256(abi.encode(sample, signature, reports));
+        HealthView memory previous = _health[assetId];
+        _health[assetId] = HealthView(true, 0,
+            previous.validUntil > block.timestamp ? previous.healthySince : uint64(block.timestamp),
+            sample.validUntil, sample.observedAt, sample.observedAt);
+        return 0;
+    }
+
+    function captureClose(bytes32 assetId, bytes32 boundary) external returns (Anchor memory anchor) {
+        require(boundary == allowedBoundary && boundary != bytes32(0), "invalid close boundary");
+        require(pullPayloadHash[assetId] != bytes32(0), "capture before update");
+        capturedBoundary[assetId] = boundary;
+        anchor.assetId = assetId;
+        anchor.boundaryHash = boundary;
+    }
 
     function setHealth(bytes32 assetId, HealthView calldata health_) external {
         _health[assetId] = health_;
@@ -312,6 +347,193 @@ contract BellHookLifecycleTest {
     // -------------------------------------------------------------------------
     // Pre-LIVE and evaluator parity
     // -------------------------------------------------------------------------
+
+    function testPullEnvelopeAppliesStockUpdateBeforeSwapPolicy() external {
+        _pullLive();
+        OraclePullUpdate[] memory updates = _pullUpdates(asset0);
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,,) = hook.beforeSwap(factory, key, _swapParams(), abi.encode(address(this), bytes32("request"), updates));
+        require(selector == IHooks.beforeSwap.selector, "pull swap rejected");
+        require(sessions.pullPayloadHash(asset0) == keccak256(abi.encode(updates[0].directSample, updates[0].directSignature, updates[0].reports)), "bundle changed");
+    }
+
+    function testPullPrepareAppliesAndCheckpointsPolicy() external {
+        _pullLive();
+        PolicyView memory policy = _preparePull(_pullUpdates(asset0));
+        require(policy.canSwap && policy.mode == uint8(Mode.ACTIVE), "prepare policy");
+        require(hook.state().mode == uint8(Mode.ACTIVE), "prepare checkpoint");
+        require(sessions.health(asset0).latestObservation == block.timestamp, "observation not updated");
+    }
+
+    function testPullPrepareRejectsEmptyOutsiderAndCounterasset() external {
+        _pullLive();
+        _rejectPull(new OraclePullUpdate[](0));
+        _rejectPull(_pullUpdates(keccak256("OUTSIDE_POOL")));
+        _rejectPull(_pullUpdates(asset1));
+        require(sessions.pullPayloadHash(asset0) == bytes32(0), "invalid set mutated stock");
+    }
+
+    function testPullStockStockRequiresCompleteUniqueSet() external {
+        _pullLive();
+        assets.setDescriptor(_descriptor(asset1, token1, true));
+        calendar.setLeaf(_leaf(asset1, PolicyConstants.PHASE_REGULAR, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
+        _rejectPull(_pullUpdates(asset0));
+        OraclePullUpdate[] memory updates = new OraclePullUpdate[](2);
+        updates[0] = _pullUpdates(asset0)[0];
+        updates[1] = updates[0];
+        _rejectPull(updates);
+        updates[1] = _pullUpdates(asset1)[0];
+        PolicyView memory policy = _preparePull(updates);
+        require(policy.canSwap, "complete stock pair rejected");
+        require(sessions.pullPayloadHash(asset0) != bytes32(0) && sessions.pullPayloadHash(asset1) != bytes32(0), "missing stock update");
+    }
+
+    function testPullSwapRejectsOutsiderDuplicateAndPartialSets() external {
+        _pullLive();
+        _rejectPullSwap(_pullUpdates(keccak256("OUTSIDE_POOL")));
+        _rejectPullSwap(_pullUpdates(asset1));
+        assets.setDescriptor(_descriptor(asset1, token1, true));
+        _rejectPullSwap(_pullUpdates(asset0));
+        OraclePullUpdate[] memory updates = new OraclePullUpdate[](2);
+        updates[0] = _pullUpdates(asset0)[0];
+        updates[1] = updates[0];
+        _rejectPullSwap(updates);
+    }
+
+    function testPullPreparePreservesRecoverySeparationAndObservationAdvance() external {
+        _pullLive();
+        hook.refreshState();
+        vm.warp(block.timestamp + 501);
+        sessions.setHealth(asset1, _healthyHealth());
+        uint64 start = uint64(block.timestamp);
+        OraclePullUpdate[] memory updates = _pullUpdates(asset0);
+        PolicyView memory policy = _preparePull(updates);
+        require(policy.mode == uint8(Mode.RECOVERING) && !policy.canSwap, "first quote bypassed recovery");
+        require(hook.state().reopenCandidateAt == start, "missing recovery checkpoint");
+        vm.warp(start + 59);
+        policy = hook.refreshState();
+        require(policy.mode == uint8(Mode.RECOVERING), "released before 60 seconds");
+        vm.warp(start + 60);
+        policy = hook.refreshState();
+        require(policy.mode == uint8(Mode.RECOVERING), "observation separation bypassed");
+        policy = _preparePull(_pullUpdates(asset0));
+        require(policy.canSwap && hook.state().reopenCandidateAt == 0, "advanced quote did not release");
+    }
+
+    function testPullExpiredSwapRollsBackWarmupUpdates() external {
+        _pullLive();
+        hook.refreshState();
+        vm.warp(block.timestamp + 501);
+        sessions.setHealth(asset1, _healthyHealth());
+        OraclePullUpdate[] memory updates = _pullUpdates(asset0);
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bool ok, bytes memory reason) = address(hook).call(abi.encodeCall(IHooks.beforeSwap,
+            (factory, key, _swapParams(), abi.encode(address(this), bytes32("request"), updates))));
+        require(!ok && bytes4(reason) == IBellErrors.PolicyBlocked.selector, "stale swap rejection");
+        require(sessions.pullPayloadHash(asset0) == bytes32(0), "reverting swap persisted update");
+        require(hook.state().reopenCandidateAt == 0, "reverting swap persisted warmup");
+    }
+
+    function testPullSuccessfulSwapsCheckpointContinuousFreshnessAcrossOldDeadline() external {
+        _pullLive();
+        _preparePull(_pullUpdates(asset0));
+        uint64 originalDeadline = hook.state().oldValidUntil;
+        PoolKey memory key = hook.poolKey();
+        for (uint256 i; i < 3; ++i) {
+            vm.warp(block.timestamp + 60);
+            bytes memory data = abi.encode(address(this), bytes32(i), _pullUpdates(asset0));
+            vm.prank(address(manager));
+            hook.beforeSwap(factory, key, _swapParams(), data);
+            vm.prank(address(manager));
+            hook.afterSwap(factory, key, _swapParams(), toBalanceDelta(-1, 1), data);
+        }
+        require(block.timestamp > originalDeadline, "did not cross initial deadline");
+        require(hook.state().oldValidUntil == block.timestamp + 120, "successful swap did not checkpoint freshness");
+        require(hook.getPolicy().canSwap, "continuous fresh swaps entered recovery");
+    }
+
+    function testPullOptionalCloseCaptureRunsAfterReportsAndPropagatesValidation() external {
+        _pullLive();
+        OraclePullUpdate[] memory updates = _pullUpdates(asset0);
+        updates[0].closeBoundaryHash = keccak256("upcoming CLOSED leaf");
+        _rejectPull(updates);
+        require(sessions.pullPayloadHash(asset0) == bytes32(0), "bad anchor did not roll back update");
+        sessions.setAllowedBoundary(updates[0].closeBoundaryHash);
+        _preparePull(updates);
+        require(sessions.capturedBoundary(asset0) == updates[0].closeBoundaryHash, "boundary changed");
+    }
+
+    function testSwapAfterCallbackBindsSenderParamsAndPayload() external {
+        _pullLive();
+        PoolKey memory key = hook.poolKey();
+        SwapParams memory params = _swapParams();
+        vm.prank(address(manager));
+        hook.beforeSwap(factory, key, params, "");
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.afterSwap(address(0xBAD), key, params, toBalanceDelta(-1, 1), "");
+        params.amountSpecified -= 1;
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.afterSwap(factory, key, params, toBalanceDelta(-1, 1), "");
+    }
+
+    function testPullAfterCallbackBindsExactEnvelope() external {
+        _pullLive();
+        PoolKey memory key = hook.poolKey();
+        OraclePullUpdate[] memory updates = _pullUpdates(asset0);
+        bytes memory data = abi.encode(address(this), bytes32("request"), updates);
+        vm.prank(address(manager));
+        hook.beforeSwap(factory, key, _swapParams(), data);
+        updates[0].closeBoundaryHash = keccak256("substitution");
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.afterSwap(factory, key, _swapParams(), toBalanceDelta(-1, 1), abi.encode(address(this), bytes32("request"), updates));
+        vm.prank(address(manager));
+        (bytes4 selector,) = hook.afterSwap(factory, key, _swapParams(), toBalanceDelta(-1, 1), data);
+        require(selector == IHooks.afterSwap.selector, "matching envelope did not settle");
+        vm.expectRevert(abi.encodeWithSelector(IBellErrors.ContextMismatch.selector));
+        vm.prank(address(manager));
+        hook.afterSwap(factory, key, _swapParams(), toBalanceDelta(-1, 1), data);
+    }
+
+    function _pullLive() internal {
+        sessions.setPullAssets(IAssetRegistry(address(assets)));
+        PoolConfig memory config = _config();
+        config.poolClass = uint8(PoolClass.SESSION_ONLY);
+        hook = _deployHookConfig(config);
+        _seedAndActivate();
+    }
+
+    function _pullUpdates(bytes32 assetId) internal view returns (OraclePullUpdate[] memory updates) {
+        updates = new OraclePullUpdate[](1);
+        updates[0].assetId = assetId;
+        updates[0].directSample.descriptorId = assetId;
+        updates[0].directSample.observedAt = uint64(block.timestamp);
+        updates[0].directSample.validUntil = uint64(block.timestamp + 120);
+        updates[0].directSignature = hex"112233";
+        updates[0].reports = new bytes[](1);
+        updates[0].reports[0] = hex"445566";
+    }
+
+    function _preparePull(OraclePullUpdate[] memory updates) internal returns (PolicyView memory) {
+        return hook.prepareOracleUpdates(updates);
+    }
+
+    function _rejectPull(OraclePullUpdate[] memory updates) internal {
+        (bool ok,) = address(hook).call(abi.encodeCall(hook.prepareOracleUpdates, (updates)));
+        require(!ok, "invalid pull set accepted");
+    }
+
+    function _rejectPullSwap(OraclePullUpdate[] memory updates) internal {
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bool ok,) = address(hook).call(abi.encodeCall(IHooks.beforeSwap,
+            (factory, key, _swapParams(), abi.encode(address(this), bytes32("request"), updates))));
+        require(!ok, "invalid swap pull set accepted");
+    }
 
     function testSetupSwapBlockedWithSameEvaluatorBits() external {
         PolicyView memory policy = hook.getPolicy();

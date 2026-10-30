@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import {YahooSourceVerifier} from "../src/adapters/YahooSourceVerifier.sol";
+import {YahooAttestedSourceAdapter} from "../src/adapters/YahooAttestedSourceAdapter.sol";
 import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
 import {AssetDescriptor, SourceWire, SourceSample, HealthView, Anchor, CalendarLeaf, ReasonBits} from "../src/types/ProtocolTypes.sol";
 import {SourceConfigHash} from "../src/libraries/SourceConfigHash.sol";
 import {CalendarProof} from "../src/libraries/CalendarProof.sol";
 
-interface VmSession { function warp(uint256 timestamp) external; }
+interface VmSession {
+    function warp(uint256 timestamp) external;
+    function addr(uint256 key) external view returns (address);
+    function sign(uint256 key, bytes32 digest) external pure returns (uint8 v, bytes32 r, bytes32 s);
+}
 
 contract MockSessionCalendar {
     CalendarLeaf private _interval;
@@ -303,6 +309,112 @@ contract SessionRegistryTest {
         bytes[] memory reports = new bytes[](1);
         reports[0] = abi.encode(sample);
         registry.submitReports(ASSET, reports);
+    }
+
+    function _pullRegistry(bool stock) internal returns (SessionRegistry registry, YahooAttestedSourceAdapter direct, YahooSourceVerifier verifier) {
+        (SessionRegistry original, MockSessionCalendar calendar,,) = _stockHealthRegistry(2);
+        AssetDescriptor memory descriptor_ = original.assetRegistry().descriptor(ASSET);
+        bytes memory config = original.assetRegistry().sourceConfig(ASSET);
+        SourceWire[] memory wires = abi.decode(config, (SourceWire[]));
+        verifier = new YahooSourceVerifier(vm.addr(0xA11CE));
+        direct = new YahooAttestedSourceAdapter(verifier, SourceConfigHash.hash(wires[1]), bytes32(0), 0, true, address(0));
+        descriptor_.tokenPriceAdapter = address(direct);
+        descriptor_.isStock = stock;
+        registry = new SessionRegistry(address(new MockSessionAssets(descriptor_, config)), address(calendar));
+    }
+
+    function _pullDirect(uint64 at) internal pure returns (SourceSample memory sample) {
+        sample = _sample(bytes32(0), 0, at, at, at + 120, 77);
+        sample.descriptorId = bytes32(0);
+        sample.price18 = 100e18;
+        sample.reportHash = keccak256(abi.encode("direct", at));
+    }
+
+    function _pullSignature(YahooSourceVerifier verifier, YahooAttestedSourceAdapter direct, SourceSample memory sample, uint256 key) internal view returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 sigS) = vm.sign(key, verifier.digest(direct.sourceConfigHash(), sample));
+        return abi.encodePacked(r, sigS, v);
+    }
+
+    function _pullReports(uint64 at) internal pure returns (bytes[] memory reports) {
+        SourceSample memory sample = _sample(bytes32(uint256(11)), 2, at, at, at + 120, 99);
+        sample.price18 = 100e18;
+        sample.reportHash = keccak256(abi.encode("stream", at));
+        reports = new bytes[](1);
+        reports[0] = abi.encode(sample);
+    }
+
+    function _callPull(SessionRegistry registry, SourceSample memory direct, bytes memory signature, bytes[] memory reports) internal returns (bool ok, bytes memory data) {
+        return address(registry).call(abi.encodeCall(registry.refreshStockWithReports, (ASSET, direct, signature, reports)));
+    }
+
+    function testPullRefreshPublishesDirectReportsAndHealthAtomically() external {
+        vm.warp(1000);
+        (SessionRegistry registry, YahooAttestedSourceAdapter direct, YahooSourceVerifier verifier) = _pullRegistry(true);
+        SourceSample memory sample = _pullDirect(1000);
+        (bool ok, bytes memory data) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1000));
+        require(ok, "atomic stock refresh failed");
+        require(abi.decode(data, (uint256)) == 0, "unexpected reasons");
+        require(direct.readCurrent().reportHash == sample.reportHash, "direct not published");
+        require(registry.latestSample(ASSET, 2).observedAt == 1000, "stream not submitted");
+        HealthView memory health_ = registry.health(ASSET);
+        require(health_.ready && health_.healthySince == 1000 && health_.validUntil == 1060, "health or freshness changed");
+    }
+
+    function testPullRefreshRejectsNonStockAndBadDirectSignature() external {
+        vm.warp(1000);
+        (SessionRegistry registry, YahooAttestedSourceAdapter direct, YahooSourceVerifier verifier) = _pullRegistry(false);
+        SourceSample memory sample = _pullDirect(1000);
+        (bool ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1000));
+        require(!ok, "non-stock accepted");
+        (ok,) = address(direct).call(abi.encodeCall(direct.readCurrent, ()));
+        require(!ok, "non-stock direct published");
+        (registry, direct, verifier) = _pullRegistry(true);
+        (ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xB0B), _pullReports(1000));
+        require(!ok && registry.latestSample(ASSET, 2).observedAt == 0 && !registry.health(ASSET).ready, "bad signature wrote state");
+        (ok,) = address(direct).call(abi.encodeCall(direct.readCurrent, ()));
+        require(!ok, "bad signature direct published");
+    }
+
+    function testPullRefreshInvalidReportsRollbackDirectAndAllowRetry() external {
+        vm.warp(1000);
+        (SessionRegistry registry, YahooAttestedSourceAdapter direct, YahooSourceVerifier verifier) = _pullRegistry(true);
+        SourceSample memory sample = _pullDirect(1000);
+        bytes memory signature = _pullSignature(verifier, direct, sample, 0xA11CE);
+        for (uint256 mode; mode < 5; ++mode) {
+            bytes[] memory reports = _pullReports(1000);
+            SourceSample memory invalid = abi.decode(reports[0], (SourceSample));
+            if (mode == 0) invalid.descriptorId = bytes32(uint256(123));
+            if (mode == 1) invalid.feedId = bytes32(uint256(123));
+            if (mode == 2) invalid.phase = 4;
+            if (mode == 3) { invalid.observedAt = 880; invalid.validFrom = 879; invalid.validUntil = 1001; invalid.expiresAt = 1001; }
+            if (mode == 4) invalid.inputAt = 939;
+            reports[0] = abi.encode(invalid);
+            (bool ok,) = _callPull(registry, sample, signature, reports);
+            require(!ok && registry.latestSample(ASSET, 2).observedAt == 0 && !registry.health(ASSET).ready, "invalid report wrote state");
+            (ok,) = address(direct).call(abi.encodeCall(direct.readCurrent, ()));
+            require(!ok, "report failure retained direct write");
+        }
+        (bool accepted,) = _callPull(registry, sample, signature, _pullReports(1000));
+        require(accepted && registry.health(ASSET).ready, "rollback prevented valid retry");
+    }
+
+    function testPullRefreshReplayRollsBackNewDirectAndPreservesHealth() external {
+        vm.warp(1000);
+        (SessionRegistry registry, YahooAttestedSourceAdapter direct, YahooSourceVerifier verifier) = _pullRegistry(true);
+        SourceSample memory sample = _pullDirect(1000);
+        (bool ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1000));
+        require(ok, "initial pull failed");
+        bytes32 previousHealth = keccak256(abi.encode(registry.health(ASSET)));
+        vm.warp(1001);
+        (ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1001));
+        require(!ok && registry.latestSample(ASSET, 2).observedAt == 1000, "direct replay accepted or wrote stream");
+        sample = _pullDirect(1001);
+        (ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1000));
+        require(!ok, "stream replay accepted");
+        require(direct.readCurrent().observedAt == 1000 && registry.latestSample(ASSET, 2).observedAt == 1000, "replay wrote samples");
+        require(keccak256(abi.encode(registry.health(ASSET))) == previousHealth, "replay changed health");
+        (ok,) = _callPull(registry, sample, _pullSignature(verifier, direct, sample, 0xA11CE), _pullReports(1001));
+        require(ok && registry.latestSample(ASSET, 2).observedAt == 1001, "new observation rejected after rollback");
     }
 
     function testStockHealthRequiresCalendarAndAgreedRegularSources() external {

@@ -4,15 +4,18 @@ Everything here targets chain 4663. Testnet is 46630 and is a different, rehears
 
 ## What "ready to deploy" means here
 
-The code path is ready. Three things are **not** proven by this repo and cannot be proven by it:
+The protocol and Yahoo/reference stacks are deployed on chain 4663, stock assets/calendars are active,
+and the scripts in this runbook continue the pool/keeper setup. The following remain unproven or
+unfinished:
 
-1. **Stock token rights.** `config/assets/candidates.mainnet.json` is `DOCUMENTED_CANDIDATES_NOT_ADMITTED`
-   with `rightsMatrix: false`. Deploying contracts does not grant or prove a right to use Robinhood's
-   token data.
-2. **An independent price reference.** `PRICE_GUARDED` (pool class 0) stays blocked. Every pool this
-   deployment can create is `SESSION_ONLY`.
-3. **Keeper liveness in production.** The Worker is deployed separately and has to be pointed at the
-   mainnet manifest.
+1. **Data rights.** `evidence/deploy/mainnet-4663-stock-adapters.json` records `rightsVerified: false`.
+   Deployment proves the source wiring, not the rights to use the upstream quotes.
+2. **Pool creation and liquidity.** No mainnet pool or swap exists yet. The PRICE_GUARDED matrix needs
+   explicit seed amounts; all candidates need fresh session health. The deployer currently holds no
+   WETH, USDG, or stock tokens for LP seeds.
+3. **Pull stack rollout.** The quote-only Worker config is generated locally but not deployed. The
+   pull-enabled SessionRegistry/Router/Hook stack and new pools are not deployed; there is no mainnet
+   pool or swap yet. The reporter secret and Cloudflare rollout still need configuration.
 
 ## Current mainnet deployment record
 
@@ -25,8 +28,32 @@ addresses from rehearsal evidence for mainnet.
 Explorer: <https://robinhoodchain.blockscout.com>
 
 The 10 protocol deployment receipts all returned success. Total measured gas cost was
-`0.000801145289812 ETH`. This is only the protocol stack; Yahoo verifier/adapters, stock admission,
-calendar, keeper, pool, swap and acceptance are not included in this record.
+`0.000801145289812 ETH`. This broadcast record is the initial protocol stack; subsequent deployment
+evidence separately records Yahoo verifier/adapters, Chainlink reference adapters, asset admissions,
+and calendars. It does not include a keeper deployment, pool, swap, or acceptance run. Consult the
+latest evidence files before broadcasting; do not use this historical paragraph as a live readiness
+check.
+
+## Pull oracle and deployment boundary
+
+The local implementation serves `/quote?symbol=AAPL`, `NVDA`, or `TSLA`. It checks the chain calendar,
+fetches a phase-matched Yahoo quote, signs the direct and stream samples, and returns them without
+sending a transaction. Wrangler's checked-in Mainnet config is set to `BELL_ORACLE_MODE=pull`, with
+the minute cron removed. Testnet push mode remains available. The quote Worker needs the RPC URL and
+`YAHOO_REPORTER_PRIVATE_KEY`; pull mode does not need `BELL_TRANSACTION_PRIVATE_KEY` or a funded relayer.
+
+Submitting a quote update costs gas in the caller's swap or explicit `prepareOracleUpdates` transaction.
+Stock/quote pools need one update per stock leg; stock/stock pools need both. A first prepare after a
+stale interval records recovery but remains blocked; a second fresh quote must be observed at least
+60 seconds later. The existing observation age remains under 120 seconds. For a planned close, a caller
+may pass the upcoming CLOSED leaf hash during the final five-minute capture window. No scheduled close
+transaction is sent; if nobody captures an anchor, closed-phase swaps remain fail-closed.
+
+Existing deployed contracts cannot be upgraded. Rollout requires a new SessionRegistry, Router, Hook
+template and dependent stack, plus pools created against that stack. AssetRegistry, CalendarRegistry,
+admitted stock assets, Yahoo verifier/adapters, and Chainlink feeds may be reused after exact wiring
+verification. The new SessionRegistry begins with empty report/health state. No scripts in this change
+broadcast or deploy any of these contracts or Worker changes.
 
 ## Timeline: it is instant by default
 
@@ -76,7 +103,7 @@ MAINNET_WETH_ADDRESS=0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73        # canonic
 MAINNET_FEE_TOKEN_ADDRESS=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168   # USDG on 4663
 
 YAHOO_REPORTER_ADDRESS=0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a       # already set
-YAHOO_REPORTER_PRIVATE_KEY=0x...                                      # already set; used by the keeper
+YAHOO_REPORTER_PRIVATE_KEY=0x...                                      # already set; signs /quote bundles
 
 BELL_POOL_CLASS=1
 BELL_POLICY_ID=bell-mainnet-v1
@@ -135,7 +162,7 @@ guardian equal to the deployer.
 
 ```bash
 pnpm mainnet:yahoo-stack             # plan only; prints wire hashes
-pnpm mainnet:yahoo-stack:broadcast
+pnpm mainnet:yahoo-stack:broadcast  # requires --i-authorize-spend
 ```
 
 Deploys `YahooSourceVerifier(reporter)` plus three adapters (direct, regular, extended), each pinned to
@@ -149,8 +176,8 @@ adapters are mainnet-specific and cannot be reused from testnet.
 ## 5. Admit assets
 
 ```bash
-pnpm mainnet:admit:queue      # queues WETH and the stock asset
-pnpm mainnet:admit:activate   # same block when the delay is zero
+pnpm mainnet:admit:queue      # queues WETH, USDG and every configured stock; requires --i-authorize-spend
+pnpm mainnet:admit:activate   # same block when the delay is zero; requires --i-authorize-spend
 pnpm mainnet:admit:status     # confirms both descriptors are ACTIVE
 ```
 
@@ -161,9 +188,9 @@ symbol matching `facade|testnet|rehearsal|fixture|mock`.
 
 ```bash
 pnpm mainnet:calendar:plan               # reads the deployed delays, prints the window
-pnpm mainnet:calendar:queue
-pnpm mainnet:calendar:activate-root
-pnpm mainnet:calendar:activate-interval
+pnpm mainnet:calendar:queue # requires --broadcast --i-authorize-spend
+pnpm mainnet:calendar:activate-root # requires --broadcast --i-authorize-spend
+pnpm mainnet:calendar:activate-interval # requires --broadcast --i-authorize-spend
 ```
 
 All four can run back to back when the delays are zero. `activateRoot` must happen before
@@ -174,8 +201,9 @@ State is persisted in `evidence/deploy/mainnet-4663-calendar-state.json`. Each s
 state, so a failed run does not need a fresh asset.
 
 The calendar is a 60-day US-Eastern PRE/REGULAR/CLOSED partition built from real wall-clock boundaries
-(04:00 / 09:30 / 16:00 ET), so DST is handled. Weekdays only: there is no holiday table, and the
-keeper's source-freshness check is what stops trading on a holiday.
+(04:00 / 09:30 / 16:00 ET), so DST is handled. Weekdays only: there is no holiday table. Pull quote
+requests read the active onchain calendar and refuse unsupported/closed phases; no background price
+transaction is sent on holidays.
 
 ## 7. Deploy reference adapters and create product pools
 
@@ -184,29 +212,50 @@ stock/counterasset pair for each pool invocation:
 
 ```bash
 pnpm mainnet:reference-stack
-pnpm mainnet:reference-stack:broadcast
-pnpm mainnet:pool -- --stock=AAPL --counterasset=USDG
+pnpm mainnet:reference-stack:broadcast # adds --broadcast --i-authorize-spend
+pnpm mainnet:pool -- --stock=AAPL --counterasset=USDG --amount0=<tokenA-units> --amount1=<tokenB-units>
+pnpm mainnet:pool:broadcast --stock=AAPL --counterasset=USDG --amount0=<tokenA-units> --amount1=<tokenB-units> --i-authorize-spend
 pnpm mainnet:pool -- --stock=TSLA --counterasset=WETH
 ```
 
 Set `BELL_POOL_CLASS=0` for PRICE_GUARDED; it requires a live reference adapter for both assets.
 Set `BELL_POOL_CLASS=1` for SESSION_ONLY; references are deliberately omitted. `--stock` accepts
 every admitted candidate symbol. `--counterasset` accepts WETH, USDG, or another admitted stock.
+For an admitted unpriced countertoken such as MEME, pass `--counterasset=MEME --counter-token=<active-token-address>`;
+this remains SESSION_ONLY unless a separately approved, fresh independent reference is configured.
 Each pool writes pair-specific evidence to `mainnet-4663-pool-<stock>-<counterasset>-<class>.json`.
 USDG is admitted as a priced counterasset before using PRICE_GUARDED; a plain token admission is
 not an oracle. Pool creation checks both stock health reports for stock/stock pairs and verifies
 that balances cover the seed and, where the seed token is USDG, the 49-USDG service fee too.
+Plan mode does not create pool evidence; a pair-specific evidence file is written only after a
+successful create receipt.
 
-For actual first-use deployment, every state-changing command still needs `--broadcast` and a
-separate operator authorization. The commands above intentionally do not broadcast.
+Every state-changing command requires both explicit `--broadcast` and `--i-authorize-spend` flags.
+The flags are intentionally never implied by `pnpm` defaults.
 
 ## 8. Create the first pool
 
-The keeper must already be publishing — pool creation consumes health, it does not create it.
+The pool factory consumes fresh health; it does not create it. In pull mode, a caller must first prepare
+the new SessionRegistry with signed bundles for the requested stock leg or both stock legs in a
+stock/stock pair. The local prepare command fetches `/quote` for exactly those stock symbols, checks
+their descriptor IDs against admission evidence, sorts the token/asset pairs, and simulates
+`SessionRegistry.applyPoolOracleUpdates(asset0, asset1, encodedUpdates, false)` when no Hook is supplied:
 
 ```bash
-pnpm mainnet:pool              # calendar + health + balances + profile hash, then simulate
-pnpm mainnet:pool:broadcast
+pnpm mainnet:prepare-oracles -- --stock=AAPL --counterasset=USDG --quote-url=https://<quote-service>
+pnpm mainnet:prepare-oracles -- --stock=NVDA --counterasset=TSLA --quote-url=https://<quote-service>
+```
+
+Both arguments are required. `BELL_QUOTE_SERVICE_URL` is the fallback for `--quote-url`.
+Simulation is the default and needs no private key; `--account=<address>` optionally selects the
+simulated gas payer. A real write requires both `--broadcast --i-authorize-spend` and a local wallet
+key. Simulation does not persist health. This implementation has sent no prepare transactions, and
+these commands require the new pull-enabled stack and quote service before they can succeed on Mainnet.
+Create a pool only after Registry priming is committed and the factory health checks pass.
+
+```bash
+pnpm mainnet:pool -- --stock=AAPL --counterasset=USDG --amount0=<tokenA-units> --amount1=<tokenB-units>
+pnpm mainnet:pool:broadcast --stock=AAPL --counterasset=USDG --amount0=<tokenA-units> --amount1=<tokenB-units> --i-authorize-spend
 ```
 
 Preflight refuses to broadcast when: no live calendar interval, health not ready, insufficient WETH /
@@ -217,8 +266,29 @@ because it needs the deployer nonce and runs once.
 
 ## 9. Swap through the router, then accept
 
+For an existing pool with stale health or pending recovery, prepare the Hook so its recovery checkpoint
+persists. Use the pair's exact Hook address; the command checks its token and asset IDs against the
+requested pair. A first call after expiry starts recovery. Fetch a new quote and prepare again with an
+advanced observation at least 60 seconds later; each report must still be younger than 120 seconds.
+A reverting swap rolls back its oracle updates and cannot persist that first recovery checkpoint.
+
 ```bash
-pnpm mainnet:swap -- --zeroForOne=true --amount=1000000000000000 --minAmountOut=<output-token-base-units>
+pnpm mainnet:prepare-oracles -- --stock=AAPL --counterasset=USDG --hook=<pool-hook> --quote-url=https://<quote-service>
+```
+
+The same simulation and explicit broadcast gates apply. During the last five minutes before a planned
+close, callers may explicitly add `--close-boundary-hash=<canonical-upcoming-CLOSED-leaf-hash>` for the
+`--stock` leg and `--counter-close-boundary-hash=<hash>` for a stock counterasset. The command checks
+the onchain upcoming leaf and capture window. It never adopts an unsolicited close hash from a quote.
+Missing the capture window leaves closed-phase swaps blocked under the existing policy.
+
+An executable pool can include fresh updates atomically in its Router swap. The optional quote URL
+fetches one bundle for each stock leg, including both sides of a stock/stock pool. Omitting the URL
+uses an empty update array and relies on already-fresh onchain state. The web swap page remains a
+fixture preview and cannot execute these live swaps.
+
+```bash
+pnpm mainnet:swap -- --stock=AAPL --counterasset=USDG --quote-url=https://<quote-service> --zeroForOne=true --amount=1000000000000000 --minAmountOut=<output-token-base-units>
 pnpm mainnet:acceptance
 ```
 
@@ -238,7 +308,7 @@ PoolManager still owned by the deployer.
   profile change; the already-live old factory cannot accept the new profile layout.
 - The deployed liquidity profile is PUBLIC (`liquidityMode=0`, `treasuryAdapter=0`); the
   `TREASURY_ONLY` path has no live deployment.
-- The keeper must be pointed at `evidence/deploy/mainnet-4663.json` separately. This repo does not
-  deploy it.
+- The pull quote Worker must be given evidence from the new deployment through
+  `pnpm mainnet:keeper-config`; this repo does not deploy it.
 - Nothing here proves stock-token rights. `mainnet-acceptance.mjs` reports that as unverified rather
   than assuming it.

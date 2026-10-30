@@ -13,7 +13,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, parseAbi, maxUint256 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { buildMainnetSwapRequest, resolveSwapLegs } from './mainnet-swap-request.mjs';
+import { buildMainnetSwapRequest, MAINNET_ROUTER_ABI, resolveSwapLegs } from './mainnet-swap-request.mjs';
+import { validateMainnetSwapPreflight, validateSwapBroadcastAuthorization } from './mainnet-swap-ops.mjs';
+import { fetchPoolOracleUpdates, ORACLE_POOL_CONFIG_ABI, resolveOraclePair, validateOraclePoolPair } from './mainnet-prepare-request.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const stockArg = process.argv.find((a) => a.startsWith('--stock='))?.slice(8)?.toUpperCase() ?? null;
@@ -24,10 +26,10 @@ if (swapBroadcast && (!stockArg || !process.argv.some((a) => a.startsWith('--cou
 }
 
 function loadEnv(text) {
-  const env = {};
+  const env = { ...process.env };
   for (const line of text.split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
+    if (m && env[m[1]] === undefined) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
   }
   return env;
 }
@@ -55,26 +57,19 @@ const chainId = await publicClient.getChainId();
 if (chainId !== MAINNET_CHAIN_ID) throw new Error(`Wrong chain ${chainId}; expected ${MAINNET_CHAIN_ID}`);
 
 const HOOK_ABI = parseAbi([
-  'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] a, uint128[2] b, uint128[2] c, uint128[2] d, uint128[2] e, uint64 f, uint64 g, bytes32 h, bytes32 i))',
+  'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] effectiveTradeCap, uint128[2] effectiveWindowCap, uint128[2] rollingRemaining, uint128[2] closureRemaining, uint128[2] referencePrice18, uint64 validUntil, uint64 closureNonce, bytes32 configHash, bytes32 stateHash))',
   'function configHash() view returns (bytes32)',
   'function buckets() view returns ((uint64 epoch, uint128[2] currentGross, uint128[2] previousGross))',
 ]);
-const ROUTER_ABI = parseAbi([
-  'function swap((address hook, bool zeroForOne, bool exactInput, uint128 amountSpecified, uint128 limitAmount, uint160 sqrtPriceLimitX96, address recipient, uint64 nonce, uint64 deadline, bytes32 expectedConfigHash, bool wrapInput, bool unwrapOutput, bool unwrapRefund) request) payable returns (uint128 amountIn, uint128 amountOut)',
-  'function nonces(address) view returns (uint64)',
-]);
+const ROUTER_ABI = MAINNET_ROUTER_ABI;
 const ERC20 = parseAbi([
   'function approve(address,uint256) returns (bool)',
   'function balanceOf(address) view returns (uint256)',
 ]);
 
-// The pool must be swappable now. A pool that was created but is currently closed is not a
-// working product, so this fails loudly instead of reporting a stale success.
+// The pool must be swappable now. A pool that is closed or halted fails before any approval/write.
 const policy = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'getPolicy' });
 console.log(`Policy: canSwap=${policy.canSwap} mode=${policy.mode} reasons=${policy.reasonBits}`);
-if (!policy.canSwap) {
-  throw new Error('pool is not swappable right now; the keeper must publish a fresh report for the active phase first');
-}
 
 const zeroForOne = arg('zeroForOne', 'true') === 'true';
 const amount = BigInt(arg('amount', '0'));
@@ -82,6 +77,7 @@ if (amount <= 0n) throw new Error('--amount must be a positive integer in the in
 
 const legs = resolveSwapLegs({ token0: pool.token0, token1: pool.token1, zeroForOne });
 const useNativeInput = arg('native', 'false') === 'true';
+const broadcast = swapBroadcast;
 
 // Exact-input router limit is minimum output in output-token base units, never amount-in units.
 // Require it explicitly; a guessed default can reject a valid trade or admit an unacceptable fill.
@@ -89,50 +85,64 @@ const minAmountOutArg = arg('minAmountOut', null);
 if (!minAmountOutArg) throw new Error('--minAmountOut is required in output-token base units');
 const minAmountOut = BigInt(minAmountOutArg);
 if (minAmountOut <= 0n) throw new Error('--minAmountOut must be a positive integer');
-const broadcast = swapBroadcast;
-
 const block = await publicClient.getBlock();
 const configHash = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'configHash' });
 const nonce = await publicClient.readContract({ address: manifest.router, abi: ROUTER_ABI, functionName: 'nonces', args: [account.address] });
 
-const request = buildMainnetSwapRequest({
-  hook: pool.hook,
-  zeroForOne,
-  amountIn: amount,
-  minAmountOut,
-  recipient: account.address,
-  nonce,
-  deadline: BigInt(Number(block.timestamp) + 600),
-  expectedConfigHash: configHash,
-  token0: pool.token0,
-  token1: pool.token1,
-  weth: manifest.weth,
-  now: BigInt(Number(block.timestamp)),
-  useNativeInput,
-});
-
-const beforeIn = await publicClient.readContract({ address: legs.tokenIn, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
+const beforeIn = useNativeInput ? 0n : await publicClient.readContract({ address: legs.tokenIn, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
 const beforeOut = await publicClient.readContract({ address: legs.tokenOut, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
 const bucketsBefore = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'buckets' });
-
-if (!useNativeInput) {
-  const balance = await publicClient.readContract({ address: legs.tokenIn, abi: ERC20, functionName: 'balanceOf', args: [account.address] });
-  if (balance < amount) throw new Error(`insufficient ${legs.tokenIn} balance: ${balance} < ${amount}`);
+const poolConfig = await publicClient.readContract({
+  address: pool.hook,
+  abi: ORACLE_POOL_CONFIG_ABI,
+  functionName: 'config',
+});
+const swapPolicy = await publicClient.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'getPolicy' });
+const remainingGross = poolConfig.windowCap[zeroForOne ? 0 : 1] - bucketsBefore.currentGross[zeroForOne ? 0 : 1];
+const liveState = await publicClient.readContract({ address: pool.hook, abi: parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']), functionName: 'state' });
+validateMainnetSwapPreflight({
+  poolLive: Number(liveState.lifecycle) === 2,
+  canSwap: policy.canSwap,
+  reasonBits: policy.reasonBits,
+  policyMode: policy.mode,
+  inputBalance: beforeIn,
+  amount,
+  remainingGross,
+  rollingRemaining: swapPolicy.rollingRemaining[zeroForOne ? 0 : 1],
+  minAmountOut,
+  nativeBalance: await publicClient.getBalance({ address: account.address }),
+  useNativeInput,
+});
+const quoteUrl = arg('quote-url', env.BELL_QUOTE_SERVICE_URL);
+let oracleUpdates = [];
+if (quoteUrl) {
+  const assetQueue = JSON.parse(readFileSync(env.BELL_MAINNET_ASSET_QUEUE || 'evidence/deploy/mainnet-4663-asset-queue.json', 'utf8'));
+  const pair = resolveOraclePair({ stock: stockArg ?? pool.stockSymbol, counterasset: counterArg, assetQueue });
+  validateOraclePoolPair(pair, poolConfig);
+  oracleUpdates = await fetchPoolOracleUpdates({ pair, quoteUrl });
 }
-
+const request = buildMainnetSwapRequest({
+  hook: pool.hook, zeroForOne, amountIn: amount, minAmountOut, recipient: account.address,
+  nonce, deadline: block.timestamp + 600n, expectedConfigHash: configHash,
+  token0: pool.token0, token1: pool.token1, weth: manifest.weth, now: block.timestamp,
+  useNativeInput, oracleUpdates,
+});
+const poolLiveCode = await publicClient.getBytecode({ address: pool.hook });
+if (!poolLiveCode || poolLiveCode === '0x') throw new Error(`pool hook ${pool.hook} has no code`);
 if (!broadcast) {
-  const simulation = await publicClient.simulateContract({
-    address: manifest.router,
-    abi: ROUTER_ABI,
-    functionName: 'swap',
-    args: [request],
-    account,
-    value: useNativeInput ? amount : 0n,
-  });
-  console.log(JSON.stringify({ mode: 'PLAN_ONLY', chainId, stock: pool.stockSymbol, counterasset: pool.counterasset, poolId: pool.poolId, amount: amount.toString(), minAmountOut: minAmountOut.toString(), simulatedResult: simulation.result?.map?.(String) ?? null }, null, 2));
-  console.log('No transaction sent. Add --broadcast to authorize the swap transaction.');
+  await publicClient.simulateContract({ address: manifest.router, abi: ROUTER_ABI, functionName: 'swap', args: [request], account, value: useNativeInput ? amount : 0n });
+  console.log(JSON.stringify({ mode: 'PLAN_ONLY', chainId, stock: pool.stockSymbol, counterasset: pool.counterasset, poolId: pool.poolId, amount: amount.toString(), minAmountOut: minAmountOut.toString(), note: 'simulation passed; no transaction sent' }, null, 2));
+  console.log('No transaction sent. Add --broadcast --i-authorize-spend only after reviewing.');
   process.exit(0);
 }
+
+validateSwapBroadcastAuthorization({
+  broadcast,
+  authorized: process.argv.includes('--i-authorize-spend'),
+  pairLabel: `${pool.stockSymbol}/${pool.counterasset}`,
+  amount,
+  minAmountOut,
+});
 
 if (!useNativeInput) {
   const approveHash = await walletClient.writeContract({

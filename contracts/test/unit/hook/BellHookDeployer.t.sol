@@ -92,6 +92,13 @@ contract BellHookDeployerTest {
         require(address(BellHook(hook).modeEvaluator()).code.length <= 24576,"evaluator exceeds EIP-170");
     }
 
+    function testInitcodeSizeGatesHookAndDeployer() external view {
+        bytes memory hookArguments = abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle());
+        require(type(BellHook).creationCode.length + hookArguments.length <= 49152, "hook exceeds EIP-3860");
+        bytes memory deployerArguments = abi.encode(address(this), dependency, keccak256(type(BellHook).creationCode), deployer.policyOracle());
+        require(type(BellHookDeployer).creationCode.length + deployerArguments.length <= 49152, "deployer exceeds EIP-3860");
+    }
+
     function testTransportPreservesExactPinnedCreationCodeHash() external view {
         bytes32 expected = keccak256(abi.encodePacked(type(BellHook).creationCode,
             abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle())));

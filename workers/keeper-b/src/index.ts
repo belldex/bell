@@ -11,12 +11,18 @@
  * /status instead of dying silently with the process.
  */
 import {
+  BaseError,
+  ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
+  decodeEventLog,
   http,
   keccak256,
   parseAbi,
+  parseAbiItem,
   stringToHex,
+  toHex,
+  toEventSelector,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '@bell/protocol/yahoo-attestation';
@@ -30,31 +36,196 @@ const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
 ]);
 const SESSION_ABI = parseAbi([
+  'function latestSample(bytes32,uint8) view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
   'function submitReports(bytes32,bytes[])',
   'function refreshHealth(bytes32) returns (uint256)',
   'function health(bytes32) view returns ((bool ready,uint256 reasonBits,uint64 healthySince,uint64 validUntil,uint64 baselineObservation,uint64 latestObservation))',
 ]);
 const DIRECT_ABI = parseAbi([
+  'error BadSample()',
+  'function readCurrent() view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
   'function publishDirect((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash),bytes)',
 ]);
 const HOOK_ABI = parseAbi([
   'function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] a,uint128[2] b,uint128[2] c,uint128[2] d,uint128[2] e,uint64 f,uint64 g,bytes32 h,bytes32 i))',
 ]);
+const POOL_CREATED_EVENT = parseAbiItem('event PoolCreated(address indexed hook,bytes32 indexed poolId,bytes32 configHash,address indexed creator,address recipient)');
+const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
+const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
+const TOKEN_ABI = parseAbi(['function symbol() view returns (string)', 'function decimals() view returns (uint8)']);
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
+}
+
+function quoteError(message, status = 422) {
+  return Object.assign(new Error(message), { status });
+}
+
+/** Read and sign only. The caller submits the bundle for onchain validation. */
+export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
+  if (!['AAPL', 'NVDA', 'TSLA'].includes(symbol)) throw quoteError('unsupported symbol', 400);
+  const assets = JSON.parse(env.BELL_STOCK_ASSETS || '[]');
+  const asset = assets.find((entry) => entry.symbol === symbol);
+  if (!asset) throw quoteError('symbol is not configured', 400);
+  const adapters = JSON.parse(env.BELL_MAINNET_ASSETS || '{}')[symbol];
+  const rpcUrl = env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
+  if (!rpcUrl || !env.YAHOO_REPORTER_PRIVATE_KEY || !env.BELL_CALENDAR_REGISTRY
+    || !env.BELL_SESSION_REGISTRY || !env.YAHOO_SOURCE_VERIFIER_ADDRESS
+    || !adapters?.directAdapter || !adapters.directWireHash) throw quoteError('quote service is not configured', 503);
+  const publicClient = createPublicClient({ transport: http(rpcUrl) });
+  const chainId = await publicClient.getChainId();
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
+  if (chainId !== expectedChainId) throw quoteError(`wrong chain ${chainId}, expected ${expectedChainId}`, 503);
+  const interval = await publicClient.readContract({ address: env.BELL_CALENDAR_REGISTRY, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [asset.assetId] });
+  const calendarPhase = Number(interval.phase);
+  if (!phaseNameForCalendarPhase(calendarPhase)) throw quoteError(`calendar phase ${calendarPhase} has no Yahoo source`);
+  if (BigInt(nowSeconds) < interval.start || BigInt(nowSeconds) >= interval.end) throw quoteError('calendar interval is not current');
+  const stream = wireForCalendarPhase(adapters, calendarPhase);
+  if (!stream?.wire?.feedId || !stream.wireHash) throw quoteError(`no admitted wire for phase ${calendarPhase}`);
+  let quote;
+  try { quote = await fetchQuote(symbol, { nowSeconds }); } catch (error) {
+    console.error('Yahoo quote upstream failed', String(error?.message ?? error).slice(0, 160));
+    throw quoteError('quote unavailable', 503);
+  }
+  if (quote?.symbol !== symbol) throw quoteError('Yahoo symbol mismatch');
+  const admission = evaluateQuote({ calendarPhase, quote, nowSeconds });
+  if (!admission.ok) throw quoteError(admission.reason);
+  const observedAt = BigInt(quote.observedAt);
+  const price18 = BigInt(quote.priceRaw18);
+  if (price18 <= 0n || price18 >= 2n ** 128n) throw quoteError('invalid quote price');
+  const [direct, latest] = await Promise.all([
+    publicClient.readContract({ address: adapters.directAdapter, abi: DIRECT_ABI, functionName: 'readCurrent' }).catch((error) => {
+      // An empty direct adapter explicitly reverts BadSample(). Never hide RPC or other errors.
+      const reverted = error instanceof BaseError ? error.walk((cause) => cause instanceof ContractFunctionRevertedError) : null;
+      if (reverted instanceof ContractFunctionRevertedError && reverted.data?.errorName === 'BadSample') return { observedAt: 0n };
+      throw error;
+    }),
+    publicClient.readContract({ address: env.BELL_SESSION_REGISTRY, abi: SESSION_ABI, functionName: 'latestSample', args: [asset.assetId, calendarPhase] }),
+  ]);
+  if (observedAt <= direct.observedAt || observedAt <= latest.observedAt) throw quoteError('quote observation has already been consumed', 409);
+  const base = {
+    descriptorId: ZERO32, price18, observedAt, inputAt: BigInt(nowSeconds), validFrom: observedAt,
+    expiresAt: BigInt(nowSeconds + 300), validUntil: BigInt(reportValidUntil(nowSeconds, Number(observedAt))),
+  };
+  const directSample = { ...base, feedId: ZERO32, phase: 0,
+    reportHash: keccak256(stringToHex(`bell-direct-${symbol}-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)) };
+  const streamSample = { ...base, feedId: stream.wire.feedId, phase: calendarPhase,
+    reportHash: keccak256(stringToHex(`bell-stream-${symbol}-${nowSeconds}-${quote.observedAt}-${quote.priceRaw18}`)) };
+  const signing = { chainId, verifier: env.YAHOO_SOURCE_VERIFIER_ADDRESS, privateKey: env.YAHOO_REPORTER_PRIVATE_KEY };
+  const [signedDirect, signedStream] = await Promise.all([
+    signYahooSourceSample(directSample, { ...signing, sourceConfigHash: adapters.directWireHash }),
+    signYahooSourceSample(streamSample, { ...signing, sourceConfigHash: stream.wireHash }),
+  ]);
+  return {
+    assetId: asset.assetId,
+    directSample: Object.fromEntries(Object.entries(directSample).map(([name, value]) => [name, typeof value === 'bigint' || typeof value === 'number' ? String(value) : value])),
+    directSignature: signedDirect.signature, reports: [signedStream.report], closeBoundaryHash: ZERO32,
+  };
+}
+
+/** Public read-only directory for pools emitted by the deployed Mainnet factory. */
+export async function runPools(env, { client, fetchImpl = fetch } = {}) {
+  const factory = env.BELL_POOL_FACTORY;
+  // Some endpoints serve eth_call but reject eth_getLogs. Prefer the Mainnet secondary/archive
+  // endpoint for event discovery, then use the configured primary as a fallback.
+  const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC
+    || env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
+  if (!factory || !rpcUrl) throw quoteError('pool directory is not configured', 503);
+  const chain = client ?? createPublicClient({ transport: http(rpcUrl) });
+  const chainId = await chain.getChainId();
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
+  if (chainId !== expectedChainId) throw quoteError(`wrong chain ${chainId}, expected ${expectedChainId}`, 503);
+  const fromBlock = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
+  const blockNumber = await chain.getBlockNumber();
+  let logs;
+  try {
+    // Raw eth_getLogs avoids provider-specific event-filter encoding quirks while still asking
+    // the configured chain RPC for canonical event data. Use bounded parallel ranges to keep
+    // the public directory response fast without exceeding the provider's per-query log limit.
+    const ranges: Array<[bigint, bigint]> = [];
+    for (let start = fromBlock; start <= blockNumber; start += 20_000n) {
+      ranges.push([start, start + 19_999n < blockNumber ? start + 19_999n : blockNumber]);
+    }
+    const chunks = await Promise.all(ranges.map(([start, end]) => chain.request({ method: 'eth_getLogs', params: [{
+      address: factory, fromBlock: toHex(start), toBlock: toHex(end), topics: [toEventSelector(POOL_CREATED_EVENT)],
+    }] } as any)));
+    logs = chunks.flatMap((chunk) => {
+      if (!Array.isArray(chunk)) throw new Error('eth_getLogs returned a malformed result');
+      return chunk;
+    });
+  } catch (rpcError) {
+    const rpcDetail = String(rpcError?.shortMessage ?? rpcError?.message ?? rpcError)
+      .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180);
+    console.error('factory eth_getLogs failed', rpcError?.name ?? 'Error', rpcDetail);
+    // Explorer fallback is read-only and still verifies every discovered hook against the RPC.
+    const legacy = new URL('https://robinhoodchain.blockscout.com/api');
+    legacy.search = new URLSearchParams({ module: 'logs', action: 'getLogs', fromBlock: String(fromBlock), toBlock: 'latest', address: factory }).toString();
+    // Blockscout rejects custom User-Agent strings on this public compatibility API.
+    const response = await fetchImpl(legacy, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw quoteError(`pool index unavailable after RPC log read (${rpcDetail}): ${response.status}`, 503);
+    const page = await response.json();
+    if (!Array.isArray(page?.result)) throw quoteError(`pool logs unavailable (${String(rpcError?.shortMessage ?? rpcError?.message ?? 'RPC error').slice(0, 120)})`, 503);
+    logs = page.result;
+  }
+  if (!Array.isArray(logs)) throw quoteError('chain RPC returned malformed factory logs', 503);
+  const found = new Map<string, any>();
+  for (const log of logs) {
+    if (BigInt(log.blockNumber) < fromBlock) continue;
+    try {
+      const decoded = decodeEventLog({ abi: [POOL_CREATED_EVENT], data: log.data, topics: log.topics });
+      const hook = decoded.args.hook;
+      if (hook) found.set(String(hook).toLowerCase(), { args: decoded.args, blockNumber: BigInt(log.blockNumber) });
+    } catch { /* Ignore unrelated factory events; only PoolCreated rows are surfaced. */ }
+  }
+  const unique = [...found.values()];
+  const pools = await Promise.all(unique.map(async (log) => {
+    const hook = log.args.hook;
+    const config = await chain.readContract({ address: hook, abi: POOL_CONFIG_ABI, functionName: 'config' });
+    const [policy, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
+      chain.readContract({ address: hook, abi: POOL_POLICY_ABI, functionName: 'getPolicy' }),
+      chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'symbol' }),
+      chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'symbol' }),
+      chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
+      chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'decimals' }),
+    ]);
+    const strings = (values) => Array.from(values, (value) => String(value));
+    return {
+      hook, poolId: log.args.poolId, token0: config.token0, token1: config.token1,
+      asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
+      poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
+      tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
+      policy: {
+        canSwap: policy.canSwap, mode: Number(policy.mode), phase: Number(policy.phase), flags: Number(policy.flags),
+        reasonBits: String(policy.reasonBits), lpFeeUnits: Number(policy.lpFeeUnits), bandBps: Number(policy.bandBps),
+        effectiveTradeCap: strings(policy.effectiveTradeCap), effectiveWindowCap: strings(policy.effectiveWindowCap),
+        rollingRemaining: strings(policy.rollingRemaining), closureRemaining: strings(policy.closureRemaining),
+        referencePrice18: strings(policy.referencePrice18), validUntil: String(policy.validUntil), closureNonce: String(policy.closureNonce),
+      },
+      legs: [{ address: config.token0, symbol: symbol0, decimals: Number(decimals0) }, { address: config.token1, symbol: symbol1, decimals: Number(decimals1) }],
+      createdAtBlock: String(log.blockNumber),
+    };
+  }));
+  return { chainId, blockNumber: String(blockNumber), pools };
 }
 
 /** Runs one keeper tick. Exported so it can be exercised without Cloudflare bindings. */
 export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
+  if (env.BELL_ORACLE_MODE === 'pull') return { status: 'skipped', reason: 'scheduled transactions disabled in pull mode' };
   // The RPC is configuration, not a testnet assumption. BELL_RPC_URL wins; the testnet variable is
   // kept as a fallback so an existing deployment keeps working unchanged.
   const rpcUrl = env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
   if (!rpcUrl) return { status: 'skipped', reason: 'BELL_RPC_URL is not configured' };
   if (!env.YAHOO_REPORTER_PRIVATE_KEY) return { status: 'skipped', reason: 'YAHOO_REPORTER_PRIVATE_KEY is not configured' };
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
+  const transactionPrivateKey = env.BELL_TRANSACTION_PRIVATE_KEY
+    || (expectedChainId === 46630 ? env.YAHOO_REPORTER_PRIVATE_KEY : null);
+  if (!transactionPrivateKey) {
+    return { status: 'skipped', reason: 'BELL_TRANSACTION_PRIVATE_KEY is required for sponsored mainnet transactions' };
+  }
 
   // Multi-asset: the keeper publishes for every configured asset each tick. BELL_STOCK_ASSETS is
   // a JSON array of {symbol, assetId}; BELL_MAINNET_ASSETS is a JSON map symbol -> adapters.
@@ -92,14 +263,16 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
     return { status: 'skipped', reason: 'keeper addresses are not configured' };
   }
 
-  const account = privateKeyToAccount(env.YAHOO_REPORTER_PRIVATE_KEY);
+  // The reporter key signs Yahoo attestations; a separately funded relayer pays transaction gas.
+  // Contracts accept reporter-signed reports from any caller, so the relayer need not hold the
+  // price-signing key. Keep the testnet fallback for existing rehearsal deployments only.
+  const transactionAccount = privateKeyToAccount(transactionPrivateKey);
   const publicClient = createPublicClient({ transport: http(rpcUrl) });
-  const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
+  const walletClient = createWalletClient({ account: transactionAccount, transport: http(rpcUrl) });
 
   const chainId = await publicClient.getChainId();
   // The keeper used to hardcode testnet 46630, which made a mainnet deployment unpublishable no
   // matter what the vars said. The expected chain is configuration now.
-  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
   if (chainId !== expectedChainId) {
     return { status: 'failed', reason: `wrong chain ${chainId}, expected ${expectedChainId}` };
   }
@@ -185,6 +358,7 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
       results[symbol] = {
         status: 'published', calendarPhase, yahooPhase: quote.phase,
         price18: price18.toString(), observedAt: Number(observedAt),
+        transactionSender: transactionAccount.address,
         directTx: directHash, streamTx: streamHash, refreshTx: refreshHash,
         healthReady: health.ready, healthReasons: health.reasonBits.toString(),
       };
@@ -211,6 +385,33 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const isPublicRead = ['/quote', '/pools'].includes(url.pathname);
+    const cors = (response) => {
+      const headers = new Headers(response.headers);
+      headers.set('access-control-allow-origin', '*');
+      headers.set('access-control-allow-methods', 'GET, OPTIONS');
+      headers.set('access-control-allow-headers', 'content-type');
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    };
+    if (isPublicRead && request.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
+    if (url.pathname === '/pools') {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      try { return cors(json(await runPools(env))); }
+      catch (error) {
+        const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);
+        console.error('pool directory failed', error?.name ?? 'Error', detail);
+        return cors(json({ error: 'Live pool discovery is temporarily unavailable' }, error.status || 503));
+      }
+    }
+    if (url.pathname === '/quote') {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      if (!['AAPL', 'NVDA', 'TSLA'].includes(url.searchParams.get('symbol'))) return cors(json({ error: 'unsupported symbol' }, 400));
+      const id = env.KEEPER_DO.idFromName('bell-keeper');
+      return cors(await env.KEEPER_DO.get(id).fetch(request));
+    }
+    if (env.BELL_ORACLE_MODE === 'pull' && ['/tick', '/ensure-alarm'].includes(url.pathname)) {
+      return json({ error: 'scheduled transactions disabled in pull mode' }, 409);
+    }
     if (env.BELL_TEST_MODE === '1' && url.pathname === '/__test/runtime') {
       // Shared-runtime vector: proves the same domain logic runs inside the Workers isolate.
       const [amounts, fee, calendar, identity, source, swap] = await Promise.all([

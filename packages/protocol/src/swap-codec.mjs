@@ -5,6 +5,24 @@ const UINT128_MAX = (1n << 128n) - 1n;
 const UINT160_MAX = (1n << 160n) - 1n;
 const ADDRESS = /^0x[0-9a-f]{40}$/i;
 const BYTES32 = /^0x[0-9a-f]{64}$/i;
+const BYTES = /^0x(?:[0-9a-f]{2})+$/i;
+export const ZERO32 = `0x${'00'.repeat(32)}`;
+export const SOURCE_SAMPLE_COMPONENTS = Object.freeze([
+  { name: 'descriptorId', type: 'bytes32' },
+  { name: 'feedId', type: 'bytes32' },
+  { name: 'phase', type: 'uint8' },
+  { name: 'price18', type: 'uint128' },
+  ...['observedAt', 'inputAt', 'validFrom', 'expiresAt', 'validUntil'].map((name) => ({ name, type: 'uint64' })),
+  { name: 'reportHash', type: 'bytes32' },
+]);
+export const ORACLE_PULL_UPDATE_COMPONENTS = Object.freeze([
+  { name: 'assetId', type: 'bytes32' },
+  { name: 'directSample', type: 'tuple', components: SOURCE_SAMPLE_COMPONENTS },
+  { name: 'directSignature', type: 'bytes' },
+  { name: 'reports', type: 'bytes[]' },
+  { name: 'closeBoundaryHash', type: 'bytes32' },
+]);
+export const ORACLE_PULL_UPDATES_ABI = [{ name: 'oracleUpdates', type: 'tuple[]', components: ORACLE_PULL_UPDATE_COMPONENTS }];
 export const SWAP_REQUEST_COMPONENTS = Object.freeze([
   { name: 'hook', type: 'address' },
   { name: 'zeroForOne', type: 'bool' },
@@ -19,6 +37,7 @@ export const SWAP_REQUEST_COMPONENTS = Object.freeze([
   { name: 'wrapInput', type: 'bool' },
   { name: 'unwrapOutput', type: 'bool' },
   { name: 'unwrapRefund', type: 'bool' },
+  ...ORACLE_PULL_UPDATES_ABI,
 ]);
 const ABI = [{ type: 'tuple', components: SWAP_REQUEST_COMPONENTS }];
 
@@ -29,6 +48,50 @@ function uint(value, maximum, label, { positive = false } = {}) {
   else throw new TypeError(`${label} must be a bigint or canonical decimal string`);
   if (parsed < (positive ? 1n : 0n) || parsed > maximum) throw new RangeError(`${label} is outside its unsigned ABI width`);
   return parsed;
+}
+
+function bytes32(value, label, { nonzero = false } = {}) {
+  if (!BYTES32.test(value ?? '') || (nonzero && value.toLowerCase() === ZERO32)) throw new TypeError(`${label} must be ${nonzero ? 'nonzero ' : ''}bytes32`);
+  return value.toLowerCase();
+}
+
+function bytes(value, label) {
+  if (typeof value !== 'string' || !BYTES.test(value)) throw new TypeError(`${label} must be nonempty even-length hex bytes`);
+  return value.toLowerCase();
+}
+
+/** Convert decimal-string quote JSON into ABI integers without JS number precision loss. */
+export function normalizeOraclePullUpdates(updates = []) {
+  if (!Array.isArray(updates)) throw new TypeError('oracleUpdates must be an array');
+  if (updates.length > 2) throw new Error('oracleUpdates supports at most two stock legs');
+  const seen = new Set();
+  return updates.map((update) => {
+    const assetId = bytes32(update?.assetId, 'assetId', { nonzero: true });
+    if (seen.has(assetId)) throw new Error('duplicate oracle update assetId');
+    seen.add(assetId);
+    const sample = update.directSample;
+    if (!sample || typeof sample !== 'object') throw new TypeError('directSample must be an object');
+    const directSample = Object.fromEntries(SOURCE_SAMPLE_COMPONENTS.map(({ name, type }) => [name,
+      type === 'bytes32' ? bytes32(sample[name], name) : uint(sample[name], type === 'uint8' ? 255n : type === 'uint128' ? UINT128_MAX : UINT64_MAX, name),
+    ]));
+    if (directSample.descriptorId !== ZERO32 || directSample.feedId !== ZERO32 || directSample.phase !== 0n
+      || directSample.price18 === 0n || directSample.observedAt === 0n || directSample.reportHash === ZERO32) {
+      throw new Error('directSample requires zero descriptorId/feedId/phase and nonzero price18, observedAt and reportHash');
+    }
+    if (!Array.isArray(update.reports) || update.reports.length === 0 || update.reports.length > 6) throw new TypeError('reports must contain one to six nonempty reports');
+    const directSignature = bytes(update.directSignature, 'directSignature');
+    if (directSignature.length !== 132) throw new Error('directSignature must be a 65-byte signature');
+    return {
+      assetId, directSample,
+      directSignature,
+      reports: update.reports.map((report) => bytes(report, 'report')),
+      closeBoundaryHash: bytes32(update.closeBoundaryHash ?? ZERO32, 'closeBoundaryHash'),
+    };
+  });
+}
+
+export function encodeOraclePullUpdates(updates) {
+  return encodeAbiParameters(ORACLE_PULL_UPDATES_ABI, [normalizeOraclePullUpdates(updates)]);
 }
 
 function normalizeSwapRequest(request) {
@@ -55,6 +118,7 @@ function normalizeSwapRequest(request) {
     wrapInput: request.wrapInput,
     unwrapOutput: request.unwrapOutput,
     unwrapRefund: request.unwrapRefund,
+    oracleUpdates: normalizeOraclePullUpdates(request.oracleUpdates),
   };
 }
 
@@ -78,6 +142,13 @@ function normalizeDecoded(wire) {
     wrapInput: values[10],
     unwrapOutput: values[11],
     unwrapRefund: values[12],
+    oracleUpdates: values[13].map((update) => ({
+      assetId: update.assetId.toLowerCase(),
+      directSample: Object.fromEntries(SOURCE_SAMPLE_COMPONENTS.map(({ name }) => [name, update.directSample[name].toString().toLowerCase()])),
+      directSignature: update.directSignature.toLowerCase(),
+      reports: update.reports.map((report) => report.toLowerCase()),
+      closeBoundaryHash: update.closeBoundaryHash.toLowerCase(),
+    })),
   };
 }
 

@@ -10,7 +10,6 @@ import {ModePolicy} from "./libraries/ModePolicy.sol";
 import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
-import {Mode, PoolClass} from "./types/ProtocolTypes.sol";
 
 /// @dev Narrow local surface of ChainlinkTokenReferenceAdapter consumed with bounded staticcalls.
 interface IChainlinkTokenReference {
@@ -427,7 +426,12 @@ contract BellPolicyOracle {
             }
         }
 
-        if (descriptorOk && AssetPolicy.oraclelessCounterasset(descriptor_, input.poolClass)) {
+        bool referencePricedCounter = descriptorOk && input.poolClass == uint8(PoolClass.PRICE_GUARDED)
+            && !descriptor_.isStock && input.referenceAdapter0 != address(0) && input.referenceAdapter1 != address(0);
+        if (descriptorOk && (AssetPolicy.oraclelessCounterasset(descriptor_, input.poolClass) || referencePricedCounter)) {
+            // SESSION_ONLY explicitly accepts an oracleless counterasset. PRICE_GUARDED
+            // non-stock assets instead rely on their required per-pool Chainlink adapter,
+            // checked by _referencePrices; they must not need stock-session report health.
             result.legHealthy = true;
         } else {
             _evaluateAssetHealth(input, result, assetId, observations);

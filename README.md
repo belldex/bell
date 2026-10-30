@@ -19,16 +19,21 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
 
 ## Quick status
 
-- **End-to-end has run on Robinhood Testnet (46630).** The first pool is live and the first swap succeeded
-  onchain: 5 token0 → 3 token1, budget commit `[5, 3]`, rolling cap turun `[100,100] → [95,97]`.
-- The protocol implementation is complete and all suites are green: 351 forge tests (27 suites, including 2 suites
-  invariant runs of 100k), 297 node:test, 45+18 reference Python, 15 Deno, 6 keeper-b.
-- Price path: **Yahoo Finance + BELL EIP-712 reporter**. Chainlink is not used (paid).
+- **Robinhood Chain mainnet (4663) is deployed.** The protocol stack, Yahoo source verifier/adapters,
+  reference adapters, stock assets, and 2026 calendars have live deployment evidence under
+  `evidence/deploy/`. Mainnet has no pool or swap yet; the keeper Worker is not deployed/configured.
+- **Testnet (46630) has completed rehearsal swaps and acceptance runs.** Those pools use rehearsal
+  fixtures and are not evidence of mainnet liquidity or token data rights.
+- Mainnet price paths use **Yahoo Finance + the BELL EIP-712 reporter** for session health, with
+  **Chainlink AggregatorV3 references** available for independent price checks. Yahoo feed rights are
+  not verified by deployment evidence (`rightsVerified: false`).
 - **Swap enforcement is active for SESSION_ONLY.** `BellHook` prepares and settles swaps;
   policy evaluation was moved to `BellPolicyOracle` to fit within EIP-170.
-- **PRICE_GUARDED remains blocked** (no reference has been admitted yet).
-- **Mainnet has not been touched.** No transactions have occurred on chainId 4663.
-- The frontend does not submit transactions; the price keeper is still a no-op.
+- **PRICE_GUARDED has independent reference adapters deployed**, but pool creation still needs current
+  session health and explicit seed amounts. The matrix planner shows which pairs are ready or blocked.
+- Mainnet keeper code supports the deployed multi-asset setup, but Cloudflare secrets, a funded relayer,
+  and a Worker deployment are still required before it can publish health.
+- The frontend swap flow exists; a live mainnet pool and mainnet swap have not been created.
 
 ## Structure
 

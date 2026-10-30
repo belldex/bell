@@ -7,6 +7,12 @@
  * slippage bounds, and canonical WETH wrapping/unwrapping — so the request shape and the
  * wrap/unwrap decisions are built here, where they can be tested without an RPC.
  */
+import { SWAP_REQUEST_COMPONENTS } from '../../packages/protocol/src/swap-codec.mjs';
+
+export const MAINNET_ROUTER_ABI = [
+  { type: 'function', name: 'swap', stateMutability: 'payable', inputs: [{ name: 'request', type: 'tuple', components: SWAP_REQUEST_COMPONENTS }], outputs: [{ name: 'amountIn', type: 'uint128' }, { name: 'amountOut', type: 'uint128' }] },
+  { type: 'function', name: 'nonces', stateMutability: 'view', inputs: [{ type: 'address' }], outputs: [{ type: 'uint64' }] },
+];
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
@@ -37,7 +43,7 @@ export function resolveSwapLegs({ token0, token1, zeroForOne }) {
 export function buildMainnetSwapRequest(input) {
   const {
     hook, zeroForOne, amountIn, minAmountOut, recipient, nonce, deadline, expectedConfigHash,
-    token0, token1, weth, now, useNativeInput = false, unwrapOutput = false,
+    token0, token1, weth, now, useNativeInput = false, unwrapOutput = false, oracleUpdates = [],
   } = input;
 
   const hookAddress = nonZeroAddress(hook, 'hook');
@@ -84,5 +90,6 @@ export function buildMainnetSwapRequest(input) {
     wrapInput: useNativeInput,
     unwrapOutput,
     unwrapRefund: useNativeInput,
+    oracleUpdates,
   });
 }

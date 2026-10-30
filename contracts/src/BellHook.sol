@@ -18,6 +18,7 @@ import {
     CalendarLeaf,
     Anchor,
     SourceSample,
+    OraclePullUpdate,
     PoolConfig,
     PoolState,
     Buckets,
@@ -37,7 +38,6 @@ import {
     ISafetyController
 } from "./interfaces/IBellProtocol.sol";
 import {PolicyConstants} from "./libraries/PolicyConstants.sol";
-import {ModePolicy} from "./libraries/ModePolicy.sol";
 import {BellModeEvaluator} from "./BellModeEvaluator.sol";
 import {BellPolicyOracle} from "./BellPolicyOracle.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
@@ -171,7 +171,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// a second dependency read.
     struct PolicyEvaluation {
         PolicyView policy;
-        ModePolicy.Decision decision;
+        bool beginLatch;
+        bool releaseLatch;
         PoolState nextState;
     }
 
@@ -396,14 +397,24 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         }
     }
 
-    function _beforeSwap(address, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
+    function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         internal
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         _requireBoundKey(key);
-        if (hookData.length != 0) revert ContextMismatch();
-        bytes32 callbackHash = keccak256(abi.encode(msg.sender, key, params));
+        if (hookData.length != 0) {
+            // Reject legacy policy/reference tuples before calling the registry transport.
+            bytes4 mismatch = ContextMismatch.selector;
+            assembly ("memory-safe") {
+                if or(lt(hookData.length, 128), iszero(eq(calldataload(add(hookData.offset, 64)), 96))) {
+                    mstore(0, mismatch)
+                    revert(0, 4)
+                }
+            }
+            _applyEncodedOracleUpdates(hookData, true);
+        }
+        bytes32 callbackHash = _swapContextHash(sender, key, params, hookData);
         (uint160 preSqrtPriceX96,,,) = StateLibrary.getSlot0(poolManager, key.toId());
         _swapSnapshot = policyOracle.prepareSwap(
             _policyInput(),
@@ -423,18 +434,23 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     }
 
     function _afterSwap(
-        address,
+        address sender,
         PoolKey calldata key,
-        SwapParams calldata,
+        SwapParams calldata params,
         BalanceDelta delta,
         bytes calldata hookData
     ) internal override returns (bytes4, int128) {
         _requireBoundKey(key);
-        if (hookData.length != 0) revert ContextMismatch();
-        bytes32 callbackHash = _swapCallbackHash;
-        if (callbackHash == bytes32(0)) revert ContextMismatch();
+        bytes32 callbackHash = _swapContextHash(sender, key, params, hookData);
+        if (callbackHash != _swapCallbackHash) revert ContextMismatch();
         _settleSwap(key, callbackHash, delta);
         return (IHooks.afterSwap.selector, 0);
+    }
+
+    function _swapContextHash(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
+        private pure returns (bytes32)
+    {
+        return keccak256(abi.encode(sender, key, params, keccak256(hookData)));
     }
 
     /// @dev Split out so the callback frame stays shallow: the settlement arithmetic lives in the evaluator,
@@ -454,8 +470,12 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
             address(modeEvaluator)
         );
         _buckets = nextBuckets;
+        // Successful open swaps prove continuity through this exact policy snapshot. A real report gap
+        // still blocks prepareSwap before settlement, so it cannot extend its own recovery deadline.
         if (snapshot.context.closedLatched) {
             _episodeGross[snapshot.context.closureNonce] = nextEpisode;
+        } else if (snapshot.context.mode == uint8(Mode.ACTIVE)) {
+            _state.oldValidUntil = snapshot.context.validUntil;
         }
         delete _swapSnapshot;
         _swapCallbackHash = bytes32(0);
@@ -470,10 +490,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     }
 
     function _requireBoundKey(PoolKey calldata key) private view {
-        if (
-            address(key.hooks) != address(this) || Currency.unwrap(key.currency0) != _token0
-                || Currency.unwrap(key.currency1) != _token1 || key.fee != _poolFee || key.tickSpacing != _tickSpacing
-        ) revert ContextMismatch();
+        // The immutable id commits to all five key fields, including this hook's address.
+        if (PoolId.unwrap(key.toId()) != poolId) revert ContextMismatch();
     }
 
     // -------------------------------------------------------------------------
@@ -589,12 +607,31 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// vector produced by the same evaluator as `getPolicy`. It never touches `_buckets` or `_episodeGross`, so
     /// pause/fault checkpoints cannot reset or refill accounting.
     function refreshState() external override returns (PolicyView memory policy) {
+        return _checkpointPolicy();
+    }
+
+    /// @notice Apply a complete pool stock update set and commit the ordinary policy/recovery checkpoint.
+    /// This persists the first recovery observation even when a swap would still be blocked.
+    function prepareOracleUpdates(OraclePullUpdate[] calldata)
+        external override returns (PolicyView memory)
+    {
+        _applyEncodedOracleUpdates(msg.data[4:], false);
+        return _checkpointPolicy();
+    }
+
+    function _checkpointPolicy() private returns (PolicyView memory policy) {
         PolicyEvaluation memory evaluation = _evaluatePolicy(true);
         policy = evaluation.policy;
         _state = evaluation.nextState;
-        if (evaluation.decision.beginLatch) emit ClosureStarted(poolId, _state.closureNonce);
-        if (evaluation.decision.releaseLatch) emit ClosureEnded(poolId, _state.closureNonce);
+        if (evaluation.beginLatch) emit ClosureStarted(poolId, _state.closureNonce);
+        if (evaluation.releaseLatch) emit ClosureEnded(poolId, _state.closureNonce);
         emit ModeCheckpoint(poolId, policy.mode, policy.reasonBits, policy.closureNonce, _state.reopenCandidateAt);
+    }
+
+    /// @dev Decode and registry writes live in SessionRegistry to keep this immutable hook deployable.
+    /// The hook binds its pool legs; caller-supplied payloads cannot select another pool's assets.
+    function _applyEncodedOracleUpdates(bytes calldata payload, bool swapEnvelope) private {
+        ISessionRegistry(sessionRegistry).applyPoolOracleUpdates(_asset0, _asset1, payload, swapEnvelope);
     }
 
     /// @dev Single canonical evaluator. Dependency reads are bounded staticcalls; a failed read is a recorded
@@ -609,10 +646,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         BellPolicyOracle.Output memory o = _runOracle(snapshot);
 
         evaluation.policy = _projectPolicy(o, checkpoint);
-        evaluation.decision = _projectDecision(o);
-        evaluation.nextState = _projectState(snapshot, o, evaluation.decision);
+        evaluation.beginLatch = o.beginLatch;
+        evaluation.releaseLatch = o.releaseLatch;
+        evaluation.nextState = _projectState(snapshot, o);
         evaluation.policy.stateHash = _stateHash(
-            _hashState(snapshot, evaluation.nextState, o, evaluation.policy, evaluation.decision, checkpoint),
+            _hashState(snapshot, evaluation.nextState, o, evaluation.policy, checkpoint),
             o.dependencyHash
         );
         if (checkpoint) evaluation.policy.closureNonce = evaluation.nextState.closureNonce;
@@ -653,35 +691,23 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         policy.configHash = o.configHash;
     }
 
-    function _projectDecision(BellPolicyOracle.Output memory o) private pure returns (ModePolicy.Decision memory decision) {
-        decision.mode = o.decisionMode;
-        decision.canSwap = o.canSwap;
-        decision.reasons = o.reasonBits;
-        decision.latch = o.latch;
-        decision.closureNonce = o.decisionClosureNonce;
-        decision.beginLatch = o.beginLatch;
-        decision.releaseLatch = o.releaseLatch;
-        decision.releaseRecovery = o.releaseRecovery;
-        decision.reopenCandidateAt = o.reopenCandidateAt;
-        decision.oldValidUntil = o.oldValidUntil;
-        decision.reopenBaseObservations = o.reopenBaseObservations;
-        decision.lastOpenObservations = o.lastOpenObservations;
-    }
-
     function _projectState(
         PoolState memory snapshot,
-        BellPolicyOracle.Output memory o,
-        ModePolicy.Decision memory decision
+        BellPolicyOracle.Output memory o
     ) private pure returns (PoolState memory nextState) {
-        nextState = _copyState(snapshot);
-        nextState.mode = decision.mode;
-        nextState.closedLatched = decision.latch;
-        nextState.closureNonce = decision.closureNonce;
-        nextState.reopenCandidateAt = decision.reopenCandidateAt;
-        nextState.oldValidUntil = decision.oldValidUntil;
-        nextState.reopenBaseObservations = decision.reopenBaseObservations;
-        nextState.lastOpenObservations = decision.lastOpenObservations;
-        if (o.poolPauseOk) nextState.pauseNonce = o.pauseNonce;
+        // Build a fresh state rather than copying and then overwriting the recovery fields.
+        // The pre-checkpoint snapshot must remain intact for view-only release hashing.
+        nextState.lifecycle = snapshot.lifecycle;
+        nextState.mode = o.decisionMode;
+        nextState.closedLatched = o.latch;
+        nextState.closureNonce = o.decisionClosureNonce;
+        nextState.reopenCandidateAt = o.reopenCandidateAt;
+        nextState.oldValidUntil = o.oldValidUntil;
+        nextState.reopenBaseObservations = o.reopenBaseObservations;
+        nextState.lastOpenObservations = o.lastOpenObservations;
+        nextState.pauseNonce = o.poolPauseOk ? o.pauseNonce : snapshot.pauseNonce;
+        nextState.bellStart = snapshot.bellStart;
+        nextState.corporateUntil = snapshot.corporateUntil;
     }
 
     /// @dev The hash binds the state that will be persisted after a checkpoint, or the projected pre-release
@@ -691,7 +717,6 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         PoolState memory nextState,
         BellPolicyOracle.Output memory o,
         PolicyView memory policy,
-        ModePolicy.Decision memory decision,
         bool checkpoint
     ) private pure returns (PoolState memory hashState) {
         if (checkpoint) {
@@ -700,12 +725,12 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
             return hashState;
         }
         hashState = snapshot;
-        if (!decision.releaseLatch && !decision.releaseRecovery) {
+        if (!o.releaseLatch && !o.releaseRecovery) {
             hashState.mode = policy.mode;
-            hashState.reopenCandidateAt = decision.reopenCandidateAt;
-            hashState.oldValidUntil = decision.oldValidUntil;
-            hashState.reopenBaseObservations = decision.reopenBaseObservations;
-            hashState.lastOpenObservations = decision.lastOpenObservations;
+            hashState.reopenCandidateAt = o.reopenCandidateAt;
+            hashState.oldValidUntil = o.oldValidUntil;
+            hashState.reopenBaseObservations = o.reopenBaseObservations;
+            hashState.lastOpenObservations = o.lastOpenObservations;
         }
         if (o.poolPauseOk) hashState.pauseNonce = o.pauseNonce;
     }
@@ -744,22 +769,6 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
                 configHash, sessionRegistry, snapshot, _buckets, _episodeGross[snapshot.closureNonce], dependencyHash
             )
         );
-    }
-
-    /// @dev Explicit deep copy. Memory-to-memory struct assignment creates a reference in Solidity, so mutating
-    /// `nextState` would otherwise corrupt the pre-release snapshot used by a view-only release hash.
-    function _copyState(PoolState memory source) private pure returns (PoolState memory copy) {
-        copy.lifecycle = source.lifecycle;
-        copy.mode = source.mode;
-        copy.closedLatched = source.closedLatched;
-        copy.closureNonce = source.closureNonce;
-        copy.reopenCandidateAt = source.reopenCandidateAt;
-        copy.oldValidUntil = source.oldValidUntil;
-        copy.reopenBaseObservations = source.reopenBaseObservations;
-        copy.lastOpenObservations = source.lastOpenObservations;
-        copy.pauseNonce = source.pauseNonce;
-        copy.bellStart = source.bellStart;
-        copy.corporateUntil = source.corporateUntil;
     }
 
     function _rollingRemaining(uint128 cap, uint128 currentGross, uint128 previousGross)

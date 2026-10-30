@@ -45,7 +45,13 @@ function loadEnv(text) {
 }
 
 function readState() {
-  return existsSync(STATE_PATH_ASSET) ? JSON.parse(readFileSync(STATE_PATH_ASSET, 'utf8')) : null;
+  if (!existsSync(STATE_PATH_ASSET)) return null;
+  const state = JSON.parse(readFileSync(STATE_PATH_ASSET, 'utf8'));
+  // Calendar state is bound to the immutable registry and asset. Never reuse an old deployment's
+  // single-use root operation when the manifest now points at a newly deployed registry.
+  if (state.calendarRegistry?.toLowerCase() !== calendarRegistry.toLowerCase()
+    || state.assetId?.toLowerCase() !== assetId?.toLowerCase()) return null;
+  return state;
 }
 
 function writeState(next) {
@@ -53,6 +59,9 @@ function writeState(next) {
 }
 
 const env = loadEnv(readFileSync('.env', 'utf8'));
+for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI', 'BELL_CALENDAR_DAYS', 'BELL_CAPABILITY_MASK']) {
+  if (process.env[name] !== undefined) env[name] = process.env[name];
+}
 const rpcUrl = env.RH_MAINNET_RPC_PRIMARY;
 const deployerPk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY;
 if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
@@ -84,6 +93,9 @@ const calendarRegistry = manifest.calendarRegistry;
 const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `0x${deployerPk}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
 const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
+const broadcastRequested = process.argv.includes('--broadcast');
+const authorizeSpend = process.argv.includes('--i-authorize-spend');
+if (broadcastRequested && !authorizeSpend) throw new Error('calendar writes require --broadcast --i-authorize-spend');
 
 const chainId = await publicClient.getChainId();
 if (chainId !== MAINNET_CHAIN_ID) throw new Error(`Wrong chain ${chainId}; expected ${MAINNET_CHAIN_ID}`);
@@ -111,6 +123,7 @@ const now = Number(head.timestamp);
 
 async function simulateAndSend(request, label) {
   await publicClient.simulateContract({ ...request, account });
+  if (!broadcastRequested || !authorizeSpend) throw new Error(`${label} simulated only; add --broadcast --i-authorize-spend to submit`);
   const hash = await walletClient.writeContract(request);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== 'success') throw new Error(`${label} reverted: ${hash}`);
@@ -132,7 +145,7 @@ async function currentIntervalState() {
 const command = process.argv[2] ?? 'status';
 
 if (command === 'plan') {
-  const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
+  const coverageDays = Number(env.BELL_CALENDAR_DAYS || 60);
   // Leave only the configured notice or a short activation buffer. Do not round to midnight:
   // same-day activation is valid and avoids an unnecessary multi-hour idle period.
   const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
@@ -174,7 +187,7 @@ if (command === 'plan') {
     process.exit(1);
   }
 
-  const coverageDays = Number(process.env.BELL_CALENDAR_DAYS || 60);
+  const coverageDays = Number(env.BELL_CALENDAR_DAYS || 60);
   const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
   const coverageEnd = coverageStart + coverageDays * DAY;
   const plan = planMainnetCalendarTimeline({
@@ -194,7 +207,7 @@ if (command === 'plan') {
 
   const intervals = buildEtMarketIntervals(coverageStart, coverageEnd);
   const provenanceHash = keccak256(stringToHex('BELL_MAINNET_US_EASTERN_SESSIONS_V1'));
-  const capabilityMask = Number(process.env.BELL_CAPABILITY_MASK || 0b110); // PRE + REGULAR
+  const capabilityMask = Number(env.BELL_CAPABILITY_MASK || 0b110); // PRE + REGULAR
   const dataset = buildCalendarDataset({
     schemaVersion: 1,
     chainId: String(chainId),
@@ -322,7 +335,7 @@ if (command === 'plan') {
     year: state.year,
     coverageStart: String(state.coverageStart),
     coverageEnd: String(state.coverageEnd),
-    capabilityMask: Number(process.env.BELL_CAPABILITY_MASK || 0b110),
+    capabilityMask: Number(env.BELL_CAPABILITY_MASK || 0b110),
     datasetProvenance: {
       timezone: 'America/New_York',
       timezoneDatabaseVersion: '2026a',

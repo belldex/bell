@@ -124,3 +124,14 @@ test('minimum output must be supplied explicitly in output-token units', () => {
   });
   assert.equal(request.limitAmount, 10n ** 18n);
 });
+
+test('builder defaults oracle updates to an empty array and preserves supplied updates for ABI encoding', () => {
+  const base = {
+    hook: HOOK, zeroForOne: true, amountIn: 1n, minAmountOut: 1n,
+    recipient: RECIPIENT, nonce: 0n, deadline: 1_800_000_000n, expectedConfigHash: CONFIG_HASH,
+    token0: WETH, token1: STOCK, weth: WETH,
+  };
+  assert.deepEqual(buildMainnetSwapRequest(base).oracleUpdates, []);
+  const updates = [{ assetId: CONFIG_HASH }];
+  assert.deepEqual(buildMainnetSwapRequest({ ...base, oracleUpdates: updates }).oracleUpdates, updates);
+});

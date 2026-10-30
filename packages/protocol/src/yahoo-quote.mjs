@@ -1,6 +1,7 @@
 const TICKER_RE = /^[A-Z][A-Z0-9.^=-]{0,15}$/;
 const MAX_RESPONSE_BYTES = 512 * 1024;
 const DEFAULT_MAX_AGE_SECONDS = 600;
+export const YAHOO_REQUEST_TIMEOUT_MS = 10_000;
 
 function checkedTicker(symbol) {
   if (typeof symbol !== 'string' || !TICKER_RE.test(symbol)) {
@@ -112,23 +113,87 @@ export async function fetchYahooChartQuote(symbol, {
   currency = 'USD',
   nowSeconds = Math.floor(Date.now() / 1000),
   maxAgeSeconds = DEFAULT_MAX_AGE_SECONDS,
+  // Cloudflare's outbound network cannot reach Yahoo's chart hosts directly in this deployment.
+  // Google Translate's web proxy relays the same Yahoo JSON; callers still validate the symbol,
+  // currency, observation timestamp, phase, and freshness below.
+  preferProxy = typeof WebSocketPair !== 'undefined',
 } = {}) {
   const ticker = checkedTicker(symbol);
   if (typeof fetchImpl !== 'function') throw new TypeError('fetch implementation is unavailable');
-  const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`);
-  url.searchParams.set('interval', '1m');
-  url.searchParams.set('range', '1d');
-  // Without this flag Yahoo only returns regular-session candles, so premarket/after-hours
-  // sessions would look permanently stale outside 09:30–16:00 ET even when quotes are live.
-  url.searchParams.set('includePrePost', 'true');
-
   let response;
-  try {
-    response = await fetchImpl(url, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10000), redirect: 'error' });
-  } catch {
-    throw new Error('Yahoo chart request failed or timed out');
+  let lastError;
+  let lastHost;
+  if (preferProxy) {
+    const upstream = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`);
+    upstream.searchParams.set('interval', '1m');
+    upstream.searchParams.set('range', '1d');
+    upstream.searchParams.set('includePrePost', 'true');
+    const translatedHost = `${upstream.hostname.replaceAll('.', '-')}.translate.goog`;
+    const proxy = new URL(`https://${translatedHost}${upstream.pathname}${upstream.search}`);
+    proxy.searchParams.set('_x_tr_sl', 'auto');
+    proxy.searchParams.set('_x_tr_tl', 'en');
+    proxy.searchParams.set('_x_tr_hl', 'en');
+    proxy.searchParams.set('_x_tr_pto', 'wapp');
+    try {
+      response = await fetchImpl(proxy, {
+        headers: { accept: 'application/json', 'user-agent': 'BELLQuote/1.0' },
+        signal: AbortSignal.timeout(YAHOO_REQUEST_TIMEOUT_MS), redirect: 'follow',
+      });
+      if (!response.ok) throw new Error(`Yahoo translated relay returned HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+      // Jina Reader is a second relay option; its wrapper content is checked to ensure its final
+      // target remains the exact Yahoo chart host and ticker.
+      try {
+        const relayUrl = `https://r.jina.ai/http://${upstream.host}${upstream.pathname}${upstream.search}`;
+        const relayed = await fetchImpl(relayUrl, {
+          headers: { accept: 'application/json', 'user-agent': 'BELLQuote/1.0' },
+          signal: AbortSignal.timeout(YAHOO_REQUEST_TIMEOUT_MS), redirect: 'follow',
+        });
+        if (!relayed.ok) throw new Error(`Yahoo Reader relay returned HTTP ${relayed.status}`);
+        const bytes = new Uint8Array(await relayed.arrayBuffer());
+        if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error('Yahoo relay response exceeded 512 KiB');
+        const envelope = JSON.parse(new TextDecoder().decode(bytes));
+        const finalUrl = new URL(envelope?.data?.finalUrl ?? 'https://invalid/');
+        if (finalUrl.hostname !== 'query1.finance.yahoo.com'
+          || !finalUrl.pathname.startsWith(`/v8/finance/chart/${ticker}`)
+          || envelope?.data?.httpStatus !== 200 || typeof envelope?.data?.content !== 'string') {
+          throw new Error('Yahoo relay returned an untrusted or unsuccessful response');
+        }
+        response = new Response(envelope.data.content, { status: 200, headers: { 'content-type': 'application/json' } });
+      } catch (relayError) {
+        throw new Error(`Yahoo chart relays failed: ${String(lastError?.message ?? lastError).slice(0, 80)}; ${String(relayError?.message ?? relayError).slice(0, 80)}`);
+      }
+    }
   }
-  if (!response.ok) throw new Error(`Yahoo chart returned HTTP ${response.status}`);
+  if (preferProxy) {
+    // Skip direct hosts in Workers: their known network timeout consumes the isolate's request budget.
+  } else {
+  for (const host of ['query1.finance.yahoo.com', 'query2.finance.yahoo.com']) {
+    const url = new URL(`https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}`);
+    url.searchParams.set('interval', '1m');
+    url.searchParams.set('range', '1d');
+    // Without this flag Yahoo only returns regular-session candles, so premarket/after-hours
+    // sessions would look permanently stale outside 09:30–16:00 ET even when quotes are live.
+    url.searchParams.set('includePrePost', 'true');
+    try {
+      response = await fetchImpl(url, {
+        headers: { accept: 'application/json', 'user-agent': 'Mozilla/5.0 (compatible; BELLQuote/1.0)' },
+        signal: AbortSignal.timeout(YAHOO_REQUEST_TIMEOUT_MS), redirect: 'error',
+      });
+      if (response.ok) break;
+      lastError = new Error(`Yahoo chart returned HTTP ${response.status}`);
+      lastHost = host;
+    } catch (error) {
+      lastError = error;
+      lastHost = host;
+    }
+  }
+  if (!response?.ok) {
+    if (lastError?.message?.startsWith('Yahoo chart returned HTTP')) throw lastError;
+    throw new Error(`Yahoo chart request failed or timed out at ${lastHost ?? 'both endpoints'}`);
+  }
+  }
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (bytes.byteLength > MAX_RESPONSE_BYTES) throw new Error('Yahoo chart response exceeded 512 KiB');
   let payload;

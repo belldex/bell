@@ -31,7 +31,8 @@ test('compiles normative protocol types with the pinned Solidity compiler', asyn
 
   const sessionRegistry = output.contracts['contracts/src/interfaces/IBellProtocol.sol'].ISessionRegistry;
   assert.deepEqual(sessionRegistry.abi.filter(({ type }) => type === 'function').map(({ name }) => name), [
-    'anchorStatus', 'captureClose', 'closeAnchor', 'health', 'latestSample', 'refreshHealth', 'submitReports',
+    'anchorStatus', 'applyPoolOracleUpdates', 'captureClose', 'closeAnchor', 'health', 'latestSample',
+    'refreshHealth', 'refreshStockWithReports', 'submitReports',
   ]);
   const anchorStatus = sessionRegistry.abi.find(({ type, name }) => type === 'function' && name === 'anchorStatus');
   assert.deepEqual(anchorStatus.outputs.map(({ type }) => type), ['tuple', 'bool', 'uint256', 'uint64']);

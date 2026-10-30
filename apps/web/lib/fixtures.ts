@@ -245,6 +245,6 @@ export interface PositionPreview {
 
 export const POSITIONS: PositionPreview[] = [
   { id: '#10441', poolId: 'usdg-aapl', range: 'Full range · tick spacing 60', liquidityShare: '0.42%', amounts: ['1,250.00 USDG', '5.804 AAPL'], feesAccrued: ['3.214 USDG', '0.0149 AAPL'] },
-  { id: '#10502', poolId: 'weth-tsla', range: '−12% … +12%', liquidityShare: '1.10%', amounts: ['0.482 WETH', '1.730 TSLA'], feesAccrued: ['0.0021 WETH', '0.0074 TSLA'], note: 'Closed episode in progress — exit in-kind is independent of the swap budget.' },
+  { id: '#10502', poolId: 'weth-tsla', range: '−12% … +12%', liquidityShare: '1.10%', amounts: ['0.482 WETH', '1.730 TSLA'], feesAccrued: ['0.0021 WETH', '0.0074 TSLA'], note: 'Closed episode in progress. Exit in-kind is independent of the swap budget.' },
   { id: '#10560', poolId: 'pons-pltr', range: 'Full range · tick spacing 60', liquidityShare: '2.65%', amounts: ['16,980 PONS', '0.109 PLTR'], feesAccrued: ['402 PONS', '0.0026 PLTR'], note: 'Swaps paused by budget exhaustion. You can still remove or collect in-kind.' },
 ];

@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellHook} from "./BellHook.sol";
 import {BellHookDeployer} from "./BellHookDeployer.sol";
-import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, LiquidityMode} from "./types/ProtocolTypes.sol";
+import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, LiquidityMode, PoolClass} from "./types/ProtocolTypes.sol";
 import {TreasuryAdapter} from "./TreasuryAdapter.sol";
 import {IBellPoolFactory, IAssetRegistry, ISessionRegistry} from "./interfaces/IBellProtocol.sol";
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
@@ -193,9 +193,11 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             || r.sqrtPriceX96 >= TickMath.getSqrtPriceAtTick(r.tickUpper)) revert InvalidRequest();
         bool stock0 = _admitted(r.config.assetRegistry, r.config.asset0, r.config.token0, r.config.poolClass);
         bool stock1 = _admitted(r.config.assetRegistry, r.config.asset1, r.config.token1, r.config.poolClass);
-        // SESSION_ONLY requires exactly one verified stock. Stock/stock belongs to PRICE_GUARDED.
-        if (r.config.poolClass != 0 && stock0 == stock1) revert InvalidConfiguration();
-        if (r.config.poolClass == 0) _validatePriceGuard(r, stock0, stock1);
+        if (!stock0 && !stock1) revert InvalidConfiguration();
+        // SESSION_ONLY requires exactly one verified stock. PRICE_GUARDED can guard a stock/non-stock pair
+        // or two stocks, but a pool without any stock is not a BELL product pool.
+        if (r.config.poolClass == uint8(PoolClass.SESSION_ONLY) && stock0 == stock1) revert InvalidConfiguration();
+        if (r.config.poolClass == uint8(PoolClass.PRICE_GUARDED)) _validatePriceGuard(r, stock0, stock1);
     }
 
     /// @dev PRICE_GUARDED admission: both sides must carry a live Chainlink reference adapter, the
@@ -234,6 +236,10 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         if (d.id != id || d.token != token || d.expectedCodeHash != token.codehash || d.evidenceHash == bytes32(0)
             || d.implementationFingerprint == bytes32(0) || d.decimals != IERC20Metadata(token).decimals()) revert InvalidConfiguration();
         if (AssetPolicy.oraclelessCounterasset(d,poolClass)) return false;
+        // A PRICE_GUARDED non-stock counterasset is anchored by its required per-pool
+        // reference adapter, not by stock-session health. _validatePriceGuard validates
+        // the live adapter and its in-band price ratio immediately after admission.
+        if (poolClass == uint8(PoolClass.PRICE_GUARDED) && !d.isStock) return false;
         HealthView memory h = ISessionRegistry(hookDeployer.sessionRegistry()).health(id);
         if (!h.ready || h.reasonBits != 0 || h.validUntil <= block.timestamp) revert InvalidConfiguration();
         return d.isStock;

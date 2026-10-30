@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {BellRouter} from "../../../src/BellRouter.sol";
-import {SwapRequest} from "../../../src/types/ProtocolTypes.sol";
+import {SwapRequest, OraclePullUpdate} from "../../../src/types/ProtocolTypes.sol";
 import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {IBellSwapEvaluator} from "../../../src/types/SwapEvaluation.sol";
 import {Buckets} from "../../../src/types/ProtocolTypes.sol";
@@ -48,6 +48,9 @@ contract RouterMockHook {
     bool private pendingSwap;
     PoolKey private storedKey;
     bytes32 public storedConfigHash;
+    bytes32 public expectedHookDataHash;
+
+    function expectHookData(bytes32 dataHash) external { expectedHookDataHash = dataHash; }
 
     constructor(IPoolManager m, IBellSwapEvaluator e) { manager = m; evaluator = e; }
 
@@ -70,6 +73,7 @@ contract RouterMockHook {
         external returns (bytes4, BeforeSwapDelta, uint24)
     {
         require(msg.sender == address(manager) && !pendingSwap, "callback context");
+        if (expectedHookDataHash != bytes32(0)) require(keccak256(data) == expectedHookDataHash, "router envelope changed");
         IBellSwapEvaluator.Context memory c = context;
         (c.preSqrtPriceX96,,,) = manager.getSlot0(key.toId());
         c.timestamp = uint64(block.timestamp);
@@ -197,6 +201,36 @@ contract BellRouterTest is IUnlockCallback {
         }
     }
 
+    function testRouterForwardsCanonicalOracleEnvelope() external {
+        token0.mint(ALICE, 1e10);
+        vm.prank(ALICE);
+        token0.approve(address(router), type(uint256).max);
+        SwapRequest memory request;
+        request.hook = address(hook);
+        request.zeroForOne = true;
+        request.exactInput = true;
+        request.amountSpecified = 1e8;
+        request.limitAmount = 1e7;
+        request.sqrtPriceLimitX96 = TickMath.MIN_SQRT_PRICE + 1;
+        request.recipient = ALICE;
+        request.deadline = 10100;
+        request.expectedConfigHash = CONFIG_HASH;
+        request.oracleUpdates = new OraclePullUpdate[](1);
+        request.oracleUpdates[0].assetId = keccak256("AAPL");
+        request.oracleUpdates[0].directSample.descriptorId = keccak256("AAPL");
+        request.oracleUpdates[0].directSample.observedAt = 9999;
+        request.oracleUpdates[0].directSignature = hex"123456";
+        request.oracleUpdates[0].reports = new bytes[](1);
+        request.oracleUpdates[0].reports[0] = hex"abcdef";
+        request.oracleUpdates[0].closeBoundaryHash = keccak256("caller-selected close boundary");
+        bytes32 requestHash = keccak256(abi.encode(block.chainid, address(router), ALICE,
+            uint64(0), uint64(10100), CONFIG_HASH, request));
+        hook.expectHookData(keccak256(abi.encode(ALICE, requestHash, request.oracleUpdates)));
+        vm.prank(ALICE);
+        (uint128 amountIn, uint128 amountOut) = router.swap(request);
+        require(amountIn == 1e8 && token1.balanceOf(ALICE) == amountOut, "pull swap settlement");
+    }
+
     function testExactInputBothDirections() external {
         // Alice swaps token0 for token1
         token0.mint(ALICE, 1e10);
@@ -216,7 +250,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -245,7 +280,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -274,7 +310,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -303,7 +340,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -331,7 +369,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -358,7 +397,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -385,7 +425,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: keccak256("wrong config hash"),
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -411,7 +452,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: true,
             unwrapOutput: false,
-            unwrapRefund: true
+            unwrapRefund: true,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         // Alice sends 2e8 wei (1e8 swap, 1e8 refund)
@@ -448,7 +490,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: true,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);
@@ -473,7 +516,8 @@ contract BellRouterTest is IUnlockCallback {
             expectedConfigHash: CONFIG_HASH,
             wrapInput: false,
             unwrapOutput: false,
-            unwrapRefund: false
+            unwrapRefund: false,
+            oracleUpdates: new OraclePullUpdate[](0)
         });
 
         vm.prank(ALICE);

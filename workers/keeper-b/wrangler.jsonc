@@ -13,19 +13,15 @@
     { "tag": "v1", "new_sqlite_classes": ["KeeperState"] }
   ],
   "vars": {
-    "BELL_STOCK_ASSET_ID": "0x360cf70000120cacd146d6ae8582d9f7f110953020f59a7d0fa65764b4db96d5",
-    "BELL_CALENDAR_REGISTRY": "0x0c7a4044f2caf793b2062920c12baf8b33641e9c",
-    "BELL_SESSION_REGISTRY": "0x1de6199618ddb2b5fdb869113e4b906628db168e",
-    "BELL_DIRECT_ADAPTER": "0x05b7cad0d07fd6f15dee724060508676ccb5bce2",
-    "BELL_HOOK_ADDRESS": "0x42708E4001B85fcbd5e6d5e5c9Fe197CFd44aCc0",
-    "BELL_REGULAR_FEED_ID": "0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b",
-    "BELL_EXTENDED_FEED_ID": "0x6db5b18a4a76ac8566c730fdd2ffd64b80bd0147bfb259fc66da07e94f2df3f9",
-    "BELL_REGULAR_WIRE_HASH": "0x802a019ef8108b9b84fbc6441f7ac7d8ecc856f724488cd08855e28a060511f4",
-    "BELL_EXTENDED_WIRE_HASH": "0xd9136980c4fe75b9acca4c81b37a7dc10d076dce0ad8c5d65cc3369843260db6",
-    "YAHOO_SOURCE_VERIFIER_ADDRESS": "0x20a066123c260bc6c5253f75e261c5056fde4bea"
-  },
-  "triggers": {
-    "crons": ["*/1 * * * *"]
+    "BELL_ORACLE_MODE": "pull",
+    "BELL_EXPECTED_CHAIN_ID": "4663",
+    "BELL_POOL_FACTORY": "0x7bd927dbe86fe403463e543cad2804386b66e730",
+    "BELL_POOL_SCAN_FROM_BLOCK": "101800000",
+    "BELL_STOCK_ASSETS": "[{\"symbol\":\"AAPL\",\"assetId\":\"0x85cffee2c6ba44ec5e3e78ca6eba5bb87215a1bda3195519b39129adb58ec464\"},{\"symbol\":\"NVDA\",\"assetId\":\"0x692223932c2ef5a8b382af4bf489f90605973d72a301322d1678f853a8c26ffa\"},{\"symbol\":\"TSLA\",\"assetId\":\"0xbeee032cf51af23c9be2a1354c48a3612921fbbdcabed6fb1e750fb23f3608b6\"}]",
+    "BELL_MAINNET_ASSETS": "{\"AAPL\":{\"directAdapter\":\"0xe6d4df58fa30718c9f8829c78195a7d5672be0b3\",\"directWireHash\":\"0xe74e0de5eccca1f11f49e3efa63544eac29fd4f4526508f168f0c71b6dd4e33b\",\"regularWire\":{\"feedId\":\"0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b\"},\"regularWireHash\":\"0x33321637ee3aae0721817e4321d15fdc6135423a901b3c8159303eec76869c0c\",\"extendedWire\":{\"feedId\":\"0x6db5b18a4a76ac8566c730fdd2ffd64b80bd0147bfb259fc66da07e94f2df3f9\"},\"extendedWireHash\":\"0x893fea677c209eaf2eb63daeebabd617cb4fe5bd63e5fd3c0e65281505bb5f53\"},\"NVDA\":{\"directAdapter\":\"0xe7bf28de1433e6846b1aeae2cba4f3ff7ae4e399\",\"directWireHash\":\"0xbaea7b38498c7e580092bca8e09baab8c101b0d475018ac5409253274abd2c47\",\"regularWire\":{\"feedId\":\"0xf7bdb39019a86d479f40197839feb3bd5ded97993da9b3f01a0ac7b8e88d2b72\"},\"regularWireHash\":\"0xd1f55a4c0fa1f9539f7e04a15ddb2def13096539f6cab676783d932bd6b72a6a\",\"extendedWire\":{\"feedId\":\"0x5e0b38fa6cfe2303ec608f9ee796d54973bd9ee3327315800382cc229309b603\"},\"extendedWireHash\":\"0xa0d4e2d762ff3115eeb90870b771e958196ee65e20e79a3f715ff5a937e794a9\"},\"TSLA\":{\"directAdapter\":\"0x380794a04158a90dcf2a14366258c5373d57aa59\",\"directWireHash\":\"0xb7d7cec288eaa19111372115f184d95d4a3d46ca51ed40ce178e022969bd99e6\",\"regularWire\":{\"feedId\":\"0xa0fda1acb14db5fb836c96aaaeda0969476af3edcc1cfcfc0168c3d0ce20dd4e\"},\"regularWireHash\":\"0xaed865d8efade860c71c6dae84dd4709ac3b8c40109fc381627487cb86e80a79\",\"extendedWire\":{\"feedId\":\"0x49029597ee1adeb129802d434e30cccffa8bca85f3ffe8e91cc7d79473b36b5f\"},\"extendedWireHash\":\"0x78c8056d14dd5cf140e31c087e5e081d391ba54c8c2567fe9fada31f6ebd9219\"}}",
+    "BELL_CALENDAR_REGISTRY": "0xba9b5142f282dde204805d66fddb5d6256080926",
+    "BELL_SESSION_REGISTRY": "0xe2380390ee342ad42dc463d6518f1e67cc5a52c3",
+    "YAHOO_SOURCE_VERIFIER_ADDRESS": "0xd2d81f46086a1dcef6cd72ea3717ecf8b1575bed"
   },
   "observability": {
     "enabled": true

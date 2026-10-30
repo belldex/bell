@@ -1,0 +1,23 @@
+{
+  "chainId": 4663,
+  "assetId": "0xa69fe95947164af5de120a06c65f3dad6f2ccee68f4dfe0ba894fd0fee6ce51f",
+  "calendarRegistry": "0x189b8f78739e9dbcf1be4d2f05247d4f8205a452",
+  "rootOperationId": "0xd2e8a1145189b229d46def4fee69849ed7059e7251d344564ce39d753fd2fd3d",
+  "root": "0x1e8d9eccfceb72ad8dd6848fa8e06378fd2bb268e2ea363b41b6d39cf4223fdb",
+  "datasetHash": "0x1d46ca24504a863792426f2a715ccd7dfa628154717c8e846b2c5e274ecefe5a",
+  "leafCount": 127,
+  "year": 2026,
+  "coverageStart": 1793359849,
+  "coverageEnd": 1798543849,
+  "queuedAt": 1793359549,
+  "queuedTxHash": "0x0f3f7d76a11c2e6edbcbb1fda3314a08370a36e5fd0babc02b483736203ab529",
+  "queuedBlock": 101690534,
+  "eta": 1793359549,
+  "expiry": 1793964349,
+  "stage": "INTERVAL_ACTIVE",
+  "assetLabel": "NVDA",
+  "updatedAt": "2026-10-30T11:33:35.418Z",
+  "rootActivatedAt": 1793359554,
+  "intervalActivatedAt": 1793360014,
+  "activePhase": 1
+}
