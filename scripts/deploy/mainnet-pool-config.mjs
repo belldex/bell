@@ -141,10 +141,11 @@ export function deriveInitialSqrtPrice({ price0_18, price1_18, decimals0 = 18, d
   }
   if (!Number.isSafeInteger(decimals0) || decimals0 < 0 || decimals0 > 18) throw new RangeError('decimals0 out of range');
   if (!Number.isSafeInteger(decimals1) || decimals1 < 0 || decimals1 > 18) throw new RangeError('decimals1 out of range');
-  // rawRatio = (price0/1e18 * 10^-d0 inverted appropriately) ... normalized:
-  // raw token1 per raw token0 = (price0_18 / price1_18) * 10^(d0 - d1)
-  const num = price0_18 * 10n ** BigInt(decimals0);
-  const den = price1_18 * 10n ** BigInt(decimals1);
+  // PoolManager sqrtPriceX96 encodes raw token1 per raw token0:
+  // (P0 / 10^d0) / (P1 / 10^d1) = (P0 * 10^d1) / (P1 * 10^d0).
+  // The 1e18 price scales cancel in the ratio.
+  const num = price0_18 * 10n ** BigInt(decimals1);
+  const den = price1_18 * 10n ** BigInt(decimals0);
   // sqrtPriceX96 = floor(sqrt(num/den) * 2^96) computed with extra precision to avoid truncation:
   // sqrtPriceX96 = floor(sqrt(num * 2^192 / den))
   const scaled = num << 192n;

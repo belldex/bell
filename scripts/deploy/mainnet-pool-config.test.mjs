@@ -142,10 +142,26 @@ test('deriveInitialSqrtPrice is monotonic in the price ratio', async () => {
 
 test('deriveInitialSqrtPrice handles decimal differences', async () => {
   const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
-  // 18-decimal stock at $350 vs 6-decimal USDG at $1: ratio is 350 * 1e12 raw.
+  // 18-decimal stock at $350 vs 6-decimal USDG at $1: token1-raw / token0-raw
+  // equals (350 / 1) * 10^(6-18) = 350 * 1e-12.
   const sqrt = deriveInitialSqrtPrice({ price0_18: 350n * 10n ** 18n, price1_18: 1n * 10n ** 18n, decimals0: 18, decimals1: 6 });
-  assert.ok(sqrt > 0n);
+  const expected = integerSqrt((350n * (1n << 192n)) / (10n ** 12n));
+  assert.equal(sqrt, expected);
 });
+
+test('equal per-token prices with equal decimals derive the neutral sqrt price', async () => {
+  const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
+  assert.equal(deriveInitialSqrtPrice({ price0_18: 10n ** 18n, price1_18: 10n ** 18n }), 1n << 96n);
+});
+
+function integerSqrt(value) {
+  if (value < 0n) throw new RangeError('negative');
+  if (value < 2n) return value;
+  let x = value;
+  let y = (x + 1n) >> 1n;
+  while (y < x) { x = y; y = (x + value / x) >> 1n; }
+  return x;
+}
 
 test('deriveInitialSqrtPrice rejects non-positive prices', async () => {
   const { deriveInitialSqrtPrice } = await import('./mainnet-pool-config.mjs');
