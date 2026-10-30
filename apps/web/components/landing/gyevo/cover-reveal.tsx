@@ -94,6 +94,7 @@ export function CoverReveal({ tagline }: Props) {
   const cipherRef = useRef<HTMLCanvasElement>(null);
   const globeRef = useRef<HTMLCanvasElement>(null);
   const [wordA, wordB] = splitTagline(tagline);
+  const stockWordMatch = wordA.match(/^(.*\s)(stocks)$/i);
 
   useEffect(() => {
     const cover = coverRef.current;
@@ -299,7 +300,13 @@ export function CoverReveal({ tagline }: Props) {
           <canvas className="lp-globe" ref={globeRef} aria-hidden="true" />
           <h1 className="lp-words" id="lp-title" aria-label={tagline}>
             <span className="lp-word lp-word--a">
-              {wordA}<span className="lp-sr">.</span>
+              {stockWordMatch ? (
+                <>
+                  {stockWordMatch[1]}
+                  <span className="lp-stock-word">{stockWordMatch[2]}</span>
+                </>
+              ) : wordA}
+              <span className="lp-sr">.</span>
             </span>
             <span className="lp-slot" ref={slotRef} aria-hidden="true" />
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
