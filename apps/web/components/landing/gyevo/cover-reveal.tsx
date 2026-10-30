@@ -10,8 +10,8 @@ import { FORM_TIMELINE, GlyphField } from "./glyph-field";
 import { scrollToId } from "./smooth-scroll";
 import { LogoMark } from "@/components/ui/Logo";
 
-/* Phase 1 is the claim on white. The full stop after "move" is a black dot;
-   scrolling cuts it into a row of slabs that turn, fly and settle as the strips of the screen (see
+/* Phase 1 is the claim on white. Scrolling opens from the clock-hand hub in the market sculpture,
+   then cuts it into a row of slabs that turn, fly and settle as the strips of the screen (see
    cipher-sculpture.ts), and phase 2, the hero, was behind them all along. After a short hold the camera
    pushes into the headline: it zooms in until the hero is gone, and the next section rises in behind it.
 
@@ -133,20 +133,34 @@ export function CoverReveal({ tagline }: Props) {
     /* offsetLeft/offsetTop are layout values, so the transforms on the
        neighbouring words can never skew the measurement */
     const measure = () => {
+      const sw = stage.clientWidth;
+      const sh = stage.clientHeight;
+      /* With the 3D canvas available, the existing hub is the seed; don't overlay it with a second dot. */
+      const w = globe ? 0 : slot.offsetWidth;
+      const h = globe ? 0 : slot.offsetHeight;
+      cipher.resize(sw, sh);
+      globe?.resize(slot);
       geo = {
-        sw: stage.clientWidth,
-        sh: stage.clientHeight,
+        sw,
+        sh,
         x: slot.offsetLeft,
         y: slot.offsetTop,
-        w: slot.offsetWidth,
-        h: slot.offsetHeight,
+        w,
+        h,
       };
-      /* the dot never moves, so its centre is written once, not on every frame */
+      alignOpeningToPivot();
+      last = -1;
+    };
+
+    const alignOpeningToPivot = () => {
+      const pivot = globe?.getOpeningPoint();
+      if (pivot) {
+        geo.x = pivot.x - geo.w / 2;
+        geo.y = pivot.y - geo.h / 2;
+      }
+      /* The opening and the sculpture share the rendered clock hand's hub. */
       stage.style.setProperty("--ox", `${(geo.x + geo.w / 2).toFixed(1)}px`);
       stage.style.setProperty("--oy", `${(geo.y + geo.h / 2).toFixed(1)}px`);
-      cipher.resize(geo.sw, geo.sh);
-      globe?.resize(slot);
-      last = -1;
     };
 
     const paint = () => {
@@ -182,6 +196,7 @@ export function CoverReveal({ tagline }: Props) {
       last = key;
 
       globe?.setProgress(p);
+      alignOpeningToPivot();
 
       const e = openness(p);
       const k = 1 - e;
@@ -192,8 +207,7 @@ export function CoverReveal({ tagline }: Props) {
       const bw = geo.sw - l - ri;
       const bh = geo.sh - t - b;
 
-      /* the dot has the soft corners of the typeface's own full stop, becomes a rounded square,
-         and is square-cornered once it fills the screen */
+      /* the opening begins round at the clock hub, becomes a rounded square, then fills the screen */
       const half = Math.min(bw, bh) / 2;
       const toSquare = smooth(0, 0.12, e);
       const dotRadius = Math.min(bw, bh) * 0.2;
@@ -203,12 +217,14 @@ export function CoverReveal({ tagline }: Props) {
       );
 
       /* the window onto the hero is the union of the slabs' faces; at rest it is still the dot's own rectangle */
-      const windowPath = cipher.draw(e, {
+      const drawnWindow = cipher.draw(e, {
         x: geo.x,
         y: geo.y,
         w: geo.w,
         h: geo.h,
       });
+      /* A zero-area polygon can rasterize as a stray pixel over the existing clock hub. */
+      const windowPath = e > 0.002 ? drawnWindow : null;
 
       const s = stage.style;
       s.setProperty("--e", e.toFixed(4));
@@ -281,13 +297,12 @@ export function CoverReveal({ tagline }: Props) {
         {/* ---- Phase 1: the claim ---- */}
         <div className="lp-p1">
           <canvas className="lp-globe" ref={globeRef} aria-hidden="true" />
-          <h1 className="lp-words" id="lp-title">
+          <h1 className="lp-words" id="lp-title" aria-label={tagline}>
             <span className="lp-word lp-word--a">
-              {wordA}
-              <span className="lp-sr">.</span>
+              {wordA}<span className="lp-sr">.</span>
             </span>
             <span className="lp-slot" ref={slotRef} aria-hidden="true" />
-            {wordB ? <span className="lp-word lp-word--b">{wordB}</span> : null}
+            {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
             BELL is a Uniswap v4 liquidity protocol for tokenized-stock pools. It sets LP fees and swap limits from verified market sessions, then halts swaps when required stock data is stale or uncertain.

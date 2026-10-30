@@ -166,21 +166,6 @@ export function createCipherSculpture(canvas: HTMLCanvasElement) {
       }
     }
 
-    /* A contained core remains visible while the larger structure opens around it. */
-    const core = Math.max(1.5, reach * (0.1 + (1 - unfold) * 0.05));
-    const pulse = 0.72 + Math.sin(v * 8 * Math.PI) * 0.12;
-    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, core * 2.8);
-    glow.addColorStop(0, `rgba(238,236,229,${0.26 * pulse * sculptureFade})`);
-    glow.addColorStop(1, "rgba(238,236,229,0)");
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(cx, cy, core * 2.8, 0, TAU);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx, cy, core * 0.12, 0, TAU);
-    ctx.fillStyle = `rgba(238,236,229,${0.72 * pulse * sculptureFade})`;
-    ctx.fill();
-
     /* The clipped hero opens through the same faceted instrument, not a circular or slab-shaped mask. */
     const opening = mix(Math.max(slot.w, slot.h) * 0.04, diagonal * 0.58, smooth(0.42, 0.98, v));
     const ry = opening * mix(0.9, 0.82, unfold);

@@ -307,15 +307,15 @@
   background: var(--lp-white);
 }
 
-/* Phase 1: the claim, on white. The period after "more" is the dot that opens. */
+/* Phase 1: the claim, on white. The opening originates at the 3D clock hub. */
 .lp-p1 {
   position: absolute; inset: 0; isolation: isolate;
   display: grid; place-content: center; justify-items: center; gap: clamp(1.1rem, 2.6svh, 1.9rem);
   padding: var(--lp-nav-h) var(--lp-gutter) 7.5rem;
   text-align: center; color: var(--lp-ink);
 }
-/* The globe: a network sphere drawn by globe-sculpture.ts, centred on the dot. It sits under the claim (a negative
-   z-index inside .lp-p1, which is its own stacking context), and the small copy gets a white halo that knocks the
+/* The market sculpture is drawn by globe-sculpture.ts. It sits under the claim (a negative z-index inside .lp-p1,
+   which is its own stacking context), and the small copy gets a white halo that knocks the
    lines out. The words stay unpositioned: the dot's offsets are measured against .lp-p1. */
 .lp-globe {
   position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none;
@@ -323,7 +323,7 @@
 }
 .lp-globe[data-ready="1"] { opacity: 1; }
 .lp-words {
-  display: flex; align-items: baseline; justify-content: center;
+  position: relative; display: flex; align-items: baseline; justify-content: center;
   font: 700 clamp(1.9rem, 5.9vw, 7.4rem) / 1 var(--lp-font-display);
   letter-spacing: -.028em; text-transform: uppercase; white-space: nowrap;
 }
@@ -333,12 +333,13 @@
   opacity: calc(1 - var(--e) * 2.4);
 }
 .lp-word--a { margin-right: .1em; }
+.lp-period { display: inline-block; width: .085em; height: .085em; margin: 0 .025em .025em .035em; border-radius: 50%; background: currentColor; vertical-align: baseline; }
 .lp-word--b {
-  margin-left: .38em;
+  margin-left: .12em;
   transform: translate(calc(var(--e) * var(--push-x, -34vw) * -1), calc(var(--e) * var(--push-y, 0px) * -1));
 }
-/* Reserves the dot's place. The real dot is .lp-box, clipped to exactly this rectangle. */
-.lp-slot { flex: none; width: .26em; height: .26em; border-radius: 22%; background: #171717; }
+/* Hidden measurement anchor. The opening dot is aligned with the 3D clock-hand hub. */
+.lp-slot { position: absolute; left: 0; top: 0; width: .26em; height: .26em; opacity: 0; pointer-events: none; }
 .lp-sub {
   max-width: 54ch;
   font-size: clamp(1rem, .92rem + .45vw, 1.28rem); line-height: 1.55; color: var(--lp-ink-soft);
@@ -377,7 +378,7 @@
   opacity: 0; transition: opacity 1.8s ease; will-change: transform, opacity; /* moved and faded by the compositor, never repainted */
 }
 .lp-light[data-on="1"] i { opacity: 1; transition-duration: .35s; }
-/* The dot is plain black, like the full stop it replaces; it hands over to the slabs drawn on .lp-cipher */
+/* The pivot opening hands over to the slabs drawn on .lp-cipher. */
 .lp-dot {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
   background: #171717; opacity: calc(1.25 - var(--e) * 10);
@@ -584,7 +585,7 @@
   .lp-words { flex-direction: column; align-items: center; font-size: clamp(2rem, 11.5vw, 4.6rem); line-height: .98; }
   .lp-word--a, .lp-word--b { margin: 0; }
   .lp-stage { --push-x: 0px; --push-y: -30svh; }
-  .lp-slot { width: .3em; height: .3em; margin-block: .16em; }
+  .lp-slot { width: .3em; height: .3em; margin: 0; }
   .lp-hero { align-items: center; justify-content: flex-start; padding-bottom: 8rem; }
   .lp-hero__col { gap: 1.05rem; justify-items: start; text-align: left; max-width: 68%; }
   .lp-badge { justify-content: flex-start; flex-wrap: wrap; gap: .4rem .7rem; font-size: .58rem; letter-spacing: .1em; padding: .5rem .9rem; }

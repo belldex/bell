@@ -234,6 +234,7 @@ const clockEnd = new Float32Array(3);
 
 export type GlobeSculpture = {
   resize: (slot: HTMLElement) => void;
+  getOpeningPoint: () => { x: number; y: number };
   setProgress: (p: number) => void;
   setReduced: (reduced: boolean) => void;
   destroy: () => void;
@@ -248,6 +249,8 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
   let dpr = 1;
   let cx = 0;
   let cy = 0;
+  let openingX = 0;
+  let openingY = 0;
   let R = 0; /* the shell's radius on screen at rest */
   let focal = 0;
 
@@ -800,6 +803,10 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
         }
         const handPivotX = pointCount ? sumX / pointCount : clockStart[0];
         const handPivotY = pointCount ? sumY / pointCount : clockStart[1];
+        if (ringIndex === 1) {
+          openingX = handPivotX;
+          openingY = handPivotY;
+        }
         const ringWeight = ringIndex === 1 ? 1 : 0.62;
         const surfaceOpacity = (z: number) => clockA * ringWeight * lerp(0.34, 0.92, smooth(-0.08, 0.08, z));
         const handPivotAlpha = surfaceOpacity(clockStart[2]);
@@ -1018,6 +1025,8 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
        no longer sits over its center as it did in the reference composition. */
     cx = narrow ? W * 0.74 : W * 0.75;
     cy = H * (narrow ? 0.52 : 0.5);
+    openingX = cx;
+    openingY = cy;
     R = narrow ? Math.min(W * 0.34, H * 0.34) : Math.min(W * 0.29, H * 0.42);
     focal = R * Math.sqrt(CZ0 * CZ0 - 1);
     fadeTop = ctx.createLinearGradient(0, 0, 0, NAV_FADE);
@@ -1055,10 +1064,9 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     readFont();
     drawnP = -1;
     if (!ready) born = performance.now();
+    /* Publish the rendered clock hub before the cover measures its opening origin. */
+    draw(performance.now());
     sync();
-    if (!running) {
-      if (progress < GONE) draw(performance.now());
-    }
   };
 
   const setProgress = (p: number) => {
@@ -1112,5 +1120,11 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  return { resize, setProgress, setReduced, destroy };
+  return {
+    resize,
+    getOpeningPoint: () => ({ x: openingX, y: openingY }),
+    setProgress,
+    setReduced,
+    destroy,
+  };
 }
