@@ -147,8 +147,8 @@
   display: inline-flex; align-items: center; gap: .7rem; min-width: 0;
   font: 700 .95rem/1 var(--lp-font-display); letter-spacing: .03em; text-transform: uppercase;
 }
-.lp-brand svg { flex: none; transition: transform .6s var(--lp-ease); }
-.lp-brand:hover svg { transform: rotate(-8deg) scale(1.08); }
+.lp-brand img { flex: none; transition: transform .6s var(--lp-ease); }
+.lp-brand:hover img { transform: rotate(-8deg) scale(1.08); }
 .lp-brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .lp-nav__links {
@@ -189,13 +189,15 @@
 .lp-nav__right { display: flex; align-items: center; gap: .6rem; }
 .lp .lp-social-link {
   display: grid; width: 2.9rem; height: 2.9rem; place-items: center; flex: 0 0 auto;
-  border: 1px solid rgba(23, 23, 23, .2); border-radius: 50%; color: inherit;
+  border: 1px solid rgba(23, 23, 23, .2); border-radius: 8px; color: inherit;
   background: rgba(238, 236, 229, .3); transition: border-color .25s ease, background-color .25s ease, transform .25s var(--lp-ease);
 }
 .lp .lp-social-link svg { width: 1rem; height: 1rem; }
 .lp[data-phase="dark"] .lp-social-link { border-color: var(--lp-line-2); background: rgba(41, 39, 37, .5); }
 .lp .lp-social-link:hover { border-color: var(--lp-accent); transform: translateY(-1px); }
 .lp .lp-social-link:focus-visible { outline: 2px solid var(--lp-accent); outline-offset: 3px; }
+.lp .lp-social-link:hover svg { transform: scale(1.08); }
+.lp .lp-social-link svg { transition: transform .2s ease; }
 
 .lp .lp-pill {
   display: inline-flex; align-items: center; gap: .55rem; height: 2.9rem; padding: 0 1.35rem;
@@ -1145,6 +1147,8 @@
 }
 .lp-cols li a:hover { color: var(--lp-accent-light); transform: translateX(4px); }
 .lp-cols li a:hover::after { transform: scaleX(1); transform-origin: left; }
+.lp-cols li a.lp-footer-x { display: inline-flex; align-items: center; gap: .45rem; }
+.lp-footer-x svg { width: 1rem; height: 1rem; }
 .lp-cols li a[target] span.arr { display: inline-block; margin-left: .35em; color: var(--lp-dim); transition: transform .4s var(--lp-ease), color .25s ease; }
 .lp-cols li a[target]:hover span.arr { transform: translate(2px, -2px); color: var(--lp-accent-light); }
 .lp-cols__brand p { margin-top: 1rem; max-width: 34ch; color: var(--lp-muted); font-size: .92rem; }

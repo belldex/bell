@@ -3,7 +3,7 @@ import { Eyebrow } from '@/components/ui/primitives';
 import { Reveal } from './motion-kit';
 
 const YES = [
-  'Swap requests accepted any time — executed only inside data, band and budget limits',
+  'Swap requests accepted any time, executed only inside data, band and budget limits',
   'Fee and flow limits that change with the session, shown before you sign',
   'A closure budget that never refills during an episode',
   'Immutable per-pool hook instances; no proxy, no admin price override',
@@ -12,7 +12,7 @@ const YES = [
 ];
 const NO = [
   '“24/7” does not mean unlimited liquidity, a live stock oracle, or no reverts',
-  'Caps are rate limits — not insurance for stock value or a USD loss guarantee',
+  'Caps are rate limits, not insurance for stock value or a USD loss guarantee',
   'No profit or APR promise; repricing can create marked LP loss',
   'SESSION_ONLY pools have no independent price for the counterasset',
   'Issuer, token, verifier, chain and multisig risk remain external dependencies',

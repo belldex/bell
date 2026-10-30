@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { FaXTwitter } from "react-icons/fa6";
 import { useEffect, useRef } from "react";
 import { Arrow } from "./arrow";
 import { BrandLogo } from "./bell-mark";
+import { BellWordmark } from "@/components/ui/Logo";
 
 /* The last section. A fixed footer sits under the opaque content (the curtain);
    a one-screen spacer after the content lets the curtain peel away and reveal it.
@@ -102,8 +104,8 @@ export function FinalReveal({ appName }: { appName: string }) {
                 href="/"
                 aria-label={`${appName} home`}
               >
-                <BrandLogo size={40} />
-                <span>{appName}</span>
+                <BrandLogo size={48} />
+                <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
                 Tokenized-stock pools with session-based fees and limits. Testnet only; synthetic assets; no independent counterasset price protection.
@@ -154,6 +156,11 @@ export function FinalReveal({ appName }: { appName: string }) {
                 </li>
                 <li>
                   <Link href="/#facts">Testnet snapshot</Link>
+                </li>
+                <li>
+                  <a className="lp-footer-x" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer">
+                    <FaXTwitter aria-hidden="true" /> BELL on X <span className="arr" aria-hidden="true">↗</span>
+                  </a>
                 </li>
               </ul>
             </nav>

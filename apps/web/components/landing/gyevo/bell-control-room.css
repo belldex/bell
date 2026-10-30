@@ -24,7 +24,9 @@
 }
 .lp--bell .lp-nav::before { display:none; }
 .lp--bell .lp-brand { gap:.8rem; letter-spacing:.13em; }
-.lp--bell .lp-brand svg { width:34px; height:34px; }
+.lp--bell .lp-brand .bell-wordmark { font-size:1.18rem; letter-spacing:.1em; }
+.lp--bell .lp-brand img { width:44px; height:44px; }
+.lp--bell[data-phase="light"] .lp-brand-mark { filter:invert(1); }
 .lp--bell .lp-nav__links {
   position:absolute; left:50%; top:50%; width:min(62vw,820px); max-width:calc(100% - 21rem); transform:translate(-50%,-50%); height:auto; margin:0;
   overflow-x:auto; scrollbar-width:none; white-space:nowrap;
@@ -190,8 +192,7 @@
   -webkit-mask:var(--logo-src) center/contain no-repeat; mask:var(--logo-src) center/contain no-repeat;
 }
 .lp--bell .lp-marq__bell-mark {
-  display:grid; width:1.125rem; height:1.125rem; flex:none; place-items:center; border:1px solid currentColor;
-  color:currentColor; font:700 .68rem/1 var(--font-geist-sans,sans-serif); letter-spacing:-.04em;
+  display:block; width:1.5rem; height:1.5rem; flex:none; object-fit:contain;
 }
 .lp--bell .lp-marq__item[data-brand="bell"] { gap:.6rem; }
 .lp--bell .lp-marq__item[data-brand="bell"] span { white-space:nowrap; }

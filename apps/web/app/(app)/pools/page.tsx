@@ -74,10 +74,10 @@ export default function PoolsPage() {
           <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim" role="status" aria-live="polite">{list.length} of {POOLS.length} examples</span>
         </div>
         <div className="flex flex-wrap items-center gap-3 border-y border-line py-4">
-          <label className="glass flex h-11 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-xs">
+          <label className="app-search-field glass flex min-h-12 min-w-[14rem] flex-1 items-center gap-2.5 rounded-none border border-line bg-surface/70 px-3.5 sm:max-w-sm">
             <Search className="h-4 w-4 text-dim" aria-hidden="true" />
             <span className="sr-only">Search pairs</span>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="w-full bg-transparent font-mono text-xs text-ink outline-none placeholder:text-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pair or symbol" className="app-search-field__input w-full bg-transparent font-mono text-sm text-ink placeholder:text-dim" />
           </label>
           <Segmented<ClassFilter> label="Class" value={cls} onChange={setCls} options={[{ v: 'ALL', l: 'All' }, { v: 'PRICE_GUARDED', l: 'Price guarded' }, { v: 'SESSION_ONLY', l: 'Session only' }]} />
           <Segmented<StateFilter> label="State" value={state} onChange={setState} options={[{ v: 'ALL', l: 'Any state' }, { v: 'OPEN', l: 'Open' }, { v: 'CLOSED', l: 'Closed' }, { v: 'HALTED', l: 'Halted' }]} />

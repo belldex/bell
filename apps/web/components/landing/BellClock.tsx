@@ -54,11 +54,11 @@ const CAPTIONS: Array<[number, string]> = [
   [0.26, 'The bell. Fee jumps to 1.00% and decays in a straight line over 300 seconds.'],
   [0.36, 'Regular session. 0.05% and the full per-trade and rolling limits.'],
   [0.48, 'Post-market. 0.30%, half-size limits, extended stream required.'],
-  [0.58, 'Overnight again. 0.50% — back to a quarter of the limits, never back to 0.05%.'],
+  [0.58, 'Overnight again. 0.50%, back to a quarter of the limits and never back to 0.05%.'],
   [0.7, 'Friday 20:00 ET: the trading week ends. Tuesday to Thursday repeat the same day.'],
   [0.74, 'Weekend. Closed state: 1.00%, one-fifth trade size and one fixed budget for the whole episode.'],
   [0.88, 'Nothing here invents a stock price. Trading is bounded around the last valid close anchor.'],
-  [0.94, 'Sunday 20:00 ET. A fresh bell — but the episode only ends after verified recovery.'],
+  [0.94, 'Sunday 20:00 ET. A fresh bell, but the episode only ends after verified recovery.'],
 ];
 
 const REQUIREMENT: Record<Exclude<MarketPhase, 'UNKNOWN'>, string> = {

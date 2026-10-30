@@ -7,7 +7,7 @@ import { registerGsap, useReducedMotion } from '@/lib/motion';
 import { clamp } from '@/lib/format';
 
 const STEPS = [
-  { at: 0.0, icon: Anchor, title: 'Capture the close', body: 'In the last five minutes of a supported session anyone can call captureClose. The last valid multiplier-adjusted reference is stored — labelled historical, never “live”.' },
+  { at: 0.0, icon: Anchor, title: 'Capture the close', body: 'In the last five minutes of a supported session anyone can call captureClose. The last valid multiplier-adjusted reference is stored as historical, never “live”.' },
   { at: 0.25, icon: Snowflake, title: 'Freeze the stock side', body: 'While the stock is closed its USD reference stays on the anchor. The counterasset keeps its live price: WETH/TSLA = frozen TSLA/USD ÷ live WETH/USD. Band widens from ±2% to ±5%.' },
   { at: 0.5, icon: Ban, title: 'One budget for the whole episode', body: 'Every swap counts gross, in both directions. The closure budget C never refills at midnight, on Monday, on pause/resume or when LPs add capital. When it is spent, swaps stop.' },
   { at: 0.85, icon: TimerReset, title: 'Reopen has to be proven', body: 'A single “open” report is not enough. All stocks must be healthy and a second fresh checkpoint ≥ 60 s later must arrive before the episode ends and a new bell begins.' },
@@ -212,13 +212,13 @@ export function WeekendEpisode() {
             </div>
             <p className="mt-3 flex items-start gap-2 text-sm text-muted" role="status">
               {exhausted && !reopened ? (
-                <><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-down" aria-hidden="true" /> Budget spent — swaps stop. It does not refill until a confirmed reopen. LPs can still exit in-kind.</>
+                <><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-down" aria-hidden="true" /> Budget spent, swaps stop. It does not refill until a confirmed reopen. LPs can still exit in-kind.</>
               ) : reopened ? (
                 <><TimerReset className="mt-0.5 h-4 w-4 shrink-0 text-ion" aria-hidden="true" /> Recovery verified. A new episode and a fresh bell begin.</>
               ) : recovery > 0 ? (
                 <><TimerReset className="mt-0.5 h-4 w-4 shrink-0 text-warn" aria-hidden="true" /> Waiting for a second fresh checkpoint · {Math.round(recovery * 60)} / 60 s</>
               ) : frozen ? (
-                <>Spending the budget. Swap back and forth — both directions count, nothing is refunded.</>
+                <>Spending the budget. Swap back and forth, both directions count and nothing is refunded.</>
               ) : (
                 <>Trading normally against the rolling budget W.</>
               )}

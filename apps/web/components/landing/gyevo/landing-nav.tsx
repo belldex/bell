@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { FaXTwitter } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "./bell-mark";
+import { BellWordmark } from "@/components/ui/Logo";
 import { getFeature, subscribeFeature } from "./feature-state";
 import { scrollToId } from "./smooth-scroll";
 
@@ -106,8 +108,8 @@ export function LandingNav({ appName }: { appName: string }) {
     <>
       <header className="lp-nav" data-open={open}>
         <Link className="lp-brand" href="/" aria-label={`${appName} home`}>
-          <BrandLogo size={40} priority />
-          <span>{appName}</span>
+          <BrandLogo size={48} priority />
+          <BellWordmark>{appName}</BellWordmark>
         </Link>
 
         <nav className="lp-nav__links" aria-label="Main navigation">
@@ -125,6 +127,9 @@ export function LandingNav({ appName }: { appName: string }) {
         </nav>
 
         <div className="lp-nav__right">
+          <a className="lp-social-link" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X">
+            <FaXTwitter aria-hidden="true" />
+          </a>
           <Link className="lp-pill lp-pill--launch" href="/pools">
             <span>Open app</span>
             <span className="lp-launch__arrow" aria-hidden="true">↗</span>

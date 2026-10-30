@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { scrollLandingTo } from './LandingMotion';
+import { BellWordmark, LogoMark } from '@/components/ui/Logo';
 
 const ITEMS = [
   { id: 'market-rhythm', label: 'Market rhythm' },
@@ -37,8 +38,8 @@ export default function SiteNav() {
   return (
     <header className="bell-story-nav">
       <Link href="/" className="bell-story-brand" aria-label="BELL home">
-        <span className="bell-story-mark" aria-hidden="true">B</span>
-        <b>BELL</b>
+        <LogoMark size={40} className="bell-story-mark" />
+        <BellWordmark />
         <i />
         <small>Session-aware liquidity</small>
       </Link>

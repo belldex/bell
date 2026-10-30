@@ -283,7 +283,7 @@ export function RoadmapSection() {
           The rehearsal is evidence, <em className="o">not a release.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          An earlier REGULAR pool completed a swap on Robinhood Chain Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). That confirms a past rehearsal—not current asset availability, live feeds, or production readiness.
+          An earlier REGULAR pool completed a swap on Robinhood Chain Testnet ({ROBINHOOD_TESTNET_CHAIN_ID}). That confirms a past rehearsal, not current asset availability, live feeds, or production readiness.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}

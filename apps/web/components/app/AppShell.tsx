@@ -1,6 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { FaXTwitter } from 'react-icons/fa6';
+import { BellWordmark } from '@/components/ui/Logo';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X } from 'lucide-react';
@@ -114,8 +117,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <aside className={cn('app-sidebar', mobileOpen && 'app-sidebar--open')} aria-label="BELL terminal navigation">
             <div className="app-sidebar__brand-row">
               <Link href="/" aria-label="BELL home" className="app-brand">
-                <span className="app-brand__mark" aria-hidden="true">B</span>
-                <span><b className="app-brand__name">BELL</b><small className="app-brand__descriptor">MARKET TERMINAL</small></span>
+                <Image src="/assets/bell-logo-transparent.png" alt="" aria-hidden="true" width={48} height={48} className="app-brand__logo" priority />
+                <span><BellWordmark className="app-brand__name" /><small className="app-brand__descriptor">MARKET TERMINAL</small></span>
               </Link>
               <button type="button" className="app-menu-toggle app-menu-toggle--close" aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
                 <X aria-hidden="true" />
@@ -148,6 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span>Mainnet · Chain 4663</span>
               </div>
               <a className="app-sidebar__reference" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>
+              <a className="app-sidebar__social" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer"><FaXTwitter aria-hidden="true" /> Follow BELL on X <span aria-hidden="true">↗</span></a>
             </div>
           </aside>
 
@@ -184,6 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span>Robinhood Chain Mainnet · 4663</span>
                 <span>Fixture data is illustrative and does not represent live pool state.</span>
                 <span>Fees and caps do not guarantee fills or returns.</span>
+                <a className="app-footer__social" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X"><FaXTwitter aria-hidden="true" /> BELL on X ↗</a>
               </div>
             </footer>
           </div>

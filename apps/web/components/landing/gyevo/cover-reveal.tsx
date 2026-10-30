@@ -8,6 +8,7 @@ import { createCipherSculpture } from "./cipher-sculpture";
 import { createGlobeSculpture } from "./globe-sculpture";
 import { FORM_TIMELINE, GlyphField } from "./glyph-field";
 import { scrollToId } from "./smooth-scroll";
+import { LogoMark } from "@/components/ui/Logo";
 
 /* Phase 1 is the claim on white. The full stop after "move" is a black dot;
    scrolling cuts it into a row of slabs that turn, fly and settle as the strips of the screen (see
@@ -441,7 +442,7 @@ export function CoverReveal({ tagline }: Props) {
                     {"logo" in item ? (
                       <span className="lp-marq__logo lp-marq__logo--wordmark" data-logo={item.label === "Robinhood Chain" ? "robinhood" : "uniswap"} role="img" aria-label={item.label} style={{ ["--logo-src" as string]: `url("${item.logo}")` }} />
                     ) : "brand" in item ? (
-                      <><span className="lp-marq__bell-mark" aria-hidden="true">B</span><span>{item.label}</span></>
+                      <><LogoMark size={24} className="lp-marq__bell-mark" /><span>{item.label}</span></>
                     ) : (
                       <><item.icon className="lp-marq__icon" aria-hidden="true" strokeWidth={1.7} /><span>{item.label}</span></>
                     )}
@@ -454,7 +455,7 @@ export function CoverReveal({ tagline }: Props) {
                     {"logo" in item ? (
                       <span className="lp-marq__logo lp-marq__logo--wordmark" data-logo={item.label === "Robinhood Chain" ? "robinhood" : "uniswap"} role="img" aria-label={item.label} style={{ ["--logo-src" as string]: `url("${item.logo}")` }} />
                     ) : "brand" in item ? (
-                      <><span className="lp-marq__bell-mark" aria-hidden="true">B</span><span>{item.label}</span></>
+                      <><LogoMark size={24} className="lp-marq__bell-mark" /><span>{item.label}</span></>
                     ) : (
                       <><item.icon className="lp-marq__icon" aria-hidden="true" strokeWidth={1.7} /><span>{item.label}</span></>
                     )}

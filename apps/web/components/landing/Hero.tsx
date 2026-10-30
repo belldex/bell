@@ -139,7 +139,7 @@ export function Hero() {
             data-reveal
             className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
           >
-            A Uniswap v4 hook layer for tokenized-stock pools. Fees, flow budgets, and recovery rules follow the bourse session — open, extended, overnight, and weekend — so LPs are never priced as if the market never sleeps.
+            A Uniswap v4 hook layer for tokenized-stock pools. Fees, flow budgets, and recovery rules follow the bourse session, open, extended, overnight, and weekend, so LPs are never priced as if the market never sleeps.
           </p>
           <div data-reveal className="mt-8 flex flex-wrap items-center gap-3.5">
             <ButtonLink href="/pools" size="lg">

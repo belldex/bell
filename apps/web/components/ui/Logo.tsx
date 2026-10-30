@@ -1,28 +1,23 @@
+import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/format';
 
-/** BELL mark: a bell dome built from concentric arcs + a clapper dot. */
-export function LogoMark({ className }: { className?: string }) {
+/** The official BELL brand mark used throughout the site and app. */
+export function LogoMark({ className, size = 32 }: { className?: string; size?: number }) {
   return (
-    <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="bell-mark" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#EEECE5" />
-          <stop offset="0.55" stopColor="#C7444F" />
-          <stop offset="1" stopColor="#9D3039" />
-        </linearGradient>
-      </defs>
-      <path d="M16 3.2c-5.4 0-9.2 4-9.2 9.4V19l-2.4 4.2h23.2L25.2 19v-6.4C25.2 7.2 21.4 3.2 16 3.2Z" stroke="url(#bell-mark)" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M11.2 13.2c.4-2.6 2.2-4.4 4.8-4.4" stroke="url(#bell-mark)" strokeWidth="1.6" strokeLinecap="round" opacity=".7" />
-      <circle cx="16" cy="27.4" r="2" fill="url(#bell-mark)" />
-    </svg>
+    <Image src="/assets/bell-logo-transparent.png" alt="" aria-hidden="true" width={size} height={size} className={cn('block shrink-0 object-contain', className)} />
   );
+}
+
+export function BellWordmark({ children = 'BELL', className }: { children?: ReactNode; className?: string }) {
+  return <span className={cn('bell-wordmark', className)}>{children}</span>;
 }
 
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
-      <LogoMark className="h-7 w-7" />
-      <span className="font-display text-[1.65rem] leading-none tracking-wide text-ink">BELL</span>
+      <LogoMark size={36} className="h-9 w-9" />
+      <BellWordmark className="text-[1.65rem] text-ink" />
     </span>
   );
 }

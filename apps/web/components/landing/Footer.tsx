@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
+import { BellWordmark, LogoMark } from '@/components/ui/Logo';
 
 const GROUPS = [
   { title: 'Explore', links: [['Pool directory', '/pools'], ['Pool classes', '/pools'], ['Create a pool', '/create']] },
@@ -12,7 +13,7 @@ export default function LandingFooter() {
   return (
     <footer className="bell-footer-curtain" aria-label="BELL footer" aria-hidden="true" inert>
       <div className="bell-footer-top">
-        <Link href="/" className="bell-footer-brand"><span>B</span><b>BELL</b><small>Bourse-event liquidity layer</small></Link>
+        <Link href="/" className="bell-footer-brand"><LogoMark size={40} /><BellWordmark /><small>Bourse-event liquidity layer</small></Link>
         <p>Liquidity that knows the bell.<br />Rules that stay visible.</p>
       </div>
       <nav className="bell-footer-groups" aria-label="Footer">

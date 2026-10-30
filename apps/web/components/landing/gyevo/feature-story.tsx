@@ -69,7 +69,7 @@ const SCENES: Scene[] = [
     sub: "Finite closure budget",
     kicker: "Scheduled closure · bounded exception",
     headline: "A planned close uses one bounded historical anchor.",
-    text: "Only a committed calendar can authorize the close anchor captured while stock data was valid—and only while its context remains valid.",
+    text: "Only a committed calendar can authorize the close anchor captured while stock data was valid, and only while its context remains valid.",
     use: "The episode budget never refills before a verified reopen. Unexpected outages or expired anchors halt swaps; LP exits remain in-kind.",
     chips: ["CLOSED · 1.00% base fee", "Unknown state · halt"],
     href: "/protocol",

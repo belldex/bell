@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { BellWordmark, LogoMark } from '@/components/ui/Logo';
 
 type Item = { label: string; href: string; text?: string; ext?: boolean };
 type Menu = { label: string; items: Item[] };
@@ -110,10 +111,8 @@ export default function Header() {
 
       <div className="hrow">
         <Link href="/" className="logo" aria-label="BELL home">
-          <img src="/assets/bell-mark.png" alt="" width={24} height={24} />
-          <b>
-            <span className="logo-v">B</span>ELL
-          </b>
+          <LogoMark size={36} className="bell-header-logo" />
+          <BellWordmark />
           <span className="logo-sub">BOURSE-EVENT LIQUIDITY LAYER</span>
         </Link>
 

@@ -192,7 +192,7 @@ export default function Scene() {
         powerPreference: 'high-performance',
       });
     } catch {
-      // WebGL unavailable — the page falls back to its plain dark background.
+      // WebGL unavailable: the page falls back to its plain dark background.
       return;
     }
 
