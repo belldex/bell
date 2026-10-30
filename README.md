@@ -21,7 +21,7 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
 
 - **Robinhood Chain mainnet (4663) is deployed.** The protocol stack, Yahoo source verifier/adapters,
   reference adapters, stock assets, and 2026 calendars have live deployment evidence under
-  `evidence/deploy/`. Mainnet has no pool or swap yet; the keeper Worker is not deployed/configured.
+  `evidence/deploy/`. Mainnet has no pool or swap yet.
 - **Testnet (46630) has completed rehearsal swaps and acceptance runs.** Those pools use rehearsal
   fixtures and are not evidence of mainnet liquidity or token data rights.
 - Mainnet price paths use **Yahoo Finance + the BELL EIP-712 reporter** for session health, with
@@ -31,9 +31,11 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
   policy evaluation was moved to `BellPolicyOracle` to fit within EIP-170.
 - **PRICE_GUARDED has independent reference adapters deployed**, but pool creation still needs current
   session health and explicit seed amounts. The matrix planner shows which pairs are ready or blocked.
-- Mainnet keeper code supports the deployed multi-asset setup, but Cloudflare secrets, a funded relayer,
-  and a Worker deployment are still required before it can publish health.
-- The frontend swap flow exists; a live mainnet pool and mainnet swap have not been created.
+- The Cloudflare Worker is deployed in pull mode: public signed quote bundles and onchain pool discovery
+  are live. It does not run a periodic transaction loop. `/pools` currently returns an empty directory
+  because no pool has been created.
+- The frontend reads live pool state and has the wallet approval and router swap flow. A live mainnet pool
+  must be created and seeded before a mainnet swap can run.
 
 ## Structure
 
