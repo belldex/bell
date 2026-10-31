@@ -16,8 +16,8 @@
   "expiry": 1793975132,
   "stage": "INTERVAL_ACTIVE",
   "assetLabel": "TSLA",
-  "updatedAt": "2026-10-30T14:30:40.252Z",
+  "updatedAt": "2026-10-31T03:01:26.802Z",
   "rootActivatedAt": 1793370336,
-  "intervalActivatedAt": 1793370640,
-  "activePhase": 2
+  "intervalActivatedAt": 1793415686,
+  "activePhase": 5
 }

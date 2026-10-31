@@ -26,20 +26,27 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { signYahooSourceSample } from '@bell/protocol/yahoo-attestation';
+import { hashCalendarLeaf } from '@bell/protocol/calendar';
+import { encodeOraclePullUpdates } from '@bell/protocol/swap-codec';
 import { fetchYahooChartQuote } from '@bell/protocol/yahoo-quote';
-import { evaluateQuote, phaseNameForCalendarPhase, reportValidUntil, wireForCalendarPhase, ZERO32 } from './tick-policy.mjs';
+import { evaluateQuote, isCloseCaptureWindow, isScheduledMaintenanceWindow, phaseNameForCalendarPhase, reportValidUntil, wireForCalendarPhase, ZERO32 } from './tick-policy.mjs';
+import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 
 export { KeeperState };
 
 const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
+  'function nextInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
+  'function activateInterval(bytes32,(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),bytes32[][])',
 ]);
 const SESSION_ABI = parseAbi([
   'function latestSample(bytes32,uint8) view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
   'function submitReports(bytes32,bytes[])',
   'function refreshHealth(bytes32) returns (uint256)',
   'function health(bytes32) view returns ((bool ready,uint256 reasonBits,uint64 healthySince,uint64 validUntil,uint64 baselineObservation,uint64 latestObservation))',
+  'function anchorStatus(bytes32,bytes32) view returns ((bytes32 assetId,bytes32 boundaryHash,uint128 price18,uint128 multiplier18,uint64 capturedAt,uint64 observedAt,uint64 inputAt,uint64 closureStart,bytes32 sourceHash),bool valid,uint256 reasons,uint64 validUntil)',
+  'function applyPoolOracleUpdates(bytes32,bytes32,bytes,bool)',
 ]);
 const DIRECT_ABI = parseAbi([
   'error BadSample()',
@@ -80,7 +87,10 @@ export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now()
   const chainId = await publicClient.getChainId();
   const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
   if (chainId !== expectedChainId) throw quoteError(`wrong chain ${chainId}, expected ${expectedChainId}`, 503);
-  const interval = await publicClient.readContract({ address: env.BELL_CALENDAR_REGISTRY, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [asset.assetId] });
+  const [interval, upcoming] = await Promise.all([
+    publicClient.readContract({ address: env.BELL_CALENDAR_REGISTRY, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [asset.assetId] }),
+    publicClient.readContract({ address: env.BELL_CALENDAR_REGISTRY, abi: CALENDAR_ABI, functionName: 'nextInterval', args: [asset.assetId] }),
+  ]);
   const calendarPhase = Number(interval.phase);
   if (!phaseNameForCalendarPhase(calendarPhase)) throw quoteError(`calendar phase ${calendarPhase} has no Yahoo source`);
   if (BigInt(nowSeconds) < interval.start || BigInt(nowSeconds) >= interval.end) throw quoteError('calendar interval is not current');
@@ -120,11 +130,97 @@ export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now()
     signYahooSourceSample(directSample, { ...signing, sourceConfigHash: adapters.directWireHash }),
     signYahooSourceSample(streamSample, { ...signing, sourceConfigHash: stream.wireHash }),
   ]);
+  const closeBoundaryHash = isCloseCaptureWindow(interval, upcoming, nowSeconds)
+    ? hashCalendarLeaf({
+      chainId, calendarRegistry: env.BELL_CALENDAR_REGISTRY, assetId: asset.assetId,
+      year: Number(upcoming.year), index: Number(upcoming.index), start: upcoming.start,
+      end: upcoming.end, phase: Number(upcoming.phase), provenanceHash: upcoming.provenanceHash,
+    })
+    : ZERO32;
   return {
     assetId: asset.assetId,
     directSample: Object.fromEntries(Object.entries(directSample).map(([name, value]) => [name, typeof value === 'bigint' || typeof value === 'number' ? String(value) : value])),
-    directSignature: signedDirect.signature, reports: [signedStream.report], closeBoundaryHash: ZERO32,
+    directSignature: signedDirect.signature, reports: [signedStream.report], closeBoundaryHash,
   };
+}
+
+/**
+ * Low-frequency, session-bound Mainnet maintenance. Calendar intervals are advanced only when
+ * their previous interval expires; signed prices are sent onchain only in the five-minute close
+ * window so SessionRegistry can preserve a verified historical reference for market-free hours.
+ */
+export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Date.now() / 1000) } = {}) {
+  if (!isScheduledMaintenanceWindow(nowSeconds)) return { status: 'skipped', reason: 'outside a US market session boundary window' };
+  const txKey = env.BELL_TRANSACTION_PRIVATE_KEY;
+  const calendarRegistry = env.BELL_CALENDAR_REGISTRY;
+  const sessionRegistry = env.BELL_SESSION_REGISTRY;
+  const counterAssetId = env.BELL_CALENDAR_COUNTER_ASSET_ID;
+  const rootConfigs = JSON.parse(env.BELL_CALENDAR_ROOTS || '{}');
+  const assets = JSON.parse(env.BELL_STOCK_ASSETS || '[]');
+  if (!txKey || !calendarRegistry || !sessionRegistry || !counterAssetId || assets.length === 0) {
+    return { status: 'skipped', reason: 'calendar maintenance is not fully configured' };
+  }
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
+  const rpcUrl = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY || env.RH_TESTNET_RPC_PRIMARY;
+  if (!rpcUrl) return { status: 'skipped', reason: 'Mainnet RPC is not configured' };
+  const account = privateKeyToAccount(txKey);
+  const publicClient = createPublicClient({ transport: http(rpcUrl) });
+  const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
+  const chainId = await publicClient.getChainId();
+  if (chainId !== expectedChainId) return { status: 'failed', reason: `wrong chain ${chainId}, expected ${expectedChainId}` };
+
+  const results = {};
+  for (const { symbol, assetId } of assets) {
+    try {
+      const rootConfig = rootConfigs[symbol];
+      if (!rootConfig) { results[symbol] = { status: 'skipped', reason: 'no published calendar root is configured' }; continue; }
+      let current = await publicClient.readContract({ address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId] });
+      if (Number(current.phase) === 0) {
+        const activation = buildCalendarActivation({ config: rootConfig, chainId, calendarRegistry, assetId, nowSeconds });
+        const request = await publicClient.simulateContract({
+          address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'activateInterval',
+          args: [assetId, activation.current, activation.previous, activation.next, activation.proofs], account,
+        });
+        const hash = await walletClient.writeContract(request.request);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status !== 'success') throw new Error(`calendar activation reverted (${hash})`);
+        current = await publicClient.readContract({ address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId] });
+        results[symbol] = { status: 'calendar-activated', phase: Number(current.phase), txHash: hash };
+      } else {
+        results[symbol] = { status: 'calendar-current', phase: Number(current.phase) };
+      }
+
+      const upcoming = await publicClient.readContract({ address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'nextInterval', args: [assetId] });
+      if (!isCloseCaptureWindow(current, upcoming, nowSeconds)) continue;
+      const boundaryHash = hashCalendarLeaf({
+        chainId, calendarRegistry, assetId, year: Number(upcoming.year), index: Number(upcoming.index),
+        start: upcoming.start, end: upcoming.end, phase: Number(upcoming.phase), provenanceHash: upcoming.provenanceHash,
+      });
+      const [, anchorValid] = await publicClient.readContract({ address: sessionRegistry, abi: SESSION_ABI, functionName: 'anchorStatus', args: [assetId, boundaryHash] });
+      if (anchorValid) { results[symbol] = { ...results[symbol], anchor: 'already-valid' }; continue; }
+      const bundle = await runQuote(env, symbol, { nowSeconds });
+      if (bundle.closeBoundaryHash.toLowerCase() !== boundaryHash.toLowerCase()) {
+        results[symbol] = { ...results[symbol], anchor: 'skipped', reason: 'quote bundle did not match the upcoming calendar boundary' };
+        continue;
+      }
+      const payload = encodeOraclePullUpdates([bundle]);
+      const request = await publicClient.simulateContract({
+        address: sessionRegistry, abi: SESSION_ABI, functionName: 'applyPoolOracleUpdates',
+        args: [assetId, counterAssetId, payload, false], account,
+      });
+      const hash = await walletClient.writeContract(request.request);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') throw new Error(`close capture reverted (${hash})`);
+      results[symbol] = { ...results[symbol], anchor: 'captured', txHash: hash };
+    } catch (error) {
+      results[symbol] = {
+        status: 'failed', reason: String(error?.shortMessage ?? error?.message ?? error)
+          .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220),
+      };
+    }
+  }
+  const values = Object.values(results);
+  return { status: values.some((result: any) => result.status === 'failed') ? 'partial' : 'ok', assets: results };
 }
 
 /** Public read-only directory for pools emitted by the deployed Mainnet factory. */
@@ -408,6 +504,16 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 }
 
 const worker = {
+  async scheduled(controller, env, ctx) {
+    const nowSeconds = Math.floor(controller.scheduledTime / 1000);
+    ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds }).then((result) => {
+      console.log('scheduled market maintenance', JSON.stringify(result));
+    }).catch((error) => {
+      const detail = String(error?.shortMessage ?? error?.message ?? error)
+        .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220);
+      console.error('scheduled market maintenance failed', detail);
+    }));
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     const isPublicRead = ['/quote', '/pools', '/positions'].includes(url.pathname);

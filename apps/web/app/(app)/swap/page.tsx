@@ -8,6 +8,8 @@ import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, R
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET, displayAmount, oracleUpdate, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
+// @ts-expect-error Shared decision helper is browser-safe and covered by node:test.
+import { phaseLabel, quoteSourceForPhase } from '@/lib/swap-calendar.mjs';
 // @ts-expect-error Shared math helper is browser-safe and covered by node:test.
 import { calculateSwapBounds } from '@/lib/swap-quote.mjs';
 
@@ -73,6 +75,9 @@ function SwapInner() {
 
   const buildUpdates = async () => {
     if (!pool) return [];
+    const source = quoteSourceForPhase(pool.policy.phase);
+    if (source === 'anchor') return [];
+    if (source === 'unavailable') throw new Error('No live price source is configured for this market phase. The router will only allow the swap if its onchain reference path is valid.');
     const stockLegs = pool.legs.filter((leg) => ['AAPL', 'NVDA', 'TSLA'].includes(leg.symbol));
     const bundles = await Promise.all(stockLegs.map(async (leg) => {
       const response = await fetch(`${MAINNET.quoteUrl}?symbol=${leg.symbol}`, { cache: 'no-store' });
@@ -87,7 +92,8 @@ function SwapInner() {
   const requestQuote = async () => {
     if (!pool || !input || !output || rawSpecified <= 0n) throw new Error(`Enter a valid ${exactInput ? 'input' : 'output'} amount`);
     if (wrongChain) throw new Error('Switch your wallet to Robinhood Chain Mainnet first');
-    setBusy(true); setError(''); setMessage('Fetching fresh signed quote and simulating against the live router…'); setQuote(null); setTxHash(null);
+    const anchored = quoteSourceForPhase(pool.policy.phase) === 'anchor';
+    setBusy(true); setError(''); setMessage(anchored ? 'Simulating against the verified weekend reference and live pool state…' : 'Fetching fresh signed quote and simulating against the live router…'); setQuote(null); setTxHash(null);
     try {
       if (!window.ethereum || !account) throw new Error('Connect your Robinhood Chain wallet first');
       const { publicClient: connectedClient } = makeClients(window.ethereum);
@@ -108,7 +114,7 @@ function SwapInner() {
       const { maxIn, minOut } = calculateSwapBounds({ exactInput, amountIn, amountOut, slippageBps: slippage });
       if (minOut <= 0n) throw new Error('Router simulation returned zero minimum output');
       setQuote({ amountIn, amountOut, maxIn, minOut, stamp: Date.now(), observedAt: updates.length ? Math.min(...updates.map((update: any) => Number(update.directSample.observedAt) * 1000)) : Date.now() });
-      setMessage(`Router simulation succeeded. Review ${exactInput ? 'minimum output' : 'maximum input'}, approve, then submit.`);
+      setMessage(`${anchored ? 'Weekend-reference' : 'Live-price'} router simulation succeeded. Review ${exactInput ? 'minimum output' : 'maximum input'}, approve, then submit.`);
       await loadWalletState();
     } catch (e) { const err = e as Error & { shortMessage?: string }; setError(err.shortMessage ?? err.message ?? 'Could not quote this swap'); setMessage(''); }
     finally { setBusy(false); }
@@ -133,7 +139,8 @@ function SwapInner() {
   const swap = async () => {
     if (!account || !pool || !input || !quote || !window.ethereum) return;
     if (Date.now() - quote.stamp > 25_000) { setError('Quote expired. Request a fresh quote before submitting.'); return; }
-    setBusy(true); setError(''); setMessage('Refreshing signed quote and simulating the exact transaction…');
+    const anchored = quoteSourceForPhase(pool.policy.phase) === 'anchor';
+    setBusy(true); setError(''); setMessage(anchored ? 'Rechecking the weekend reference and simulating the exact transaction…' : 'Refreshing signed quote and simulating the exact transaction…');
     try {
       const { publicClient: walletProvider, walletClient } = makeClients(window.ethereum);
       const updates = await buildUpdates();
@@ -158,7 +165,7 @@ function SwapInner() {
   };
 
   return <div className="app-swap-page mx-auto max-w-[1200px]">
-    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Pool policy and output are simulated against the deployed contracts. Stock legs require fresh signed quote bundles.</p></header>
+    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against deployed policy. Supported market sessions use fresh signed prices; weekend swaps use the contract’s verified stock reference with live prices for other assets.</p></header>
     {pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">No live pool to swap yet</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">No pool has been created on Mainnet. This screen reads the factory; it will enable trading after a pool and liquidity exist.</p><Link href="/pools" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Check live pools</Link></section>}
     {pools.length > 0 && pool && input && output && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
       <section className="border border-line bg-surface/60 p-5 sm:p-7">
@@ -170,7 +177,7 @@ function SwapInner() {
           <div className="border border-line bg-bg-1 p-4"><span className="font-mono text-[10px] uppercase text-dim">{exactInput ? 'Estimated output' : 'Estimated input'}</span><p className="num mt-3 truncate text-xl text-ink">{quote ? displayAmount(exactInput ? quote.amountOut : quote.amountIn, exactInput ? output.decimals : input.decimals) : '—'}</p><p className="mt-2 text-xs text-dim">{exactInput ? output.symbol : input.symbol}</p></div>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><label className="font-mono text-[10px] uppercase text-dim">Max slippage</label><div className="flex gap-2">{[[10, '0.1%'], [50, '0.5%'], [100, '1%']].map(([bps, label]) => <button key={bps} type="button" aria-pressed={slippage === bps} onClick={() => { setSlippage(Number(bps)); setQuote(null); }} className={`border px-3 py-2 font-mono text-xs ${slippage === bps ? 'border-ion text-ion' : 'border-line text-muted'}`}>{label}</button>)}</div></div>
-        <div className="mt-5 flex flex-wrap gap-2">{status !== 'connected' ? <button type="button" onClick={() => void connect()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0">Connect wallet</button> : wrongChain ? <button type="button" onClick={() => void switchChain(4663)} className="min-h-12 flex-1 border border-warn px-5 font-mono text-xs uppercase text-warn">Switch to Robinhood Chain</button> : <button type="button" disabled={busy || rawSpecified <= 0n} onClick={() => void requestQuote()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0 disabled:opacity-50">{busy ? 'Working…' : 'Get live quote'}</button>}
+        <div className="mt-5 flex flex-wrap gap-2">{status !== 'connected' ? <button type="button" onClick={() => void connect()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0">Connect wallet</button> : wrongChain ? <button type="button" onClick={() => void switchChain(4663)} className="min-h-12 flex-1 border border-warn px-5 font-mono text-xs uppercase text-warn">Switch to Robinhood Chain</button> : <button type="button" disabled={busy || rawSpecified <= 0n} onClick={() => void requestQuote()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0 disabled:opacity-50">{busy ? 'Working…' : quoteSourceForPhase(pool.policy.phase) === 'anchor' ? 'Simulate weekend swap' : 'Get live quote'}</button>}
           {quote && account && allowance !== null && allowance < quote.maxIn && <button type="button" disabled={busy} onClick={() => void approve()} className="min-h-12 flex-1 border border-ion px-5 font-mono text-xs uppercase text-ion disabled:opacity-50">Approve up to {input.symbol}</button>}
           {quote && account && allowance !== null && allowance >= quote.maxIn && <button type="button" disabled={busy || (balance !== null && balance < quote.maxIn)} onClick={() => void swap()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0 disabled:opacity-50">Swap on Mainnet</button>}
         </div>
@@ -179,7 +186,7 @@ function SwapInner() {
         {error && <p role="alert" className="mt-4 flex items-start gap-2 border border-down/30 bg-down/5 p-3 text-sm text-down"><AlertTriangle size={16} className="mt-0.5 shrink-0"/>{error}</p>}
         {txHash && <a className="mt-4 inline-flex items-center gap-2 text-sm text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${txHash}`} target="_blank" rel="noreferrer">View transaction <ExternalLink size={14}/></a>}
       </section>
-      <aside className="space-y-4"><section className="border border-line bg-surface/50 p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Onchain policy</h2><p className="mt-3 text-lg text-ink">{pool.policy.canSwap ? 'Currently tradable' : 'Fresh quote update required or policy blocked'}</p><p className="mt-2 text-xs leading-relaxed text-muted">Every quote and final transaction is simulated against the router with the signed stock updates included. The contract decides whether the swap can proceed.</p><dl className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt className="text-dim">Mode · phase</dt><dd className="text-ink">{['Halted', 'Active', 'Closed', 'Recovering', 'Setup'][pool.policy.mode] ?? pool.policy.mode} · {['Unknown', 'Pre-market', 'Regular', 'Post-market', 'Overnight', 'Closed'][pool.policy.phase] ?? pool.policy.phase}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Pool fee</dt><dd className="text-ink">{(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Quote observation age</dt><dd className="text-ink">{quote ? `${Math.max(0, Math.floor((now - quote.observedAt) / 1000))}s` : 'Not quoted'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">{exactInput ? 'Minimum received' : 'Maximum paid'}</dt><dd className="text-ink">{quote ? exactInput ? `${displayAmount(quote.minOut, output.decimals)} ${output.symbol}` : `${displayAmount(quote.maxIn, input.decimals)} ${input.symbol}` : '—'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Valid until</dt><dd className="text-ink">{pool.policy.validUntil ? new Date(Number(pool.policy.validUntil) * 1000).toLocaleString() : '—'}</dd></div></dl></section>
+      <aside className="space-y-4"><section className="border border-line bg-surface/50 p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Onchain policy</h2><p className="mt-3 text-lg text-ink">{pool.policy.canSwap ? 'Currently tradable' : 'Fresh quote update required or policy blocked'}</p><p className="mt-2 text-xs leading-relaxed text-muted">The router simulates every swap. In supported stock sessions it receives signed updates; during the weekend it checks the stored close reference and live prices for other assets. The contract decides whether the swap can proceed.</p><dl className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt className="text-dim">Mode · phase</dt><dd className="text-ink">{['Halted', 'Active', 'Market-free', 'Recovering', 'Setup'][pool.policy.mode] ?? pool.policy.mode} · {phaseLabel(pool.policy.phase)}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Pool fee</dt><dd className="text-ink">{(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">{pool.policy.phase === 5 ? 'Stock reference' : 'Quote observation age'}</dt><dd className="text-ink">{pool.policy.phase === 5 ? 'Stored historical reference' : quote ? `${Math.max(0, Math.floor((now - quote.observedAt) / 1000))}s` : 'Not quoted'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">{exactInput ? 'Minimum received' : 'Maximum paid'}</dt><dd className="text-ink">{quote ? exactInput ? `${displayAmount(quote.minOut, output.decimals)} ${output.symbol}` : `${displayAmount(quote.maxIn, input.decimals)} ${input.symbol}` : '—'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Valid until</dt><dd className="text-ink">{pool.policy.validUntil ? new Date(Number(pool.policy.validUntil) * 1000).toLocaleString() : '—'}</dd></div></dl></section>
         <section className="border border-line p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Live contract</h2><p className="mt-3 break-all font-mono text-xs text-dim">Hook: {pool.hook}</p><p className="mt-2 break-all font-mono text-xs text-dim">Pool ID: {pool.poolId}</p><a className="mt-4 inline-flex items-center gap-2 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/address/${pool.hook}`} target="_blank" rel="noreferrer">Open in explorer <ExternalLink size={13}/></a></section>
         <button type="button" onClick={() => { setQuote(null); setError(''); setRefreshKey((v) => v + 1); }} className="inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted"><RefreshCw size={14}/>Refresh pool</button>
       </aside>

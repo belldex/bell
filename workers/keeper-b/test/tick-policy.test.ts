@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   evaluateQuote,
+  isCloseCaptureWindow,
+  isScheduledMaintenanceWindow,
   phaseNameForCalendarPhase,
   reportValidUntil,
   sessionPhaseCode,
@@ -37,6 +39,36 @@ describe('calendar phase mapping', () => {
     expect(wireForCalendarPhase(adapters, 1)).toEqual({ wire: adapters.extendedWire, wireHash: '0xeh' });
     expect(wireForCalendarPhase(adapters, 3)).toEqual({ wire: adapters.extendedWire, wireHash: '0xeh' });
     expect(wireForCalendarPhase(adapters, 5)).toBeNull();
+  });
+});
+
+describe('planned close anchor window', () => {
+  const current = { start: 100n, end: 1_000n, phase: 2 };
+  const upcoming = { start: 1_000n, end: 2_000n, phase: 5 };
+
+  it('only attaches a close boundary during the final five minutes of a supported session', () => {
+    expect(isCloseCaptureWindow(current, upcoming, 701)).toBe(true);
+    expect(isCloseCaptureWindow(current, upcoming, 700)).toBe(true);
+    expect(isCloseCaptureWindow(current, upcoming, 699)).toBe(false);
+    expect(isCloseCaptureWindow(current, upcoming, 1_000)).toBe(false);
+  });
+
+  it('rejects gaps, non-closure phases, and unsupported calendar phases', () => {
+    expect(isCloseCaptureWindow(current, { ...upcoming, start: 1_001n }, 900)).toBe(false);
+    expect(isCloseCaptureWindow(current, { ...upcoming, phase: 2 }, 900)).toBe(false);
+    expect(isCloseCaptureWindow({ ...current, phase: 5 }, upcoming, 900)).toBe(false);
+  });
+});
+
+describe('UTC market maintenance schedule', () => {
+  const stamp = (day: string, hour: number, minute: number) => Date.parse(`${day}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`) / 1000;
+
+  it('covers both US daylight offsets and weekdays while ignoring cross-product cron minutes', () => {
+    expect(isScheduledMaintenanceWindow(stamp('2026-10-30', 19, 55))).toBe(true); // 15:55 EDT
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 20, 55))).toBe(true); // 15:55 EST
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 30))).toBe(true); // 09:30 EST
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 35))).toBe(false);
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-01', 20, 55))).toBe(false);
   });
 });
 

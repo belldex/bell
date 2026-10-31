@@ -1,10 +1,11 @@
 import { ContractFunctionRevertedError, BaseError, encodeErrorResult, decodeAbiParameters, parseAbiParameters, recoverTypedDataAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const rpc = vi.hoisted(() => ({ phase: 2, chainId: 4663, direct: 0n, stream: 0n, directError: null, writes: vi.fn(), wallet: vi.fn() }));
+const rpc = vi.hoisted(() => ({ phase: 2, chainId: 4663, nextPhase: 5, nextStart: 1_800_001_000n, direct: 0n, stream: 0n, directError: null, writes: vi.fn(), wallet: vi.fn() }));
 vi.mock('viem', async (original) => ({ ...await original(),
   createPublicClient: () => ({ getChainId: async () => rpc.chainId, getBlockNumber: async () => 100n, request: async () => [], getLogs: async () => [], readContract: async ({ functionName }) => {
     if (functionName === 'currentInterval') return { phase: rpc.phase, start: 1_799_999_000n, end: 1_800_001_000n };
+    if (functionName === 'nextInterval') return { assetId: `0x${'1'.repeat(64)}`, year: 2026, index: 1, start: rpc.nextStart, end: rpc.nextStart + 600n, phase: rpc.nextPhase, provenanceHash: `0x${'aa'.repeat(32)}` };
     if (functionName === 'readCurrent') { if (rpc.directError) throw rpc.directError; return { observedAt: rpc.direct }; }
     if (functionName === 'latestSample') return { observedAt: rpc.stream };
     throw new Error(`unexpected read ${functionName}`);
@@ -13,6 +14,7 @@ vi.mock('viem', async (original) => ({ ...await original(),
 }));
 vi.mock('@bell/protocol/yahoo-quote', () => ({ fetchYahooChartQuote: async symbol => ({ symbol, phase: 'REGULAR', observedAt: 1_799_999_950, priceRaw18: '1000000000000000000' }) }));
 const { default: worker, runQuote, runTick, KeeperState } = await import('../src/index');
+const { hashCalendarLeaf } = await import('@bell/protocol/calendar');
 const key = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
 const symbols = ['AAPL', 'NVDA', 'TSLA'];
 const env = {
@@ -30,13 +32,22 @@ const env = {
 };
 const quote = (symbol = 'AAPL', overrides = {}) => ({ symbol, phase: 'REGULAR', observedAt: 1_799_999_950, priceRaw18: '1000000000000000000', ...overrides });
 const options = (overrides = {}) => ({ nowSeconds: 1_800_000_000, fetchQuote: async symbol => quote(symbol), ...overrides });
-beforeEach(() => { rpc.phase = 2; rpc.chainId = 4663; rpc.direct = 0n; rpc.directError = null; rpc.stream = 0n; rpc.writes.mockClear(); rpc.wallet.mockClear(); });
+beforeEach(() => { rpc.phase = 2; rpc.chainId = 4663; rpc.nextPhase = 5; rpc.nextStart = 1_800_001_000n; rpc.direct = 0n; rpc.directError = null; rpc.stream = 0n; rpc.writes.mockClear(); rpc.wallet.mockClear(); });
 describe('read-only pull quote bundles', () => {
   it('uses one captured timestamp for quote parsing and report freshness', async () => {
     const fetchQuote = vi.fn(async (symbol, { nowSeconds }) => quote(symbol, { observedAt: nowSeconds }));
     const result = await runQuote(env, 'AAPL', options({ fetchQuote }));
     expect(fetchQuote).toHaveBeenCalledWith('AAPL', { nowSeconds: 1_800_000_000 });
     expect(result.directSample.observedAt).toBe('1800000000');
+  });
+  it('binds the signed quote to a planned market-free interval during the final five minutes', async () => {
+    const nowSeconds = 1_800_000_800;
+    const result = await runQuote(env, 'AAPL', options({ nowSeconds, fetchQuote: async () => quote('AAPL', { observedAt: nowSeconds - 10 }) }));
+    expect(result.closeBoundaryHash).toBe(hashCalendarLeaf({
+      chainId: 4663, calendarRegistry: env.BELL_CALENDAR_REGISTRY, assetId: `0x${'1'.repeat(64)}`,
+      year: 2026, index: 1, start: 1_800_001_000n, end: 1_800_001_600n, phase: 5,
+      provenanceHash: `0x${'aa'.repeat(32)}`,
+    }));
   });
   it.each(symbols)('signs an ABI-friendly bundle for %s without a transaction key', async symbol => {
     const result = await runQuote(env, symbol, options());
