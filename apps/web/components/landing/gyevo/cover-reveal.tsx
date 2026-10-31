@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            BELL sets pool fees and swap limits by market session. Stale stock data pauses trading.
+            BELL adapts pool fees and swap limits to market sessions, and pauses trading when Chainlink stock-price data goes stale.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
