@@ -144,36 +144,40 @@
 .app-market-time { display: inline-flex; align-items: center; gap: 8px; color: var(--color-muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .app-market-time > span:first-child { font-family: var(--font-geist-mono), monospace; }
 .app-market-time > span:last-child { padding: 3px 6px; border: 1px solid color-mix(in srgb,var(--color-phase-regular) 48%,var(--color-line-strong)); border-radius: 2px !important; background: color-mix(in srgb,var(--color-phase-regular) 8%,transparent) !important; color: var(--color-phase-regular) !important; font-size: 9px; letter-spacing: .05em; }
-.app-status-wrap { border-bottom: 1px solid var(--color-line); background: var(--color-bg-1); }
-.app-status-wrap > div { border-color: transparent !important; border-radius: 0 !important; background: transparent !important; backdrop-filter: none !important; }
-.app-status-wrap [class*="max-w-6xl"] { max-width: none; min-height: 39px; padding-right: clamp(22px,3.4vw,50px); padding-left: clamp(22px,3.4vw,50px); }
-.app-status-wrap [class*="rounded-full"],.app-status-wrap [class*="rounded-lg"] { border-radius: 2px !important; }
-.app-status-wrap [class*="animate-pulse"] { display: none !important; }
-.app-status-wrap button { color: var(--color-muted) !important; }
-.app-status-wrap [role="status"] { border-radius: 2px !important; background: rgba(194,74,84,.09) !important; }
-.app-mainnet-status { display: grid; grid-template-columns: minmax(185px,.8fr) minmax(260px,1.3fr) minmax(190px,.8fr); align-items: center; gap: 14px 28px; padding: 16px clamp(22px,3.4vw,50px) 12px; border: 0; border-left: 2px solid var(--color-ion); border-radius: 0; background: var(--color-bg-1); }
-.app-mainnet-status__headline { display: grid; justify-items: start; gap: 4px; }
-.app-mainnet-status__label,.app-mainnet-status__headline p,.app-mainnet-status__contracts summary { margin: 0; color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
-.app-mainnet-status__headline strong { color: var(--color-ink); font-size: 14px; font-weight: 550; }
-.app-mainnet-status__chain { color: var(--color-muted); font-family: var(--font-geist-mono),monospace; font-size: 11px; }
-.app-mainnet-status__assets { min-width: 0; }
-.app-mainnet-status__asset-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.app-mainnet-status__asset-list span { display: inline-flex; min-height: 24px; align-items: center; border: 1px solid var(--color-line-strong); padding: 0 7px; color: var(--color-ink); font-family: var(--font-geist-mono),monospace; font-size: 10px; letter-spacing: .04em; }
-.app-mainnet-status__assets p { margin: 6px 0 0; color: var(--color-muted); font-size: 11px; line-height: 1.4; }
-.app-mainnet-status__availability { display: grid; justify-items: start; gap: 5px; }
-.app-mainnet-status__state { color: var(--color-ion-text); font-family: var(--font-geist-mono),monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-.app-mainnet-status__availability a { color: var(--color-muted); font-size: 10px; text-decoration: none; }
-.app-mainnet-status__availability a:hover { color: var(--color-ink); }
-.app-mainnet-status__availability a span { margin-left: 3px; color: var(--color-dim); }
-.app-mainnet-status__disclosure { grid-column: 1 / 3; margin: 0; padding-top: 9px; border-top: 1px solid var(--color-line); color: var(--color-dim); font-size: 11px; line-height: 1.4; }
-.app-mainnet-status__contracts { grid-column: 3; grid-row: 2; justify-self: end; min-width: 0; }
-.app-mainnet-status__contracts summary { width: fit-content; cursor: pointer; color: var(--color-dim); font-size: 8px; }
-.app-mainnet-status__contracts summary:hover { color: var(--color-ink); }
-.app-mainnet-status__contracts dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px 18px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--color-line); }
-.app-mainnet-status__contracts dt { color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
-.app-mainnet-status__contracts dd { display: flex; min-width: 0; gap: 8px; margin: 2px 0 0; color: var(--color-muted); font-family: var(--font-geist-mono),monospace; font-size: 10px; }
-.app-mainnet-status__contracts dd a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-chain-guard { padding: 9px 22px; border-top: 1px solid color-mix(in srgb,var(--color-down) 24%,transparent); background: color-mix(in srgb,var(--color-down) 6%,transparent); color: var(--color-down); text-align: center; font-size: 11px; }
+.app-status-wrap { position: relative; z-index: 41; border-bottom: 1px solid var(--color-line); background: var(--color-bg-0); }
+.app-mainnet-status { position: relative; display: block; padding: 0 clamp(18px,2.4vw,34px); border: 0; background: transparent; }
+.app-mainnet-status__row { position: relative; display: flex; min-height: 39px; align-items: center; gap: clamp(10px,1.5vw,20px); }
+.app-mainnet-status__network { display: inline-flex; min-width: 0; align-items: baseline; gap: 8px; white-space: nowrap; }
+.app-mainnet-status__network strong { color: var(--color-muted); font-size: 11px; font-weight: 550; }
+.app-mainnet-status__network > span,.app-mainnet-status__deployment { color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .045em; white-space: nowrap; }
+.app-mainnet-status__deployment { border-left: 1px solid var(--color-line); padding-left: clamp(10px,1.5vw,20px); }
+.app-mainnet-status__explorer,.app-mainnet-status__details > summary { display: inline-flex; min-height: 30px; align-items: center; gap: 5px; border: 0; background: transparent; padding: 0 4px; color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .045em; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.app-mainnet-status__explorer:hover,.app-mainnet-status__details > summary:hover { color: var(--color-ink); }
+.app-mainnet-status__explorer { margin-left: auto; }
+.app-mainnet-status__explorer span { color: var(--color-dim); }
+.app-mainnet-status__details { position: relative; flex: none; }
+.app-mainnet-status__details-panel { position: absolute; z-index: 80; top: calc(100% + 7px); right: 0; width: min(700px,calc(100vw - 32px)); border: 1px solid var(--color-line-strong); background: #211f1d; padding: 16px 18px; box-shadow: 0 16px 42px rgba(0,0,0,.36); }
+.app-mainnet-status__disclosure { max-width: 90ch; margin: 0; color: var(--color-muted); font-size: 11px; line-height: 1.6; }
+.app-mainnet-status__contracts { margin-top: 13px; border-top: 1px solid var(--color-line); padding-top: 10px; }
+.app-mainnet-status__contracts > summary { width: fit-content; color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .09em; text-transform: uppercase; cursor: pointer; }
+.app-mainnet-status__contracts > summary:hover { color: var(--color-ink); }
+.app-mainnet-status__contracts dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px 18px; margin: 11px 0 0; }
+.app-mainnet-status__contracts dt { color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.app-mainnet-status__contracts dd { min-width: 0; margin: 3px 0 0; color: var(--color-muted); font-family: var(--font-geist-mono),monospace; font-size: 10px; }
+.app-mainnet-status__contracts dd a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-session-feeds { position: relative; flex: none; }
+.app-session-feeds > summary { display: inline-flex; min-height: 30px; align-items: center; gap: 6px; border: 0; background: transparent; padding: 0 4px; color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .045em; white-space: nowrap; cursor: pointer; }
+.app-session-feeds > summary:hover { color: var(--color-ink); }
+.app-session-feeds > summary strong { color: var(--color-muted); font-weight: 500; }
+.app-session-feeds > summary[data-state="attention"] strong { color: var(--color-muted); }
+.app-session-feeds__panel { position: absolute; z-index: 80; top: calc(100% + 7px); right: 0; width: min(370px,calc(100vw - 32px)); border: 1px solid var(--color-line-strong); background: #211f1d; padding: 12px 14px; box-shadow: 0 16px 42px rgba(0,0,0,.36); }
+.app-session-feeds__panel > p { margin: 0; color: var(--color-muted); font-size: 11px; line-height: 1.5; }
+.app-session-feeds__panel ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.app-session-feeds__panel li { display: grid; grid-template-columns: 42px 66px minmax(0,1fr); gap: 8px; align-items: baseline; color: var(--color-dim); font-family: var(--font-geist-mono),monospace; font-size: 9px; }
+.app-session-feeds__panel li > span:first-child { color: var(--color-ink); }
+.app-session-feeds__panel li > strong { color: var(--color-muted); font-weight: 400; }
+.app-chain-guard { padding: 5px clamp(18px,2.4vw,34px); border-top: 1px solid var(--color-line); background: transparent; color: var(--color-muted); text-align: left; font-size: 10px; line-height: 1.4; }
+.app-chain-guard[data-state="warning"] { color: var(--color-warn); }
 
 /* Shared page typography, restrained surfaces and predictable data density. */
 .app-page { box-sizing: border-box; width: min(100% - clamp(32px,4vw,56px),1600px); max-width: none; min-height: calc(100dvh - 150px); margin: 0 auto; padding: clamp(22px,2.5vw,34px) 0 42px; }
@@ -376,7 +380,7 @@
   .app-workspace { width: calc(100% - 220px); margin-left: 220px; }
   .app-page { width: calc(100% - 44px); }
   .app-market-time { gap: 6px; font-size: 9px; }
-  .app-mainnet-status { gap: 12px 14px; padding-inline: 18px; }
+  .app-mainnet-status { padding-inline: 18px; }
 }
 @media (max-width: 960px) {
   .app-sidebar { z-index: 60; width: min(300px,84vw); transform: translateX(-101%); transition: transform .22s ease; }
@@ -389,12 +393,8 @@
   .app-terminal-bar { min-height: 54px; padding-inline: 18px; }
   .app-terminal-bar__left,.app-terminal-bar__right { gap: 10px; }
   .app-wallet-control { width: min(220px,42vw); }
-  .app-status-wrap [class*="max-w-6xl"] { padding-inline: 18px; }
-  .app-mainnet-status { grid-template-columns: minmax(0,.85fr) minmax(0,1.4fr); gap: 12px 20px; padding-inline: 18px; }
-  .app-mainnet-status__assets { grid-column: 1 / -1; }
-  .app-mainnet-status__availability { grid-column: 2; grid-row: 1; justify-self: end; }
-  .app-mainnet-status__disclosure { grid-column: 1; grid-row: 3; }
-  .app-mainnet-status__contracts { grid-column: 2; grid-row: 3; justify-self: end; }
+  .app-mainnet-status { padding-inline: 18px; }
+  .app-mainnet-status__row { flex-wrap: wrap; gap: 0 14px; }
   .app-page { width: calc(100% - 48px); min-height: calc(100dvh - 180px); padding-top: 34px; padding-bottom: 54px; }
   .app-pools-empty { min-height: 250px; grid-template-columns: minmax(0,1fr) minmax(190px,.42fr); }
   .app-content-frame { max-width: 100%; }
@@ -437,15 +437,15 @@
   .app-create-steps > li > span[aria-hidden="true"] { width: 10px; }
   .app-page :is(.p-6,.p-7,.p-8) { padding: 16px; }
   .app-footer__inner { flex-direction: column; gap: 6px; padding-inline: 16px; }
-  .app-status-wrap [class*="max-w-6xl"] { padding-inline: 16px; }
-  .app-mainnet-status { grid-template-columns: minmax(0,1fr); gap: 10px; padding: 13px 16px; }
-  .app-mainnet-status__headline strong { font-size: 13px; }
-  .app-mainnet-status__assets,.app-mainnet-status__availability,.app-mainnet-status__disclosure,.app-mainnet-status__contracts { grid-column: 1; grid-row: auto; }
-  .app-mainnet-status__availability { grid-template-columns: 1fr 1fr; align-items: center; justify-items: start; }
-  .app-mainnet-status__state { grid-column: 1 / -1; }
-  .app-mainnet-status__disclosure { padding-top: 8px; font-size: 10px; }
-  .app-mainnet-status__contracts { justify-self: start; }
-  .app-mainnet-status__contracts dl { grid-template-columns: 1fr; }
+  .app-mainnet-status { padding-inline: 15px; }
+  .app-mainnet-status__row { min-height: 36px; gap: 0 10px; }
+  .app-mainnet-status__network { gap: 6px; }
+  .app-mainnet-status__network strong { font-size: 10px; }
+  .app-mainnet-status__network > span,.app-mainnet-status__deployment,.app-session-feeds > summary,.app-mainnet-status__explorer,.app-mainnet-status__details > summary { font-size: 8px; }
+  .app-mainnet-status__deployment,.app-mainnet-status__explorer { display: none; }
+  .app-mainnet-status__contracts dl { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .app-mainnet-status__details-panel { padding: 13px; }
+  .app-session-feeds__panel li { grid-template-columns: 38px 56px minmax(0,1fr); gap: 6px; font-size: 8px; }
 }
 @media (max-width: 380px) {
   .app-terminal-bar { padding-inline: 11px; }

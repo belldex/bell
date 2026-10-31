@@ -9,26 +9,32 @@ const label = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) 
 export function MainnetStatusBanner() {
   return (
     <section className="app-mainnet-status" aria-label="Mainnet deployment status">
-      <div className="app-mainnet-status__headline">
-        <p>Robinhood Chain <span>·</span> Mainnet</p>
-        <strong>Contracts and asset registry live <span>4663</span></strong>
+      <div className="app-mainnet-status__row">
+        <div className="app-mainnet-status__network">
+          <strong>Robinhood Chain</strong>
+          <span>Mainnet · 4663</span>
+        </div>
+        <span className="app-mainnet-status__deployment">Contracts deployed</span>
+        <MainnetSessionFeedStatus />
+        <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer <span aria-hidden="true">↗</span></a>
+        <details className="app-mainnet-status__details">
+          <summary>Network details</summary>
+          <div className="app-mainnet-status__details-panel">
+            <p className="app-mainnet-status__disclosure">BELL admits Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG, WETH, and MEME. Mainnet pools use SESSION_ONLY pricing: swaps stay available when stock feeds are stale, with session fees and bounded flow limits. The seed ratio sets the opening price; there is no independent price protection. No Mainnet pool or swap exists yet, and an independent security audit is not complete. BELL is independent and is not affiliated with Robinhood Markets, Inc.</p>
+            <details className="app-mainnet-status__contracts">
+              <summary>Contract addresses</summary>
+              <dl>
+                {contracts.map(([key, address]) => (
+                  <div key={key} className="min-w-0">
+                    <dt>{label(key)}</dt>
+                    <dd><a href={`https://robinhoodchain.blockscout.com/address/${address}`} target="_blank" rel="noreferrer noopener">{address}</a></dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          </div>
+        </details>
       </div>
-      <p className="app-mainnet-status__disclosure">Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. Chainlink freshness is session-specific: up to 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale rounds block swaps, and feed updates can be intermittent. No Mainnet pool or swap exists yet. An independent security audit is not complete. BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc.</p>
-      <MainnetSessionFeedStatus />
-      <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
-      <details className="app-mainnet-status__contracts">
-        <summary>Contract addresses</summary>
-        <dl>
-          {contracts.map(([key, address]) => (
-            <div key={key} className="min-w-0">
-              <dt className="font-mono text-[9px] uppercase tracking-[0.12em] text-dim">{label(key)}</dt>
-              <dd className="mt-0.5 flex min-w-0 items-center gap-2 font-mono text-[10px] text-muted">
-                <a className="truncate underline-offset-2 hover:text-ink hover:underline" href={`https://robinhoodchain.blockscout.com/address/${address}`} target="_blank" rel="noreferrer noopener">{address}</a>
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </details>
     </section>
   );
 }

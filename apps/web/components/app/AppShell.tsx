@@ -75,7 +75,7 @@ function ChainGuard() {
   const wallet = useWallet();
   if (!wallet.wrongChain && !wallet.error) return null;
   return (
-    <div role="alert" className="app-chain-guard">
+    <div role="alert" data-state={wallet.wrongChain ? 'warning' : 'error'} className="app-chain-guard">
       {wallet.wrongChain
         ? 'Wrong network. Switch to Robinhood Chain Mainnet (4663) before continuing.'
         : wallet.error}
