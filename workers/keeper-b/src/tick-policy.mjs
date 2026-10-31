@@ -12,6 +12,35 @@
 
 export const ZERO32 = `0x${'0'.repeat(64)}`;
 const MAX_AGE_SECONDS = 120;
+const CLOSE_CAPTURE_WINDOW_SECONDS = 300;
+
+/** Match SessionRegistry's exact eligibility window before a planned session boundary. */
+export function isCloseCaptureWindow(current, upcoming, nowSeconds) {
+  if (!current || !upcoming) return false;
+  const now = BigInt(nowSeconds);
+  const currentStart = BigInt(current.start);
+  const currentEnd = BigInt(current.end);
+  const upcomingStart = BigInt(upcoming.start);
+  const upcomingEnd = BigInt(upcoming.end);
+  return Number(current.phase) >= 1 && Number(current.phase) <= 4
+    && Number(upcoming.phase) === 5
+    && currentStart < currentEnd && currentEnd === upcomingStart && upcomingEnd > upcomingStart
+    && now < upcomingStart && upcomingStart - now <= BigInt(CLOSE_CAPTURE_WINDOW_SECONDS);
+}
+
+/** A single UTC cron covers both US daylight offsets; ignore its cross-product minutes. */
+export function isScheduledMaintenanceWindow(nowSeconds) {
+  const date = new Date(Number(nowSeconds) * 1000);
+  const weekday = date.getUTCDay();
+  if (weekday === 0 || weekday === 6) return false;
+  const hour = date.getUTCHours();
+  const minute = date.getUTCMinutes();
+  const premarket = [8, 9].includes(hour) && minute <= 4;
+  const regular = [13, 14].includes(hour) && minute >= 30 && minute <= 34;
+  const closeCapture = [19, 20].includes(hour) && minute >= 55;
+  const marketFree = [20, 21].includes(hour) && minute <= 4;
+  return premarket || regular || closeCapture || marketFree;
+}
 
 export function phaseNameForCalendarPhase(phase) {
   if (phase === 1) return 'PRE';
