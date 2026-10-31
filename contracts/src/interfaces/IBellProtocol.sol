@@ -71,6 +71,7 @@ interface IBellHook {
     function poolId() external view returns (bytes32);
     function apiVersion() external view returns (uint32);
     function refreshState() external returns (PolicyView memory);
+    function activateStagedPool() external returns (PolicyView memory);
     function prepareOracleUpdates(OraclePullUpdate[] calldata updates) external returns (PolicyView memory);
     function getPolicy() external view returns (PolicyView memory);
     function state() external view returns (PoolState memory);

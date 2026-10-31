@@ -23,7 +23,8 @@ enum LiquidityMode {
 enum Lifecycle {
     DEPLOYED,
     SEEDING,
-    LIVE
+    LIVE,
+    STAGED
 }
 
 enum Mode {

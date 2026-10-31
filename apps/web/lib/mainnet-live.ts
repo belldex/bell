@@ -36,6 +36,7 @@ const poolCreated = parseAbiItem('event PoolCreated(address indexed hook, bytes3
 export type LivePool = {
   hook: Address;
   poolId: `0x${string}`;
+  lifecycle: number;
   token0: Address;
   token1: Address;
   asset0: `0x${string}`;
@@ -61,6 +62,7 @@ export async function readLivePools(): Promise<LivePool[]> {
     if (Number(body.chainId) !== MAINNET.chainId || !Array.isArray(body.pools)) throw new Error('Pool directory returned an invalid Mainnet response');
     return body.pools.map((pool: any) => ({
       ...pool,
+      lifecycle: Number(pool.lifecycle ?? 2),
       directoryBlockNumber: body.blockNumber === undefined ? undefined : BigInt(body.blockNumber),
       createdAtBlock: pool.createdAtBlock === undefined ? undefined : BigInt(pool.createdAtBlock),
       tradeCap: pool.tradeCap.map(BigInt), windowCap: pool.windowCap.map(BigInt),
@@ -84,9 +86,10 @@ export async function readLivePools(): Promise<LivePool[]> {
     const directoryBlockNumber = await client.getBlockNumber();
     return Promise.all(unique.map(async (log) => {
       const hook = log.args.hook as Address;
-      const [config, policy] = await Promise.all([
+      const [config, policy, state] = await Promise.all([
         client.readContract({ address: hook, abi: hookAbi, functionName: 'config' }) as Promise<any>,
         client.readContract({ address: hook, abi: hookAbi, functionName: 'getPolicy' }) as Promise<any>,
+        client.readContract({ address: hook, abi: hookAbi, functionName: 'state' }) as Promise<any>,
       ]);
       const [symbol0, symbol1, decimals0, decimals1] = await Promise.all([
         client.readContract({ address: config.token0, abi: erc20, functionName: 'symbol' }),
@@ -95,7 +98,7 @@ export async function readLivePools(): Promise<LivePool[]> {
         client.readContract({ address: config.token1, abi: erc20, functionName: 'decimals' }),
       ]);
       return {
-        hook, poolId: log.args.poolId as `0x${string}`, createdAtBlock: log.blockNumber, directoryBlockNumber, token0: config.token0, token1: config.token1,
+        hook, poolId: log.args.poolId as `0x${string}`, lifecycle: Number(state.lifecycle), createdAtBlock: log.blockNumber, directoryBlockNumber, token0: config.token0, token1: config.token1,
         asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
         poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
         tradeCap: config.tradeCap, windowCap: config.windowCap,

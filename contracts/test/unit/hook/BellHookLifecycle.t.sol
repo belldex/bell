@@ -55,6 +55,10 @@ contract MockHookToken {
 
 contract MockHookDependency {}
 
+contract MockHookReferenceAdapter {
+    function referencePrice() external pure returns (uint128) { return 1e18; }
+}
+
 contract MockHookPositionManager {
     address public originalSender;
 
@@ -167,12 +171,15 @@ contract MockAssetRegistry {
 
 contract MockCalendarRegistry {
     mapping(bytes32 assetId => CalendarLeaf leaf) private _leaves;
+    mapping(bytes32 assetId => CalendarLeaf leaf) private _nextLeaves;
     mapping(bytes32 assetId => uint8 mode) private _malformed;
     bool public revertReads;
 
     function setLeaf(CalendarLeaf calldata leaf) external {
         _leaves[leaf.assetId] = leaf;
     }
+
+    function setNextLeaf(CalendarLeaf calldata leaf) external { _nextLeaves[leaf.assetId] = leaf; }
 
     function clearLeaf(bytes32 assetId) external {
         delete _leaves[assetId];
@@ -211,10 +218,14 @@ contract MockCalendarRegistry {
         }
         return _leaves[assetId];
     }
+
+    function nextInterval(bytes32 assetId) external view returns (CalendarLeaf memory) { return _nextLeaves[assetId]; }
 }
 
 contract MockSessionRegistry {
+    struct AnchorRecord { Anchor anchor; bool valid; uint256 reasons; uint64 validUntil; }
     mapping(bytes32 assetId => HealthView health) private _health;
+    mapping(bytes32 assetId => mapping(bytes32 boundary => AnchorRecord record)) private _anchors;
     bool public revertReads;
     bool public malformedReads;
     mapping(bytes32 => bytes32) public pullPayloadHash;
@@ -254,6 +265,10 @@ contract MockSessionRegistry {
         _health[assetId] = health_;
     }
 
+    function setAnchor(bytes32 assetId, bytes32 boundary, Anchor calldata anchor, bool valid, uint256 reasons, uint64 validUntil) external {
+        _anchors[assetId][boundary] = AnchorRecord(anchor, valid, reasons, validUntil);
+    }
+
     function setRevertReads(bool value) external {
         revertReads = value;
     }
@@ -277,12 +292,14 @@ contract MockSessionRegistry {
         return sample;
     }
 
-    function anchorStatus(bytes32, bytes32)
+    function anchorStatus(bytes32 assetId, bytes32 boundary)
         external
-        pure
+        view
         returns (Anchor memory anchor, bool valid, uint256 reasons, uint64 validUntil)
     {
-        return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, 0);
+        AnchorRecord memory record = _anchors[assetId][boundary];
+        if (record.anchor.assetId == bytes32(0)) return (anchor, false, ReasonBits.ANCHOR_MISSING_OR_EXPIRED, 0);
+        return (record.anchor, record.valid, record.reasons, record.validUntil);
     }
 }
 
@@ -317,6 +334,7 @@ contract BellHookLifecycleTest {
     MockAssetRegistry private assets;
     MockCalendarRegistry private calendar;
     MockSessionRegistry private sessions;
+    MockHookReferenceAdapter private referenceAdapter;
     bytes32 private templateCodeHash;
     BellHook private hook;
     BellPolicyOracle private oracle;
@@ -338,6 +356,7 @@ contract BellHookLifecycleTest {
         assets = new MockAssetRegistry();
         calendar = new MockCalendarRegistry();
         sessions = new MockSessionRegistry();
+        referenceAdapter = new MockHookReferenceAdapter();
         templateCodeHash = keccak256(type(BellHook).creationCode);
         oracle = new BellPolicyOracle();
         _installHealthyState();
@@ -546,7 +565,7 @@ contract BellHookLifecycleTest {
     }
 
     function testUnknownLifecycleNeverHealthy() external {
-        _setLifecycle(3);
+        _setLifecycle(type(uint8).max);
         PolicyView memory policy = hook.getPolicy();
         require(policy.mode == uint8(Mode.SETUP), "mode");
         require(policy.reasonBits & ReasonBits.SETUP != 0, "setup");
@@ -565,6 +584,8 @@ contract BellHookLifecycleTest {
     }
 
     function testViewAndCallbackParityUnderCombinedFaults() external {
+        assets.setDescriptor(_descriptor(asset1, token1, true));
+        calendar.setLeaf(_leaf(asset1, PolicyConstants.PHASE_REGULAR, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
         _seedAndActivate();
         safety.setPause(ModePolicy.targetId(1, address(hook)), true, 1);
         safety.setPause(ModePolicy.targetId(2, token0), true, 1);
@@ -936,6 +957,8 @@ contract BellHookLifecycleTest {
     }
 
     function testStateHashChangesWhenQuoteHealthChanges() external {
+        assets.setDescriptor(_descriptor(asset1, token1, true));
+        calendar.setLeaf(_leaf(asset1, PolicyConstants.PHASE_REGULAR, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
         _seedAndActivate();
         bytes32 before = hook.getPolicy().stateHash;
 
@@ -1108,7 +1131,7 @@ contract BellHookLifecycleTest {
 
         evaluation = ModePolicy.evaluate(uint8(Lifecycle.LIVE), PolicyConstants.PHASE_REGULAR, true, 0, true);
         require(evaluation.mode == uint8(Mode.CLOSED), "latched mode");
-        require(!evaluation.canSwap, "latched swap");
+        require(evaluation.canSwap, "valid planned closure swap");
 
         evaluation = ModePolicy.evaluate(uint8(Lifecycle.LIVE), PolicyConstants.PHASE_UNKNOWN, false, 0, true);
         require(evaluation.mode == uint8(Mode.HALTED), "unknown phase mode");
@@ -1501,8 +1524,8 @@ contract BellHookLifecycleTest {
         config.windowCap = [uint128(10_000_000), uint128(20_000_000)];
         config.closureCap = [uint128(500_000), uint128(1_000_000)];
         config.policyId = keccak256("POLICY_V1");
-        config.referenceAdapter0 = address(0);
-        config.referenceAdapter1 = address(0);
+        config.referenceAdapter0 = address(referenceAdapter);
+        config.referenceAdapter1 = address(referenceAdapter);
     }
 
     function _key() internal view returns (PoolKey memory key) {
@@ -1589,8 +1612,8 @@ contract BellHookLifecycleTest {
         hook.beginSeed(requestHash, -60, 60, salt, liquidity);
 
         PoolKey memory key = hook.poolKey();
-        vm.prank(address(manager));
-        require(hook.beforeInitialize(factory, key, 1) == IHooks.beforeInitialize.selector, "init selector");
+        vm.prank(factory);
+        manager.initialize(key, uint160(1 << 96));
         require(hook.state().lifecycle == uint8(Lifecycle.SEEDING), "seeding transition");
 
         ModifyLiquidityParams memory params = _seedParams();

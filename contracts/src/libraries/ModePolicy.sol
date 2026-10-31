@@ -104,6 +104,7 @@ library ModePolicy {
             if (context.anyPlannedClosed) {
                 // A proven closure (or a fault inside an existing closure) never creates a new episode.
                 decision.mode = healthy && context.closureContextValid ? uint8(Mode.CLOSED) : uint8(Mode.HALTED);
+                decision.canSwap = decision.mode == uint8(Mode.CLOSED) && context.executionReady;
                 if (!context.closureContextValid) decision.reasons |= ReasonBits.ANCHOR_MISSING_OR_EXPIRED;
                 _cancelCandidate(decision);
                 return decision;
@@ -185,6 +186,7 @@ library ModePolicy {
             decision.beginLatch = true;
             decision.closureNonce = context.closureNonce + 1;
             decision.mode = healthy ? uint8(Mode.CLOSED) : uint8(Mode.HALTED);
+            decision.canSwap = decision.mode == uint8(Mode.CLOSED) && context.executionReady;
             decision.reopenCandidateAt = 0;
             decision.reopenBaseObservations = [uint64(0), uint64(0)];
             decision.oldValidUntil = 0;

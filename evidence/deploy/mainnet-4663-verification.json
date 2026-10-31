@@ -3,12 +3,12 @@
   "verifiedAt": "2026-10-31",
   "status": "PRODUCTION_DEPLOYED",
   "sourceCommit": "72f2e6f",
-  "manifestHash": "0x3751ed73b05955f178f588033df5ba2e96da083a64d81faa074a876b7a624bc6",
+  "manifestHash": "0xe9ccc6b0031c1e94fc32d9295b091b292dfdb8a5b3fc3173535784824c6a6aa9",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "blocks": {
     "first": 102269264,
     "last": 102269298,
-    "verifiedAtBlock": 102269681
+    "verifiedAtBlock": 102355141
   },
   "contracts": {
     "safetyController": {
@@ -42,14 +42,14 @@
       "codeHash": "0x27cad064438e815b2fc990ed3a4e17868720b71225f657a10457e34cbb6166b6"
     },
     "hookDeployer": {
-      "address": "0xfc3cfb2d1d94e13f633a3371f3d94188cfd3a4b8",
+      "address": "0x4de343295ab68a62f25b965494fc6cf3b3c03334",
       "codeBytes": 3169,
-      "codeHash": "0x8950937554a2f04b302a5359fc594eafe77b5c0d6031207f80e73f3d1669702f"
+      "codeHash": "0xb68d1ab2f4b1c99b618fcc6552ee0eb9f2860b8ba5d7be5b4933c30035755fee"
     },
     "poolFactory": {
-      "address": "0x242fc7068cfa0616e95471bf7de82fbae84ff7fb",
-      "codeBytes": 19297,
-      "codeHash": "0x09abb20cabd8e441a3c09952fba6b911b03a065b238e92590b6438361fa9cfff"
+      "address": "0xed367cd54af9eafa0e7512555f5f8bf77a0a2090",
+      "codeBytes": 22564,
+      "codeHash": "0x9b21eaa9492fade60a7ad8dbaf851f386e49a397b56cc96e94aa3c6207c1f5a3"
     },
     "weth": {
       "address": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
@@ -75,10 +75,10 @@
     "positionManager.poolManager": "0x8b26FEfa276860592D45114Cb30B335DdDd87B56",
     "positionManager.WETH9": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
     "positionManager.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "poolFactory.hookDeployer": "0xfc3CFB2D1D94e13f633A3371F3D94188cfd3a4B8",
+    "poolFactory.hookDeployer": "0x4DE343295Ab68A62f25b965494FC6CF3b3c03334",
     "poolFactory.positionManager": "0x84da249Aafa359886C6A2Ae1ebDC78a6059B662D",
     "poolFactory.serviceToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-    "hookDeployer.factory": "0x242Fc7068cfA0616E95471Bf7dE82FbaE84ff7fb",
+    "hookDeployer.factory": "0xEd367cD54aF9EAFa0e7512555f5f8BF77A0A2090",
     "hookDeployer.sessionRegistry": "0x5F1b0212dc6167CBC1883f910640A685B1243795",
     "sessionRegistry.assetRegistry": "0x0D9C0c8b2065b08A8aD4Abc861eB128385Ef18C6",
     "sessionRegistry.calendarRegistry": "0x394983BfF2715d57197389F323d807b0D61c05a3",
@@ -94,8 +94,8 @@
     "factory.liquidityMode": 0,
     "factory.serviceFee": "49000000",
     "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
-    "factory.profileHash": "0x700a94150c8f69ab2d51538614aa087c864312df77aac44dd1beb4aae7d152c7",
-    "hookDeployer.templateCodeHash": "0x416c3ae14d06f9d44063f7c65e6a6fe87fa8c93cf95db475e601d4e30cf77189",
+    "factory.profileHash": "0xbada2e703cb6b45935944c26ac1b0b71c884889e98ebbe3320e2357f85410f0f",
+    "hookDeployer.templateCodeHash": "0xaff993c6066c5881fe9f5ebb6e1744d0a47c02f061a5d87904f72acaa680ee93",
     "weth.symbol": "WETH",
     "weth.decimals": 18
   },

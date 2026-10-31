@@ -3,7 +3,6 @@
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "treasury": "0xf6e272fbf862ae055949c61bc41e6395dfe20841",
   "serviceRecipient": "0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc",
-  "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "permit2": "0x000000000022d473030f116ddee9f6b43ac78ba3",
   "safetyController": "0x7243cf13f0308edd4a0397551042fea3cf9da179",
   "assetRegistry": "0x0d9c0c8b2065b08a8ad4abc861eb128385ef18c6",
@@ -11,10 +10,11 @@
   "sessionRegistry": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
   "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
   "positionManager": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
-  "hookDeployer": "0xfc3cfb2d1d94e13f633a3371f3d94188cfd3a4b8",
-  "poolFactory": "0x242fc7068cfa0616e95471bf7de82fbae84ff7fb",
+  "hookDeployer": "0x4de343295ab68a62f25b965494fc6cf3b3c03334",
+  "poolFactory": "0xed367cd54af9eafa0e7512555f5f8bf77a0a2090",
   "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
   "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+  "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "status": "PRODUCTION",
-  "note": "PRICE_GUARDED stays blocked until an independent reference is admitted."
+  "note": "Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused."
 }

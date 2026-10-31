@@ -7,7 +7,8 @@ import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {ChainlinkTokenReferenceAdapter} from "../../../src/adapters/ChainlinkTokenReferenceAdapter.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
-import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Lifecycle, Mode, PoolClass, PolicyView} from "../../../src/types/ProtocolTypes.sol";
+import {CalendarProof} from "../../../src/libraries/CalendarProof.sol";
+import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Anchor, Lifecycle, Mode, PoolClass, PolicyView} from "../../../src/types/ProtocolTypes.sol";
 import {MockAssetRegistry, MockCalendarRegistry, MockSessionRegistry, MockSafetyController} from "../../unit/hook/BellHookLifecycle.t.sol";
 import {PoolManager} from "@uniswap/v4-core/src/PoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
@@ -44,6 +45,8 @@ contract GuardStubAggregator is AggregatorV3Interface {
     }
 
     function setBroken(bool value) external { broken = value; }
+    function setUpdatedAt(uint256 value) external { updatedAt = value; }
+    function setAnswer(int256 value) external { answer = value; }
 
     function decimals() external view returns (uint8) { return dec; }
     function description() external pure returns (string memory) { return "guard-stub"; }
@@ -191,6 +194,53 @@ contract PriceGuardedCreationTest {
         require(policy.referencePrice18[0] == 350_73393114 * 1e10, "stock reference missing");
         require(policy.referencePrice18[1] == 350_73393114 * 1e10, "counter reference missing");
         require(factory.nonces(address(this)) == 1, "nonce");
+    }
+
+    function testClosedMarketCreationStagesUntilValidOracleContextReturns() external {
+        calendar.setLeaf(CalendarLeaf(request.config.asset0, 2026, 1, 90_000, 200_000,
+            PolicyConstants.PHASE_CLOSED, keccak256("closed-fixture")));
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.STAGED), "pool was not staged");
+        require(!BellHook(r.hook).getPolicy().canSwap, "staged pool can swap");
+
+        vm.warp(200_001);
+        GuardStubAggregator(address(stockAdapter.feed())).setUpdatedAt(block.timestamp);
+        GuardStubAggregator(address(counterAdapter.feed())).setUpdatedAt(block.timestamp);
+        sessions.setHealth(request.config.asset0, HealthView(true, 0, 200_000, 300_000, 200_000, 200_001));
+        calendar.setLeaf(CalendarLeaf(request.config.asset0, 2026, 2, 200_000, 300_000,
+            PolicyConstants.PHASE_REGULAR, keccak256("open-fixture")));
+        vm.warp(200_061);
+        GuardStubAggregator(address(stockAdapter.feed())).setUpdatedAt(block.timestamp);
+        GuardStubAggregator(address(counterAdapter.feed())).setUpdatedAt(block.timestamp);
+        sessions.setHealth(request.config.asset0, HealthView(true, 0, 200_000, 300_000, 200_001, 200_061));
+        GuardStubAggregator(address(stockAdapter.feed())).setAnswer(STOCK_ANSWER * 2);
+        BellHook(r.hook).activateStagedPool();
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.STAGED), "out-of-band pool activated");
+        GuardStubAggregator(address(stockAdapter.feed())).setAnswer(STOCK_ANSWER);
+        PolicyView memory activated = BellHook(r.hook).activateStagedPool();
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "pool did not activate");
+        require(activated.mode == uint8(Mode.ACTIVE) && activated.canSwap, "fresh open pool not tradable");
+    }
+
+    function testPriceGuardedPoolUsesVerifiedFrozenStockReferenceDuringClosure() external {
+        CalendarLeaf memory closed = CalendarLeaf(request.config.asset0, 2026, 1, 100_000, 200_000,
+            PolicyConstants.PHASE_CLOSED, keccak256("closed-fixture"));
+        CalendarLeaf memory next = CalendarLeaf(request.config.asset0, 2026, 2, 200_000, 300_000,
+            PolicyConstants.PHASE_REGULAR, keccak256("open-fixture"));
+        calendar.setLeaf(closed);
+        calendar.setNextLeaf(next);
+        bytes32 boundary = CalendarProof.hashLeaf(block.chainid, address(calendar), closed);
+        Anchor memory anchor = Anchor(request.config.asset0, boundary, uint128(uint256(STOCK_ANSWER) * 1e10),
+            1e18, 99_995, 99_990, 99_990, closed.start, keccak256("close-anchor-source"));
+        sessions.setAnchor(request.config.asset0, boundary, anchor, true, 0, 200_000);
+
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "valid closed pool staged");
+        PolicyView memory policy = BellHook(r.hook).getPolicy();
+        require(policy.mode == uint8(Mode.CLOSED) && policy.canSwap, "verified close does not allow bounded swap");
+        uint256 stockSide = address(token0) < address(token1) ? 0 : 1;
+        require(policy.referencePrice18[stockSide] == anchor.price18, "frozen close price missing");
+        require(policy.reasonBits == 0, "closed policy has blocking reason");
     }
 
     function testPriceGuardedUnpricedCounterassetUsesReferenceWithoutSessionHealth() external {

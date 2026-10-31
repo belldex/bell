@@ -59,6 +59,7 @@ const HOOK_ABI = parseAbi([
 const POOL_CREATED_EVENT = parseAbiItem('event PoolCreated(address indexed hook,bytes32 indexed poolId,bytes32 configHash,address indexed creator,address recipient)');
 const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
 const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
+const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
 const TOKEN_ABI = parseAbi(['function symbol() view returns (string)', 'function decimals() view returns (uint8)']);
 
 function json(body, status = 200) {
@@ -290,8 +291,9 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   const pools = await Promise.all(unique.map(async (log) => {
     const hook = log.args.hook;
     const config = await chain.readContract({ address: hook, abi: POOL_CONFIG_ABI, functionName: 'config' });
-    const [policy, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
+    const [policy, state, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
       chain.readContract({ address: hook, abi: POOL_POLICY_ABI, functionName: 'getPolicy' }),
+      chain.readContract({ address: hook, abi: POOL_STATE_ABI, functionName: 'state' }),
       chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'symbol' }),
       chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'symbol' }),
       chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
@@ -299,7 +301,7 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
     ]);
     const strings = (values) => Array.from(values, (value) => String(value));
     return {
-      hook, poolId: log.args.poolId, token0: config.token0, token1: config.token1,
+      hook, poolId: log.args.poolId, lifecycle: Number(state.lifecycle), token0: config.token0, token1: config.token1,
       asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
       poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
       tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
