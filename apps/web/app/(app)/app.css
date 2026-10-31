@@ -347,15 +347,26 @@
 
 /* Keep route changes, controls and disclosure panels responsive without adding visual noise. */
 .app-shell { scroll-behavior: smooth; }
-.app-route-enter { animation: app-route-in 220ms cubic-bezier(.2,.75,.25,1); }
-.app-create-stage { animation: app-route-in 180ms cubic-bezier(.2,.75,.25,1); }
+.app-route-enter { animation: app-route-in 260ms cubic-bezier(.22,.8,.28,1) both; }
+.app-route-enter[data-direction="back"] { animation-name: app-route-in-back; }
+.app-create-stage { animation: app-stage-in 260ms cubic-bezier(.22,.8,.28,1) both; }
+.app-create-stage[data-direction="-1"] { animation-name: app-stage-in-back; }
+.app-create-progress { position: relative; height: 2px; margin-top: 18px; overflow: hidden; background: var(--color-line); }
+.app-create-progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--color-ion), var(--color-ion-text)); transform-origin: left center; transition: transform 420ms cubic-bezier(.22,.8,.28,1); }
+.app-create-steps { scroll-behavior: smooth; }
+.app-create-steps > li { position: relative; }
+.app-create-steps > li > button { transition: border-color 200ms ease, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease; }
+.app-create-steps__link { position: relative; width: 20px; height: 1px; overflow: hidden; background: var(--color-line); }
+.app-create-steps__link::after { position: absolute; inset: 0; background: var(--color-ion); content: ""; transform: scaleX(0); transform-origin: left center; transition: transform 340ms cubic-bezier(.22,.8,.28,1); }
+.app-create-steps > li[data-state="done"] .app-create-steps__link::after { transform: scaleX(1); }
+.app-mainnet-status__details-panel, .app-session-feeds__panel, .app-wallet-popover, .app-wallet-modal { animation: app-pop-in 180ms cubic-bezier(.22,.8,.28,1) both; }
 .app-sidebar-overlay { animation: app-overlay-in 180ms ease-out; }
 .app-page :is(a,button,[role="button"],input,select,summary) { transition-duration: 160ms; transition-timing-function: cubic-bezier(.2,.75,.25,1); }
 .app-page :is(button,[role="button"]):not(:disabled):active { transform: translateY(1px); }
 .app-page :is(a,button,input,select,summary):focus-visible { outline: 2px solid var(--color-ion); outline-offset: 3px; }
 .app-pool-card { transition: transform 180ms cubic-bezier(.2,.75,.25,1), border-color 180ms ease, background-color 180ms ease; }
 .app-pool-card:hover { transform: translateY(-1px); border-color: color-mix(in srgb,var(--color-ion) 48%,var(--color-line-strong)); background: var(--color-surface-2); }
-.app-pool-grid > li { animation: app-route-in 170ms ease-out; }
+.app-pool-grid > li { animation: app-lift-in 220ms cubic-bezier(.22,.8,.28,1) both; }
 .app-pool-card__action { display: inline-flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 14px; color: var(--color-muted); font-family: var(--font-geist-mono),monospace; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; transition: color 160ms ease; }
 .app-pool-card:hover .app-pool-card__action { color: var(--color-ion-text); }
 .app-pool-card__action svg { transition: transform 160ms ease; }
@@ -372,7 +383,12 @@
 .app-page .app-search-field__input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-ink); font-size: 14px; line-height: 1.4; }
 .app-page .app-search-field__input:focus-visible { outline: none !important; box-shadow: none !important; }
 .app-live-transaction { scroll-margin-top: 76px; }
-@keyframes app-route-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes app-route-in { from { opacity: 0; transform: translate3d(14px, 8px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes app-route-in-back { from { opacity: 0; transform: translate3d(-14px, 8px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@keyframes app-stage-in { from { opacity: 0; transform: translate3d(22px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes app-stage-in-back { from { opacity: 0; transform: translate3d(-22px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes app-lift-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes app-pop-in { from { opacity: 0; transform: translateY(-6px) scale(.996); } to { opacity: 1; transform: none; } }
 @keyframes app-overlay-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (max-width: 1100px) {
@@ -459,7 +475,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .app-shell { scroll-behavior: auto; }
-  .app-route-enter,.app-create-stage,.app-pool-grid > li,.app-sidebar-overlay { animation: none; }
+  .app-route-enter,.app-create-stage,.app-pool-grid > li,.app-sidebar-overlay,.app-mainnet-status__details-panel,.app-session-feeds__panel,.app-wallet-popover,.app-wallet-modal { animation: none; }
+  .app-create-progress > span,.app-create-steps__link::after { transition: none; }
   .app-page .animate-spin { animation: none !important; }
   .app-loading__spinner,.app-loading__card i,.app-loading__metrics i,.app-loading__panel i,.app-loading__page > i,.app-loading__inline-bar::after,.app-inline-skeleton::after { animation: none; }
   .app-sidebar,.app-terminal-bar *,.app-page * { scroll-behavior: auto !important; transition-duration: .01ms !important; }

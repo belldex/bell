@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { formatUnits, parseUnits, type Address } from 'viem';
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, ExternalLink, LoaderCircle, Lock, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/primitives';
@@ -33,6 +33,28 @@ function amountLabel(raw: bigint, symbol: string) {
 export default function CreatePage() {
   const wallet = useWallet();
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const previousHeight = useRef<number | null>(null);
+  const goStep = (next: number) => {
+    if (next === step) return;
+    const node = stageRef.current;
+    previousHeight.current = node ? node.offsetHeight : null;
+    setDirection(next >= step ? 1 : -1);
+    setStep(next);
+  };
+  useLayoutEffect(() => {
+    const node = stageRef.current;
+    const from = previousHeight.current;
+    if (!node || from === null) return;
+    previousHeight.current = null;
+    const to = node.offsetHeight;
+    if (from === to) return;
+    node.style.overflow = 'hidden';
+    const animation = node.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: 280, easing: 'cubic-bezier(.22,.8,.28,1)' });
+    const restore = () => { node.style.overflow = ''; };
+    animation.finished.then(restore).catch(restore);
+  }, [step]);
   const [stockSymbol, setStockSymbol] = useState('AAPL');
   const [counterSymbol, setCounterSymbol] = useState('USDG');
   const [poolClass, setPoolClass] = useState<0 | 1>(1);
@@ -118,15 +140,18 @@ export default function CreatePage() {
       <p className="mt-3 text-sm leading-relaxed text-muted">Choose whether the pool uses external price protection when references are healthy or runs as an AMM at all times. Both classes are fixed at creation and use onchain flow limits.</p>
     </header>
 
-    <ol className="mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
-      {STEPS.map((label, index) => <li key={label} className="flex items-center gap-2">
-        <button type="button" disabled={index > step || busy} onClick={() => setStep(index)} aria-current={index === step ? 'step' : undefined} className={cn('min-h-10 whitespace-nowrap border px-3 font-mono text-[10px] uppercase tracking-[0.08em]', index === step ? 'border-ion/60 bg-ion/10 text-ion' : index < step ? 'border-line text-ink' : 'border-line text-dim opacity-60')}>
+    <ol className="app-create-steps mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
+      {STEPS.map((label, index) => <li key={label} className="flex items-center gap-2" data-state={index < step ? "done" : index === step ? "current" : "todo"}>
+        <button type="button" disabled={index > step || busy} onClick={() => goStep(index)} aria-current={index === step ? 'step' : undefined} className={cn('min-h-10 whitespace-nowrap border px-3 font-mono text-[10px] uppercase tracking-[0.08em]', index === step ? 'border-ion/60 bg-ion/10 text-ion' : index < step ? 'border-line text-ink' : 'border-line text-dim opacity-60')}>
           {index < step ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true"/> : null}{label}
-        </button>{index < STEPS.length - 1 && <span className="h-px w-5 bg-line" aria-hidden="true"/>}
+        </button>{index < STEPS.length - 1 && <span className="app-create-steps__link" aria-hidden="true"/>}
       </li>)}
     </ol>
 
+    <div className="app-create-progress" aria-hidden="true"><span style={{ transform: `scaleX(${(step + 1) / STEPS.length})` }} /></div>
+
     <section className="mt-6 border border-line bg-surface/75 p-5 sm:p-8">
+      <div ref={stageRef} key={step} className="app-create-stage" data-direction={direction}>
       {step === 0 && <div className="space-y-6">
         <div className="flex items-center gap-4 border-b border-line pb-5"><TokenPair symbols={[stockSymbol, counterSymbol]} size={32}/><div><p className="font-mono text-[10px] uppercase text-dim">Selected pair</p><p className="mt-1 text-lg text-ink">{stockSymbol} / {counterSymbol}</p></div></div>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -181,11 +206,12 @@ export default function CreatePage() {
           <label className="flex cursor-pointer items-start gap-3 border border-warn/30 bg-warn/5 p-4"><input type="checkbox" checked={ackRisk} onChange={(event) => setAckRisk(event.target.checked)} className="mt-1 accent-ion"/><span>I understand the pool class is permanent, seed tokens can be lost, the factory service fee is paid separately, and the position NFT will be minted to my connected wallet.</span></label>
         </div>
       </div>}
+      </div>
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
-        <Button variant="ghost" onClick={() => setStep((current) => Math.max(0, current - 1))} disabled={step === 0 || busy}><ArrowLeft className="h-4 w-4"/> Back</Button>
+        <Button variant="ghost" onClick={() => goStep(Math.max(0, step - 1))} disabled={step === 0 || busy}><ArrowLeft className="h-4 w-4"/> Back</Button>
         <div className="flex flex-wrap gap-2">
-          {step < STEPS.length - 1 && <Button onClick={() => setStep((current) => current + 1)} disabled={!stepOk[step] || busy}>Continue <ArrowRight className="h-4 w-4"/></Button>}
+          {step < STEPS.length - 1 && <Button onClick={() => goStep(Math.min(STEPS.length - 1, step + 1))} disabled={!stepOk[step] || busy}>Continue <ArrowRight className="h-4 w-4"/></Button>}
           {step === STEPS.length - 1 && <button type="button" onClick={() => void startCreate()} disabled={busy || !stepOk[3]} className="inline-flex min-h-11 items-center gap-2 bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 disabled:opacity-50">{busy ? <><LoaderCircle className="h-4 w-4 animate-spin"/>{stage?.message ?? 'Working…'}</> : wallet.status !== 'connected' ? <><Wallet className="h-4 w-4"/>Connect wallet</> : wallet.wrongChain ? 'Switch to Mainnet' : 'Create and seed pool'}</button>}
         </div>
       </div>

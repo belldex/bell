@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { FaXTwitter } from 'react-icons/fa6';
 import { BellWordmark } from '@/components/ui/Logo';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X } from 'lucide-react';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
@@ -39,6 +39,13 @@ const PAGE_NAMES: Record<string, string> = {
   '/privacy': 'Privacy',
   '/terms': 'Terms',
   '/cookies': 'Cookies',
+};
+
+const ROUTE_ORDER = ['/pools', '/pool', '/swap', '/create', '/positions', '/protocol', '/privacy', '/terms', '/cookies'];
+const routeRank = (value: string) => {
+  const normalized = value.length > 1 && value.endsWith('/') ? value.slice(0, -1) : value;
+  const index = ROUTE_ORDER.indexOf(normalized);
+  return index === -1 ? 0 : index;
 };
 
 function MarketClock({ minute }: { minute: number | null }) {
@@ -102,6 +109,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, []);
 
+  const previousPath = useRef(path);
+  const routeDirection = routeRank(path) >= routeRank(previousPath.current) ? 'forward' : 'back';
+  useEffect(() => { previousPath.current = path; }, [path]);
   const pageName = PAGE_NAMES[path] ?? PAGE_NAMES[path.replace(/\/$/, '')] ?? 'Markets';
   const isActive = (href: string) =>
     path === href || path === `${href}/` ||
@@ -181,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <main id="main" className={cn('app-page', path === '/swap' && 'app-page--swap')}>
-              <div key={path} className="app-route-enter">
+              <div key={path} className="app-route-enter" data-direction={routeDirection}>
                 {children}
               </div>
             </main>
