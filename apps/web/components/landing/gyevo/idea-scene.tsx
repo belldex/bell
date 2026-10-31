@@ -154,7 +154,7 @@ export function IdeaScene() {
               BELL provides liquidity pools that can include Robinhood Stock Tokens. Regular, extended and overnight sessions carry different data and liquidity conditions.
             </p>
             <p className="lp-body lp-ie">
-              Before every swap, BELL checks the exchange calendar, asset identity and Chainlink round freshness. A round must be less than 120 seconds old; stale, unsupported or conflicting state stops execution. Historical feed cadence shows this can halt swaps during scheduled sessions.
+              Before every swap, BELL checks the exchange calendar, asset identity and Chainlink round freshness. The limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT; stale, unsupported or conflicting state stops execution. Historical feed cadence shows this can halt swaps during scheduled sessions.
             </p>
 
             {/* sticky mode only: where you are in the scene */}

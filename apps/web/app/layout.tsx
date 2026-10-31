@@ -22,20 +22,20 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://bell-black.vercel.app'),
   title: { default: 'BELL: Session-aware Robinhood Stock Token liquidity', template: '%s · BELL' },
   description:
-    'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. Chainlink rounds must be less than 120 seconds old; stale data halts swaps and feed freshness can be intermittent.',
+    'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
   icons: {
     icon: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
     apple: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
   },
   openGraph: {
     title: 'BELL: Session-aware Robinhood Stock Token liquidity',
-    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Swaps require a Chainlink round less than 120 seconds old; feed freshness can be intermittent.',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'BELL: Session-aware Robinhood Stock Token liquidity',
-    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Swaps require a Chainlink round less than 120 seconds old; feed freshness can be intermittent.',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

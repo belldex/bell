@@ -14,7 +14,7 @@ test('landing route composes the current BELL landing page without redirecting',
 test('page metadata no longer reports outdated asset admission status', async () => {
   const layout = await read('../app/layout.tsx');
   assert.match(layout, /Session-aware Robinhood Stock Token liquidity/);
-  assert.match(layout, /less than 120 seconds old; stale data halts swaps/);
+  assert.match(layout, /60 seconds in REGULAR.{0,100}120 seconds in PRE/is);
   assert.doesNotMatch(layout, /signed quotes/i);
   assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
 });
@@ -122,6 +122,7 @@ test('landing connects live product routes and explains verified limits', async 
   const copy = `${landing}\n${closing}`;
   for (const path of ['/pools', '/create', '/swap', '/positions', '/protocol']) assert.ok(copy.includes(path), `landing should link to ${path}`);
   assert.match(copy, /Chainlink.{0,100}(PRE|REGULAR|POST|OVERNIGHT)|PRE.{0,100}Chainlink/is);
+  assert.match(copy, /60 seconds in REGULAR/i);
   assert.match(copy, /120 seconds/i);
   assert.match(copy, /audit/i);
   assert.match(copy, /empty|no pool.{0,50}created/is);

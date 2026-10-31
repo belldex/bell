@@ -13,7 +13,7 @@ export function MainnetStatusBanner() {
         <p>Robinhood Chain <span>·</span> Mainnet</p>
         <strong>Contracts and asset registry live <span>4663</span></strong>
       </div>
-      <p className="app-mainnet-status__disclosure">Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. The contracts check Chainlink rounds directly and reject rounds 120 seconds old or older; historical feed cadence shows freshness can be intermittent. No Mainnet pool or swap exists yet. An independent security audit is not complete. BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc.</p>
+      <p className="app-mainnet-status__disclosure">Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. Chainlink freshness is session-specific: up to 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale rounds block swaps, and feed updates can be intermittent. No Mainnet pool or swap exists yet. An independent security audit is not complete. BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc.</p>
       <MainnetSessionFeedStatus />
       <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
       <details className="app-mainnet-status__contracts">

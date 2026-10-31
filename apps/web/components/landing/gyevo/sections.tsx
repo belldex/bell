@@ -37,7 +37,7 @@ const STEPS = [
     where: "A verified session selects the base fee",
     text: "The pool starts from a session-specific LP fee. Less-supported hours carry a higher base fee and tighter gross-flow limits.",
     reads: ["Base LP fee", "Per-trade cap", "Rolling-flow cap"],
-    stops: "Every active session requires a Chainlink round less than 120 seconds old; stale data halts swaps.",
+    stops: "Chainlink freshness is capped at 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT; stale data halts swaps.",
   },
   {
     name: "Bound the flow",
@@ -111,7 +111,7 @@ export function PathSection() {
             From market signal <em className="o">to swap decision.</em>
           </h2>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            BELL is a Uniswap v4 hook for pools that include Robinhood Stock Tokens. It checks the market phase, sets the pool’s fee and flow limits, then allows a swap only while the Chainlink round is less than 120 seconds old. Historical updates can be too sparse to keep swaps available throughout a session.
+            BELL is a Uniswap v4 hook for pools that include Robinhood Stock Tokens. It checks the market phase, sets the pool’s fee and flow limits, then allows a swap only while the Chainlink round passes its session gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Historical updates can be too sparse to keep swaps available throughout a session.
           </p>
         </div>
 
@@ -294,7 +294,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "live",
     items: [
       "Session adapter scopes use onchain Chainlink AggregatorV3 stock feeds for PRE, REGULAR, POST and OVERNIGHT",
-      "Every active-session swap checks its feed onchain; rounds older than 120 seconds fail closed",
+      "Every active-session swap checks its feed onchain; the effective age limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT",
       "Feeds may pause or go stale off-hours; an independent security audit is not complete",
     ],
   },
@@ -330,7 +330,7 @@ export function RoadmapSection() {
           Contracts are deployed. <em className="o">Liquidity is not.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          The protocol, Chainlink adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Adapter scopes cover PRE, REGULAR, POST and OVERNIGHT, but historical rounds rarely remain within the 120-second gate; continuous 24/5 swap availability is not established. The factory has no pool, seeded liquidity or completed Mainnet swap.
+          The protocol, Chainlink adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Adapter scopes cover PRE, REGULAR, POST and OVERNIGHT, but historical rounds rarely remain within the effective gate (60 seconds in REGULAR and under 120 seconds in the other sessions); continuous 24/5 swap availability is not established. The factory has no pool, seeded liquidity or completed Mainnet swap.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -395,7 +395,7 @@ export function FactsSection() {
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
           <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
-          <div className="lp-fact" data-spot><dt>Feed freshness</dt><dd>Less than 120 seconds · stale feed blocks swaps · freshness may be intermittent</dd></div>
+          <div className="lp-fact" data-spot><dt>Feed freshness</dt><dd>REGULAR ≤60s · PRE/POST/OVERNIGHT &lt;120s · stale feed blocks swaps</dd></div>
           <div className="lp-fact" data-spot><dt>Session readiness</dt><dd>PRE · REGULAR · POST · OVERNIGHT configured · fresh rounds can be intermittent</dd></div>
           <div className="lp-fact" data-spot><dt>Closed-session anchor</dt><dd>Not captured for the active registry · closed swaps blocked</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>

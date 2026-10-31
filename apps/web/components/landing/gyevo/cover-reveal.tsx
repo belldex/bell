@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            This independent project is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. BELL is a Uniswap v4 liquidity protocol for pools that include Robinhood Stock Tokens on Robinhood Chain Mainnet. You can create and seed a pool from your wallet; each swap requires an existing pool and a Chainlink round less than 120 seconds old. Historical rounds show that this freshness window can be intermittent.
+            This independent project is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. BELL is a Uniswap v4 liquidity protocol for pools that include Robinhood Stock Tokens on Robinhood Chain Mainnet. You can create and seed a pool from your wallet; each swap requires an existing pool and a fresh Chainlink round. The limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Historical round cadence can be intermittent.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -404,7 +404,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A verified calendar phase selects the base LP fee and flow limits; the Chainlink round must also pass the 120-second freshness check.
+                    A verified calendar phase selects the base LP fee and flow limits; the Chainlink round must also pass its session freshness gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
