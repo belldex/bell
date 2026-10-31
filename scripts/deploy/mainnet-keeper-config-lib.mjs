@@ -143,6 +143,7 @@ export function buildMainnetChainlinkKeeperVars({ manifest, verification, adapte
   return {
     BELL_ORACLE_MODE: 'chainlink',
     BELL_EXPECTED_CHAIN_ID: String(CHAIN_ID),
+    BELL_ASSET_REGISTRY: requireAddress(manifest.assetRegistry, 'AssetRegistry'),
     BELL_POOL_FACTORY: requireAddress(manifest.poolFactory, 'PoolFactory'),
     BELL_POOL_SCAN_FROM_BLOCK: String(verifiedAtBlock),
     BELL_POSITION_MANAGER: requireAddress(manifest.positionManager, 'PositionManager'),

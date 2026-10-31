@@ -11,7 +11,7 @@ import { makeClients, useWallet } from '@/lib/wallet';
 // @ts-expect-error Shared protocol codec is browser-safe and encodes the pinned public PositionManager path.
 import { buildPublicLpTransaction } from '../../../../../packages/protocol/src/lp-codec.mjs';
 
-const manager = '0x4bd4f5fcb1c73890d8166f046b9f71188e004a14' as Address;
+const manager = MAINNET.positionManager;
 const positionAbi = parseAbi([
   'function ownerOf(uint256 tokenId) view returns (address)',
   'function getPoolAndPositionInfo(uint256 tokenId) view returns ((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks),uint256 info)',

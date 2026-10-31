@@ -8,6 +8,7 @@ test('builds the mainnet multi-asset keeper vars from active evidence without re
   const build = configModule.buildMainnetKeeperVars;
   const manifest = {
     chainId: 4663,
+    assetRegistry: '0x0000000000000000000000000000000000000010',
     calendarRegistry: '0x0000000000000000000000000000000000000011',
     sessionRegistry: '0x0000000000000000000000000000000000000012',
   };
@@ -80,6 +81,7 @@ test('builds the production keeper vars from active Chainlink assets and publish
   const b32 = (byte) => '0x' + byte.repeat(32);
   const manifest = {
     chainId: 4663,
+    assetRegistry: '0x0000000000000000000000000000000000000010',
     calendarRegistry: '0x0000000000000000000000000000000000000011',
     sessionRegistry: '0x0000000000000000000000000000000000000012',
     poolFactory: '0x0000000000000000000000000000000000000013',
@@ -124,6 +126,7 @@ test('builds the production keeper vars from active Chainlink assets and publish
   assert.equal(vars.BELL_ORACLE_MODE, 'chainlink');
   assert.equal(vars.BELL_POOL_SCAN_FROM_BLOCK, '102269681');
   assert.equal(vars.BELL_POOL_FACTORY, manifest.poolFactory);
+  assert.equal(vars.BELL_ASSET_REGISTRY, manifest.assetRegistry);
   assert.equal(vars.BELL_POSITION_MANAGER, manifest.positionManager);
   assert.equal(vars.BELL_CALENDAR_COUNTER_ASSET_ID, assets.weth.descriptorId);
   assert.equal(vars.BELL_MAINNET_ASSETS, '{}');

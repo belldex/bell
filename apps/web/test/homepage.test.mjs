@@ -138,9 +138,20 @@ test('Mainnet banner and protocol page separate ready wallet flows from missing 
   assert.doesNotMatch(copy, /asset admission.{0,35}unverified|pool creation remain unavailable|not wired in this frontend|Sample LP positions/i);
 });
 
+test('Mainnet banner reads live per-asset Chainlink session freshness from the Worker', async () => {
+  const banner = await read('../components/app/MainnetStatusBanner.tsx');
+  const status = await read('../components/app/MainnetSessionFeedStatus.tsx');
+  assert.match(banner, /MainnetSessionFeedStatus/);
+  assert.match(status, /MAINNET\.quoteUrl\.replace\(\/\\\/quote\$\/|\/status/);
+  assert.match(status, /feedAgeSeconds/);
+  assert.match(status, /sessionFeedFresh/);
+  assert.match(status, /anchorValid/);
+  assert.match(status, /aria-live/);
+});
+
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
   const worker = await read('../../../workers/keeper-b/src/index.ts');
-  assert.match(worker, /\['\/quote', '\/pools', '\/positions'\]/);
+  assert.match(worker, /\['\/quote', '\/pools', '\/positions', '\/status'\]/);
   assert.match(worker, /access-control-allow-origin', '\*'/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /BELL_POOL_FACTORY/);

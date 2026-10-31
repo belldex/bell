@@ -2,7 +2,7 @@
 
 Single source of truth. Every claim is backed by a transaction or on-chain state.
 
-## Current Mainnet deployment — Robinhood Chain 4663 (2026-10-31 04:15 UTC)
+## Current Mainnet deployment — Robinhood Chain 4663 (2026-10-31 04:38 UTC)
 
 The replacement 11-contract protocol stack is deployed and code-verified at block `102269681`.
 Manifest hash: `0x3751ed73b05955f178f588033df5ba2e96da083a64d81faa074a876b7a624bc6`.
@@ -17,7 +17,7 @@ and pool creation fail closed until the relevant feed publishes a round less tha
 valid close anchor has been captured for the new registry, so closed-session swaps remain unavailable
 until a supported close is captured.
 
-Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (version `1817e005-b946-4518-8abf-2c8794b3ab9c`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, and boundary cron schedules. `/quote?symbol=AAPL` returns 410 by design. `/pools` returned 200 with an empty list at block `102275789`; the current factory has no pool, liquidity position, or Mainnet swap. The updated wallet app is deployed to the public production alias `https://bell-black.vercel.app` (deployment `dpl_6wzEMAUow1UZheopguQxqYdC8yts`); an unauthenticated request returned 200 and the page includes Chainlink and MEME disclosures.
+Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (version `16c8a589-48c9-4b34-b5c6-6b08614ee4a1`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, and boundary cron schedules. `/status` now reads current phase, session-adapter freshness, and closed-anchor validity directly from the same Mainnet block; its read-only snapshot is in `evidence/deploy/mainnet-4663-live-status.json`. `/quote?symbol=AAPL` returns 410 by design. `/pools` returned 200 with an empty list at block `102288657`; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI now sources factory, router, registries, position manager, and scan block from the verified deployment manifest instead of stale hard-coded addresses, and displays the Worker’s live per-asset feed status. The production alias `https://bell-black.vercel.app` is deployed as Vercel deployment `dpl_J1KtaVGjU8U3XAeGpsqQB4cnp4wQ`; the production JS bundle contains the new router and PositionManager addresses and none of the old ones.
 
 Deployment evidence is in `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-verification.json`,

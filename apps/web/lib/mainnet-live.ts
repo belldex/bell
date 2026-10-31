@@ -4,16 +4,20 @@ import {
 } from 'viem';
 import { makeClients } from './wallet';
 import manifest from '../../../packages/protocol/generated/abi-manifest.json';
+import deployment from '../../../evidence/deploy/mainnet-4663.json';
+import verification from '../../../evidence/deploy/mainnet-4663-verification.json';
 
 export const MAINNET = {
-  chainId: 4663,
-  factory: '0x7bd927dbe86fe403463e543cad2804386b66e730' as Address,
-  router: '0x2dbcb85d5703d7e2f69f05955f0d461b38d148eb' as Address,
-  weth: '0x0bd7d308f8e1639fab988df18a8011f41eacad73' as Address,
-  calendarRegistry: '0xba9b5142f282dde204805d66fddb5d6256080926' as Address,
-  sessionRegistry: '0xe2380390ee342ad42dc463d6518f1e67cc5a52c3' as Address,
+  chainId: deployment.chainId,
+  factory: deployment.poolFactory as Address,
+  router: deployment.router as Address,
+  weth: deployment.weth as Address,
+  assetRegistry: deployment.assetRegistry as Address,
+  calendarRegistry: deployment.calendarRegistry as Address,
+  sessionRegistry: deployment.sessionRegistry as Address,
+  positionManager: deployment.positionManager as Address,
   quoteUrl: 'https://bell-keeper-b.asysyifaq25.workers.dev/quote',
-  deploymentBlock: 101800000n,
+  deploymentBlock: BigInt(verification.blocks.verifiedAtBlock),
 } as const;
 
 export const routerAbi = manifest.interfaces.IBellRouter as Abi;

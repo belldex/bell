@@ -1,4 +1,5 @@
 import manifest from '../../../../evidence/deploy/mainnet-4663.json';
+import { MainnetSessionFeedStatus } from './MainnetSessionFeedStatus';
 
 const contracts = Object.entries(manifest)
   .filter(([key, value]) => key !== 'status' && key !== 'note' && key !== 'chainId' && key !== 'deployer' && key !== 'treasury' && key !== 'serviceRecipient' && typeof value === 'string' && value.startsWith('0x')) as Array<[string, string]>;
@@ -13,6 +14,7 @@ export function MainnetStatusBanner() {
         <strong>Contracts and asset registry live <span>4663</span></strong>
       </div>
       <p className="app-mainnet-status__disclosure">AAPL, NVDA, TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. Four-session Chainlink feeds are checked directly by the contracts and stale rounds block swaps. No Mainnet pool or swap exists yet. An independent security audit is not complete.</p>
+      <MainnetSessionFeedStatus />
       <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
       <details className="app-mainnet-status__contracts">
         <summary>Contract addresses</summary>

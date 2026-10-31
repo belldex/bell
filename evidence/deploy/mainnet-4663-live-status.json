@@ -1,0 +1,46 @@
+{
+  "capturedAt": "2026-10-31T04:38:46.272Z",
+  "workerVersion": "16c8a589-48c9-4b34-b5c6-6b08614ee4a1",
+  "mode": "chainlink",
+  "chainId": 4663,
+  "blockNumber": 102288862,
+  "blockTimestamp": 1793421525,
+  "checkedAt": 1793421525,
+  "freshnessLimitSeconds": 120,
+  "status": "closed-anchor-missing",
+  "assets": {
+    "AAPL": {
+      "phase": 5,
+      "session": "CLOSED",
+      "intervalStart": 1793419842,
+      "intervalEnd": 1793581200,
+      "sessionFeedFresh": null,
+      "feedAgeSeconds": null,
+      "status": "closed-anchor-missing",
+      "anchorValid": false,
+      "anchorValidUntil": 0
+    },
+    "NVDA": {
+      "phase": 5,
+      "session": "CLOSED",
+      "intervalStart": 1793419847,
+      "intervalEnd": 1793581200,
+      "sessionFeedFresh": null,
+      "feedAgeSeconds": null,
+      "status": "closed-anchor-missing",
+      "anchorValid": false,
+      "anchorValidUntil": 0
+    },
+    "TSLA": {
+      "phase": 5,
+      "session": "CLOSED",
+      "intervalStart": 1793419852,
+      "intervalEnd": 1793581200,
+      "sessionFeedFresh": null,
+      "feedAgeSeconds": null,
+      "status": "closed-anchor-missing",
+      "anchorValid": false,
+      "anchorValidUntil": 0
+    }
+  }
+}\n

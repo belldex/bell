@@ -28,6 +28,7 @@ import { hashCalendarLeaf } from '@bell/protocol/calendar';
 import { encodeOraclePullUpdates } from '@bell/protocol/swap-codec';
 import { fetchYahooChartQuote } from '@bell/protocol/yahoo-quote';
 import { evaluateQuote, isCloseCaptureWindow, isScheduledMaintenanceWindow, phaseNameForCalendarPhase, reportValidUntil, wireForCalendarPhase, ZERO32 } from './tick-policy.mjs';
+import { runChainlinkStatus } from './chainlink-status.mjs';
 import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 
@@ -524,7 +525,7 @@ const worker = {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
-    const isPublicRead = ['/quote', '/pools', '/positions'].includes(url.pathname);
+    const isPublicRead = ['/quote', '/pools', '/positions', '/status'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -586,6 +587,14 @@ const worker = {
       });
     }
     if (url.pathname === '/status') {
+      if (env.BELL_ORACLE_MODE === 'chainlink') {
+        try { return cors(json(await runChainlinkStatus(env))); }
+        catch (error) {
+          const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220);
+          console.error('Chainlink status read failed', error?.name ?? 'Error', detail);
+          return cors(json({ error: 'Live Chainlink status is temporarily unavailable' }, 503));
+        }
+      }
       const id = env.KEEPER_DO.idFromName('bell-keeper');
       return env.KEEPER_DO.get(id).fetch(new Request('https://do/status'));
     }
