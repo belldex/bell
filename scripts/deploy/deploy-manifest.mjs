@@ -49,12 +49,13 @@ export function validateDeployManifest(raw) {
     validated[field] = val.toLowerCase();
   }
 
-  if (raw.modeEvaluator !== undefined && raw.modeEvaluator !== null) {
-    if (typeof raw.modeEvaluator !== 'string' || !ADDRESS_RE.test(raw.modeEvaluator)) {
-      throw new TypeError('modeEvaluator must be a valid 40-hex address');
+  for (const field of ['modeEvaluator', 'policyOracle']) {
+    if (raw[field] === undefined || raw[field] === null) continue;
+    if (typeof raw[field] !== 'string' || !ADDRESS_RE.test(raw[field])) {
+      throw new TypeError(`${field} must be a valid 40-hex address`);
     }
-    if (raw.modeEvaluator.toLowerCase() === ZERO_ADDRESS) throw new RangeError('modeEvaluator cannot be zero address');
-    validated.modeEvaluator = raw.modeEvaluator.toLowerCase();
+    if (raw[field].toLowerCase() === ZERO_ADDRESS) throw new RangeError(`${field} cannot be zero address`);
+    validated[field] = raw[field].toLowerCase();
   }
 
   // Optional fee token

@@ -45,6 +45,8 @@ const ABI = [
   { type: 'function', name: 'calendarRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'sessionRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'modeEvaluator', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'policyOracle', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'dependencyReader', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'safetyController', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'governance', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'guardian', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
@@ -102,7 +104,8 @@ export async function buildVerification({
 
   const block = await client.getBlock();
   const contracts = {};
-  for (const key of (manifest.modeEvaluator ? [...CONTRACT_KEYS, 'modeEvaluator'] : CONTRACT_KEYS)) {
+  const optionalContracts = ['modeEvaluator', 'policyOracle'].filter((key) => manifest[key]);
+  for (const key of [...CONTRACT_KEYS, ...optionalContracts]) {
     const address = manifest[key];
     const code = await client.getBytecode({ address, blockNumber: block.number });
     if (!code || code === '0x') throw new Error(`${key} has no code at ${address}`);
@@ -132,6 +135,16 @@ export async function buildVerification({
     const actual = await client.readContract({ address: manifest.hookDeployer, abi: ABI, functionName: 'modeEvaluator' });
     wiringChecks['hookDeployer.modeEvaluator'] = actual;
     if (!same(actual, manifest.modeEvaluator)) mismatches.push(`hookDeployer.modeEvaluator() = ${actual}, manifest modeEvaluator = ${manifest.modeEvaluator}`);
+  }
+  if (manifest.policyOracle) {
+    const oracle = await client.readContract({ address: manifest.hookDeployer, abi: ABI, functionName: 'policyOracle' });
+    wiringChecks['hookDeployer.policyOracle'] = oracle;
+    if (!same(oracle, manifest.policyOracle)) mismatches.push(`hookDeployer.policyOracle() = ${oracle}, manifest policyOracle = ${manifest.policyOracle}`);
+    const reader = await client.readContract({ address: manifest.policyOracle, abi: ABI, functionName: 'dependencyReader' });
+    const readerCode = await client.getBytecode({ address: reader, blockNumber: block.number });
+    if (!readerCode || readerCode === '0x') throw new Error(`policyOracle dependencyReader has no code at ${reader}`);
+    contracts.policyDependencyReader = { address: reader, codeBytes: (readerCode.length - 2) / 2, codeHash: keccak256(readerCode) };
+    wiringChecks['policyOracle.dependencyReader'] = reader;
   }
   const roles = {};
   for (const role of ['governance', 'guardian', 'treasury']) {

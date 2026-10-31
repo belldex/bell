@@ -67,3 +67,13 @@ test('formats deploy manifest canonically with stable hash', () => {
   assert.equal(formatted.manifestHash.length, 66);
   assert.equal(formatted.manifest.chainId, 46630);
 });
+
+test('preserves optional policy oracle and rejects a zero oracle address', () => {
+  const policyOracle = '0xABabABabABabABabABabABabABabABabABabABab';
+  const mainnet = validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, policyOracle });
+  assert.equal(mainnet.policyOracle, policyOracle.toLowerCase());
+  assert.throws(
+    () => validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, policyOracle: '0x0000000000000000000000000000000000000000' }),
+    /policyOracle cannot be zero address/,
+  );
+});

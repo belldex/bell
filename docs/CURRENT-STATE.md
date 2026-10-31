@@ -12,7 +12,9 @@ in blocks `102445453` and `102445459`; total receipt cost was `0.000447757730788
 `0x59599f115df4588de4a17e195a28c5f7fa6930be`. Factory profile hash:
 `0xbc951f9a7e952b147dfbcab956f4b45aff23c55c69b264d7849858898d1d0265`. The registries, PoolManager,
 PositionManager, WETH, fee token, and router are reused from the verified Mainnet deployment. Verification is
-recorded in `evidence/deploy/mainnet-4663-verification.json` at block `102445470`.
+recorded in `evidence/deploy/mainnet-4663-verification.json` at block `102448710`. The oracle's immutable
+dependency reader `0xe5d8c6ba18589a71a89d11c54b9e03806a260ce3` (10,064 runtime bytes) is verified alongside
+the factory, deployer, and evaluator (oracle runtime: 18,807 bytes).
 
 Two pool classes are available. `PRICE_GUARDED` uses its independent reference and price band while those
 inputs are valid; when required stock inputs or references are unavailable, including when no usable close

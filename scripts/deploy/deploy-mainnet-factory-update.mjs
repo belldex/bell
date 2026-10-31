@@ -121,6 +121,7 @@ try {
     ...manifest,
     hookDeployer: result.hookDeployer,
     modeEvaluator: result.modeEvaluator,
+    policyOracle: result.policyOracle,
     poolFactory: result.poolFactory,
     note: 'Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused.',
   };

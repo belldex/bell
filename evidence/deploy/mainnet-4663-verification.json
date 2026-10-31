@@ -2,13 +2,13 @@
   "chainId": 4663,
   "verifiedAt": "2026-10-31",
   "status": "PRODUCTION_DEPLOYED",
-  "sourceCommit": "015fd14",
-  "manifestHash": "0xc7a3b6ac10a6e5bfac449e36058889f8d12dd89bcf73474f59adebd4ab8510b9",
+  "sourceCommit": "f9b8142",
+  "manifestHash": "0xde47892e7756c31ff415989f7b87a12c5dd2451da23f19c958afbc1df3b32018",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "blocks": {
-    "first": null,
-    "last": null,
-    "verifiedAtBlock": 102445470
+    "first": 102445453,
+    "last": 102445459,
+    "verifiedAtBlock": 102448710
   },
   "contracts": {
     "safetyController": {
@@ -66,12 +66,22 @@
       "codeBytes": 15254,
       "codeHash": "0x92eea1dad5569d6564affd33158c41b668fcecd6d0574da8c618d9093fcc432c"
     },
+    "policyOracle": {
+      "address": "0xc0f60f0aa9ef9f6eaca1a33f25d39575be80bf1c",
+      "codeBytes": 18807,
+      "codeHash": "0xc37e2d4c0d0445779661b230aa82c8157bfe65ccc5d649c59761a8feaf25f563"
+    },
     "feeToken": {
       "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
       "codeBytes": 170,
       "codeHash": "0x864cc9ad53b338b82da1f7cab85ab0b3d5c8861acb422b6fec63cf36234f36a6",
       "decimals": 6,
       "label": "PRODUCTION_FEE_TOKEN"
+    },
+    "policyDependencyReader": {
+      "address": "0xe5D8c6Ba18589a71a89D11c54B9E03806A260CE3",
+      "codeBytes": 10064,
+      "codeHash": "0x732df7553048929ff4a7c78e2599a700e4da798ab8f2013cf9b8343a39dab5d6"
     }
   },
   "wiringChecks": {
@@ -91,6 +101,8 @@
     "calendarRegistry.safetyController": "0x7243cF13f0308edd4A0397551042FeA3Cf9da179",
     "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
     "hookDeployer.modeEvaluator": "0x59599F115df4588DE4a17E195a28c5F7fa6930bE",
+    "hookDeployer.policyOracle": "0xC0f60F0aA9EF9f6EacA1A33f25d39575bE80Bf1c",
+    "policyOracle.dependencyReader": "0xe5D8c6Ba18589a71a89D11c54B9E03806A260CE3",
     "safetyController.roles": {
       "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
       "guardian": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
@@ -106,10 +118,10 @@
     "weth.decimals": 18
   },
   "gas": {
-    "txCount": 0,
-    "used": "0",
-    "priceWei": "0",
-    "costEth": "0"
+    "txCount": 4,
+    "used": "22210958",
+    "priceWei": "20224000",
+    "costEth": "0.000449194414592"
   },
   "notCovered": [
     "Neither pool class guarantees a fixed or maximum loss; AMM liquidity, price divergence, arbitrage, and market depth remain economic risks",

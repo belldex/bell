@@ -15,6 +15,7 @@
   "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
   "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
   "modeEvaluator": "0x59599f115df4588de4a17e195a28c5f7fa6930be",
+  "policyOracle": "0xc0f60f0aa9ef9f6eaca1a33f25d39575be80bf1c",
   "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "status": "PRODUCTION",
   "note": "Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused."
