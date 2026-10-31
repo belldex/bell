@@ -30,6 +30,8 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
   const [percent, setPercent] = useState(50);
   const [amount0, setAmount0] = useState('');
   const [amount1, setAmount1] = useState('');
+  const [minimum0, setMinimum0] = useState('0');
+  const [minimum1, setMinimum1] = useState('0');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [hash, setHash] = useState('');
@@ -44,6 +46,10 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
       const amounts = [
         parseUnits(amount0 || '0', position.pool.legs[0].decimals),
         parseUnits(amount1 || '0', position.pool.legs[1].decimals),
+      ];
+      const minimums = [
+        parseUnits(minimum0 || '0', position.pool.legs[0].decimals),
+        parseUnits(minimum1 || '0', position.pool.legs[1].decimals),
       ];
       if (operation === 'increase') {
         if (amounts[0] === 0n && amounts[1] === 0n) throw new Error('Enter a maximum amount for at least one token.');
@@ -67,7 +73,7 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
         operation, account: wallet.account, positionManager: manager, recipient: wallet.account,
         currency0: position.pool.token0, currency1: position.pool.token1,
         tokenId: position.id.toString(), now: chainNow.toString(), deadline: (chainNow + 90n).toString(),
-        ...(operation === 'increase' ? { amountMax: amounts.map(String) } : operation === 'remove' ? { liquidity: liquidity.toString(), amountMin: ['0', '0'] } : { liquidity: '0', amountMin: ['0', '0'] }),
+        ...(operation === 'increase' ? { amountMax: amounts.map(String) } : operation === 'remove' ? { liquidity: liquidity.toString(), amountMin: minimums.map(String) } : { liquidity: '0', amountMin: ['0', '0'] }),
       });
       setStatus('Checking the exact transaction on-chain…');
       await publicClient.call({ account: wallet.account, to: tx.to as Address, data: tx.data as `0x${string}`, value: tx.value });
@@ -89,7 +95,7 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
         <p className="mt-2 text-sm text-muted">BELL pool · hook {pool.hook.slice(0, 8)}…{pool.hook.slice(-6)}</p></div>
       <dl className="text-right text-sm"><dt className="text-xs uppercase text-dim">Position range</dt><dd className="mt-1 text-ink">{position.lower} to {position.upper} ticks</dd><dt className="mt-3 text-xs uppercase text-dim">Liquidity units</dt><dd className="mt-1 font-mono text-ink">{position.liquidity.toString()}</dd></dl>
     </div>
-    <p className="mt-5 text-sm text-muted">Current NFT ownership and liquidity are read from Mainnet. Add uses your entered maximum amounts. Remove sends the selected share in-kind with zero minimum output. Collect sends accrued fees directly to your wallet; fee amounts are read by the chain at execution.</p>
+    <p className="mt-5 text-sm text-muted">Current NFT ownership and liquidity units are read from Mainnet. Add uses your entered maximum amounts. Set minimum in-kind outputs before removing; the PositionManager reverts if either token amount falls below them. Collect sends accrued fees directly to your wallet; amounts are calculated on-chain when collected.</p>
     <div className="mt-5 flex flex-wrap gap-2">
       <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')}><Plus className="h-4 w-4"/> Add liquidity</Button>
       <Button variant="outline" size="sm" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')}><Minus className="h-4 w-4"/> Remove liquidity</Button>
@@ -100,7 +106,7 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
       <label className="text-xs text-dim">Max {pool.legs[1].symbol}<input value={amount1} onChange={e => setAmount1(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label>
       <Button className="self-end" disabled={busy} onClick={() => void submit('increase')}>Add</Button>
     </div>}
-    {mode === 'remove' && <div className="mt-4 flex flex-wrap items-center gap-3"><label className="text-sm text-muted">Remove <select value={percent} onChange={e => setPercent(Number(e.target.value))} className="mx-2 border border-line bg-bg-1 p-2 text-ink"><option value={25}>25%</option><option value={50}>50%</option><option value={100}>100%</option></select> of liquidity</label><Button disabled={busy} onClick={() => void submit('remove')}>Remove in-kind</Button></div>}
+    {mode === 'remove' && <div className="mt-4 space-y-3"><div className="flex flex-wrap items-center gap-3"><label className="text-sm text-muted">Remove <select value={percent} onChange={e => setPercent(Number(e.target.value))} className="mx-2 border border-line bg-bg-1 p-2 text-ink"><option value={25}>25%</option><option value={50}>50%</option><option value={100}>100%</option></select> of liquidity</label></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs text-dim">Minimum {pool.legs[0].symbol} received<input value={minimum0} onChange={e => setMinimum0(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label><label className="text-xs text-dim">Minimum {pool.legs[1].symbol} received<input value={minimum1} onChange={e => setMinimum1(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label></div><Button disabled={busy} onClick={() => void submit('remove')}>Remove in-kind</Button></div>}
     {status && <p className="mt-4 break-words text-sm text-muted" role="status">{status} {hash && <a className="text-ion underline" href={`${explorer}${hash}`} target="_blank" rel="noreferrer">View transaction</a>}</p>}
   </article>;
 }

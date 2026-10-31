@@ -1,0 +1,14 @@
+{
+  "chainId": 4663,
+  "registryAddress": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
+  "token": "0x385F4f8ae47651ce5F58F5265395a669f8281e18",
+  "evidenceHash": "0x0e1076e0b791ea38071b9d766a36e95348a9666d1078ac38ac507e20f3ea2478",
+  "operationId": "0x27088ec4d30967698cd571ba058993188fd009885b2851dbe3d12eb6d9476422",
+  "descriptorId": "0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f",
+  "txHash": "0x1661ba1d4f352553d5b1a4ec8020b8e51d0aa9e1503bd93a81d6c6f2b59bfec1",
+  "queuedAtBlock": "102186113",
+  "eta": "1793410681",
+  "status": "ACTIVE",
+  "activationHash": "0x9eefcc4c0c93c4c645d6795fbde4c870a136871af689d8ade32bd97f07b6b0c8",
+  "activatedAtBlock": "102186361"
+}

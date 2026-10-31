@@ -16,7 +16,7 @@ const NO = [
   'No profit or APR promise; repricing can create marked LP loss',
   'SESSION_ONLY pools have no independent price for the counterasset',
   'Issuer, token, verifier, chain and multisig risk remain external dependencies',
-  'Sample pools on this page are previews, not live pool state. Contracts are deployed on testnet for rehearsal; no pool exists yet and production swaps are not enabled.',
+  'Sample pools on this page are previews, not live pool state. Mainnet contracts are deployed, but no production pool has been created or seeded yet.',
 ];
 
 export function Promises() {

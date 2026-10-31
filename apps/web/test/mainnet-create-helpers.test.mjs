@@ -31,6 +31,14 @@ test('exposes only pool classes supported by the selected asset pair', () => {
   assert.deepEqual(poolClassesForPair(resolveAdmittedPair({ stockSymbol: 'AAPL', counterSymbol: 'USDG', assetQueue: queue }), { AAPL: address('d') }), [1]);
 });
 
+test('pinned admitted MEME is eligible only for SESSION_ONLY and unadmitted tickers stay blocked', () => {
+  const withMeme = { ...queue, counterassets: { MEME: { symbol: 'MEME', token: address('f'), descriptorId: word('4'), isStock: false, decimals: 18, active: true } } };
+  const pair = resolveAdmittedPair({ stockSymbol: 'NVDA', counterSymbol: 'MEME', assetQueue: withMeme });
+  assert.equal(pair.legs.find((leg) => leg.symbol === 'MEME')?.token, address('f'));
+  assert.deepEqual(poolClassesForPair(pair, { NVDA: address('e') }), [1]);
+  assert.throws(() => resolveAdmittedPair({ stockSymbol: 'NVDA', counterSymbol: 'NOT_ADMITTED', assetQueue: withMeme }), /admitted/i);
+});
+
 test('browser salt miner returns a hook address with the deployed BELL permission mask', () => {
   const result = mineHookSalt({ chainId: 4663n, factory: address('1'), creator: address('2'), deployer: address('3'), nonce: 0n, baseSalt: word('4'), initCodeHash: word('5'), maxAttempts: 100_000 });
   assert.equal(result.hookFlags, '0x2cc0');

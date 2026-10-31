@@ -237,7 +237,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "live",
     items: [
       "Protocol contracts and AAPL, NVDA, and TSLA adapters are deployed on Robinhood Chain 4663",
-      "USDG and WETH are admitted counterassets; no pool or liquidity has been created",
+      "USDG, WETH, and MEME are admitted counterassets; MEME is SESSION_ONLY only",
       "Every pool still requires fresh signed reports and a successful create-and-seed transaction",
     ],
   },
@@ -336,7 +336,7 @@ export function FactsSection() {
           </div>
           <div className="lp-facts__stamp">
             <span className="lp-facts__stamp-label">Verified at</span>
-            <time dateTime="2026-10-30T15:54:00Z"><span>30 Oct 2026</span><strong>15:54 UTC</strong></time>
+            <time dateTime="2026-10-31T01:38:57Z"><span>31 Oct 2026</span><strong>01:38 UTC</strong></time>
             <span className="lp-facts__stamp-note">Static record · not live-updating</span>
           </div>
         </header>
@@ -346,9 +346,9 @@ export function FactsSection() {
           <div className="lp-fact" data-spot><dt>Quote service</dt><dd>Live · pull mode · no periodic report transactions</dd></div>
           <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty · no Mainnet pool or liquidity yet</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
-          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
           <div className="lp-fact" data-spot><dt>Data rights</dt><dd>Yahoo source rights are not verified</dd></div>
-          <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not completed</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
           <div className="lp-fact" data-spot><dt>SESSION_ONLY</dt><dd>Session controls; no independent counterasset price protection</dd></div>
         </dl>

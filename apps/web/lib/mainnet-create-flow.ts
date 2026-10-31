@@ -1,5 +1,5 @@
 import {
-  decodeEventLog, encodeAbiParameters, formatUnits, parseAbi, type Abi,
+  decodeEventLog, encodeAbiParameters, formatUnits, keccak256, parseAbi, type Abi,
   type Address, type EIP1193Provider,
 } from 'viem';
 import { makeClients } from './wallet';
@@ -64,6 +64,8 @@ export const MAINNET_ASSET_OPTIONS = [
     const asset = queue[key];
     return { symbol: asset.symbol ?? key.toUpperCase(), token: asset.token as Address, assetId: asset.descriptorId as `0x${string}`, isStock: false };
   }),
+  ...Object.entries(queue.counterassets ?? {}).filter(([, asset]: [string, any]) => asset.active === true && asset.descriptorId)
+    .map(([symbol, asset]: [string, any]) => ({ symbol: asset.symbol ?? symbol, token: asset.token as Address, assetId: asset.descriptorId as `0x${string}`, isStock: false })),
 ].filter((asset) => Boolean(asset.token && asset.assetId));
 
 export function availablePoolClasses(stockSymbol: string, counterSymbol: string) {
@@ -183,7 +185,11 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const key = { currency0: config.token0 as Address, currency1: config.token1 as Address, fee: 0x800000, tickSpacing: 60, hooks: `0x${'0'.repeat(40)}` as Address };
   const initCodeHash = await client.readContract({ address: (deployment as any).hookDeployer, abi: deployerAbi, functionName: 'initCodeHash', args: [config.config, key] });
   const mined = mineHookSalt({ chainId: BigInt(MAINNET.chainId), factory: walletFactory, creator: account, deployer: (deployment as any).hookDeployer, nonce, baseSalt: `0x${'0'.repeat(63)}1`, initCodeHash, maxAttempts: 200_000 });
-  emit('prepared', `Pool preflight passed for ${tokenASymbol}/${tokenBSymbol}. Confirm the listed wallet transactions to continue.`);
+  const predictedPoolId = keccak256(encodeAbiParameters([{ type: 'tuple', components: [
+    { name: 'currency0', type: 'address' }, { name: 'currency1', type: 'address' }, { name: 'fee', type: 'uint24' },
+    { name: 'tickSpacing', type: 'int24' }, { name: 'hooks', type: 'address' },
+  ] }], [{ ...key, hooks: mined.hook }]));
+  emit('prepared', `Preflight passed. Predicted hook ${mined.hook}; Pool ID ${predictedPoolId}; ticks ${tickLower} to ${tickUpper}; per-trade caps ${config.config.tradeCap.map(String).join(' / ')} base units; rolling caps ${config.config.windowCap.map(String).join(' / ')} base units. Pair ${tokenASymbol}/${tokenBSymbol}.`);
 
   if (wrapAmount > 0n) {
     emit('wrap', `Confirm wrapping exactly ${formatUnits(wrapAmount, 18)} ETH into WETH…`);
@@ -255,7 +261,7 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   });
   const created: any = decoded.find((event: any) => event?.eventName === 'PoolCreated');
   const activated: any = decoded.find((event: any) => event?.eventName === 'PoolActivated');
-  if (!created || !activated || created.args.creator.toLowerCase() !== account.toLowerCase() || created.args.recipient.toLowerCase() !== account.toLowerCase() || created.args.poolId.toLowerCase() !== activated.args.poolId.toLowerCase()) {
+  if (!created || !activated || created.args.creator.toLowerCase() !== account.toLowerCase() || created.args.recipient.toLowerCase() !== account.toLowerCase() || created.args.poolId.toLowerCase() !== activated.args.poolId.toLowerCase() || created.args.poolId.toLowerCase() !== predictedPoolId.toLowerCase() || created.args.hook.toLowerCase() !== mined.hook.toLowerCase()) {
     throw new Error(`Transaction succeeded but PoolCreated/PoolActivated recipient evidence is missing: ${explorer}/tx/${createHash}`);
   }
   const tokenId = BigInt(activated.args.tokenId);

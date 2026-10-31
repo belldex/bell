@@ -91,7 +91,9 @@ test('swap approval and BellRouter transaction wait for confirmed receipts', asy
   assert.match(swap, /receipt\.status !== 'success'/);
   assert.match(swap, /robinhoodchain\.blockscout\.com\/tx/);
   assert.match(swap, /expectedConfigHash: pool\.configHash/);
-  assert.match(swap, /limitAmount: quote\.minOut/);
+  assert.match(swap, /limitAmount: exactInput \? quote\.minOut : quote\.maxIn/);
+  assert.match(swap, /Exact output/);
+  assert.match(swap, /Maximum paid/);
 });
 
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
@@ -116,6 +118,8 @@ test('pool creation is wired to the wallet, live Registry, approvals, factory si
   assert.match(flow, /applyPoolOracleUpdates/);
   assert.match(flow, /functionName: 'approve'/);
   assert.match(flow, /functionName: 'createAndSeed'/);
+  assert.match(flow, /Object\.entries\(queue\.counterassets/);
+  assert.match(flow, /SESSION_ONLY/);
   assert.match(flow, /simulateContract/);
   assert.match(flow, /waitForTransactionReceipt/);
   assert.match(flow, /PoolCreated/);
@@ -124,6 +128,8 @@ test('pool creation is wired to the wallet, live Registry, approvals, factory si
   assert.match(helpers, /EXPECTED_HOOK_FLAGS = 0x2cc0n/);
   assert.doesNotMatch(create, /Illustrative|fake|sample price/i);
   assert.match(positions, /readLivePools\(\)/);
+  assert.match(positions, /minimum0/);
+  assert.match(positions, /amountMin: minimums\.map\(String\)/);
   assert.match(positions, /getPositionLiquidity/);
   assert.match(positions, /buildPublicLpTransaction/);
   assert.match(positions, /ownerOf/);

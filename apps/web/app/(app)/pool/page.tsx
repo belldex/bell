@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, ExternalLink, RefreshCw } from 'lucide-react';
-import { readLivePools, type LivePool } from '@/lib/mainnet-live';
+import { displayAmount, readLivePools, type LivePool } from '@/lib/mainnet-live';
 
 function PoolDetails() {
   const params = useSearchParams();
@@ -33,8 +33,10 @@ function PoolDetails() {
         ['Mode', ['Halted', 'Active', 'Closed', 'Recovering', 'Setup'][pool.policy.mode] ?? `Mode ${pool.policy.mode}`],
         ['Pool class', pool.poolClass === 0 ? 'Price guarded' : 'Session only'],
         ['Fee', `${(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%`],
+        ['Market phase', ['Unknown', 'Pre-market', 'Regular', 'Post-market', 'Overnight', 'Closed'][pool.policy.phase] ?? `Phase ${pool.policy.phase}`],
+        ['Policy valid until', pool.policy.validUntil ? new Date(Number(pool.policy.validUntil) * 1000).toLocaleString() : 'Not reported'],
       ].map(([label, value]) => <div key={label} className="border border-line bg-surface/50 p-5"><p className="font-mono text-[10px] uppercase text-dim">{label}</p><p className="mt-2 text-xl text-ink">{value}</p></div>)}</section>
-      <section className="mt-5 border border-line p-5"><h2 className="font-mono text-xs uppercase tracking-[0.12em] text-muted">Onchain limits</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-sm text-ink">{pool.legs[0].symbol}</p><p className="mt-1 text-xs text-dim">Per trade {pool.policy.effectiveTradeCap ? String(pool.policy.effectiveTradeCap[0]) : '—'} · rolling remaining {pool.policy.rollingRemaining ? String(pool.policy.rollingRemaining[0]) : '—'}</p></div><div><p className="text-sm text-ink">{pool.legs[1].symbol}</p><p className="mt-1 text-xs text-dim">Per trade {pool.policy.effectiveTradeCap ? String(pool.policy.effectiveTradeCap[1]) : '—'} · rolling remaining {pool.policy.rollingRemaining ? String(pool.policy.rollingRemaining[1]) : '—'}</p></div></div><p className="mt-4 break-all font-mono text-[10px] text-dim">Pool ID {pool.poolId}</p><a className="mt-4 inline-flex items-center gap-2 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/address/${pool.hook}`} target="_blank" rel="noreferrer">View contract <ExternalLink size={13}/></a></section>
+      <section className="mt-5 border border-line p-5"><h2 className="font-mono text-xs uppercase tracking-[0.12em] text-muted">Onchain limits · raw token values shown in token units</h2><div className="mt-4 grid gap-4 sm:grid-cols-2">{pool.legs.map((leg, index) => <div key={leg.address}><p className="text-sm text-ink">{leg.symbol}</p><p className="mt-1 text-xs text-dim">Per trade cap {displayAmount(pool.policy.effectiveTradeCap[index], leg.decimals)} · rolling cap {displayAmount(pool.policy.effectiveWindowCap[index], leg.decimals)}</p><p className="mt-1 text-xs text-dim">Rolling remaining {displayAmount(pool.policy.rollingRemaining[index], leg.decimals)} · closure remaining {displayAmount(pool.policy.closureRemaining[index], leg.decimals)}</p></div>)}</div><p className="mt-4 break-all font-mono text-[10px] text-dim">Pool ID {pool.poolId}</p><p className="mt-2 font-mono text-[10px] text-dim">Created at block {pool.createdAtBlock?.toString?.() ?? 'unknown'} · directory indexed through {pool.directoryBlockNumber?.toString() ?? 'wallet RPC'}</p><a className="mt-4 inline-flex items-center gap-2 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/address/${pool.hook}`} target="_blank" rel="noreferrer">View contract <ExternalLink size={13}/></a></section>
     </>}
   </div>;
 }

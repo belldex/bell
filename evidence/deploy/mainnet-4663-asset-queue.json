@@ -14,7 +14,19 @@
     "alreadyActive": false,
     "active": true
   },
-  "counterassets": {},
+  "counterassets": {
+    "MEME": {
+      "symbol": "MEME",
+      "name": "A Meme Coin",
+      "token": "0x385F4f8ae47651ce5F58F5265395a669f8281e18",
+      "descriptorId": "0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f",
+      "isStock": false,
+      "decimals": 18,
+      "evidenceHash": "0x0e1076e0b791ea38071b9d766a36e95348a9666d1078ac38ac507e20f3ea2478",
+      "allowedPoolClass": "SESSION_ONLY",
+      "active": true
+    }
+  },
   "stocks": {
     "AAPL": {
       "symbol": "AAPL",
@@ -48,5 +60,5 @@
   "chainId": 4663,
   "admittedAt": "2026-10-30T14:24:26.610Z",
   "activationPending": false,
-  "activatedAt": "2026-10-30T14:24:38.634Z"
+  "activatedAt": "2026-10-31T01:38:57.614Z"
 }

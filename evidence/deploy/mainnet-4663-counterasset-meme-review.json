@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "status": "ADMITTED",
+  "observedAt": "2026-10-31T00:16:19Z",
+  "observedBlock": 102185143,
+  "chainId": 4663,
+  "token": {
+    "name": "A Meme Coin",
+    "symbol": "MEME",
+    "address": "0x385F4f8ae47651ce5F58F5265395a669f8281e18",
+    "decimals": 18,
+    "runtimeCodeHash": "0xf10f86b05965a827a332e6c73086f18026fbe3917f4bffbec3f938b3b5397b56",
+    "totalSupplyRaw": "1000000000000000000000000000",
+    "proxyType": "ERC-1167 minimal clone",
+    "implementationAddress": "0x3Be8B97Fd0e713B5aBE0649Fa830223B6B4BC599",
+    "implementationName": "DopplerERC20V1",
+    "implementationVerified": true,
+    "implementationRuntimeCodeHash": "0x67a382a66d2b14a7032698e11c9ae4432435d2c803429d5c660692289ad10e12"
+  },
+  "observedTransferControls": {
+    "owner": "0xeb7C034704eF8Dcd2D32324c1545f62fB4aD0862",
+    "controller": "0x0000000000000000000000000000000000000000",
+    "poolLockActive": true,
+    "poolLockTarget": "0xdeaDDeADDEaDdeaDdEAddEADDEAdDeadDEADDEaD",
+    "balanceLimitActive": false,
+    "balanceLimitEnd": "0",
+    "maxBalanceLimit": "0",
+    "bellPoolManagerExcludedFromBalanceLimit": false,
+    "sourceFindings": [
+      "Verified implementation exposes ordinary ERC-20 transfer and transferFrom without a transfer-tax function.",
+      "The clone's current balance limit is inactive; BELL's PoolManager is not on its exclusion list.",
+      "The current pool-lock target is the dead address, not BELL's PoolManager."
+    ]
+  },
+  "admissionPolicy": {
+    "isStock": false,
+    "capabilityMask": 0,
+    "sourceConfig": "0x",
+    "referenceAdapter": null,
+    "allowedPoolClass": "SESSION_ONLY",
+    "disclosure": "No independent price protection for the counterasset. Do not display MEME NAV or fair-value claims."
+  },
+  "limitations": [
+    "This snapshot is not an independent security audit or legal endorsement.",
+    "MEME's market price and liquidity can change sharply; the SESSION_ONLY pool does not validate its fair price.",
+    "Token holder and market risks remain. Admission does not promise continuous transferability or liquidity.",
+    "The source verification is attributed to Robinhood Chain Blockscout and the implementation identity is pinned by address and runtime code hash."
+  ],
+  "sources": [
+    "https://robinhoodchain.blockscout.com/address/0x385f4f8ae47651ce5f58f5265395a669f8281e18",
+    "https://robinhoodchain.blockscout.com/address/0x3be8b97fd0e713b5abe0649fa830223b6b4bc599"
+  ],
+  "admission": {
+    "descriptorId": "0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f",
+    "queueTxHash": "0x1661ba1d4f352553d5b1a4ec8020b8e51d0aa9e1503bd93a81d6c6f2b59bfec1",
+    "activationTxHash": "0x9eefcc4c0c93c4c645d6795fbde4c870a136871af689d8ade32bd97f07b6b0c8",
+    "activatedAtBlock": "102186361"
+  }
+}

@@ -111,7 +111,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
-                Mainnet session-aware pools for admitted AAPL, NVDA, and TSLA assets. No pool has been seeded yet; SESSION_ONLY has no independent counterasset price protection.
+                Mainnet session-aware pools for admitted AAPL, NVDA, and TSLA assets, with USDG, WETH, and MEME counterassets. MEME is SESSION_ONLY with no independent price protection. Check the live pool directory before trading.
               </p>
               <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
                 <span className="lp-ecosystem__item">

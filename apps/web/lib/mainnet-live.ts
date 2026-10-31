@@ -42,6 +42,8 @@ export type LivePool = {
   tradeCap: readonly [bigint, bigint];
   windowCap: readonly [bigint, bigint];
   policy: Record<string, unknown> & { canSwap: boolean; mode: number; phase: number; lpFeeUnits: number; reasonBits: bigint; effectiveTradeCap: readonly [bigint, bigint]; effectiveWindowCap: readonly [bigint, bigint]; rollingRemaining: readonly [bigint, bigint]; closureRemaining: readonly [bigint, bigint]; validUntil: bigint };
+  directoryBlockNumber?: bigint;
+  createdAtBlock?: bigint;
   legs: readonly [{ address: Address; symbol: string; decimals: number }, { address: Address; symbol: string; decimals: number }];
 };
 
@@ -54,6 +56,8 @@ export async function readLivePools(): Promise<LivePool[]> {
     if (Number(body.chainId) !== MAINNET.chainId || !Array.isArray(body.pools)) throw new Error('Pool directory returned an invalid Mainnet response');
     return body.pools.map((pool: any) => ({
       ...pool,
+      directoryBlockNumber: body.blockNumber === undefined ? undefined : BigInt(body.blockNumber),
+      createdAtBlock: pool.createdAtBlock === undefined ? undefined : BigInt(pool.createdAtBlock),
       tradeCap: pool.tradeCap.map(BigInt), windowCap: pool.windowCap.map(BigInt),
       policy: {
         ...pool.policy,
@@ -72,6 +76,7 @@ export async function readLivePools(): Promise<LivePool[]> {
     if (await client.getChainId() !== MAINNET.chainId) throw directoryError;
     const logs = await client.getLogs({ address: MAINNET.factory, event: poolCreated, fromBlock: MAINNET.deploymentBlock, toBlock: 'latest' });
     const unique = [...new Map(logs.map((log) => [String(log.args.hook).toLowerCase(), log])).values()];
+    const directoryBlockNumber = await client.getBlockNumber();
     return Promise.all(unique.map(async (log) => {
       const hook = log.args.hook as Address;
       const [config, policy] = await Promise.all([
@@ -85,7 +90,7 @@ export async function readLivePools(): Promise<LivePool[]> {
         client.readContract({ address: config.token1, abi: erc20, functionName: 'decimals' }),
       ]);
       return {
-        hook, poolId: log.args.poolId as `0x${string}`, token0: config.token0, token1: config.token1,
+        hook, poolId: log.args.poolId as `0x${string}`, createdAtBlock: log.blockNumber, directoryBlockNumber, token0: config.token0, token1: config.token1,
         asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
         poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
         tradeCap: config.tradeCap, windowCap: config.windowCap,

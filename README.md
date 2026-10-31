@@ -31,11 +31,14 @@ If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of 
   policy evaluation was moved to `BellPolicyOracle` to fit within EIP-170.
 - **PRICE_GUARDED has independent reference adapters deployed**, but pool creation still needs current
   session health and explicit seed amounts. The matrix planner shows which pairs are ready or blocked.
+- **MEME is admitted as a counterasset for SESSION_ONLY only.** It has no independent price reference;
+  admission does not claim fair value or continuous transferability.
 - The Cloudflare Worker is deployed in pull mode: public signed quote bundles, onchain pool discovery,
   and wallet PositionManager NFT discovery are available. It does not run a periodic transaction loop.
   `/pools` is empty because no pool has been created.
-- The frontend has wallet flows for pool creation and seeding, swaps, and direct PositionManager add,
-  in-kind removal, and fee collection. A live mainnet pool must be created and seeded before a swap can run.
+- The frontend has wallet flows for pool creation and seeding, exact-input and exact-output swaps, and
+  direct PositionManager add, minimum-output in-kind removal, and fee collection. A live mainnet pool
+  must be created and seeded before a swap can run.
 
 ## Structure
 

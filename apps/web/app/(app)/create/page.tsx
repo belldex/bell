@@ -145,7 +145,7 @@ export default function CreatePage() {
           </button>)}
           {allowedClasses.length === 0 && <p role="alert" className="border border-down/30 p-4 text-sm text-down">No pool class is supported for this pair on the deployed Mainnet factory.</p>}
         </div>
-        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries no independent counterasset price protection. The displayed seed ratio is the opening price.</p>}
+        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries session controls only; it has no independent price protection for the counterasset. The seed ratio sets the opening price. MEME is admitted only for this pool class and can be highly volatile.</p>}
         {poolClass === 0 && <p className="border border-line bg-bg-1 p-4 text-sm text-muted">Opening price uses current onchain reference adapter values. The factory will reject stale feeds or a price outside its configured band.</p>}
       </div>}
 
