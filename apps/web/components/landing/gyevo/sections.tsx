@@ -151,11 +151,96 @@ export function PathSection() {
 
 /* Routes to the connected product. This is not a sample dashboard or a claim of existing liquidity. */
 const PRODUCT_PATHS = [
-  { href: "/pools", number: "01", name: "Explore pools", state: "LIVE DIRECTORY", detail: "Read deployed pool settings and onchain trading policy. The directory is currently empty.", icon: ChartNoAxesColumnIncreasing },
-  { href: "/create", number: "02", name: "Create and seed", state: "WALLET FLOW", detail: "Choose admitted assets and pool class, set your own seed, review the factory fee, then confirm each transaction.", icon: Plus },
-  { href: "/swap", number: "03", name: "Quote and swap", state: "NEEDS A POOL", detail: "Use exact-input or exact-output quoting with slippage bounds. No Mainnet pool exists to trade yet.", icon: ArrowLeftRight },
-  { href: "/positions", number: "04", name: "Manage liquidity", state: "WALLET NFTS", detail: "Find BELL positions in your wallet, add liquidity, remove with minimum outputs, or collect fees.", icon: BriefcaseBusiness },
+  { href: "/pools", area: "DIRECTORY", name: "Explore pools", state: "NO POOLS YET", detail: "Inspect deployed pool settings and onchain trading policy. The Mainnet directory is empty for now.", action: "Browse directory", icon: ChartNoAxesColumnIncreasing },
+  { href: "/create", area: "POOL SETUP", name: "Create and seed", state: "WALLET APPROVAL", detail: "Choose admitted assets and a pool class, set your seed, then review and approve each transaction.", action: "Start a pool", icon: Plus },
+  { href: "/swap", area: "QUOTE AND SWAP", name: "Prepare a swap", state: "POOL NEEDED", detail: "Build exact-input or exact-output quotes with slippage bounds. Trading starts when a pool exists.", action: "Open swap", icon: ArrowLeftRight },
+  { href: "/positions", area: "LIQUIDITY", name: "Manage positions", state: "WALLET ACCESS", detail: "Find your BELL positions, add or remove liquidity, and collect fees from your wallet.", action: "View positions", icon: BriefcaseBusiness },
 ] as const;
+
+function ProductFlowArt() {
+  return (
+    <figure className="lp-product__flow" data-lp-reveal>
+      <div className="lp-product__flow-head">
+        <span>HOW A BELL POOL COMES TO LIFE</span>
+        <span>ROBINHOOD CHAIN MAINNET</span>
+      </div>
+      <svg viewBox="0 0 860 450" role="img" aria-label="Stock feeds pass through the BELL session and risk hook before reaching a tokenized-stock pool">
+        <defs>
+          <linearGradient id="product-rail" x1="0" x2="1">
+            <stop offset="0" stopColor="#B7B4AD" stopOpacity=".18" />
+            <stop offset=".5" stopColor="#EEECE5" stopOpacity=".72" />
+            <stop offset="1" stopColor="#C7444F" stopOpacity=".86" />
+          </linearGradient>
+          <linearGradient id="product-hook" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#292725" />
+            <stop offset="1" stopColor="#171717" />
+          </linearGradient>
+          <linearGradient id="product-pool-top" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#EEECE5" stopOpacity=".24" />
+            <stop offset="1" stopColor="#C7444F" stopOpacity=".14" />
+          </linearGradient>
+          <pattern id="product-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0H0V28" fill="none" stroke="#EEECE5" strokeOpacity=".035" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="860" height="450" fill="url(#product-grid)" />
+        <path className="lp-product__rail" d="M185 143H285Q321 143 344 174L371 208H508Q552 208 575 179L611 143H681" />
+        <path className="lp-product__rail" d="M185 225H340M510 225H681" />
+        <path className="lp-product__rail" d="M185 307H285Q321 307 344 276L371 242H508Q552 242 575 271L611 307H681" />
+        <path className="lp-product__beam" d="M185 143H285Q321 143 344 174L371 208H508Q552 208 575 179L611 143H681M185 225H340M510 225H681M185 307H285Q321 307 344 276L371 242H508Q552 242 575 271L611 307H681" />
+
+        <g className="lp-product__feed lp-product__feed--top">
+          <path d="M42 119H166L185 143L166 167H42Z" />
+          <text className="lp-product__feed-name" x="62" y="142">AAPL</text>
+          <text className="lp-product__feed-type" x="62" y="157">SIGNED FEED</text>
+        </g>
+        <g className="lp-product__feed lp-product__feed--mid">
+          <path d="M42 201H166L185 225L166 249H42Z" />
+          <text className="lp-product__feed-name" x="62" y="224">NVDA</text>
+          <text className="lp-product__feed-type" x="62" y="239">STOCK DATA</text>
+        </g>
+        <g className="lp-product__feed lp-product__feed--bottom">
+          <path d="M42 283H166L185 307L166 331H42Z" />
+          <text className="lp-product__feed-name" x="62" y="306">TSLA</text>
+          <text className="lp-product__feed-type" x="62" y="321">SIGNED FEED</text>
+        </g>
+
+        <g className="lp-product__hook">
+          <path className="lp-product__hook-body" d="M370 126L402 99H480L512 126V324L480 351H402L370 324Z" />
+          <path className="lp-product__hook-edge" d="M370 126L402 99H480L512 126V324L480 351H402L370 324Z" />
+          <path className="lp-product__hook-scan" d="M382 162H500" />
+          <text className="lp-product__hook-name" x="441" y="196" textAnchor="middle">BELL</text>
+          <text className="lp-product__hook-label" x="441" y="222" textAnchor="middle">V4 HOOK</text>
+          <path className="lp-product__hook-rule" d="M401 244H481" />
+          <text className="lp-product__hook-check" x="441" y="269" textAnchor="middle">SESSION</text>
+          <text className="lp-product__hook-check" x="441" y="290" textAnchor="middle">FEE</text>
+          <text className="lp-product__hook-check" x="441" y="311" textAnchor="middle">FLOW LIMIT</text>
+        </g>
+
+        <g className="lp-product__pool">
+          <path className="lp-product__pool-side" d="M681 143L743 176V275L681 307Z" />
+          <path className="lp-product__pool-front" d="M611 176L681 143V307L611 275Z" />
+          <path className="lp-product__pool-top" d="M611 176L681 143L743 176L674 211Z" />
+          <path className="lp-product__pool-seam" d="M646 159V292M711 159V291M611 225L681 258L743 225" />
+          <text className="lp-product__pool-name" x="674" y="351" textAnchor="middle">TOKENIZED POOL</text>
+          <text className="lp-product__pool-type" x="674" y="371" textAnchor="middle">LIQUIDITY WITH RULES</text>
+        </g>
+
+        <text className="lp-product__rail-label" x="42" y="386">STOCK IDENTITY</text>
+        <path className="lp-product__rail-mark" d="M42 399H188" />
+        <text className="lp-product__rail-label" x="370" y="386">VERIFY BEFORE SWAP</text>
+        <path className="lp-product__rail-mark" d="M370 399H512" />
+        <text className="lp-product__rail-label" x="611" y="386">CREATE AND SEED</text>
+        <path className="lp-product__rail-mark" d="M611 399H743" />
+      </svg>
+      <figcaption>
+        <span>Fresh stock data enters the hook.</span>
+        <span>Session policy sets the fee and flow limits.</span>
+        <span>A pool must be created before swaps can happen.</span>
+      </figcaption>
+    </figure>
+  );
+}
 
 export function ProductPathsSection() {
   return (
@@ -164,25 +249,30 @@ export function ProductPathsSection() {
         <Eyebrow>Use the deployed product</Eyebrow>
         <header className="lp-product__head">
           <div>
-            <h2 className="lp-h2" id="product-title" data-lp-reveal>One protocol. <em className="o">Four real workflows.</em></h2>
-            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>BELL is deployed on Robinhood Chain Mainnet. Its wallet flows are connected, but the pool directory is empty: no one has created and seeded a Mainnet pool yet.</p>
+            <h2 className="lp-h2" id="product-title" data-lp-reveal>BELL is deployed. <em className="o">Start with a pool.</em></h2>
+            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>Create and seed a tokenized-stock pool from your wallet. BELL checks market data, fees and flow limits before swaps; the Mainnet directory is empty until the first pool is created.</p>
           </div>
           <Link className="lp-btn lp-btn--primary" href="/create">Create a pool <Arrow /></Link>
         </header>
 
-        <ol className="lp-product__grid">
-          {PRODUCT_PATHS.map(({ href, number, name, state, detail, icon: Icon }) => (
-            <li key={href} data-lp-reveal>
-              <Link href={href} className="lp-product__card">
-                <span className="lp-product__card-top"><span>{number} / WORKFLOW</span><Icon size={18} aria-hidden="true" /></span>
-                <span className="lp-product__state"><i aria-hidden="true" />{state}</span>
-                <strong>{name}</strong>
-                <span className="lp-product__detail">{detail}</span>
-                <span className="lp-product__link">Open {name.toLowerCase()} <ArrowUpRight size={15} aria-hidden="true" /></span>
-              </Link>
-            </li>
-          ))}
-        </ol>
+        <div className="lp-product__body">
+          <ProductFlowArt />
+          <ul className="lp-product__paths">
+            {PRODUCT_PATHS.map(({ href, area, name, state, detail, action, icon: Icon }, index) => (
+              <li key={href} data-lp-reveal style={{ ["--i" as string]: index + 1 }}>
+                <Link href={href} className="lp-product__path">
+                  <span className="lp-product__path-icon"><Icon size={21} aria-hidden="true" /></span>
+                  <span className="lp-product__path-copy">
+                    <span className="lp-product__path-meta"><span>{area}</span><span>{state}</span></span>
+                    <strong>{name}</strong>
+                    <span className="lp-product__path-detail">{detail}</span>
+                    <span className="lp-product__path-action">{action}<ArrowUpRight size={16} aria-hidden="true" /></span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="lp-product__assets" data-lp-reveal>
           <div><span className="lp-product__asset-label">Admitted stock assets</span><div className="lp-product__tokens">{["AAPL", "NVDA", "TSLA"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}</span>)}</div></div>
