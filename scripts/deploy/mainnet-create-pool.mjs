@@ -266,20 +266,33 @@ for (const [index, id] of stockAssetIds.entries()) {
   console.log(`Calendar ${id}: phase ${intervals[index].phase} until ${new Date(Number(intervals[index].end) * 1000).toISOString()}`);
 }
 
-// 2. Health must already be ready. Pool creation does not create health; it consumes it.
+// 2. Health is required only while the calendar is NOT a proven planned close. BellPoolFactory._admitted
+// accepts a planned-closed asset without fresh health and the hook then parks the seeded pool in STAGED,
+// so a hard health gate here would reject pool creations the deployed contracts already permit.
+const now = Number((await publicClient.getBlock()).timestamp);
+function plannedClosed(interval) {
+  return Number(interval.phase) === 5 && BigInt(interval.provenanceHash) !== 0n
+    && now >= Number(interval.start) && now < Number(interval.end);
+}
+const stockInterval = intervals[stockAssetIds.indexOf(stockAssetIdByToken)];
+const pairInterval = pairIsStock ? intervals[stockAssetIds.indexOf(pairStockAssetId)] : null;
 const health = await publicClient.readContract({
   address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [stockAssetIdByToken],
 });
 const pairHealth = pairIsStock ? await publicClient.readContract({
   address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [pairStockAssetId],
 }) : null;
-const now = Number((await publicClient.getBlock()).timestamp);
 console.log(`Health: ready=${health.ready} reasons=${health.reasonBits} validUntil=${health.validUntil}`);
-if (!isPoolCreatePreflightReady(health, now)) {
-  throw new Error('stock health is not ready; the keeper must publish a fresh report first');
+const stockClosed = plannedClosed(stockInterval);
+const pairClosed = pairInterval ? plannedClosed(pairInterval) : false;
+if (!isPoolCreatePreflightReady(health, now) && !stockClosed) {
+  throw new Error('stock health is not ready outside a proven planned close; the keeper must publish a fresh report first');
 }
-if (pairHealth && !isPoolCreatePreflightReady(pairHealth, now)) {
-  throw new Error(`${pairCounter} stock health is not ready; keeper must publish a fresh report first`);
+if (pairHealth && !isPoolCreatePreflightReady(pairHealth, now) && !pairClosed) {
+  throw new Error(`${pairCounter} stock health is not ready outside a proven planned close; keeper must publish a fresh report first`);
+}
+if (stockClosed || pairClosed) {
+  console.log('Planned close proven: the factory will accept the request and park the seeded pool in STAGED until activation inputs return.');
 }
 
 // 3. Balance and allowance preflight, so a failed seed cannot burn gas on approvals only.
@@ -391,7 +404,9 @@ const preliminaryPreflight = buildCreatePoolPreflight({
   referenceAdapterB,
   poolClass,
   now,
-  stockHealth: pairHealth ? [health, pairHealth] : [health],
+  stockHealth: (pairHealth
+    ? [{ ...health, plannedClosed: stockClosed }, { ...pairHealth, plannedClosed: pairClosed }]
+    : [{ ...health, plannedClosed: stockClosed }]),
   stockCount: pairIsStock ? 2 : 1,
   activationPending: assetQueue.activationPending,
   tokenABalance: tokenA.toLowerCase() === manifest.feeToken.toLowerCase() ? feeBalance : tokenABalance,

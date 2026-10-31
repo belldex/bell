@@ -109,6 +109,37 @@ test('stock/stock is allowed only PRICE_GUARDED and requires both health reports
   }), /missing health/);
 });
 
+test('a planned-closed stock is admitted without fresh health, mirroring factory _admitted', () => {
+  const closed = { ready: false, reasonBits: 0n, validUntil: 0n, plannedClosed: true };
+  const sessionOnly = buildCreatePoolPreflight({
+    ...base,
+    poolClass: 1,
+    referenceAdapterA: ZERO,
+    referenceAdapterB: ZERO,
+    stockHealth: [closed],
+  });
+  assert.equal(sessionOnly.poolClass, 1);
+  assert.equal(sessionOnly.staged, true);
+
+  const guarded = buildCreatePoolPreflight({ ...base, poolClass: 0, stockHealth: [closed] });
+  assert.equal(guarded.poolClass, 0);
+  assert.equal(guarded.staged, true);
+});
+
+test('an open session still requires fresh health even for SESSION_ONLY', () => {
+  assert.throws(() => buildCreatePoolPreflight({
+    ...base,
+    poolClass: 1,
+    referenceAdapterA: ZERO,
+    referenceAdapterB: ZERO,
+    stockHealth: [{ ready: false, reasonBits: 0n, validUntil: 0n, plannedClosed: false }],
+  }), /health/);
+});
+
+test('a fresh open-session health report is not reported as staged', () => {
+  assert.equal(buildCreatePoolPreflight(base).staged, false);
+});
+
 test('PRICE_GUARDED admits a priced non-stock counterasset without session health', () => {
   const input = {
     ...base,

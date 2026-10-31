@@ -56,10 +56,18 @@ export function buildCreatePoolPreflight(input) {
   if (input.poolClass === 1 && input.stockCount !== 1) throw new Error('SESSION_ONLY requires exactly one stock asset');
   if (input.activationPending) throw new Error('asset activation is pending');
   if (input.stockHealth.length !== input.stockCount) throw new Error('missing health record for a stock asset');
+  // Mirrors BellPoolFactory._admitted: a fresh joint-health vector is required only while the asset's
+  // calendar is NOT a proven planned close. During a planned close the factory accepts the request and
+  // the hook parks the seeded pool in STAGED until activation inputs return, so demanding fresh health
+  // here would block every pool that the deployed contracts already allow.
+  let staged = false;
   for (const [i, health] of input.stockHealth.entries()) {
-    if (!health.ready || BigInt(health.reasonBits) !== 0n || BigInt(health.validUntil) <= BigInt(input.now)) {
-      throw new Error(`stock ${i + 1} health is not fresh and ready`);
+    if (health.ready && BigInt(health.reasonBits) === 0n && BigInt(health.validUntil) > BigInt(input.now)) continue;
+    if (health.plannedClosed === true) {
+      staged = true;
+      continue;
     }
+    throw new Error(`stock ${i + 1} health is not fresh and ready outside a proven planned close`);
   }
   for (const [name, value] of Object.entries({
     tokenABalance: input.tokenABalance, tokenBBalance: input.tokenBBalance,
@@ -112,6 +120,7 @@ export function buildCreatePoolPreflight(input) {
     pair: input.pairLabel,
     poolClass: input.poolClass,
     stockCount: input.stockCount,
+    staged,
   amountMax: Object.freeze([seedA, seedB]),
     nativeToWrap,
     serviceFee: input.serviceFee,
