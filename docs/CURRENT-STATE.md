@@ -24,6 +24,16 @@ Deployment evidence is in `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-chainlink-session-adapters.json`,
 `evidence/deploy/mainnet-4663-asset-queue.json`, and the per-asset calendar-state files.
 
+Historical feed cadence was audited from up to each stock feed's latest 100 onchain rounds at block
+`102291723` (`2026-10-31T04:43:45Z`); the complete report is
+`evidence/deploy/mainnet-4663-session-feed-history.json`.
+Rounds were observed during PRE, REGULAR, POST, and OVERNIGHT for all three stocks, but observed round
+availability is not the same as a fresh quote: estimated time coverage under the deployed 120-second gate
+was about 1.3–5.6% in session groups with enough adjacent rounds to estimate it, and most sampled
+within-session gaps were far longer than 120 seconds. This limited historical sample therefore does not
+establish continuous 24/5 swap availability. The onchain Data Feed path remains free of a keeper update
+transaction, but swaps and pool creation still fail closed whenever its latest round is 120 seconds old.
+
 ## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
 
 The following block documents the deployment that existed before the migration above. Its signed
