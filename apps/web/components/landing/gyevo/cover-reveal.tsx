@@ -94,7 +94,7 @@ export function CoverReveal({ tagline }: Props) {
   const cipherRef = useRef<HTMLCanvasElement>(null);
   const globeRef = useRef<HTMLCanvasElement>(null);
   const [wordA, wordB] = splitTagline(tagline);
-  const stockWordMatch = wordA.match(/^(.*\s)(stocks)$/i);
+  const stockWordMatch = wordA.match(/^(.*\s)(stock(?:\s+tokens?)?|stocks)$/i);
 
   useEffect(() => {
     const cover = coverRef.current;
@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            This independent project is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. BELL is a Uniswap v4 liquidity protocol for pools that include Robinhood Stock Tokens on Robinhood Chain Mainnet. You can create and seed a pool from your wallet; each swap requires an existing pool and a fresh Chainlink round. The limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Historical round cadence can be intermittent.
+            BELL sets pool fees and swap limits by market session. Stale stock data pauses trading.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
