@@ -49,6 +49,20 @@ materials into applications; this project has not switched production feeds to t
 permission ([API docs](https://docs.robinhood.com/chain/stock-token-apis/),
 [terms](https://docs.robinhood.com/chain/terms-of-service/)).
 
+Alternative-provider check on 2026-10-31: Pyth Core and Pyth Pro verifier contracts are deployed on
+Robinhood Chain, and Pyth Core currently charges no EVM update-verification fee. However, Pyth's own
+sponsored-push-feed list does not include Robinhood Chain, so an app would need to obtain signed stock
+updates and submit them with transactions. Pyth Pro's API key and feed access require a paid service plan
+for production; the free plan is view-only with no API access or redistribution rights. The listed Starter
+plan is $500/month and covers crypto, while equities are listed under Pro starting at $2,500/month; Pyth
+Indices' 24/7 data has custom pricing. A free trial key is available for evaluation but does not grant
+production redistribution rights. This does not provide a free production source for AAPL/NVDA/TSLA.
+Sources: [Pyth contract addresses](https://docs.pyth.network/pro/contract-addresses),
+[sponsored feeds](https://docs.pyth.network/pro/sponsored-feeds),
+[on-chain fees](https://docs.pyth.network/pro/on-chain-fees),
+[Pyth pricing](https://app.pyth.com/products),
+[Pyth API key](https://docs.pyth.network/pro/acquire-api-key).
+
 A fresh, read-only Data Streams API check at `2026-10-31T04:57:50Z` confirms credential A still
 authenticates, but its authorized feed list is empty; the configured credential B variable has no value.
 No Robinhood AAPL, NVDA, or TSLA stream is available to this account, and no subscription was created.
