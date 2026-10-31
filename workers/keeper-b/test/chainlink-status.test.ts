@@ -60,10 +60,39 @@ describe('Chainlink Worker status', () => {
     expect(calls).toContainEqual({ address: expectedAdapter, functionName: 'readCurrent', blockNumber: 500n });
   });
 
-  it('reports an active-session feed at the strict 120 second boundary as stale', async () => {
+  it('reports a REGULAR feed at the 120 second adapter boundary as stale', async () => {
     const { client } = clientFor({ phase: 2, updatedAt: 880 });
     const status = await runChainlinkStatus(env, { client: client as any });
-    expect(status.assets.AAPL).toMatchObject({ phase: 2, session: 'REGULAR', feedAgeSeconds: 120, sessionFeedFresh: false });
+    expect(status.assets.AAPL).toMatchObject({
+      phase: 2, session: 'REGULAR', feedAgeSeconds: 120, freshnessLimitSeconds: 60, sessionFeedFresh: false,
+    });
+  });
+
+  it('reports the effective session-specific freshness gate used by the contract', async () => {
+    const expectedLimits = [[1, 120], [2, 60], [3, 120], [4, 120]] as const;
+    for (const [phase, freshnessLimitSeconds] of expectedLimits) {
+      const { client } = clientFor({ phase, updatedAt: 950 });
+      const status = await runChainlinkStatus(env, { client: client as any });
+      expect(status.assets.AAPL.freshnessLimitSeconds).toBe(freshnessLimitSeconds);
+    }
+  });
+
+  it('marks a 70 second REGULAR round stale because the policy limit is 60 seconds', async () => {
+    const { client, calls } = clientFor({ phase: 2, updatedAt: 930 });
+    const status = await runChainlinkStatus(env, { client: client as any });
+    expect(status.assets.AAPL).toMatchObject({
+      phase: 2, session: 'REGULAR', feedAgeSeconds: 70, freshnessLimitSeconds: 60,
+      sessionFeedFresh: false, status: 'stale',
+    });
+    expect(calls).not.toContainEqual({ address: ADDRESS(12), functionName: 'readCurrent', blockNumber: 500n });
+  });
+
+  it('accepts the inclusive 60 second REGULAR input-age boundary when the adapter remains fresh', async () => {
+    const { client } = clientFor({ phase: 2, updatedAt: 940 });
+    const status = await runChainlinkStatus(env, { client: client as any });
+    expect(status.assets.AAPL).toMatchObject({
+      phase: 2, session: 'REGULAR', feedAgeSeconds: 60, freshnessLimitSeconds: 60, sessionFeedFresh: true, status: 'fresh',
+    });
   });
 
   it('checks the active calendar leaf anchor and reads feed age while the market is closed', async () => {

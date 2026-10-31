@@ -1,7 +1,8 @@
 import { createPublicClient, http, parseAbi } from 'viem';
 import { hashCalendarLeaf } from '@bell/protocol/calendar';
 
-const MAX_SESSION_FEED_AGE_SECONDS = 120;
+const MAX_SESSION_ADAPTER_AGE_SECONDS = 120;
+const MAX_POLICY_INPUT_AGE_SECONDS = Object.freeze({ 1: 120, 2: 60, 3: 120, 4: 300 });
 const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
 ]);
@@ -31,6 +32,10 @@ function selectedAdapter(descriptor, phase) {
   if (phase === 4) return descriptor.overnightAdapter;
   if (phase === 1 || phase === 3) return descriptor.extendedAdapter;
   return null;
+}
+
+function effectiveFreshnessLimit(phase) {
+  return Math.min(MAX_SESSION_ADAPTER_AGE_SECONDS, MAX_POLICY_INPUT_AGE_SECONDS[phase] ?? MAX_SESSION_ADAPTER_AGE_SECONDS);
 }
 
 /** Read current market phase, closed anchor state, and onchain Chainlink freshness without writes. */
@@ -75,7 +80,7 @@ export async function runChainlinkStatus(env, { client, nowSeconds } = {}) {
       result.anchorValid = Boolean(tupleField(anchor, 1, 'valid'));
       result.anchorValidUntil = Number(tupleField(anchor, 3, 'validUntil'));
       result.status = result.anchorValid ? 'closed-anchor-valid' : 'closed-anchor-missing';
-      result.freshnessLimitSeconds = MAX_SESSION_FEED_AGE_SECONDS;
+      result.freshnessLimitSeconds = MAX_SESSION_ADAPTER_AGE_SECONDS;
       try {
         const descriptor = await readAtBlock({
           address: env.BELL_ASSET_REGISTRY, abi: ASSET_ABI, functionName: 'descriptor', args: [assetId],
@@ -144,9 +149,10 @@ export async function runChainlinkStatus(env, { client, nowSeconds } = {}) {
     const age = observedAt - updatedAt;
     result.feedAgeSeconds = age;
     result.updatedAt = updatedAt;
-    result.freshnessLimitSeconds = MAX_SESSION_FEED_AGE_SECONDS;
+    result.freshnessLimitSeconds = effectiveFreshnessLimit(phase);
     const roundValid = roundId > 0n && answeredInRound >= roundId && answer > 0n && updatedAt > 0 && age >= 0;
-    if (!roundValid || age >= MAX_SESSION_FEED_AGE_SECONDS) {
+    const sessionInputAgeLimit = MAX_POLICY_INPUT_AGE_SECONDS[phase] ?? MAX_SESSION_ADAPTER_AGE_SECONDS;
+    if (!roundValid || age >= MAX_SESSION_ADAPTER_AGE_SECONDS || age > sessionInputAgeLimit) {
       result.sessionFeedFresh = false;
       result.status = roundValid ? 'stale' : 'invalid-feed-round';
       output[symbol] = result;
@@ -183,7 +189,8 @@ export async function runChainlinkStatus(env, { client, nowSeconds } = {}) {
     blockNumber: Number(block.number),
     blockTimestamp: Number(block.timestamp),
     checkedAt: observedAt,
-    freshnessLimitSeconds: MAX_SESSION_FEED_AGE_SECONDS,
+    // This top-level value is the adapter ceiling; assets[].freshnessLimitSeconds is the effective session gate.
+    freshnessLimitSeconds: MAX_SESSION_ADAPTER_AGE_SECONDS,
     status: overall,
     assets: output,
   };

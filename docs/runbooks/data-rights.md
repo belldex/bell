@@ -8,10 +8,13 @@ directory snapshot is `evidence/runtime/chainlink-robinhood-feed-directory-2026-
 
 The Chainlink directory lists one `us_equities_24/5` Data Feed proxy per ticker, with an 86,400-second
 heartbeat and 0.5% deviation threshold. BELL uses that same canonical proxy in phase-scoped PRE,
-REGULAR, POST, and OVERNIGHT adapters. Calendar and source checks stay session-specific. Each active
-execution read has a stricter 120-second age limit and fails closed when the latest onchain round is older.
-That strict limit is BELL policy, not a Chainlink freshness promise; historical rounds show that it can
-make swaps unavailable for long intervals. See `docs/CURRENT-STATE.md` before describing availability.
+REGULAR, POST, and OVERNIGHT adapters. Calendar and source checks stay session-specific. BELL policy
+allows input ages up to 60 seconds in REGULAR, 120 seconds in PRE/POST, and 300 seconds in OVERNIGHT.
+The Chainlink adapter itself rejects rounds 120 seconds old or older, so the effective Chainlink gates
+are 60 seconds in REGULAR and under 120 seconds in PRE/POST/OVERNIGHT. Both the Worker and UI report the
+effective gate for the selected session. These are BELL policy limits, not a Chainlink freshness promise;
+historical rounds show that they can make swaps unavailable for long intervals. See
+`docs/CURRENT-STATE.md` before describing availability.
 
 The onchain proxy and round data are public contract state. This path does not fetch or redistribute raw
 Data Streams reports and does not require a Data Streams subscription or a keeper transaction to update

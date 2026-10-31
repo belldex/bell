@@ -12,10 +12,12 @@ be used in a `SESSION_ONLY` pool; admission is not a token audit or fair-value a
 
 All three stock descriptors and their 2026 calendar roots are active. Each calendar currently reports
 phase 5 (CLOSED) through Monday 2026-11-02 01:00 UTC and includes PRE, REGULAR, POST, and OVERNIGHT
-leaves through 2026-12-30. Feed rounds are stale while the feed window is closed; active-session swaps
-and pool creation fail closed until the relevant feed publishes a round less than 120 seconds old. No
-valid close anchor has been captured for the new registry, so closed-session swaps remain unavailable
-until a supported close is captured.
+leaves through 2026-12-30. BELL policy limits stock input age to 60 seconds in REGULAR, 120 seconds in
+PRE/POST, and 300 seconds in OVERNIGHT. The Chainlink session adapter independently rejects any round
+120 seconds old or older, so the effective Chainlink limits are 60 seconds in REGULAR and under 120
+seconds in PRE/POST/OVERNIGHT. The Worker now reports and applies those same effective per-session
+limits; stale rounds fail closed. No valid close anchor has been captured for the new registry, so
+closed-session swaps remain unavailable until a supported close is captured.
 
 Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (latest version `b3c4141c-e6d3-47a0-80ba-d35cd61ebd48`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, and boundary cron schedules. `/status` reads current phase, session-adapter freshness, closed-anchor validity, and read-only feed age directly from Mainnet; its latest snapshot is `evidence/deploy/mainnet-4663-live-status-2026-10-31T0512Z.json`. `/quote?symbol=AAPL` returns 410 by design. `/pools` returned 200 with an empty list at block `102288657`; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI sources factory, router, registries, position manager, and scan block from the verified deployment manifest and displays the Worker’s live per-asset feed status. Production alias `https://bell-black.vercel.app` is READY on Vercel deployment `dpl_BJqNzubtZTmrAXPqQod1LggbvMiG` (`https://bell-41v0kt381-sifaqs-projects.vercel.app`); authenticated production HTML confirms the Stock Token terminology, non-affiliation disclosure, freshness warning, and updated close-anchor/feed-age status UI.
 
@@ -29,10 +31,12 @@ Historical feed cadence was audited from up to each stock feed's latest 100 onch
 `evidence/deploy/mainnet-4663-session-feed-history.json`.
 Rounds were observed during PRE, REGULAR, POST, and OVERNIGHT for all three stocks, but observed round
 availability is not the same as a fresh quote: estimated time coverage under the deployed 120-second gate
-was about 1.3–5.6% in session groups with enough adjacent rounds to estimate it, and most sampled
+was about 1.3–5.6% under a 120-second freshness window in session groups with enough adjacent rounds to
+estimate it. This is an upper bound for REGULAR, where the effective limit is 60 seconds; most sampled
 within-session gaps were far longer than 120 seconds. This limited historical sample therefore does not
 establish continuous 24/5 swap availability. The onchain Data Feed path needs no separate keeper update
-transaction, but swaps and pool creation still fail closed whenever its latest round reaches 120 seconds old.
+transaction, but swaps and pool creation fail closed when the active session's effective freshness limit
+is exceeded.
 
 Provider research as of 2026-10-31: Chainlink documents Data Feeds as heartbeat/deviation-triggered updates,
 not streaming, and warns that some heartbeats last several hours
