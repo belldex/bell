@@ -111,7 +111,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
-                Mainnet session-aware pools for admitted AAPL, NVDA, and TSLA assets, with USDG, WETH, and MEME counterassets. MEME is SESSION_ONLY with no independent price protection. Check the live pool directory before trading.
+                Mainnet session-aware pools for admitted Robinhood Stock Tokens AAPL, NVDA, and TSLA, with USDG, WETH, and MEME counterassets. MEME is SESSION_ONLY with no independent price protection. Fresh Chainlink rounds are intermittent and stale data blocks swaps. Check the live feed status and pool directory before trading.
               </p>
               <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
                 <span className="lp-ecosystem__item">
@@ -178,7 +178,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             </nav>
           </div>
           <p className="lp-legal">
-            <span>Mainnet contracts deployed · No live pool · Independent audit incomplete</span>
+            <span>BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. · No live pool · Independent audit incomplete</span>
           </p>
         </div>
         <span

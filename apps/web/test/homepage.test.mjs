@@ -13,8 +13,8 @@ test('landing route composes the current BELL landing page without redirecting',
 
 test('page metadata no longer reports outdated asset admission status', async () => {
   const layout = await read('../app/layout.tsx');
-  assert.match(layout, /Session-aware tokenized-stock liquidity/);
-  assert.match(layout, /Chainlink equity feeds across four market sessions/);
+  assert.match(layout, /Session-aware Robinhood Stock Token liquidity/);
+  assert.match(layout, /less than 120 seconds old; stale data halts swaps/);
   assert.doesNotMatch(layout, /signed quotes/i);
   assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
 });
@@ -34,7 +34,9 @@ test('served landing and legal copy describe Mainnet and enabled wallet flows tr
   assert.match(landing, /Worker/i);
   assert.match(footer, /Create pool/i);
   assert.match(terms, /wallet/i);
-  assert.match(privacy, /quote/i);
+  assert.match(privacy, /Worker|session-feed/i);
+  assert.match(publicCopy, /not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc\./i);
+  assert.doesNotMatch(publicCopy, /tokenized[- ]stocks?|tokenized[- ]equities/i);
 });
 
 test('copied template build artifacts are absent', async () => {

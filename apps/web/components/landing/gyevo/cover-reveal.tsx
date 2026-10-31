@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            BELL is a Uniswap v4 liquidity protocol for tokenized-stock pools on Robinhood Chain Mainnet. Create and seed a pool from your wallet; swaps require fresh signed stock data and an existing liquidity pool.
+            This independent project is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. BELL is a Uniswap v4 liquidity protocol for pools that include Robinhood Stock Tokens on Robinhood Chain Mainnet. You can create and seed a pool from your wallet; each swap requires an existing pool and a Chainlink round less than 120 seconds old. Historical rounds show that this freshness window can be intermittent.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -331,7 +331,7 @@ export function CoverReveal({ tagline }: Props) {
               <p className="lp-badge">
                 <CalendarClock aria-hidden="true" />
                 <span>Session-aware liquidity</span>
-                <span className="lp-badge__detail">for tokenized stocks</span>
+                <span className="lp-badge__detail">for Robinhood Stock Tokens</span>
               </p>
               <h2 className="lp-h">
                 {/* Each scroll chapter keeps its headline to two deliberate lines. */}
@@ -396,7 +396,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-i={0}
                     data-story-kind="lede"
                   >
-                    One tokenized-stock pool can face different liquidity and data conditions before, during and after the exchange session.
+                    A Robinhood Stock Token pool can face different liquidity and data conditions before, during and after an exchange session.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -404,7 +404,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Verified calendar and stock data select the session’s base LP fee and flow limits.
+                    A verified calendar phase selects the base LP fee and flow limits; the Chainlink round must also pass the 120-second freshness check.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -420,7 +420,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A calendar-proven closure may use a historical close anchor and one finite episode budget.
+                    A calendar-proven closure still needs a verified close anchor; this deployment has not captured one for the active registry.
                   </span>
                 </p>
                 <div className="lp-actions">

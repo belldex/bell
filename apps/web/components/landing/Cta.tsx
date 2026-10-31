@@ -49,7 +49,7 @@ export function Footer() {
         <div className="max-w-sm">
           <Logo />
           <p className="mt-4 text-sm leading-relaxed text-muted">
-            Bourse-Event Liquidity Layer. A Uniswap v4 hook protocol for tokenized-stock liquidity on Robinhood Chain.
+          Bourse-Event Liquidity Layer. An independent Uniswap v4 hook protocol for Robinhood Stock Token liquidity on Robinhood Chain.
           </p>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-14 gap-y-3 text-sm">
@@ -67,7 +67,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <p className="mx-auto max-w-6xl px-4 py-6 text-xs leading-relaxed text-dim sm:px-6">
-          Rehearsal build. Robinhood Testnet (Chain 46630) protocol suite is deployed; mainnet approval has not been given. Sample pools demonstrate interface behavior. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
+          BELL is not affiliated with or endorsed by Robinhood Markets, Inc. The protocol is deployed on Robinhood Chain Mainnet; the pool directory is currently empty, and Chainlink feed freshness may be intermittent. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
         </p>
       </div>
     </footer>

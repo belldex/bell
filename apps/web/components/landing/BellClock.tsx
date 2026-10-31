@@ -62,10 +62,10 @@ const CAPTIONS: Array<[number, string]> = [
 ];
 
 const REQUIREMENT: Record<Exclude<MarketPhase, 'UNKNOWN'>, string> = {
-  REGULAR: 'Onchain Chainlink round fresh · ≤ 120 s old',
-  PRE: 'Onchain Chainlink round fresh · ≤ 120 s old',
-  POST: 'Onchain Chainlink round fresh · ≤ 120 s old',
-  OVERNIGHT: 'Onchain Chainlink round fresh · ≤ 120 s old',
+  REGULAR: 'Onchain Chainlink round fresh · < 120 s old',
+  PRE: 'Onchain Chainlink round fresh · < 120 s old',
+  POST: 'Onchain Chainlink round fresh · < 120 s old',
+  OVERNIGHT: 'Onchain Chainlink round fresh · < 120 s old',
   CLOSED: 'Committed closure context · close anchor ≤ 96 h old · episode budget',
 };
 

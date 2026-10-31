@@ -151,10 +151,10 @@ export function IdeaScene() {
               Market hours change. <em className="o">Pool rules adapt.</em>
             </h2>
             <p className="lp-lead lp-ie">
-              BELL provides liquidity pools for tokenized stocks. Regular hours, extended trading and scheduled closures carry different data quality and liquidity risks.
+              BELL provides liquidity pools that can include Robinhood Stock Tokens. Regular, extended and overnight sessions carry different data and liquidity conditions.
             </p>
             <p className="lp-body lp-ie">
-              Before every swap, BELL checks the exchange calendar, stock identity and feed freshness. Verified conditions set the base LP fee and flow caps; stale, unsupported or conflicting state stops execution.
+              Before every swap, BELL checks the exchange calendar, asset identity and Chainlink round freshness. A round must be less than 120 seconds old; stale, unsupported or conflicting state stops execution. Historical feed cadence shows this can halt swaps during scheduled sessions.
             </p>
 
             {/* sticky mode only: where you are in the scene */}

@@ -31,8 +31,23 @@ Rounds were observed during PRE, REGULAR, POST, and OVERNIGHT for all three stoc
 availability is not the same as a fresh quote: estimated time coverage under the deployed 120-second gate
 was about 1.3–5.6% in session groups with enough adjacent rounds to estimate it, and most sampled
 within-session gaps were far longer than 120 seconds. This limited historical sample therefore does not
-establish continuous 24/5 swap availability. The onchain Data Feed path remains free of a keeper update
-transaction, but swaps and pool creation still fail closed whenever its latest round is 120 seconds old.
+establish continuous 24/5 swap availability. The onchain Data Feed path needs no separate keeper update
+transaction, but swaps and pool creation still fail closed whenever its latest round reaches 120 seconds old.
+
+Provider research as of 2026-10-31: Chainlink documents Data Feeds as heartbeat/deviation-triggered updates,
+not streaming, and warns that some heartbeats last several hours
+([Data Feeds overview](https://docs.chain.link/data-feeds/overview)). Data Streams gives sub-second reports,
+but requires API credentials and subscription billing; Chainlink's published free tier ended on 2026-09-01
+([credentials](https://docs.chain.link/data-streams/tutorials/ts-sdk-fetch),
+[subscription billing](https://docs.chain.link/data-streams/tutorials/evm-onchain-report-verification),
+[free-tier notice](https://docs.chain.link/changelog)). Chainlink announced 24/7 RWA pricing on 2026-10-29;
+closed-market prices are blended from perp venues, and the post says to contact Chainlink for integration,
+so no public entitlement or price is established
+([Chainlink 24/7 announcement](https://chain.link/blog/introducing-chainlink-24-7)). Robinhood documents a
+15-second-cache `/prices/{symbol}` API, but its public terms broadly limit incorporating its Services and
+materials into applications; this project has not switched production feeds to that API without explicit
+permission ([API docs](https://docs.robinhood.com/chain/stock-token-apis/),
+[terms](https://docs.robinhood.com/chain/terms-of-service/)).
 
 ## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
 
