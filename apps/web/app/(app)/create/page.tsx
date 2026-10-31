@@ -65,10 +65,10 @@ export default function CreatePage() {
   }, [allowedClasses, poolClass]);
 
   useEffect(() => {
-    if (!wallet.account || !window.ethereum || wallet.wrongChain) { setFeeLabel('Connect to Robinhood Chain to read'); setGasPrice(''); setFeeLoading(false); return; }
+    if (!wallet.account || !wallet.provider || wallet.wrongChain) { setFeeLabel('Connect to Robinhood Chain to read'); setGasPrice(''); setFeeLoading(false); return; }
     let active = true;
     setFeeLoading(true);
-    const { publicClient } = makeClients(window.ethereum);
+    const { publicClient } = makeClients(wallet.provider);
     Promise.all([
       publicClient.readContract({ address: MAINNET.factory, abi: [{ type: 'function', name: 'serviceFee', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint128' }] }], functionName: 'serviceFee' }),
       publicClient.readContract({ address: MAINNET.factory, abi: [{ type: 'function', name: 'serviceRecipient', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] }], functionName: 'serviceRecipient' }),
@@ -80,7 +80,7 @@ export default function CreatePage() {
     }).catch(() => { if (active) setFeeLabel('Fee read unavailable; create preflight will stop'); })
       .finally(() => { if (active) setFeeLoading(false); });
     return () => { active = false; };
-  }, [wallet.account, wallet.chainId, wallet.wrongChain]);
+  }, [wallet.account, wallet.chainId, wallet.provider, wallet.wrongChain]);
 
   const stepOk = [
     Boolean(stock && counter && stockSymbol !== counterSymbol && allowedClasses.length),
@@ -90,13 +90,13 @@ export default function CreatePage() {
   ];
 
   const startCreate = async () => {
-    if (!window.ethereum || !wallet.account) { await wallet.connect(); return; }
+    if (!wallet.provider || !wallet.account) { await wallet.connect(); return; }
     if (wallet.wrongChain) { await wallet.switchChain(4663); return; }
     if (!stepOk[3]) return;
     setBusy(true); setError(''); setStage(null); setHistory([]); setResult(null);
     try {
       const created = await createMainnetPool({
-        provider: window.ethereum,
+        provider: wallet.provider,
         account: wallet.account as Address,
         selection: { stockSymbol, counterSymbol, poolClass, amountStock: rawStock, amountCounter: rawCounter, wrapWeth },
         onStage: (next) => {

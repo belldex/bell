@@ -10,12 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import { createPublicClient, createWalletClient, custom, type EIP1193Provider } from 'viem';
-import { WagmiConfig, createConfig, http, injected } from 'wagmi';
-import { ConnectButton, RainbowKitProvider } from '@rainbow-me/rainbowkit/components';
-import { darkTheme } from '@rainbow-me/rainbowkit';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { defineChain } from 'viem';
-import '@rainbow-me/rainbowkit/styles.css';
+import { connectSelectedWallet, detectWallet, getInjectedWalletProvider, isWalletDisconnected, loadSelectedWallet, onWalletProvidersChange, requestWalletProviders, saveSelectedWallet, setActiveWalletProvider, setWalletDisconnected, type EvmWalletProvider, type WalletId, WALLET_OPTIONS } from './wallet-options';
 
 /** The app wallet is pinned to Robinhood Chain mainnet. */
 export const CHAINS = {
@@ -31,15 +27,6 @@ export const robinhoodMainnet = defineChain({
   blockExplorers: { default: { name: 'Robinhood Explorer', url: 'https://robinhoodchain.blockscout.com' } },
 });
 
-const chains = [robinhoodMainnet] as const;
-const wagmiConfig = createConfig({
-  chains,
-  connectors: [injected({ shimDisconnect: true })],
-  transports: {
-    [robinhoodMainnet.id]: http(),
-  },
-});
-const queryClient = new QueryClient();
 export type SupportedChainId = keyof typeof CHAINS;
 export const isSupportedChain = (id: number | null): id is SupportedChainId => id === 4663;
 
@@ -51,6 +38,9 @@ interface WalletState {
   chainId: number | null;
   wrongChain: boolean;
   error: string | null;
+  provider: EIP1193Provider | null;
+  walletId: WalletId | null;
+  connectWallet: (id: WalletId) => Promise<void>;
   connect: () => Promise<void>;
   disconnect: () => void;
   switchChain: (id: SupportedChainId) => Promise<void>;
@@ -67,13 +57,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<`0x${string}` | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<EvmWalletProvider | null>(null);
+  const [walletId, setWalletId] = useState<WalletId | null>(null);
 
   useEffect(() => {
-    const eth = window.ethereum;
-    if (!eth) {
-      setStatus('no-provider');
-      return;
-    }
+    requestWalletProviders();
+    const restore = () => {
+      if (isWalletDisconnected()) {
+        setActiveWalletProvider(null);
+        setProvider(null);
+        setWalletId(null);
+        setAccount(null);
+        setChainId(null);
+        setStatus('disconnected');
+        return;
+      }
+      const savedId = loadSelectedWallet();
+      const selected = savedId ? detectWallet(savedId) : null;
+      const eth = selected ?? getInjectedWalletProvider();
+      if (!eth) { setStatus('no-provider'); return; }
+      setActiveWalletProvider(eth);
+      setProvider(eth);
+      setWalletId(selected && savedId ? savedId : null);
+    };
+    restore();
+    const unsubscribe = onWalletProvidersChange(restore);
+    const refreshTimer = window.setTimeout(restore, 180);
+    return () => { unsubscribe(); window.clearTimeout(refreshTimer); };
+  }, []);
+
+  useEffect(() => {
+    const eth = provider;
+    if (!eth) return;
     const onAccounts = (accounts: unknown) => {
       const list = accounts as string[];
       if (list.length === 0) {
@@ -93,41 +108,57 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       eth.removeListener('accountsChanged', onAccounts);
       eth.removeListener('chainChanged', onChain);
     };
-  }, []);
+  }, [provider]);
 
-  const connect = useCallback(async () => {
-    const eth = window.ethereum;
-    if (!eth) {
-      setError('No EIP-1193 wallet found. You can still browse in read-only mode.');
-      return;
-    }
+  const connectWallet = useCallback(async (id: WalletId) => {
     setError(null);
     setStatus('connecting');
     try {
-      const accounts = (await eth.request({ method: 'eth_requestAccounts' })) as string[];
-      setAccount(accounts[0] as `0x${string}`);
-      setChainId(parseInt((await eth.request({ method: 'eth_chainId' })) as string, 16));
+      const result = await connectSelectedWallet(id);
+      setActiveWalletProvider(result.provider);
+      setProvider(result.provider);
+      setWalletId(id);
+      setAccount(result.account);
+      setChainId(parseInt((await result.provider.request({ method: 'eth_chainId' })) as string, 16));
       setStatus('connected');
     } catch (e) {
       setStatus('disconnected');
       setError(e instanceof Error ? e.message : 'Connection rejected');
+      throw e;
     }
   }, []);
 
+  const connect = useCallback(async () => {
+    const preferred = walletId ?? loadSelectedWallet();
+    const id = (preferred && detectWallet(preferred) ? preferred : WALLET_OPTIONS.find((item) => detectWallet(item.id))?.id) ?? null;
+    if (!id) {
+      setError('No EIP-1193 wallet found. You can still browse in read-only mode.');
+      return;
+    }
+    try { await connectWallet(id); } catch { /* surfaced by the wallet menu when initiated there */ }
+  }, [connectWallet, walletId]);
+
   const disconnect = useCallback(() => {
+    setActiveWalletProvider(null);
+    setWalletDisconnected(true);
+    setProvider(null);
+    setWalletId(null);
     setAccount(null);
+    setChainId(null);
     setStatus('disconnected');
+    setError(null);
+    saveSelectedWallet(null);
   }, []);
 
   const switchChain = useCallback(async (id: SupportedChainId) => {
-    const eth = window.ethereum;
+    const eth = provider;
     if (!eth) return;
     try {
       await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: `0x${id.toString(16)}` }] });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not switch network');
     }
-  }, []);
+  }, [provider]);
 
   const value = useMemo<WalletState>(
     () => ({
@@ -136,31 +167,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       chainId,
       wrongChain: status === 'connected' && !isSupportedChain(chainId),
       error,
+      provider,
+      walletId,
+      connectWallet,
       connect,
       disconnect,
       switchChain,
     }),
-    [status, account, chainId, error, connect, disconnect, switchChain],
+    [status, account, chainId, error, provider, walletId, connectWallet, connect, disconnect, switchChain],
   );
 
-  return (
-    <WagmiConfig config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          initialChain={robinhoodMainnet}
-          theme={darkTheme({
-            accentColor: '#C7444F',
-            accentColorForeground: '#EEECE5',
-            borderRadius: 'small',
-            fontStack: 'system',
-            overlayBlur: 'small',
-          })}
-        >
-          <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiConfig>
-  );
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
 export function useWallet(): WalletState {

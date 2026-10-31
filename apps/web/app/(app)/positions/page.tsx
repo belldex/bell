@@ -38,10 +38,10 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
   const [hash, setHash] = useState('');
 
   const submit = async (operation: 'increase' | 'remove' | 'collect') => {
-    if (!window.ethereum || !wallet.account) throw new Error('Connect your wallet first.');
+    if (!wallet.provider || !wallet.account) throw new Error('Connect your wallet first.');
     setBusy(true); setStatus('Preparing a direct PositionManager transaction…'); setHash('');
     try {
-      const { publicClient, walletClient } = makeClients(window.ethereum);
+      const { publicClient, walletClient } = makeClients(wallet.provider);
       if (await publicClient.getChainId() !== MAINNET.chainId) throw new Error('Switch your wallet to BELL Mainnet (4663).');
       const chainNow = BigInt(Math.floor(Date.now() / 1000));
       const amounts = [
@@ -118,7 +118,7 @@ export default function PositionsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const refresh = useCallback(async () => {
-    if (!wallet.account || !window.ethereum || wallet.chainId !== MAINNET.chainId) { setPositions([]); return; }
+    if (!wallet.account || !wallet.provider || wallet.chainId !== MAINNET.chainId) { setPositions([]); return; }
     setLoading(true); setError('');
     try {
       const [pools, response] = await Promise.all([
@@ -126,7 +126,7 @@ export default function PositionsPage() {
       ]);
       const directory = await response.json();
       if (!response.ok || directory.chainId !== MAINNET.chainId || directory.owner.toLowerCase() !== wallet.account.toLowerCase()) throw new Error(directory.error || 'Position directory returned an invalid response.');
-      const { publicClient } = makeClients(window.ethereum);
+      const { publicClient } = makeClients(wallet.provider);
       const rows = await Promise.all((directory.tokenIds as string[]).map(async id => {
         try {
           const tokenId = BigInt(id);
@@ -145,7 +145,7 @@ export default function PositionsPage() {
       setPositions(rows.filter((row): row is Position => Boolean(row)));
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
-  }, [wallet.account, wallet.chainId]);
+  }, [wallet.account, wallet.chainId, wallet.provider]);
   useEffect(() => { void refresh(); }, [refresh]);
 
   return <div className="app-content-frame space-y-7">

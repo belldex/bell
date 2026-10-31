@@ -3,6 +3,7 @@ import {
   type Abi, type Address,
 } from 'viem';
 import { makeClients } from './wallet';
+import { getActiveWalletProvider, getInjectedWalletProvider } from './wallet-options';
 import manifest from '../../../packages/protocol/generated/abi-manifest.json';
 import deployment from '../../../evidence/deploy/mainnet-4663.json';
 import verification from '../../../evidence/deploy/mainnet-4663-verification.json';
@@ -78,8 +79,9 @@ export async function readLivePools(): Promise<LivePool[]> {
   } catch (directoryError) {
     // A connected wallet may provide a working chain RPC even when the public directory index
     // cannot serve historical event logs. Keep the fallback read-only and verify each hook live.
-    if (!window.ethereum) throw directoryError;
-    const { publicClient: client } = makeClients(window.ethereum);
+    const provider = getActiveWalletProvider() ?? getInjectedWalletProvider();
+    if (!provider) throw directoryError;
+    const { publicClient: client } = makeClients(provider);
     if (await client.getChainId() !== MAINNET.chainId) throw directoryError;
     const logs = await client.getLogs({ address: MAINNET.factory, event: poolCreated, fromBlock: MAINNET.deploymentBlock, toBlock: 'latest' });
     const unique = [...new Map(logs.map((log) => [String(log.args.hook).toLowerCase(), log])).values()];

@@ -17,7 +17,7 @@ const MAX_SQRT = 1461446703485210103287273052203988822378723970341n;
 
 function SwapInner() {
   const params = useSearchParams();
-  const { account, status, wrongChain, connect, switchChain } = useWallet();
+  const { account, status, wrongChain, connect, switchChain, provider } = useWallet();
   const [pools, setPools] = useState<LivePool[]>([]);
   const [pool, setPool] = useState<LivePool | null>(null);
   const [direction, setDirection] = useState(true);
@@ -56,15 +56,15 @@ function SwapInner() {
   const loadWalletState = useCallback(async () => {
     if (!account || !input) { setBalance(null); setAllowance(null); return; }
     try {
-      if (!window.ethereum) throw new Error('Wallet provider is not available');
-      const { publicClient: connectedClient } = makeClients(window.ethereum);
+      if (!provider) throw new Error('Wallet provider is not available');
+      const { publicClient: connectedClient } = makeClients(provider);
       const [b, a] = await Promise.all([
         connectedClient.readContract({ address: input.address, abi: tokenAbi, functionName: 'balanceOf', args: [account] }),
         connectedClient.readContract({ address: input.address, abi: tokenAbi, functionName: 'allowance', args: [account, MAINNET.router] }),
       ]);
       setBalance(b); setAllowance(a);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not read wallet token balance'); }
-  }, [account, input]);
+  }, [account, input, provider]);
   useEffect(() => { void loadWalletState(); }, [loadWalletState]);
 
   const buildUpdates = async () => {
@@ -83,8 +83,8 @@ function SwapInner() {
     const onchainFeed = quoteSourceForPhase(pool.policy.phase) === 'chainlink-feed';
     setBusy(true); setError(''); setMessage(anchored ? 'Simulating against the verified weekend reference and live pool state…' : onchainFeed ? 'Checking fresh Chainlink feed rounds onchain and simulating…' : 'Simulating against the live router…'); setQuote(null); setTxHash(null);
     try {
-      if (!window.ethereum || !account) throw new Error('Connect your Robinhood Chain wallet first');
-      const { publicClient: connectedClient } = makeClients(window.ethereum);
+      if (!provider || !account) throw new Error('Connect your Robinhood Chain wallet first');
+      const { publicClient: connectedClient } = makeClients(provider);
       const updates = await buildUpdates();
       const nonce = await connectedClient.readContract({ address: MAINNET.router, abi: routerAbi, functionName: 'nonces', args: [account] }) as bigint;
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 90);
@@ -109,14 +109,14 @@ function SwapInner() {
   };
 
   const approve = async () => {
-    if (!account || !input || approvalAmount <= 0n || !window.ethereum) return;
+    if (!account || !input || approvalAmount <= 0n || !provider) return;
     if (balance !== null && balance < approvalAmount) { setError(`Insufficient ${input.symbol} balance for the quoted maximum input.`); return; }
     setBusy(true); setError(''); setMessage('Confirm token approval in your wallet…');
     try {
-      const { walletClient } = makeClients(window.ethereum);
+      const { walletClient } = makeClients(provider);
       const hash = await walletClient.writeContract({ address: input.address, abi: tokenAbi, functionName: 'approve', args: [approvalAmount], account } as any);
       setMessage('Waiting for approval confirmation…');
-      const { publicClient: connectedClient } = makeClients(window.ethereum);
+      const { publicClient: connectedClient } = makeClients(provider);
       const receipt = await connectedClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== 'success') throw new Error('Token approval reverted');
       await loadWalletState(); setMessage('Approval confirmed. Your quote may expire; refresh it before swapping.');
@@ -125,13 +125,13 @@ function SwapInner() {
   };
 
   const swap = async () => {
-    if (!account || !pool || !input || !quote || !window.ethereum) return;
+    if (!account || !pool || !input || !quote || !provider) return;
     if (Date.now() - quote.stamp > 25_000) { setError('Quote expired. Request a fresh quote before submitting.'); return; }
     const anchored = quoteSourceForPhase(pool.policy.phase) === 'anchor';
     const onchainFeed = quoteSourceForPhase(pool.policy.phase) === 'chainlink-feed';
     setBusy(true); setError(''); setMessage(anchored ? 'Rechecking the weekend reference and simulating the exact transaction…' : onchainFeed ? 'Rechecking Chainlink feed freshness and simulating the exact transaction…' : 'Simulating the exact transaction…');
     try {
-      const { publicClient: walletProvider, walletClient } = makeClients(window.ethereum);
+      const { publicClient: walletProvider, walletClient } = makeClients(provider);
       const updates = await buildUpdates();
       const nonce = await walletProvider.readContract({ address: MAINNET.router, abi: routerAbi, functionName: 'nonces', args: [account] }) as bigint;
       const request = {
