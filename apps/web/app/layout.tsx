@@ -19,23 +19,23 @@ const pixel = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bell.exchange'),
-  title: { default: 'BELL: Market-aware liquidity for tokenized stocks', template: '%s · BELL' },
+  metadataBase: new URL('https://bell-black.vercel.app'),
+  title: { default: 'BELL: Session-aware tokenized-stock liquidity', template: '%s · BELL' },
   description:
-    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
+    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
   icons: {
     icon: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
     apple: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
   },
   openGraph: {
-    title: 'BELL: Market-aware liquidity for tokenized stocks',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
+    title: 'BELL: Session-aware tokenized-stock liquidity',
+    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BELL: Market-aware liquidity for tokenized stocks',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain mainnet. Asset admission and active pools are pending verification.',
+    title: 'BELL: Session-aware tokenized-stock liquidity',
+    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

@@ -11,6 +11,13 @@ test('landing route composes the current BELL landing page without redirecting',
   assert.doesNotMatch(page, /window\.location\.(replace|assign)|templates\/v4market/);
 });
 
+test('page metadata no longer reports outdated asset admission status', async () => {
+  const layout = await read('../app/layout.tsx');
+  assert.match(layout, /Session-aware tokenized-stock liquidity/);
+  assert.match(layout, /Check the live pool directory before trading/);
+  assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
+});
+
 test('served landing and legal copy describe Mainnet and enabled wallet flows truthfully', async () => {
   const landing = await read('../components/landing/gyevo/sections.tsx');
   const footer = await read('../components/landing/gyevo/final-reveal.tsx');
@@ -94,6 +101,42 @@ test('swap approval and BellRouter transaction wait for confirmed receipts', asy
   assert.match(swap, /limitAmount: exactInput \? quote\.minOut : quote\.maxIn/);
   assert.match(swap, /Exact output/);
   assert.match(swap, /Maximum paid/);
+});
+
+test('asset and pool pickers expose real token logos and pair identities', async () => {
+  const create = await read('../app/(app)/create/page.tsx');
+  const swap = await read('../app/(app)/swap/page.tsx');
+  assert.match(create, /<LogoSelect/);
+  assert.match(create, /symbols: \[asset\.symbol\]/);
+  assert.match(create, /SESSION_ONLY ONLY/);
+  assert.match(create, /useState\(''\)/);
+  assert.match(swap, /<LogoSelect/);
+  assert.match(swap, /symbols: \[item\.legs\[0\]\.symbol, item\.legs\[1\]\.symbol\]/);
+  assert.match(swap, /PRICE_GUARDED|SESSION_ONLY/);
+});
+
+test('landing connects live product routes and explains verified limits', async () => {
+  const landing = await read('../components/landing/gyevo/sections.tsx');
+  const closing = await read('../components/landing/gyevo/final-reveal.tsx');
+  const copy = `${landing}\n${closing}`;
+  for (const path of ['/pools', '/create', '/swap', '/positions', '/protocol']) assert.ok(copy.includes(path), `landing should link to ${path}`);
+  assert.match(copy, /MEME.{0,80}SESSION_ONLY|SESSION_ONLY.{0,80}MEME/is);
+  assert.match(copy, /data rights/i);
+  assert.match(copy, /audit/i);
+  assert.match(copy, /empty|no pool.{0,50}created/is);
+  assert.match(copy, /illustrative|example/i);
+});
+
+test('Mainnet banner and protocol page separate ready wallet flows from missing liquidity', async () => {
+  const banner = await read('../components/app/MainnetStatusBanner.tsx');
+  const protocol = await read('../app/(app)/protocol/page.tsx');
+  const shell = await read('../components/app/AppShell.tsx');
+  const copy = `${banner}\n${protocol}\n${shell}`;
+  assert.match(banner, /MEME.{0,60}SESSION_ONLY|SESSION_ONLY.{0,60}MEME/is);
+  assert.match(copy, /No active Mainnet pool|pool directory is empty|no pools have been created/i);
+  assert.match(protocol, /wallet.{0,40}position|position.{0,40}wallet/i);
+  assert.match(shell, /Manage wallet positions|Manage LP positions/i);
+  assert.doesNotMatch(copy, /asset admission.{0,35}unverified|pool creation remain unavailable|not wired in this frontend|Sample LP positions/i);
 });
 
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {

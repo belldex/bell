@@ -6,6 +6,7 @@ import { formatUnits, parseUnits, type Address } from 'viem';
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, ExternalLink, LoaderCircle, Lock, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/primitives';
 import { TokenPair } from '@/components/ui/TokenLogo';
+import { LogoSelect } from '@/components/ui/LogoSelect';
 import { cn } from '@/lib/format';
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET } from '@/lib/mainnet-live';
@@ -35,8 +36,8 @@ export default function CreatePage() {
   const [stockSymbol, setStockSymbol] = useState('AAPL');
   const [counterSymbol, setCounterSymbol] = useState('USDG');
   const [poolClass, setPoolClass] = useState<0 | 1>(0);
-  const [seedStock, setSeedStock] = useState('0.05');
-  const [seedCounter, setSeedCounter] = useState('20');
+  const [seedStock, setSeedStock] = useState('');
+  const [seedCounter, setSeedCounter] = useState('');
   const [wrapWeth, setWrapWeth] = useState(false);
   const [ackRisk, setAckRisk] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -126,12 +127,8 @@ export default function CreatePage() {
       {step === 0 && <div className="space-y-6">
         <div className="flex items-center gap-4 border-b border-line pb-5"><TokenPair symbols={[stockSymbol, counterSymbol]} size={32}/><div><p className="font-mono text-[10px] uppercase text-dim">Selected pair</p><p className="mt-1 text-lg text-ink">{stockSymbol} / {counterSymbol}</p></div></div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">Stock token<select className={`${inputCls} mt-2`} value={stockSymbol} onChange={(event) => { setStockSymbol(event.target.value); if (event.target.value === counterSymbol) setCounterSymbol(event.target.value === 'AAPL' ? 'USDG' : 'AAPL'); }}>
-            {stockOptions.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · admitted stock</option>)}
-          </select></label>
-          <label className="text-[10px] uppercase tracking-[0.14em] text-dim">Counterasset<select className={`${inputCls} mt-2`} value={counterSymbol} onChange={(event) => setCounterSymbol(event.target.value)}>
-            {counterOptions.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · {asset.isStock ? 'admitted stock' : 'admitted token'}</option>)}
-          </select></label>
+          <div><span id="stock-token-label" className="text-[10px] uppercase tracking-[0.14em] text-dim">Stock token</span><LogoSelect id="stock-token" labelId="stock-token-label" value={stockSymbol} className="mt-2" options={stockOptions.map((asset) => ({ value: asset.symbol, label: asset.symbol, detail: 'ADMITTED STOCK', symbols: [asset.symbol] }))} onChange={(symbol) => { setStockSymbol(symbol); if (symbol === counterSymbol) setCounterSymbol(symbol === 'AAPL' ? 'USDG' : 'AAPL'); }}/></div>
+          <div><span id="counterasset-label" className="text-[10px] uppercase tracking-[0.14em] text-dim">Counterasset</span><LogoSelect id="counterasset" labelId="counterasset-label" value={counterSymbol} className="mt-2" options={counterOptions.map((asset) => ({ value: asset.symbol, label: asset.symbol, detail: asset.symbol === 'MEME' ? 'SESSION_ONLY ONLY' : asset.isStock ? 'ADMITTED STOCK' : 'ADMITTED COUNTERASSET', symbols: [asset.symbol] }))} onChange={setCounterSymbol}/></div>
         </div>
         <div className="border border-line bg-bg-1 p-4"><p className="font-mono text-[10px] uppercase text-muted">Live asset set</p><p className="mt-2 text-sm text-ink">{MAINNET_ASSET_OPTIONS.map((asset) => asset.symbol).join(' · ')}</p><p className="mt-2 text-xs text-dim">Token addresses and descriptor IDs are rechecked against the Mainnet AssetRegistry before any approval.</p></div>
       </div>}

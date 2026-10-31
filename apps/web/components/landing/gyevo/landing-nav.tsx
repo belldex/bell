@@ -12,6 +12,7 @@ import { scrollToId } from "./smooth-scroll";
 const SECTIONS = [
   { id: "idea", label: "Why BELL", desc: "The market problem BELL is built around." },
   { id: "how", label: "How it works", desc: "The checks every swap must pass." },
+  { id: "product", label: "Use BELL", desc: "Pools, creation, swaps, and wallet positions." },
   { id: "policy-overview", label: "Market hours", desc: "Why each verified session changes the rules." },
   { id: "operating-policy", label: "Operating policy", desc: "Session fees, swap limits and planned closes." },
   { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
@@ -20,7 +21,7 @@ const SECTIONS = [
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
-const SCROLL_SECTIONS = ["idea", "how", "policy-overview", "operating-policy", "sessions", "roadmap", "facts"] as const;
+const SCROLL_SECTIONS = ["idea", "how", "product", "policy-overview", "operating-policy", "sessions", "roadmap", "facts"] as const;
 
 function sectionAtReadingLine(): SectionId | null {
   const line = window.innerHeight * 0.4;

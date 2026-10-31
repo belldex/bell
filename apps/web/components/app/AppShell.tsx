@@ -18,11 +18,11 @@ import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/poli
 const NAV_GROUPS = [
   { label: 'Markets', items: [
     { href: '/pools', label: 'Pools', detail: 'Browse pool policies', icon: ChartNoAxesColumnIncreasing },
-    { href: '/swap', label: 'Swap', detail: 'Mainnet readiness + preview', icon: ArrowLeftRight },
+    { href: '/swap', label: 'Swap', detail: 'Quote through BellRouter', icon: ArrowLeftRight },
   ] },
   { label: 'Liquidity', items: [
     { href: '/create', label: 'Create pool', detail: 'Preview pool settings', icon: Plus },
-    { href: '/positions', label: 'Positions', detail: 'Sample LP positions', icon: BriefcaseBusiness },
+    { href: '/positions', label: 'Positions', detail: 'Manage wallet positions', icon: BriefcaseBusiness },
   ] },
   { label: 'Reference', items: [
     { href: '/protocol', label: 'Protocol', detail: 'Rules and contracts', icon: ShieldCheck },
@@ -146,7 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="app-sidebar__bottom">
               <p className="app-sidebar__section-label">Network</p>
               <div className="app-sidebar__network-card">
-                <span className="app-sidebar__network-label">Workspace target</span>
+                <span className="app-sidebar__network-label">Connected network</span>
                 <span className="app-sidebar__network-brand" role="img" aria-label="Robinhood Chain">
                   <span className="app-sidebar__network-logo" aria-hidden="true" />
                   <b aria-hidden="true">Chain</b>
@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <footer className="app-footer">
               <div className="app-footer__inner">
                 <span>Robinhood Chain Mainnet · 4663</span>
-                <span>Fixture data is illustrative and does not represent live pool state.</span>
+                <span>Illustrations are not live pool state.</span>
                 <span>Fees and caps do not guarantee fills or returns.</span>
                 <a className="app-footer__social" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X"><FaXTwitter aria-hidden="true" /> BELL on X ↗</a>
               </div>

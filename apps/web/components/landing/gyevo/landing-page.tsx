@@ -7,7 +7,7 @@ import { LandingNav } from "./landing-nav";
 import { IdeaScene } from "./idea-scene";
 import { SmoothScroll } from "./smooth-scroll";
 import { FeatureStory } from "./feature-story";
-import { FactsSection, PathSection, RoadmapSection, SessionSection } from "./sections";
+import { FactsSection, PathSection, ProductPathsSection, RoadmapSection, SessionSection } from "./sections";
 
 /* The landing page. Presentation only: wallet, chain, credential and proof logic
    stay in the hooks and protocol modules, untouched. */
@@ -25,6 +25,7 @@ export function LandingPage() {
         <CoverReveal tagline="Tokenized stocks. Market rules adapt." />
         <IdeaScene />
         <PathSection />
+        <ProductPathsSection />
         <FeatureStory />
         <SessionSection />
         <RoadmapSection />

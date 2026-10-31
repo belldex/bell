@@ -1,10 +1,12 @@
 import { Fragment } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, BadgeCheck, CalendarClock, CalendarDays, CircleCheck, CircleX, Gauge, Percent, Radio, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeftRight, ArrowRight, ArrowUpRight, BadgeCheck, BriefcaseBusiness, CalendarClock, CalendarDays, ChartNoAxesColumnIncreasing, CircleCheck, CircleX, Gauge, Percent, Plus, Radio, ShieldCheck } from "lucide-react";
 import { Arrow } from "./arrow";
 import { SessionFeeCurve } from "./session-fee-curve";
+import { TokenLogo } from "@/components/ui/TokenLogo";
 
 const ROBINHOOD_MAINNET_CHAIN_ID = 4663;
+const MAINNET_POOL_SNAPSHOT_BLOCK = 102201201;
 
 /* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
 
@@ -141,6 +143,51 @@ export function PathSection() {
           <span>At the hook boundary</span>
           <b>All guards pass</b><i aria-hidden="true">→</i><strong>Swap executes</strong>
           <span className="lp-how-summary__halt">One guard fails <i aria-hidden="true">→</i> <b>transaction reverts</b></span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* Routes to the connected product. This is not a sample dashboard or a claim of existing liquidity. */
+const PRODUCT_PATHS = [
+  { href: "/pools", number: "01", name: "Explore pools", state: "LIVE DIRECTORY", detail: "Read deployed pool settings and onchain trading policy. The directory is currently empty.", icon: ChartNoAxesColumnIncreasing },
+  { href: "/create", number: "02", name: "Create and seed", state: "WALLET FLOW", detail: "Choose admitted assets and pool class, set your own seed, review the factory fee, then confirm each transaction.", icon: Plus },
+  { href: "/swap", number: "03", name: "Quote and swap", state: "NEEDS A POOL", detail: "Use exact-input or exact-output quoting with slippage bounds. No Mainnet pool exists to trade yet.", icon: ArrowLeftRight },
+  { href: "/positions", number: "04", name: "Manage liquidity", state: "WALLET NFTS", detail: "Find BELL positions in your wallet, add liquidity, remove with minimum outputs, or collect fees.", icon: BriefcaseBusiness },
+] as const;
+
+export function ProductPathsSection() {
+  return (
+    <section className="lp-sec lp-product" id="product" aria-labelledby="product-title">
+      <div className="lp-wrap">
+        <Eyebrow>Use the deployed product</Eyebrow>
+        <header className="lp-product__head">
+          <div>
+            <h2 className="lp-h2" id="product-title" data-lp-reveal>One protocol. <em className="o">Four real workflows.</em></h2>
+            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>BELL is deployed on Robinhood Chain Mainnet. Its wallet flows are connected, but the pool directory is empty: no one has created and seeded a Mainnet pool yet.</p>
+          </div>
+          <Link className="lp-btn lp-btn--primary" href="/create">Create a pool <Arrow /></Link>
+        </header>
+
+        <ol className="lp-product__grid">
+          {PRODUCT_PATHS.map(({ href, number, name, state, detail, icon: Icon }) => (
+            <li key={href} data-lp-reveal>
+              <Link href={href} className="lp-product__card">
+                <span className="lp-product__card-top"><span>{number} / WORKFLOW</span><Icon size={18} aria-hidden="true" /></span>
+                <span className="lp-product__state"><i aria-hidden="true" />{state}</span>
+                <strong>{name}</strong>
+                <span className="lp-product__detail">{detail}</span>
+                <span className="lp-product__link">Open {name.toLowerCase()} <ArrowUpRight size={15} aria-hidden="true" /></span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+
+        <div className="lp-product__assets" data-lp-reveal>
+          <div><span className="lp-product__asset-label">Admitted stock assets</span><div className="lp-product__tokens">{["AAPL", "NVDA", "TSLA"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}</span>)}</div></div>
+          <div><span className="lp-product__asset-label">Counterassets</span><div className="lp-product__tokens">{["USDG", "WETH", "MEME"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}{symbol === "MEME" && <small>SESSION_ONLY</small>}</span>)}</div></div>
+          <p>MEME has no independent price reference or PRICE_GUARDED option. Pool eligibility is checked against the deployed AssetRegistry.</p>
         </div>
       </div>
     </section>
@@ -335,22 +382,22 @@ export function FactsSection() {
             <h2 className="lp-facts__headline" id="facts-title">Mainnet snapshot</h2>
           </div>
           <div className="lp-facts__stamp">
-            <span className="lp-facts__stamp-label">Verified at</span>
-            <time dateTime="2026-10-31T01:38:57Z"><span>31 Oct 2026</span><strong>01:38 UTC</strong></time>
-            <span className="lp-facts__stamp-note">Static record · not live-updating</span>
+            <span className="lp-facts__stamp-label">Directory checked</span>
+            <time dateTime="2026-10-31T02:04:21Z"><span>31 Oct 2026</span><strong>02:04 UTC</strong></time>
+            <span className="lp-facts__stamp-note">Worker response · block {MAINNET_POOL_SNAPSHOT_BLOCK}</span>
           </div>
         </header>
         <dl className="lp-facts__grid" data-lp-reveal>
           <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
           <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
           <div className="lp-fact" data-spot><dt>Quote service</dt><dd>Live · pull mode · no periodic report transactions</dd></div>
-          <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty · no Mainnet pool or liquidity yet</dd></div>
+          <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty at block {MAINNET_POOL_SNAPSHOT_BLOCK} · no pool or liquidity</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME admitted</dd></div>
           <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
           <div className="lp-fact" data-spot><dt>Data rights</dt><dd>Yahoo source rights are not verified</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
-          <div className="lp-fact" data-spot><dt>SESSION_ONLY</dt><dd>Session controls; no independent counterasset price protection</dd></div>
+          <div className="lp-fact" data-spot><dt>Pool classes</dt><dd>PRICE_GUARDED where both live references pass · SESSION_ONLY for one-stock pairs</dd></div>
         </dl>
       </div>
     </section>
