@@ -1,0 +1,63 @@
+{
+  "capturedAt": "2026-10-31T05:18:49Z",
+  "workerVersion": "d738c2b2-dcaf-4b51-9dcf-800554ad8f88",
+  "source": {
+    "status": "https://bell-keeper-b.asysyifaq25.workers.dev/status",
+    "pools": "https://bell-keeper-b.asysyifaq25.workers.dev/pools"
+  },
+  "status": {
+    "mode": "chainlink",
+    "chainId": 4663,
+    "blockNumber": 102311380,
+    "blockTimestamp": 1793423929,
+    "checkedAt": 1793423929,
+    "freshnessLimitSeconds": 120,
+    "status": "closed-anchor-missing",
+    "assets": {
+      "AAPL": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419842,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 34056,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793389873
+      },
+      "NVDA": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419847,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 33409,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793390520
+      },
+      "TSLA": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419852,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 36579,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793387350
+      }
+    }
+  },
+  "pools": {
+    "chainId": 4663,
+    "blockNumber": "102311401",
+    "pools": []
+  }
+}

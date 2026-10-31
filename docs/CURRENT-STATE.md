@@ -19,7 +19,7 @@ seconds in PRE/POST/OVERNIGHT. The Worker now reports and applies those same eff
 limits; stale rounds fail closed. No valid close anchor has been captured for the new registry, so
 closed-session swaps remain unavailable until a supported close is captured.
 
-Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (latest version `b3c4141c-e6d3-47a0-80ba-d35cd61ebd48`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, and boundary cron schedules. `/status` reads current phase, session-adapter freshness, closed-anchor validity, and read-only feed age directly from Mainnet; its latest snapshot is `evidence/deploy/mainnet-4663-live-status-2026-10-31T0512Z.json`. `/quote?symbol=AAPL` returns 410 by design. `/pools` returned 200 with an empty list at block `102288657`; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI sources factory, router, registries, position manager, and scan block from the verified deployment manifest and displays the Worker’s live per-asset feed status. Production alias `https://bell-black.vercel.app` is READY on Vercel deployment `dpl_BJqNzubtZTmrAXPqQod1LggbvMiG` (`https://bell-41v0kt381-sifaqs-projects.vercel.app`); authenticated production HTML confirms the Stock Token terminology, non-affiliation disclosure, freshness warning, and updated close-anchor/feed-age status UI.
+Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (latest version `d738c2b2-dcaf-4b51-9dcf-800554ad8f88`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, boundary cron schedules, and effective per-session freshness reporting. `/status` reads current phase, session-adapter freshness, closed-anchor validity, and read-only feed age directly from Mainnet; its latest snapshot is `evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`. `/quote?symbol=AAPL` returns 410 by design. The latest `/pools` read at block `102311401` returned an empty list; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI reads each asset's effective freshness limit from Worker status. Production alias `https://bell-black.vercel.app` is READY on Vercel deployment `dpl_BJqNzubtZTmrAXPqQod1LggbvMiG` (`https://bell-41v0kt381-sifaqs-projects.vercel.app`); authenticated production HTML confirms the Stock Token terminology, non-affiliation disclosure, freshness warning, and close-anchor/feed-age status UI.
 
 Deployment evidence is in `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-verification.json`,
@@ -86,16 +86,19 @@ to switch among. This push feed may go many minutes or hours without a new round
 120-second execution guard intentionally fails closed in those gaps. Snapshot:
 `evidence/runtime/chainlink-robinhood-feed-directory-2026-10-31.json`.
 
-Fresh production read at `2026-10-31T05:10:27Z` confirms the Worker reads Mainnet at block
-`102306702`; all three assets are CLOSED with `closed-anchor-missing`, and the factory still has no pool.
-The UI and Worker telemetry are deployed and expose each stock's stale feed age: AAPL was 33,554 seconds
-old, NVDA 32,907 seconds, and TSLA 36,077 seconds against the strict 120-second gate. The previous 24/5 close-capture window is no longer open, so its anchor
+Fresh production read at `2026-10-31T05:18:49Z` confirms the Worker reads Mainnet at block
+`102311380`; all three assets are CLOSED with `closed-anchor-missing`, and `/pools` is empty at block
+`102311401`. Feed ages were 34,056 seconds for AAPL, 33,409 for NVDA, and 36,579 for TSLA against the
+120-second adapter limit. The effective active-session thresholds now match the policy in Worker code:
+REGULAR is 60 seconds, PRE/POST/OVERNIGHT are capped at 120 seconds by the adapter. The currently closed
+market does not exercise these active-session code paths on production; they are covered by the 70-test
+Worker suite. The previous 24/5 close-capture window is no longer open, so its anchor
 cannot be backfilled now. The Worker has a transaction key and boundary cron, but `captureClose` requires
 the phase adapter to pass the 120-second gate and the direct adapter to pass its separate 600-second
 gate. Friday's latest sampled rounds were 15:51 ET for AAPL, 16:02 ET for NVDA, and 15:09 ET for TSLA;
 the next weekly CLOSED boundary was 20:00 ET, when those inputs were hours old. That feed cadence cannot
 produce a valid close anchor under the current strict policy. Live snapshot:
-`evidence/deploy/mainnet-4663-live-status-2026-10-31T0512Z.json`.
+`evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`.
 
 ## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
 
