@@ -35,7 +35,7 @@ export default function PoolsPage() {
     {!loading && !error && pools.length === 0 && <section className="app-pools-empty" aria-labelledby="pools-empty-title">
       <div className="app-pools-empty__copy">
         <p className="app-pools-empty__eyebrow">LIVE FACTORY DIRECTORY</p>
-        <h2 id="pools-empty-title">No pools created yet.</h2>
+        <h2 id="pools-empty-title">No Mainnet pools yet.</h2>
         <p>This directory reads live events from the deployed factory. A pool’s pair and trading policy will appear here after it is created. Preview markets stay separate from Mainnet data.</p>
         <div className="app-pools-empty__actions">
           <Link href="/create">Create a pool <ArrowRight size={15} aria-hidden="true" /></Link>

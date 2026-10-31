@@ -164,7 +164,7 @@ function ProductFlowArt() {
         <span>HOW A BELL POOL COMES TO LIFE</span>
         <span>ROBINHOOD CHAIN MAINNET</span>
       </div>
-      <svg viewBox="0 0 860 450" role="img" aria-label="Stock feeds pass through the BELL session and risk hook before reaching a tokenized-stock pool">
+      <svg viewBox="0 0 860 450" role="img" aria-label="Stock feeds pass through the BELL session and risk hook before reaching a pool that includes a stock token">
         <defs>
           <linearGradient id="product-rail" x1="0" x2="1">
             <stop offset="0" stopColor="#B7B4AD" stopOpacity=".18" />
@@ -250,7 +250,7 @@ export function ProductPathsSection() {
         <header className="lp-product__head">
           <div>
             <h2 className="lp-h2" id="product-title" data-lp-reveal>BELL is deployed. <em className="o">Start with a pool.</em></h2>
-            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>Create and seed a tokenized-stock pool from your wallet. BELL checks market data, fees and flow limits before swaps; the Mainnet directory is empty until the first pool is created.</p>
+            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>Create and seed a stock-token pool from your wallet. BELL checks market data, fees and flow limits before swaps; the Mainnet directory is empty until the first pool is created.</p>
           </div>
           <Link className="lp-btn lp-btn--primary" href="/create">Create a pool <Arrow /></Link>
         </header>
