@@ -75,6 +75,33 @@ export async function runChainlinkStatus(env, { client, nowSeconds } = {}) {
       result.anchorValid = Boolean(tupleField(anchor, 1, 'valid'));
       result.anchorValidUntil = Number(tupleField(anchor, 3, 'validUntil'));
       result.status = result.anchorValid ? 'closed-anchor-valid' : 'closed-anchor-missing';
+      result.freshnessLimitSeconds = MAX_SESSION_FEED_AGE_SECONDS;
+      try {
+        const descriptor = await readAtBlock({
+          address: env.BELL_ASSET_REGISTRY, abi: ASSET_ABI, functionName: 'descriptor', args: [assetId],
+        });
+        const adapter = descriptor.isStock ? descriptor.regularAdapter : null;
+        if (adapter && adapter !== '0x0000000000000000000000000000000000000000') {
+          const [feed, fingerprint] = await Promise.all([
+            readAtBlock({ address: adapter, abi: ADAPTER_ABI, functionName: 'feed' }),
+            readAtBlock({ address: adapter, abi: ADAPTER_ABI, functionName: 'fingerprint' }),
+          ]);
+          if (fingerprint && !/^0x0{64}$/i.test(fingerprint)) {
+            const round = await readAtBlock({ address: feed, abi: FEED_ABI, functionName: 'latestRoundData' });
+            const roundId = BigInt(tupleField(round, 0, 'roundId'));
+            const answer = BigInt(tupleField(round, 1, 'answer'));
+            const updatedAt = Number(tupleField(round, 3, 'updatedAt'));
+            const answeredInRound = BigInt(tupleField(round, 4, 'answeredInRound'));
+            const age = observedAt - updatedAt;
+            if (roundId > 0n && answeredInRound >= roundId && answer > 0n && updatedAt > 0 && age >= 0) {
+              result.feedAgeSeconds = age;
+              result.updatedAt = updatedAt;
+            }
+          }
+        }
+      } catch {
+        // Closed-anchor status remains useful when optional feed-age telemetry is unavailable.
+      }
       output[symbol] = result;
       continue;
     }

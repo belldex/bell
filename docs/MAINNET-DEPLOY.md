@@ -1,5 +1,10 @@
 # BELL — Robinhood Chain MAINNET (4663) deployment
 
+> **Historical rollout notes.** The Yahoo pull-quote and old registry instructions below are superseded.
+> The current Mainnet state, active Chainlink Data Feed adapters, Worker version, and production UI are
+> recorded in [`docs/CURRENT-STATE.md`](CURRENT-STATE.md). Do not run the historical Yahoo rollout steps
+> as the current Mainnet procedure.
+
 Everything here targets chain 4663. Testnet is 46630 and is a different, rehearsal-only deployment.
 
 ## What "ready to deploy" means here

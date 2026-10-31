@@ -60,6 +60,24 @@ access is provisioned ([24/5 Streams release](https://docs.chain.link/changelog/
 remains configured for all sessions and needs no keeper transaction; its updates cannot satisfy BELL's
 120-second onchain freshness gates reliably, as measured in the historical round audit above.
 
+The live Chainlink reference directory was also checked at `2026-10-31T05:00:06Z`. It lists exactly
+one 24/5 onchain Data Feed proxy for each of AAPL, NVDA, and TSLA, each with `marketHours=us_equities_24/5`,
+an 86,400-second heartbeat, and a 0.5% deviation threshold. The same proxy is therefore correctly wired
+through BELL's phase-scoped adapters; there are no separate PRE/REGULAR/POST/OVERNIGHT Data Feed proxies
+to switch among. This push feed may go many minutes or hours without a new round, so BELL's independent
+120-second execution guard intentionally fails closed in those gaps. Snapshot:
+`evidence/runtime/chainlink-robinhood-feed-directory-2026-10-31.json`.
+
+Fresh production read at `2026-10-31T05:03:26Z` confirms the Worker still reads Mainnet at block
+`102302808`; all three assets are CLOSED with `closed-anchor-missing`, and `/pools` returns an empty
+directory at block `102302816`. The previous 24/5 close-capture window is no longer open, so its anchor
+cannot be backfilled now. The Worker has a transaction key and boundary cron, but `captureClose` requires
+the phase adapter to pass the 120-second gate and the direct adapter to pass its separate 600-second
+gate. Friday's latest sampled rounds were 15:51 ET for AAPL, 16:02 ET for NVDA, and 15:09 ET for TSLA;
+the next weekly CLOSED boundary was 20:00 ET, when those inputs were hours old. That feed cadence cannot
+produce a valid close anchor under the current strict policy. Live snapshot:
+`evidence/deploy/mainnet-4663-live-status-2026-10-31T0503Z.json`.
+
 ## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
 
 The following block documents the deployment that existed before the migration above. Its signed

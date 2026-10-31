@@ -55,8 +55,11 @@ export function MainnetSessionFeedStatus() {
       {assets.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
           {assets.map(([symbol, item]) => {
+            const feedAge = item.feedAgeSeconds === null
+              ? ''
+              : ` · last feed ${item.feedAgeSeconds}s old / ${item.freshnessLimitSeconds ?? 120}s gate`;
             const detail = item.session === 'CLOSED'
-              ? `close anchor ${item.anchorValid ? 'valid' : 'pending'}`
+              ? `close anchor ${item.anchorValid ? 'valid' : 'missing'}${feedAge}`
               : item.sessionFeedFresh
                 ? `fresh · ${item.feedAgeSeconds}s / ${item.freshnessLimitSeconds ?? 120}s`
                 : `stale · ${item.feedAgeSeconds ?? '—'}s / ${item.freshnessLimitSeconds ?? 120}s`;

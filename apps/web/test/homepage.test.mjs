@@ -148,6 +148,7 @@ test('Mainnet banner reads live per-asset Chainlink session freshness from the W
   assert.match(status, /feedAgeSeconds/);
   assert.match(status, /sessionFeedFresh/);
   assert.match(status, /anchorValid/);
+  assert.match(status, /last feed/);
   assert.match(status, /aria-live/);
 });
 

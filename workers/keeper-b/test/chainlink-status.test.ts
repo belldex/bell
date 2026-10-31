@@ -66,11 +66,16 @@ describe('Chainlink Worker status', () => {
     expect(status.assets.AAPL).toMatchObject({ phase: 2, session: 'REGULAR', feedAgeSeconds: 120, sessionFeedFresh: false });
   });
 
-  it('checks the active calendar leaf anchor while the market is closed', async () => {
+  it('checks the active calendar leaf anchor and reads feed age while the market is closed', async () => {
     const { client, calls } = clientFor({ phase: 5, anchorValid: false });
     const status = await runChainlinkStatus(env, { client: client as any });
-    expect(status.assets.AAPL).toMatchObject({ phase: 5, session: 'CLOSED', anchorValid: false, sessionFeedFresh: null });
+    expect(status.assets.AAPL).toMatchObject({
+      phase: 5, session: 'CLOSED', anchorValid: false, sessionFeedFresh: null,
+      feedAgeSeconds: 50, freshnessLimitSeconds: 120, updatedAt: 950,
+    });
     expect(calls.some((call) => call.functionName === 'anchorStatus')).toBe(true);
+    expect(calls).toContainEqual({ address: ADDRESS(12), functionName: 'feed', blockNumber: 500n });
+    expect(calls.some((call) => call.functionName === 'latestRoundData')).toBe(true);
     expect(calls.some((call) => call.functionName === 'readCurrent')).toBe(false);
   });
 });

@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-10-31T05:03:26.6840741Z",
+  "worker": "https://bell-keeper-b.asysyifaq25.workers.dev",
+  "chainId": 4663,
+  "statusBlock": 102302808,
+  "freshnessLimitSeconds": 120,
+  "status": "closed-anchor-missing",
+  "assets": {
+    "AAPL": { "session": "CLOSED", "phase": 5, "status": "closed-anchor-missing", "anchorValid": false },
+    "NVDA": { "session": "CLOSED", "phase": 5, "status": "closed-anchor-missing", "anchorValid": false },
+    "TSLA": { "session": "CLOSED", "phase": 5, "status": "closed-anchor-missing", "anchorValid": false }
+  },
+  "poolDirectory": {
+    "blockNumber": 102302816,
+    "poolCount": 0
+  },
+  "conclusion": "The live Worker and pool endpoint respond on Robinhood Chain Mainnet, but the current calendar is CLOSED, all three close anchors are missing, and the factory has no pools. This is a live read-only snapshot; it does not prove that the next session will receive a fresh feed round."
+}
