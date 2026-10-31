@@ -8,6 +8,7 @@ import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, R
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET, displayAmount, oracleUpdate, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
+import { AppLoadingState } from '@/components/app/AppLoadingState';
 // @ts-expect-error Shared decision helper is browser-safe and covered by node:test.
 import { phaseLabel, quoteSourceForPhase } from '@/lib/swap-calendar.mjs';
 // @ts-expect-error Shared math helper is browser-safe and covered by node:test.
@@ -33,6 +34,7 @@ function SwapInner() {
   const [error, setError] = useState('');
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loadingPools, setLoadingPools] = useState(true);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -41,12 +43,15 @@ function SwapInner() {
 
   useEffect(() => {
     let active = true;
+    setLoadingPools(true);
+    setError('');
     readLivePools().then((items) => {
       if (!active) return;
       setPools(items);
       const requested = params.get('hook')?.toLowerCase();
       setPool((current) => items.find((item) => item.hook.toLowerCase() === (requested ?? current?.hook.toLowerCase())) ?? items[0] ?? null);
-    }).catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not read Mainnet pool state'); });
+    }).catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not read Mainnet pool state'); })
+      .finally(() => { if (active) setLoadingPools(false); });
     return () => { active = false; };
   }, [params, refreshKey]);
 
@@ -164,9 +169,12 @@ function SwapInner() {
     finally { setBusy(false); }
   };
 
-  return <div className="app-swap-page mx-auto max-w-[1200px]">
-    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against deployed policy. Supported market sessions use fresh signed prices; weekend swaps use the contract’s verified stock reference with live prices for other assets.</p></header>
-    {pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">No live pool to swap yet</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">No pool has been created on Mainnet. This screen reads the factory; it will enable trading after a pool and liquidity exist.</p><Link href="/pools" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Check live pools</Link></section>}
+  return <div className="app-content-frame app-swap-page">
+    <header className="mb-7 border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against deployed policy. Supported market sessions use fresh signed prices; weekend swaps use the contract’s verified stock reference with live prices for other assets.</p></header>
+    {loadingPools && pools.length === 0 && <AppLoadingState label="Reading live pools for swap" variant="cards" />}
+    {loadingPools && pools.length > 0 && <AppLoadingState label="Refreshing live pool state" variant="inline" />}
+    {!loadingPools && pools.length === 0 && error && <section className="app-data-error" role="alert"><div><h2>Pool data could not be loaded.</h2><p>{error}</p></div><button type="button" onClick={() => setRefreshKey((v) => v + 1)}><RefreshCw size={14} aria-hidden="true"/> Try again</button></section>}
+    {!loadingPools && pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">No live pool to swap yet</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">No pool has been created on Mainnet. This screen reads the factory; it will enable trading after a pool and liquidity exist.</p><Link href="/pools" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Check live pools</Link></section>}
     {pools.length > 0 && pool && input && output && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
       <section className="border border-line bg-surface/60 p-5 sm:p-7">
         <label id="swap-live-pool-label" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Live pool</label>

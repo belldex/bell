@@ -6,6 +6,7 @@ import { formatUnits, parseAbi, parseUnits, type Address } from 'viem';
 import { Coins, Minus, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/primitives';
 import { TokenPair } from '@/components/ui/TokenLogo';
+import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { MAINNET, readLivePools, type LivePool, tokenAbi } from '@/lib/mainnet-live';
 import { makeClients, useWallet } from '@/lib/wallet';
 // @ts-expect-error Shared protocol codec is browser-safe and encodes the pinned public PositionManager path.
@@ -147,16 +148,18 @@ export default function PositionsPage() {
   }, [wallet.account, wallet.chainId]);
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return <main className="space-y-7">
-    <header className="max-w-3xl"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · BELL Mainnet</p>
+  return <div className="app-content-frame space-y-7">
+    <header><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · BELL Mainnet</p>
       <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink">Liquidity positions at a glance.</h1>
       <p className="mt-3 text-base text-muted">Connect the wallet that owns your position NFT. BELL positions are user-owned PositionManager NFTs; add, in-kind remove and fee collection are sent directly from your wallet.</p></header>
     {!wallet.account ? <p className="border border-line bg-surface p-5 text-sm text-muted">Connect your wallet to read your positions.</p>
       : wallet.chainId !== MAINNET.chainId ? <p className="border border-warn/30 bg-warn/5 p-5 text-sm text-warn">Switch your wallet to BELL Mainnet (4663) to read positions.</p>
-      : <div className="flex items-center justify-between border border-line bg-surface p-4 text-sm text-muted"><span>{loading ? 'Reading wallet NFTs and live BELL pools…' : `${positions.length} BELL position${positions.length === 1 ? '' : 's'} found`}</span><Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}><RefreshCw className="h-4 w-4"/> Refresh</Button></div>}
+      : <div className="flex items-center justify-between border border-line bg-surface p-4 text-sm text-muted" role="status" aria-live="polite"><span>{loading ? 'Reading wallet positions from Mainnet' : `${positions.length} BELL position${positions.length === 1 ? '' : 's'} found`}</span><Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}><RefreshCw className={`h-4 w-4${loading ? ' animate-spin' : ''}`}/> Refresh</Button></div>}
+    {loading && positions.length === 0 && wallet.account && wallet.chainId === MAINNET.chainId && <AppLoadingState label="Checking wallet NFTs against live BELL pools" variant="cards" />}
+    {loading && positions.length > 0 && <AppLoadingState label="Refreshing wallet positions" variant="inline" />}
     {error && <p role="alert" className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">Could not load live positions: {error}</p>}
     {positions.length ? <div className="grid gap-4 md:grid-cols-2">{positions.map(position => <PositionCard key={position.id.toString()} position={position} refresh={() => void refresh()}/>)}</div>
       : !loading && wallet.account && wallet.chainId === MAINNET.chainId && !error && <section className="border border-line bg-surface p-8"><h2 className="font-display text-2xl text-ink">No BELL positions in this wallet</h2><p className="mt-2 text-sm text-muted">Only NFTs verified against the live BELL pool directory appear here. Create a pool to mint its first position NFT.</p><Link className="mt-5 inline-block text-ion underline" href="/create">Create a pool</Link></section>}
     <p className="text-xs text-dim">Position NFTs are also transferable. Add requires ERC-20 approval when needed. Removal uses zero minimum token outputs, and Collect displays the mined transaction receipt. The app filters out unrelated Uniswap v4 PositionManager NFTs.</p>
-  </main>;
+  </div>;
 }

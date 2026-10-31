@@ -47,6 +47,7 @@ export default function CreatePage() {
   const [result, setResult] = useState<CreateResult | null>(null);
   const [feeLabel, setFeeLabel] = useState('Read from factory before signing');
   const [gasPrice, setGasPrice] = useState('');
+  const [feeLoading, setFeeLoading] = useState(false);
 
   const stockOptions = MAINNET_ASSET_OPTIONS.filter((asset) => asset.isStock);
   const counterOptions = MAINNET_ASSET_OPTIONS.filter((asset) => asset.symbol !== stockSymbol);
@@ -64,8 +65,9 @@ export default function CreatePage() {
   }, [allowedClasses, poolClass]);
 
   useEffect(() => {
-    if (!wallet.account || !window.ethereum || wallet.wrongChain) { setFeeLabel('Connect to Robinhood Chain to read'); return; }
+    if (!wallet.account || !window.ethereum || wallet.wrongChain) { setFeeLabel('Connect to Robinhood Chain to read'); setGasPrice(''); setFeeLoading(false); return; }
     let active = true;
+    setFeeLoading(true);
     const { publicClient } = makeClients(window.ethereum);
     Promise.all([
       publicClient.readContract({ address: MAINNET.factory, abi: [{ type: 'function', name: 'serviceFee', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint128' }] }], functionName: 'serviceFee' }),
@@ -75,7 +77,8 @@ export default function CreatePage() {
       if (!active) return;
       setFeeLabel(`${formatUnits(fee as bigint, 6)} USDG → ${recipient}`);
       setGasPrice(`${formatUnits(gas as bigint, 18)} ETH/gas unit`);
-    }).catch(() => { if (active) setFeeLabel('Fee read unavailable; create preflight will stop'); });
+    }).catch(() => { if (active) setFeeLabel('Fee read unavailable; create preflight will stop'); })
+      .finally(() => { if (active) setFeeLoading(false); });
     return () => { active = false; };
   }, [wallet.account, wallet.chainId, wallet.wrongChain]);
 
@@ -108,8 +111,8 @@ export default function CreatePage() {
     } finally { setBusy(false); }
   };
 
-  return <div className="mx-auto w-full max-w-[920px]">
-    <header className="max-w-3xl">
+  return <div className="app-content-frame">
+    <header>
       <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create · Robinhood Chain Mainnet</p>
       <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Create and seed a live pool.</h1>
       <p className="mt-3 text-sm leading-relaxed text-muted">Only admitted assets can proceed. The app checks the live factory, reads reference prices, gets signed quote bundles, updates health, simulates the exact request, then asks your wallet to create and seed.</p>
@@ -153,7 +156,7 @@ export default function CreatePage() {
           <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{stockSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedStock} onChange={(event) => setSeedStock(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedStock, stockSymbol).toString()} base units</span></label>
           <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{counterSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedCounter} onChange={(event) => setSeedCounter(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedCounter, counterSymbol).toString()} base units</span></label>
         </div>
-        <div className="grid gap-4 border border-line bg-bg-1 p-4 sm:grid-cols-3"><Metric label="Seed ratio" value={`${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} / ${stockSymbol}`} note={poolClass === 0 ? 'Guarded opening price is derived from live references' : 'Used as the SESSION_ONLY opening price'}/><Metric label="Factory service fee" value={feeLabel} note="Live factory getter; seed is charged separately"/><Metric label="Current gas quote" value={gasPrice || 'Read from wallet RPC during preflight'} note="Final create gas is estimated after simulation"/></div>
+        <div className="grid gap-4 border border-line bg-bg-1 p-4 sm:grid-cols-3"><Metric label="Seed ratio" value={`${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} / ${stockSymbol}`} note={poolClass === 0 ? 'Guarded opening price is derived from live references' : 'Used as the SESSION_ONLY opening price'}/><Metric label="Factory service fee" value={feeLabel} note="Live factory getter; seed is charged separately" loading={feeLoading}/><Metric label="Current gas quote" value={gasPrice || 'Read from wallet RPC during preflight'} note="Final create gas is estimated after simulation" loading={feeLoading}/></div>
         {counterSymbol === 'WETH' && <label className="flex items-start gap-3 border border-line p-4 text-sm text-muted"><input type="checkbox" checked={wrapWeth} onChange={(event) => setWrapWeth(event.target.checked)} className="mt-1 accent-ion"/>If my WETH balance is short, allow the app to ask my wallet to wrap only the exact ETH shortfall into WETH. Gas is additional.</label>}
         <p className="border border-line p-4 text-xs leading-relaxed text-dim">The deployed factory profile fixes pool flow caps. They are checked live and cannot be customized in this creation request. Fee and seed approvals are limited to the exact required amounts.</p>
       </div>}
@@ -197,8 +200,8 @@ export default function CreatePage() {
   </div>;
 }
 
-function Metric({ label, value, note }: { label: string; value: string; note: string }) {
-  return <div className="min-w-0"><p className="font-mono text-[10px] uppercase text-dim">{label}</p><p className="mt-2 break-words text-sm text-ink">{value}</p><p className="mt-1 text-xs text-dim">{note}</p></div>;
+function Metric({ label, value, note, loading = false }: { label: string; value: string; note: string; loading?: boolean }) {
+  return <div className="min-w-0"><p className="font-mono text-[10px] uppercase text-dim">{label}</p><p className="mt-2 break-words text-sm text-ink">{loading ? <span className="app-inline-skeleton" role="status">Reading live value</span> : value}</p><p className="mt-1 text-xs text-dim">{note}</p></div>;
 }
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return <div className="flex flex-wrap justify-between gap-3 py-3"><dt className="font-mono text-[10px] uppercase text-dim">{label}</dt><dd className="break-all text-right text-sm text-ink">{value}</dd></div>;

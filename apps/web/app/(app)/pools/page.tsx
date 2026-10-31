@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { readLivePools, type LivePool } from '@/lib/mainnet-live';
+import { AppLoadingState } from '@/components/app/AppLoadingState';
 
 export default function PoolsPage() {
   const [pools, setPools] = useState<LivePool[]>([]);
@@ -19,7 +20,7 @@ export default function PoolsPage() {
     return () => { active = false; };
   }, [revision]);
 
-  return <div className="app-pools-page mx-auto max-w-[1200px]">
+  return <div className="app-content-frame app-pools-page">
     <header className="app-pools-heading">
       <div>
         <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets / Robinhood Chain Mainnet</p>
@@ -28,7 +29,8 @@ export default function PoolsPage() {
       </div>
       <button type="button" onClick={() => setRevision((v) => v + 1)} className="inline-flex min-h-10 shrink-0 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted transition-colors hover:border-line-strong hover:text-ink"><RefreshCw size={14} /> Refresh</button>
     </header>
-    {loading && <p className="mt-8 text-sm text-muted" role="status">Reading Robinhood Chain…</p>}
+    {loading && pools.length === 0 && <AppLoadingState label="Reading the live pool directory" variant="cards" />}
+    {loading && pools.length > 0 && <AppLoadingState label="Refreshing onchain pool state" variant="inline" />}
     {error && <div className="mt-8 border border-down/40 bg-down/5 p-5 text-sm text-down" role="alert">Could not read live pools: {error}</div>}
     {!loading && !error && pools.length === 0 && <section className="app-pools-empty" aria-labelledby="pools-empty-title">
       <div className="app-pools-empty__copy">

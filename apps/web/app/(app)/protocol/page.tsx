@@ -11,7 +11,7 @@ const sections = [
 
 export default function ProtocolPage() {
   return (
-    <div className="app-protocol-page w-full">
+    <div className="app-content-frame app-protocol-page">
       <div className="app-protocol-header">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ion">Protocol / Robinhood Chain mainnet</p>
