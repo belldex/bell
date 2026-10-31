@@ -10,15 +10,38 @@ AAPL/NVDA/TSLA adapters, Chainlink reference adapters, WETH/USDG and all three s
 their calendars are active. MEME (`0x385F4f8ae47651ce5F58F5265395a669f8281e18`) was separately reviewed and admitted to AssetRegistry for `SESSION_ONLY` use. Admission transactions: queue `0x1661ba1d4f352553d5b1a4ec8020b8e51d0aa9e1503bd93a81d6c6f2b59bfec1`, activation `0x9eefcc4c0c93c4c645d6795fbde4c870a136871af689d8ade32bd97f07b6b0c8`; descriptor `0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f`. This is an admission review, not a security audit or fair-value assessment. MEME has no independent price source and no `PRICE_GUARDED` option. See `evidence/deploy/mainnet-4663-counterasset-meme-review.json` and
 `evidence/deploy/mainnet-4663-verification.json`, and related evidence files.
 
-The Cloudflare pull Worker is deployed at `https://bell-keeper-b.asysyifaq25.workers.dev` (version
-`95f67f44-6146-4ffa-b76b-7a4ef1c627e4`). `/quote?symbol=AAPL|NVDA|TSLA` returns fresh, signed
-bundles with `Cache-Control: no-store` and public CORS. Cloudflare reaches Yahoo's chart JSON through
-Google Translate's relay because direct Yahoo requests time out from the Worker network. The bundle
-still passes the existing symbol, currency, phase, observation-age, and onchain high-water checks.
-The `/pools` endpoint scans `PoolCreated` logs using the Mainnet secondary RPC in bounded parallel
-ranges, then reads hook config and live policy. It returned HTTP 200 with an empty pool list at block
-`102189470`; no live pool has been created yet. The app displays that real empty state and falls back
-to the connected wallet's RPC if the public directory is unavailable.
+The Cloudflare pull quote Worker is deployed at `https://bell-keeper-b.asysyifaq25.workers.dev`
+(version `de1f0d82-98ef-4963-8ad8-ca94915806c0`). `/quote?symbol=AAPL|NVDA|TSLA` signs fresh
+bundles only for configured PRE/REGULAR/POST phases; phase 5 returns “no Yahoo source” intentionally.
+The swap UI uses no new stock quote during phase 5 and asks the router to validate the historical
+close anchor instead. Overnight phase 4 is not configured for live quotes. Yahoo quotes still pass
+symbol, currency, phase, observation-age, and onchain high-water checks. `/pools` returned HTTP 200
+with an empty pool list at block `102238721`; no live pool has been created yet. The app displays
+that real empty state and falls back to the connected wallet's RPC if the public directory is unavailable.
+
+### Session-aware maintenance rollout — 2026-10-31
+
+`CalendarRegistry.activateInterval` was permissionlessly called for AAPL, NVDA, and TSLA after all
+three current intervals had expired. The active phase is 5 through `2026-11-02T09:00:00Z` (04:00
+Eastern Standard Time). Transactions: AAPL `0xbf3a3c7682c3207e3e1fa74db48c44062b501b6a7aa4f60082281fa9e226dd30`,
+NVDA `0x95733483fb9b8a5a4646b6a10bc358d945be608ec475e4dd67acd6d8b0bcbdfd`; TSLA activation:
+block `102233690`. Each calendar activation used about 130,900 gas and cost about `0.00000262 ETH` at the observed fee.
+
+The prior Friday close anchor is missing for all three assets (`anchorStatus` reason bit 2048), so
+weekend swap and weekend pool creation remain unavailable until a valid close is captured. Cloudflare
+now has one weekday UTC cron that advances expired calendar intervals near 04:00, 09:30, and 16:00
+Eastern, and submits signed source updates plus `captureClose` during the five minutes before 16:00.
+It uses `BELL_TRANSACTION_PRIVATE_KEY`; `0.002 ETH` was moved from the funded deployment wallet to
+that dedicated relayer (`0x01219888c2c11b1078c0a396faf3bc26bba742b5c5dea5a6db524ace62561c23`). It
+does not publish stock prices every few minutes. The first scheduled close capture after deployment
+is Monday 2026-11-02 at 15:55 Eastern (2026-11-02 20:55 UTC); the anchor is valid only if live source,
+direct reference, and onchain checks all pass.
+
+The published calendar roots cover only through 2026-12-29 and use the weekday session template; no
+holiday or early-close table is committed. Queue an accurately sourced replacement before coverage
+ends. Live overnight equities also remain unavailable: the active descriptors do not include an
+overnight stream, and the Chainlink report probe returned Unauthorized. Weekend/overnight use is a
+frozen, validated reference with live pricing for other assets, not a live stock market quote.
 
 Registry health expires after 120 seconds, so it needs a fresh prepare close to pool creation. No fixed
 seed amount is selected. The Create UI reads the current service fee, recipient, wallet balances and gas
