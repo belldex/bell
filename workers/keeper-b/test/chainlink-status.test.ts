@@ -47,12 +47,17 @@ function clientFor({ phase = 4, updatedAt = 950, anchorValid = false } = {}) {
 }
 
 describe('Chainlink Worker status', () => {
-  it('reports the active overnight adapter and its onchain freshness', async () => {
-    const { client, calls } = clientFor({ phase: 4, updatedAt: 950 });
+  it.each([
+    [1, 'PRE', ADDRESS(13)],
+    [2, 'REGULAR', ADDRESS(12)],
+    [3, 'POST', ADDRESS(13)],
+    [4, 'OVERNIGHT', ADDRESS(14)],
+  ])('selects the %s %s adapter and reports its onchain freshness', async (phase, session, expectedAdapter) => {
+    const { client, calls } = clientFor({ phase, updatedAt: 950 });
     const status = await runChainlinkStatus(env, { client: client as any });
     expect(status.mode).toBe('chainlink');
-    expect(status.assets.AAPL).toMatchObject({ phase: 4, session: 'OVERNIGHT', feedAgeSeconds: 50, sessionFeedFresh: true });
-    expect(calls).toContainEqual({ address: ADDRESS(14), functionName: 'readCurrent', blockNumber: 500n });
+    expect(status.assets.AAPL).toMatchObject({ phase, session, feedAgeSeconds: 50, sessionFeedFresh: true });
+    expect(calls).toContainEqual({ address: expectedAdapter, functionName: 'readCurrent', blockNumber: 500n });
   });
 
   it('reports an active-session feed at the strict 120 second boundary as stale', async () => {
