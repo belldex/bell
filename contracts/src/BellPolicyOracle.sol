@@ -9,6 +9,7 @@ import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {ModePolicy} from "./libraries/ModePolicy.sol";
 import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
+import {WidePriceMath} from "./libraries/WidePriceMath.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
 
 /// @dev Narrow local surface of ChainlinkTokenReferenceAdapter consumed with bounded staticcalls.
@@ -93,6 +94,7 @@ contract BellPolicyOracle {
         bool phaseSet;
         bool isStock;
         uint64 healthySince;
+        uint128 closeReferencePrice;
         bool plannedClosed;
         bool activeHealthy;
         bool legHealthy;
@@ -114,6 +116,7 @@ contract BellPolicyOracle {
         uint8 stockMask;
         uint64[2] observations;
         uint64[2] healthySince;
+        uint128[2] closeReferencePrices;
         uint64 poolPauseNonce;
         bool poolPauseOk;
         bytes32 dependencyHash;
@@ -139,7 +142,7 @@ contract BellPolicyOracle {
         // PRICE_GUARDED reference reads happen before the decision so a failed/stale feed is a
         // recorded blocking reason inside the same dependency aggregation, never a revert of the
         // whole evaluate and never a healthy default.
-        (uint128[2] memory referencePrices, uint256 referenceReasons) = _referencePrices(input);
+        (uint128[2] memory referencePrices, uint256 referenceReasons) = _referencePrices(input, deps);
         deps.reasons |= referenceReasons;
 
         ModePolicy.Context memory context;
@@ -214,7 +217,7 @@ contract BellPolicyOracle {
     /// @notice Per-side reference prices for PRICE_GUARDED. Each read is a bounded staticcall: a
     /// failed or stale feed becomes a recorded blocking reason, never a revert of the evaluation and
     /// never a healthy default. SESSION_ONLY (or a pool missing an adapter) reports ([0, 0], 0).
-    function _referencePrices(Input calldata input)
+    function _referencePrices(Input calldata input, DependencyEvaluation memory deps)
         private
         view
         returns (uint128[2] memory prices, uint256 reasons)
@@ -223,8 +226,12 @@ contract BellPolicyOracle {
             || input.referenceAdapter1 == address(0)) {
             return (prices, 0);
         }
-        prices[0] = _readReferencePrice(input.referenceAdapter0);
-        prices[1] = _readReferencePrice(input.referenceAdapter1);
+        prices[0] = deps.closeReferencePrices[0] != 0
+            ? deps.closeReferencePrices[0]
+            : _readReferencePrice(input.referenceAdapter0);
+        prices[1] = deps.closeReferencePrices[1] != 0
+            ? deps.closeReferencePrices[1]
+            : _readReferencePrice(input.referenceAdapter1);
         // A zero price means the bounded read failed, returned out of domain or reported a stale
         // feed (the adapter reverts); either way the side cannot anchor a price and blocks trading.
         if (prices[0] == 0 || prices[1] == 0) reasons = ReasonBits.PRICE_INPUT_INVALID_OR_STALE;
@@ -279,7 +286,10 @@ contract BellPolicyOracle {
             input, [uint128(0), uint128(0)], [uint128(0), uint128(0)], [uint128(0), uint128(0)]
         );
         if (!o.canSwap) revert PolicyBlocked(o.reasonBits);
-        if (input.poolClass != uint8(PoolClass.SESSION_ONLY)) revert PolicyBlocked(ReasonBits.PRICE_INPUT_INVALID_OR_STALE);
+        if (input.poolClass == uint8(PoolClass.PRICE_GUARDED)
+            && (o.referencePrice18[0] == 0 || o.referencePrice18[1] == 0)) {
+            revert PolicyBlocked(ReasonBits.PRICE_INPUT_INVALID_OR_STALE);
+        }
 
         IBellSwapEvaluator.Context memory context;
         context.configHash = input.configHash;
@@ -299,6 +309,7 @@ contract BellPolicyOracle {
         context.tradeCap = input.tradeCap;
         context.windowCap = input.windowCap;
         context.closureCap = input.closureCap;
+        context.referencePrice18 = o.referencePrice18;
         snapshot = IBellSwapEvaluator(evaluator).prepare(context, callbackHash, zeroForOne, amountSpecified);
     }
 
@@ -332,6 +343,74 @@ contract BellPolicyOracle {
         return _evaluateDependencies(input);
     }
 
+    /// @notice Validates fully seeded pool activation and returns 1=open, 2=verified close, 3=closed staging.
+    /// @dev Keeping this aggregation beside dependency evaluation avoids duplicating large validation logic in
+    /// the CREATE2 hook. Status 3 is only possible for a proven planned close with a narrowly missing price input.
+    function activationStatus(Input calldata input, uint160 poolSqrtPriceX96, uint8[2] calldata decimals)
+        external view returns (uint8 status, uint64 validUntil, uint64[2] memory observations)
+    {
+        DependencyEvaluation memory deps = _evaluateDependencies(input);
+        return _classifyActivation(input, deps, poolSqrtPriceX96, decimals);
+    }
+
+    function _classifyActivation(
+        Input calldata input,
+        DependencyEvaluation memory deps,
+        uint160 poolSqrtPriceX96,
+        uint8[2] calldata decimals
+    ) private view returns (uint8 status, uint64 validUntil, uint64[2] memory observations) {
+        (uint128[2] memory refs, uint256 refReasons) = _referencePrices(input, deps);
+        bool refsReady = refReasons == 0 && (input.poolClass != uint8(PoolClass.PRICE_GUARDED)
+            || (refs[0] != 0 && refs[1] != 0));
+        bool openReady = deps.reasons == 0 && refsReady && deps.phaseSet
+            && deps.phase != PolicyConstants.PHASE_CLOSED && deps.allLegsHealthy
+            && deps.validUntil > block.timestamp && deps.stockMask != 0;
+        bool closedReady = deps.reasons == 0 && refsReady && deps.phaseSet
+            && deps.phase == PolicyConstants.PHASE_CLOSED && deps.anyPlannedClosed
+            && deps.closureContextValid && deps.allLegsHealthy && deps.validUntil > block.timestamp
+            && deps.stockMask != 0;
+        uint256 stageReasons = ReasonBits.SETUP | ReasonBits.UNEXPECTED_CLOSED
+            | ReasonBits.ANCHOR_MISSING_OR_EXPIRED | ReasonBits.PRICE_INPUT_INVALID_OR_STALE;
+        bool canStageClosed = deps.phaseSet && deps.phase == PolicyConstants.PHASE_CLOSED
+            && deps.stockMask != 0 && deps.reasons & ~(ReasonBits.UNEXPECTED_CLOSED
+                | ReasonBits.ANCHOR_MISSING_OR_EXPIRED) == 0
+            && (deps.reasons | refReasons) & ~stageReasons == 0;
+
+        if (openReady) status = 1;
+        else if (closedReady) status = 2;
+        else if (canStageClosed) status = 3;
+        if (status == 1 || status == 2) {
+            uint16 band = status == 2 ? PolicyConstants.FROZEN_STOCK_BAND_BPS : PolicyConstants.ACTIVE_BAND_BPS;
+            if (input.poolClass == uint8(PoolClass.PRICE_GUARDED)
+                && (refReasons != 0 || !_isActivationPriceWithinBand(poolSqrtPriceX96, refs, decimals, band))) {
+                status = 0;
+            }
+        }
+        validUntil = deps.validUntil;
+        observations = deps.observations;
+        if (status == 1) {
+            for (uint256 i; i < 2; ++i) {
+                // forge-lint: disable-next-line(incorrect-shift)
+                if ((deps.stockMask & uint8(1 << i)) == 0) continue;
+                if (deps.healthySince[i] == 0
+                    || uint256(deps.healthySince[i]) + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS > block.timestamp
+                    || deps.observations[i] == 0) status = 0;
+            }
+        }
+    }
+
+    function _isActivationPriceWithinBand(
+        uint160 sqrtPriceX96,
+        uint128[2] memory prices,
+        uint8[2] calldata decimals,
+        uint16 band
+    ) private pure returns (bool) {
+        return prices[0] != 0 && prices[1] != 0
+            && WidePriceMath.isWithinPriceBand(
+                sqrtPriceX96, prices[0], prices[1], decimals[0], decimals[1], band
+            );
+    }
+
     function _evaluateDependencies(Input calldata input) private view returns (DependencyEvaluation memory deps) {
         deps.validUntil = type(uint64).max;
         deps.phase = PolicyConstants.PHASE_UNKNOWN;
@@ -361,6 +440,8 @@ contract BellPolicyOracle {
         deps.observations[1] = e1.observation;
         deps.healthySince[0] = e0.healthySince;
         deps.healthySince[1] = e1.healthySince;
+        deps.closeReferencePrices[0] = e0.closeReferencePrice;
+        deps.closeReferencePrices[1] = e1.closeReferencePrice;
         deps.anyPlannedClosed = e0.plannedClosed || e1.plannedClosed;
         deps.unexpectedClosed = e0.unexpectedClosed || e1.unexpectedClosed;
         deps.allLegsHealthy = e0.legHealthy && e1.legHealthy;
@@ -600,6 +681,7 @@ contract BellPolicyOracle {
             result.plannedClosed = true;
             result.closureContextOk = true;
             result.legHealthy = true;
+            result.closeReferencePrice = anchor.price18;
             if (anchorValidUntil < result.validUntil) result.validUntil = anchorValidUntil;
             if (interval.end < result.validUntil) result.validUntil = interval.end;
         } else {

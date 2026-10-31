@@ -46,6 +46,8 @@
     "mainnet:preflight": "node scripts/deploy/mainnet-preflight.mjs",
     "mainnet:deploy": "node scripts/deploy/deploy-mainnet.mjs",
     "mainnet:deploy:broadcast": "node scripts/deploy/deploy-mainnet.mjs --broadcast",
+    "mainnet:factory-upgrade": "node scripts/deploy/deploy-mainnet-factory-update.mjs",
+    "mainnet:factory-upgrade:broadcast": "node scripts/deploy/deploy-mainnet-factory-update.mjs --broadcast",
     "mainnet:verify": "node scripts/deploy/verify-mainnet-deployment.mjs",
     "mainnet:verify:check": "node scripts/deploy/verify-mainnet-deployment.mjs --check",
     "mainnet:yahoo-stack": "node scripts/deploy/mainnet-yahoo-stack.mjs",

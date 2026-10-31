@@ -28,18 +28,22 @@ export function isCloseCaptureWindow(current, upcoming, nowSeconds) {
     && now < upcomingStart && upcomingStart - now <= BigInt(CLOSE_CAPTURE_WINDOW_SECONDS);
 }
 
-/** A single UTC cron covers both US daylight offsets; ignore its cross-product minutes. */
+/** Match the pinned US Eastern session boundaries across both daylight offsets. */
 export function isScheduledMaintenanceWindow(nowSeconds) {
   const date = new Date(Number(nowSeconds) * 1000);
-  const weekday = date.getUTCDay();
-  if (weekday === 0 || weekday === 6) return false;
-  const hour = date.getUTCHours();
-  const minute = date.getUTCMinutes();
-  const premarket = [8, 9].includes(hour) && minute <= 4;
-  const regular = [13, 14].includes(hour) && minute >= 30 && minute <= 34;
-  const closeCapture = [19, 20].includes(hour) && minute >= 55;
-  const marketFree = [20, 21].includes(hour) && minute <= 4;
-  return premarket || regular || closeCapture || marketFree;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(date);
+  const weekday = parts.find((part) => part.type === 'weekday')?.value;
+  if (!['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(weekday)) return false;
+  const minuteOfDay = Number(parts.find((part) => part.type === 'hour')?.value ?? 0) * 60
+    + Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
+  const boundaries = [0, 240, 570, 780, 960, 1020, 1200];
+  return boundaries.some((boundary) => {
+    const before = (boundary - minuteOfDay + 1440) % 1440;
+    const after = (minuteOfDay - boundary + 1440) % 1440;
+    return (before > 0 && before <= 5) || after <= 4;
+  });
 }
 
 export function phaseNameForCalendarPhase(phase) {

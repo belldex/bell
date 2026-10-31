@@ -25,8 +25,8 @@ test('admission runner admits every candidate stock, not a single configured sym
   // `configured.assets` is the candidate list source; `adapters.assets` is the deployed per-symbol map.
   assert.match(admitRunner, /configured\.assets\.map|candidates\.assets/);
   assert.match(admitRunner, /adapters\.assets\[/);
-  // Capability mask must include PRE|REGULAR|POST (0b1110) per the brief's session scope.
-  assert.match(admitRunner, /0b1110|14\b/, 'capability mask must cover PRE+REGULAR+POST');
+  // Capability mask must include PRE|REGULAR|POST|OVERNIGHT (0b11110) for the deployed scope.
+  assert.match(admitRunner, /0b11110|30\b/, 'capability mask must cover all four equity sessions');
 });
 
 test('brief decision removed the four-weekend gate so runners must not wait for it', () => {

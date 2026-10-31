@@ -1,60 +1,43 @@
-# Data Access and Redistribution Limits (M01-04)
+# Data Access and Redistribution Limits
 
-Status of this file: `config/sources/rights-status.json` → **BLOCKED_ACCESS**. No source has been
-admitted for production.
+## Current Mainnet path
 
-## Direction change: Chainlink → Yahoo
+Mainnet reads the public Chainlink Robinhood Chain `AggregatorV3` equity Data Feeds onchain. The active
+proxies are recorded in `evidence/deploy/mainnet-4663-chainlink-session-adapters.json`; the current feed
+directory snapshot is `evidence/runtime/chainlink-robinhood-feed-directory-2026-10-31.json`.
 
-The current price path is **the public Yahoo Finance chart + a BELL EIP-712 reporter**.
-Chainlink Data Streams was dropped because it is paid. Therefore:
+The Chainlink directory lists one `us_equities_24/5` Data Feed proxy per ticker, with an 86,400-second
+heartbeat and 0.5% deviation threshold. BELL uses that same canonical proxy in phase-scoped PRE,
+REGULAR, POST, and OVERNIGHT adapters. Calendar and source checks stay session-specific. BELL policy
+allows input ages up to 60 seconds in REGULAR, 120 seconds in PRE/POST, and 300 seconds in OVERNIGHT.
+The Chainlink adapter itself rejects rounds 120 seconds old or older, so the effective Chainlink gates
+are 60 seconds in REGULAR and under 120 seconds in PRE/POST/OVERNIGHT. Both the Worker and UI report the
+effective gate for the selected session. These are BELL policy limits, not a Chainlink freshness promise;
+historical rounds show that they can make swaps unavailable for long intervals. See
+`docs/CURRENT-STATE.md` before describing availability.
 
-- The Chainlink section below is retained as historical documentation, not as an active path.
-- The current data-rights question concerns **Yahoo**, and it **has not been answered**.
+The onchain proxy and round data are public contract state. This path does not fetch or redistribute raw
+Data Streams reports and does not require a Data Streams subscription or a keeper transaction to update
+the Chainlink proxy.
 
-## Yahoo Finance (jalur aktif)
+## Chainlink Data Streams (separate paid product; not active)
 
-- Endpoint: `query1.finance.yahoo.com/v8/finance/chart/{SYMBOL}`. Gratis, tanpa API key.
-- Yahoo does **not sign** its HTTP responses. Cryptographic assurance is provided by the BELL reporter
-  (`YahooSourceVerifier` + EIP-712), not Yahoo. This makes the reporter key a new trust boundary that must
-  be protected like an oracle key.
-- Session coverage: PRE, REGULAR, POST. **There is no OVERNIGHT feed.** Yahoo must not be used to claim
-  overnight sessions are healthy.
-- Unresolved limits that must not be claimed as settled:
-  - rights to redistribute derived prices to product users (`derivedCustomerProduct` = NOT_VERIFIED);
-  - rights to store/back up raw prices (`encryptedBackup` = NOT_VERIFIED);
-  - hak pemrosesan internal (`internalProcessing` = NOT_VERIFIED).
-- **Allowed**: display indicative prices in the UI with a disclaimer and cited source.
-- **Not allowed**: describe Yahoo prices as "provider-signed" or treat public access as permission for
-  commercial redistribution.
+Data Streams provides low-latency signed reports, including separate Regular, Extended, and Overnight
+24/5 U.S. equity streams. It is not the same as the push-based onchain Data Feed above. The local mainnet
+credential authenticates, but the account currently has no entitled feeds; no subscription has been
+created. Evidence: `evidence/runtime/chainlink-entitlement-live-2026-10-31.json`. Do not switch the active
+registry to the V11 report adapter until authorized report access is available and verified. Raw report
+redistribution remains disallowed under the current rights record.
 
-## Chainlink Data Streams (historical, not in use)
+## Yahoo Finance (historical/testnet rehearsal path)
 
-- Akses = entitlement per API key (username + HMAC secret). Kredensial di `.env` (gitignored).
-- Redistribution of raw reports without rights is not permitted; reports are only for guard/quote/verify.
-- Robinhood equity streams are hidden streams, visible only to keys with active entitlement.
-- Probe 2026-10-26: the Testnet endpoint returned `Unauthorized` because the available credentials were
-  mainnet-only. This, along with cost, prompted the pivot.
+The Yahoo chart endpoint and BELL EIP-712 reporter remain in the repository for testnet rehearsal. That
+path has PRE/REGULAR/POST coverage but no overnight source; it is not the active Mainnet price path. Yahoo
+does not sign its HTTP responses. Do not describe its prices as provider-signed, or infer commercial
+redistribution rights from public HTTP access. See `docs/runbooks/yahoo-source.md` for its testnet details.
 
-## Data on-chain (publik)
+## Internal data
 
-- State/log/block data via authenticated RPC may be read, stored, and redisplayed (public consensus data).
-- Push-based on-chain feeds (24-hour heartbeat): public proxy metadata; daily reference only, never used as
-  an execution price.
-
-## Data internet indikatif
-
-- May be used in the UI/display with an "indicative" disclaimer and cited source.
-- Must not enter signing/keeper/on-chain verification paths without BELL attestation.
-
-## Penyimpanan internal
-
-- `incident_records`, `service_metrics`, `job_lease_history` = PRIVATE_OPS (RLS default-deny).
-- AES-256-GCM encrypted backups go to a private bucket; keys are in the local secret manager.
-- The frontend only receives sanitized data through public views + a typed API.
-
-## What will unblock this
-
-1. The project owner's decision on Yahoo data usage scope (indicative only vs. derived product).
-2. If a paid path with clear rights is needed, select an SLA-backed provider; this is a separate cost decision,
-   independent of the technical work.
-3. Once a decision is made, populate `config/sources/rights-status.json` so M01-04 can proceed.
+- `incident_records`, `service_metrics`, and `job_lease_history` are PRIVATE_OPS with default-deny RLS.
+- AES-256-GCM encrypted backups go to a private bucket; keys stay in the local secret manager.
+- The frontend receives sanitized data through public views and a typed API.

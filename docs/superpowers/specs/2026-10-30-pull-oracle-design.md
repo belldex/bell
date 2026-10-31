@@ -1,5 +1,7 @@
 # BELL Pull Oracle Design
 
+> Historical design for the signed Yahoo pull path. Superseded for the new Mainnet migration by [Chainlink Onchain Equity Feed Design](./2026-10-31-chainlink-onchain-feed-design.md); the current production deployment remains on this design until that migration is activated.
+
 ## Goal
 
 Keep AAPL, NVDA, and TSLA available in the full pool matrix while removing routine Yahoo report transactions when no one is trading.

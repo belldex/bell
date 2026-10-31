@@ -1,5 +1,10 @@
 # BELL Full-Product Mainnet Implementation Plan
 
+> **Historical plan snapshot.** This plan predates the Mainnet Chainlink 24/5 Data Feed migration. Its
+> Yahoo-as-active-source and overnight-unavailable statements are superseded by the deployed state in
+> [`docs/CURRENT-STATE.md`](../../CURRENT-STATE.md). Keep this file as implementation history; do not
+> execute it as the current deployment plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement the full BELL product scope on the live mainnet stack — multi-asset admission (AAPL/NVDA/TSLA), all supported sessions, `PRICE_GUARDED` via free onchain Chainlink Data Feeds, multi-asset keeper, pools per brief pair matrix, and acceptance — in one continuous push.

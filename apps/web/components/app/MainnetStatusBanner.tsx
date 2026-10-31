@@ -1,5 +1,5 @@
 import manifest from '../../../../evidence/deploy/mainnet-4663.json';
-import Link from 'next/link';
+import { MainnetSessionFeedStatus } from './MainnetSessionFeedStatus';
 
 const contracts = Object.entries(manifest)
   .filter(([key, value]) => key !== 'status' && key !== 'note' && key !== 'chainId' && key !== 'deployer' && key !== 'treasury' && key !== 'serviceRecipient' && typeof value === 'string' && value.startsWith('0x')) as Array<[string, string]>;
@@ -10,23 +10,12 @@ export function MainnetStatusBanner() {
   return (
     <section className="app-mainnet-status" aria-label="Mainnet deployment status">
       <div className="app-mainnet-status__headline">
-        <p>Network status</p>
-        <strong>Robinhood Chain Mainnet</strong>
-        <span className="app-mainnet-status__chain">Chain 4663 · contracts live</span>
+        <p>Robinhood Chain <span>·</span> Mainnet</p>
+        <strong>Contracts and asset registry live <span>4663</span></strong>
       </div>
-      <div className="app-mainnet-status__assets">
-        <span className="app-mainnet-status__label">Admitted assets</span>
-        <div className="app-mainnet-status__asset-list" aria-label="Admitted assets: AAPL, NVDA, TSLA, USDG, WETH, and MEME">
-          {['AAPL', 'NVDA', 'TSLA', 'USDG', 'WETH', 'MEME'].map((asset) => <span key={asset}>{asset}</span>)}
-        </div>
-        <p>MEME is available for SESSION_ONLY pools only.</p>
-      </div>
-      <div className="app-mainnet-status__availability">
-        <span className="app-mainnet-status__state">Live factory directory</span>
-        <Link href="/pools">View live directory <span aria-hidden="true">↗</span></Link>
-        <a href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Block explorer <span aria-hidden="true">↗</span></a>
-      </div>
-      <p className="app-mainnet-status__disclosure">Yahoo data rights and an independent audit are not verified.</p>
+      <p className="app-mainnet-status__disclosure">Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. Chainlink freshness is session-specific: up to 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale rounds block swaps, and feed updates can be intermittent. No Mainnet pool or swap exists yet. An independent security audit is not complete. BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc.</p>
+      <MainnetSessionFeedStatus />
+      <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
       <details className="app-mainnet-status__contracts">
         <summary>Contract addresses</summary>
         <dl>

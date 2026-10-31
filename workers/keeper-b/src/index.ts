@@ -1,10 +1,8 @@
 /**
  * BELL keeper Worker.
  *
- * Runs on a Durable Object alarm every 30 seconds. Each tick:
- *   1. reads the active onchain calendar phase for the configured rehearsal asset
- *   2. fetches a Yahoo quote and refuses to publish if the phase does not match
- *   3. signs and publishes the direct sample, the phase-matched stream report, and refreshes health
+ * Mainnet calendar maintenance is boundary-triggered. Stock prices are read from Chainlink
+ * AggregatorV3 onchain by SessionRegistry; this Worker does not publish routine price updates.
  *
  * A closed market or a stale quote is a normal state: the tick records why it skipped and the
  * alarm keeps running. Hard failures are recorded in the Durable Object so they are visible from
@@ -30,6 +28,7 @@ import { hashCalendarLeaf } from '@bell/protocol/calendar';
 import { encodeOraclePullUpdates } from '@bell/protocol/swap-codec';
 import { fetchYahooChartQuote } from '@bell/protocol/yahoo-quote';
 import { evaluateQuote, isCloseCaptureWindow, isScheduledMaintenanceWindow, phaseNameForCalendarPhase, reportValidUntil, wireForCalendarPhase, ZERO32 } from './tick-policy.mjs';
+import { runChainlinkStatus } from './chainlink-status.mjs';
 import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 
@@ -44,6 +43,7 @@ const SESSION_ABI = parseAbi([
   'function latestSample(bytes32,uint8) view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
   'function submitReports(bytes32,bytes[])',
   'function refreshHealth(bytes32) returns (uint256)',
+  'function captureClose(bytes32,bytes32) returns ((bytes32 assetId,bytes32 boundaryHash,uint128 price18,uint128 multiplier18,uint64 capturedAt,uint64 observedAt,uint64 inputAt,uint64 closureStart,bytes32 sourceHash))',
   'function health(bytes32) view returns ((bool ready,uint256 reasonBits,uint64 healthySince,uint64 validUntil,uint64 baselineObservation,uint64 latestObservation))',
   'function anchorStatus(bytes32,bytes32) view returns ((bytes32 assetId,bytes32 boundaryHash,uint128 price18,uint128 multiplier18,uint64 capturedAt,uint64 observedAt,uint64 inputAt,uint64 closureStart,bytes32 sourceHash),bool valid,uint256 reasons,uint64 validUntil)',
   'function applyPoolOracleUpdates(bytes32,bytes32,bytes,bool)',
@@ -59,6 +59,7 @@ const HOOK_ABI = parseAbi([
 const POOL_CREATED_EVENT = parseAbiItem('event PoolCreated(address indexed hook,bytes32 indexed poolId,bytes32 configHash,address indexed creator,address recipient)');
 const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
 const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
+const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
 const TOKEN_ABI = parseAbi(['function symbol() view returns (string)', 'function decimals() view returns (uint8)']);
 
 function json(body, status = 200) {
@@ -75,6 +76,7 @@ function quoteError(message, status = 422) {
 /** Read and sign only. The caller submits the bundle for onchain validation. */
 export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
   if (!['AAPL', 'NVDA', 'TSLA'].includes(symbol)) throw quoteError('unsupported symbol', 400);
+  if (env.BELL_ORACLE_MODE === 'chainlink') throw quoteError('stock prices are read from onchain Chainlink feeds; Worker-signed quote endpoint is disabled', 410);
   const assets = JSON.parse(env.BELL_STOCK_ASSETS || '[]');
   const asset = assets.find((entry) => entry.symbol === symbol);
   if (!asset) throw quoteError('symbol is not configured', 400);
@@ -146,8 +148,8 @@ export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now()
 
 /**
  * Low-frequency, session-bound Mainnet maintenance. Calendar intervals are advanced only when
- * their previous interval expires; signed prices are sent onchain only in the five-minute close
- * window so SessionRegistry can preserve a verified historical reference for market-free hours.
+ * their previous interval expires; in Chainlink mode the Worker asks SessionRegistry to capture
+ * a close directly from the onchain feed during the five-minute boundary window.
  */
 export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Date.now() / 1000) } = {}) {
   if (!isScheduledMaintenanceWindow(nowSeconds)) return { status: 'skipped', reason: 'outside a US market session boundary window' };
@@ -155,9 +157,10 @@ export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Dat
   const calendarRegistry = env.BELL_CALENDAR_REGISTRY;
   const sessionRegistry = env.BELL_SESSION_REGISTRY;
   const counterAssetId = env.BELL_CALENDAR_COUNTER_ASSET_ID;
+  const chainlinkMode = env.BELL_ORACLE_MODE === 'chainlink';
   const rootConfigs = JSON.parse(env.BELL_CALENDAR_ROOTS || '{}');
   const assets = JSON.parse(env.BELL_STOCK_ASSETS || '[]');
-  if (!txKey || !calendarRegistry || !sessionRegistry || !counterAssetId || assets.length === 0) {
+  if (!txKey || !calendarRegistry || !sessionRegistry || (!counterAssetId && !chainlinkMode) || assets.length === 0) {
     return { status: 'skipped', reason: 'calendar maintenance is not fully configured' };
   }
   const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
@@ -198,20 +201,27 @@ export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Dat
       });
       const [, anchorValid] = await publicClient.readContract({ address: sessionRegistry, abi: SESSION_ABI, functionName: 'anchorStatus', args: [assetId, boundaryHash] });
       if (anchorValid) { results[symbol] = { ...results[symbol], anchor: 'already-valid' }; continue; }
-      const bundle = await runQuote(env, symbol, { nowSeconds });
-      if (bundle.closeBoundaryHash.toLowerCase() !== boundaryHash.toLowerCase()) {
-        results[symbol] = { ...results[symbol], anchor: 'skipped', reason: 'quote bundle did not match the upcoming calendar boundary' };
-        continue;
+      let request;
+      if (chainlinkMode) {
+        request = await publicClient.simulateContract({
+          address: sessionRegistry, abi: SESSION_ABI, functionName: 'captureClose', args: [assetId, boundaryHash], account,
+        });
+      } else {
+        const bundle = await runQuote(env, symbol, { nowSeconds });
+        if (bundle.closeBoundaryHash.toLowerCase() !== boundaryHash.toLowerCase()) {
+          results[symbol] = { ...results[symbol], anchor: 'skipped', reason: 'quote bundle did not match the upcoming calendar boundary' };
+          continue;
+        }
+        const payload = encodeOraclePullUpdates([bundle]);
+        request = await publicClient.simulateContract({
+          address: sessionRegistry, abi: SESSION_ABI, functionName: 'applyPoolOracleUpdates',
+          args: [assetId, counterAssetId, payload, false], account,
+        });
       }
-      const payload = encodeOraclePullUpdates([bundle]);
-      const request = await publicClient.simulateContract({
-        address: sessionRegistry, abi: SESSION_ABI, functionName: 'applyPoolOracleUpdates',
-        args: [assetId, counterAssetId, payload, false], account,
-      });
       const hash = await walletClient.writeContract(request.request);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== 'success') throw new Error(`close capture reverted (${hash})`);
-      results[symbol] = { ...results[symbol], anchor: 'captured', txHash: hash };
+      results[symbol] = { ...results[symbol], anchor: 'captured', source: chainlinkMode ? 'onchain-chainlink-feed' : 'signed-yahoo', txHash: hash };
     } catch (error) {
       results[symbol] = {
         status: 'failed', reason: String(error?.shortMessage ?? error?.message ?? error)
@@ -281,8 +291,9 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   const pools = await Promise.all(unique.map(async (log) => {
     const hook = log.args.hook;
     const config = await chain.readContract({ address: hook, abi: POOL_CONFIG_ABI, functionName: 'config' });
-    const [policy, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
+    const [policy, state, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
       chain.readContract({ address: hook, abi: POOL_POLICY_ABI, functionName: 'getPolicy' }),
+      chain.readContract({ address: hook, abi: POOL_STATE_ABI, functionName: 'state' }),
       chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'symbol' }),
       chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'symbol' }),
       chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
@@ -290,7 +301,7 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
     ]);
     const strings = (values) => Array.from(values, (value) => String(value));
     return {
-      hook, poolId: log.args.poolId, token0: config.token0, token1: config.token1,
+      hook, poolId: log.args.poolId, lifecycle: Number(state.lifecycle), token0: config.token0, token1: config.token1,
       asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
       poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
       tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
@@ -516,7 +527,7 @@ const worker = {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
-    const isPublicRead = ['/quote', '/pools', '/positions'].includes(url.pathname);
+    const isPublicRead = ['/quote', '/pools', '/positions', '/status'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -578,6 +589,14 @@ const worker = {
       });
     }
     if (url.pathname === '/status') {
+      if (env.BELL_ORACLE_MODE === 'chainlink') {
+        try { return cors(json(await runChainlinkStatus(env))); }
+        catch (error) {
+          const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220);
+          console.error('Chainlink status read failed', error?.name ?? 'Error', detail);
+          return cors(json({ error: 'Live Chainlink status is temporarily unavailable' }, 503));
+        }
+      }
       const id = env.KEEPER_DO.idFromName('bell-keeper');
       return env.KEEPER_DO.get(id).fetch(new Request('https://do/status'));
     }

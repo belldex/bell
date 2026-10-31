@@ -8,6 +8,7 @@ test('builds the mainnet multi-asset keeper vars from active evidence without re
   const build = configModule.buildMainnetKeeperVars;
   const manifest = {
     chainId: 4663,
+    assetRegistry: '0x0000000000000000000000000000000000000010',
     calendarRegistry: '0x0000000000000000000000000000000000000011',
     sessionRegistry: '0x0000000000000000000000000000000000000012',
   };
@@ -72,6 +73,64 @@ test('refuses incomplete or non-mainnet keeper evidence', () => {
   assert.equal(typeof configModule?.buildMainnetKeeperVars, 'function');
   const build = configModule.buildMainnetKeeperVars;
   assert.throws(() => build({ manifest: { chainId: 46630 } }), /chainId/);
+});
+
+test('builds the production keeper vars from active Chainlink assets and published calendar roots', () => {
+  const build = configModule?.buildMainnetChainlinkKeeperVars;
+  assert.equal(typeof build, 'function');
+  const b32 = (byte) => '0x' + byte.repeat(32);
+  const manifest = {
+    chainId: 4663,
+    assetRegistry: '0x0000000000000000000000000000000000000010',
+    calendarRegistry: '0x0000000000000000000000000000000000000011',
+    sessionRegistry: '0x0000000000000000000000000000000000000012',
+    poolFactory: '0x0000000000000000000000000000000000000013',
+    positionManager: '0x0000000000000000000000000000000000000014',
+  };
+  const assets = {
+    chainId: 4663,
+    activationPending: false,
+    weth: { descriptorId: b32('70') },
+    counterassets: { MEME: { active: true, descriptorId: b32('71') } },
+    stocks: { AAPL: { symbol: 'AAPL', descriptorId: b32('61') } },
+  };
+  const assetState = {
+    chainId: 4663,
+    stage: 'ACTIVE',
+    stocks: { AAPL: { alreadyActive: true, descriptorId: b32('61') } },
+  };
+  const adapters = {
+    chainId: 4663,
+    assets: {
+      AAPL: {
+        directAdapter: '0x0000000000000000000000000000000000000021',
+        regularAdapter: '0x0000000000000000000000000000000000000022',
+        extendedAdapter: '0x0000000000000000000000000000000000000023',
+        overnightAdapter: '0x0000000000000000000000000000000000000024',
+      },
+    },
+  };
+  const verification = { chainId: 4663, blocks: { verifiedAtBlock: 102269681 } };
+  const calendarStates = {
+    AAPL: {
+      chainId: 4663, assetLabel: 'AAPL', stage: 'INTERVAL_ACTIVE', root: b32('81'),
+      year: 2026, coverageStart: 1793419842, coverageEnd: 1798603842,
+    },
+  };
+
+  const vars = build({ manifest, verification, adapters, assets, assetState, calendarStates });
+  expectJson(vars.BELL_STOCK_ASSETS, [{ symbol: 'AAPL', assetId: b32('61') }]);
+  expectJson(vars.BELL_CALENDAR_ROOTS, {
+    AAPL: { root: b32('81'), year: 2026, coverageStart: 1793419842, coverageEnd: 1798603842, capabilityMask: 30 },
+  });
+  assert.equal(vars.BELL_ORACLE_MODE, 'chainlink');
+  assert.equal(vars.BELL_POOL_SCAN_FROM_BLOCK, '102269681');
+  assert.equal(vars.BELL_POOL_FACTORY, manifest.poolFactory);
+  assert.equal(vars.BELL_ASSET_REGISTRY, manifest.assetRegistry);
+  assert.equal(vars.BELL_POSITION_MANAGER, manifest.positionManager);
+  assert.equal(vars.BELL_CALENDAR_COUNTER_ASSET_ID, assets.weth.descriptorId);
+  assert.equal(vars.BELL_MAINNET_ASSETS, '{}');
+  assert.equal('YAHOO_SOURCE_VERIFIER_ADDRESS' in vars, false);
 });
 
 test('replaces only the Wrangler vars object when values contain nested JSON', () => {

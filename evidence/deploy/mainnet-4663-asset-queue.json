@@ -8,22 +8,14 @@
     "token": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
     "descriptorId": "0xcbb99b58d6eec6885449965262a1f4372f95e2b26ca874ca5ae3a30a277dd864",
     "isStock": false,
-    "operationId": "0xac4ac6323dd721b770144fda6ad61fe5e17ce657daf6c7fc134dcd67b7bf67fa",
-    "eta": 1793370264,
-    "txHash": "0x32cc1404f6ac7a2ba5fb157878527054ed046855b15160d83e9b8fbfe9ba1918",
-    "alreadyActive": false,
-    "active": true
+    "alreadyActive": true
   },
   "counterassets": {
     "MEME": {
       "symbol": "MEME",
-      "name": "A Meme Coin",
       "token": "0x385F4f8ae47651ce5F58F5265395a669f8281e18",
-      "descriptorId": "0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f",
+      "descriptorId": "0x13c864074b482dc9f85395e5f47f0a9464dd3444ea3784e8bfc19ef578403a03",
       "isStock": false,
-      "decimals": 18,
-      "evidenceHash": "0x0e1076e0b791ea38071b9d766a36e95348a9666d1078ac38ac507e20f3ea2478",
-      "allowedPoolClass": "SESSION_ONLY",
       "active": true
     }
   },
@@ -31,34 +23,37 @@
     "AAPL": {
       "symbol": "AAPL",
       "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
-      "descriptorId": "0x85cffee2c6ba44ec5e3e78ca6eba5bb87215a1bda3195519b39129adb58ec464",
+      "descriptorId": "0x846db71c8d321ca12d7708c8158112a62f5c770799bbb1e9786beb977c0e6746",
       "isStock": true,
-      "directAdapter": "0xe6d4df58fa30718c9f8829c78195a7d5672be0b3",
-      "regularAdapter": "0x01cc7bbc4e015298b280237cb050afd873ae28c7",
-      "extendedAdapter": "0x8acbae7fc346a37e2059def357cd2fff23515619"
+      "directAdapter": "0xacc5d29a7be56bf54dec5ce66216b22c45461e44",
+      "regularAdapter": "0x09df1e7a62566c1bcafed8a0b24666c699203850",
+      "extendedAdapter": "0xc125e0a940b5b44a313cb10aabf940158af688fb",
+      "overnightAdapter": "0x2f814f8e59081796622ebdd66d9e08d76b036cc3"
     },
     "NVDA": {
       "symbol": "NVDA",
       "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
-      "descriptorId": "0x692223932c2ef5a8b382af4bf489f90605973d72a301322d1678f853a8c26ffa",
+      "descriptorId": "0x8be195d306480811443a54e01bb2e8dc85444fa62a7addc55c347ca50ee3fe8b",
       "isStock": true,
-      "directAdapter": "0xe7bf28de1433e6846b1aeae2cba4f3ff7ae4e399",
-      "regularAdapter": "0xb7c3f37242277c141ef611baaead1badcf46da4b",
-      "extendedAdapter": "0x49ec6ff967df4c4e3f44f9701de492eb4873e906"
+      "directAdapter": "0x06b3fede7eac97fafaa4f77eb3653b75c269b7c3",
+      "regularAdapter": "0x9aad6451bd052ed65086ba853f171ab2f48db19b",
+      "extendedAdapter": "0x68984740638b3775827d6aca5e68a3e3c67398be",
+      "overnightAdapter": "0x2286610e61293a6a8c9328e2fccaf529a8ca5e0b"
     },
     "TSLA": {
       "symbol": "TSLA",
       "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
-      "descriptorId": "0xbeee032cf51af23c9be2a1354c48a3612921fbbdcabed6fb1e750fb23f3608b6",
+      "descriptorId": "0x9bd48cfd4fa29ebe281de6e1ec774a799d39a914d380ac07bf9a3119eaeb7ae8",
       "isStock": true,
-      "directAdapter": "0x380794a04158a90dcf2a14366258c5373d57aa59",
-      "regularAdapter": "0xb6e9e15d688cc9a5baac0afd7f0982a6665893dc",
-      "extendedAdapter": "0x74fd92c92062e81e22f7f5ca868952cf00225588"
+      "directAdapter": "0x88e05a4664748fafcb6fe67c05593129ab0b2692",
+      "regularAdapter": "0xfc4448cf35cec33cb29515031992e59178ed996b",
+      "extendedAdapter": "0xbb6b6799860bae2a5b935b9723bfb3be0883d774",
+      "overnightAdapter": "0x613fa750060d2727b496350cdfe24d6f20e9593b"
     }
   },
-  "registryAddress": "0xfcbc049c4406d446112735b0bf2a9153500e6d2e",
+  "registryAddress": "0x0d9c0c8b2065b08a8ad4abc861eb128385ef18c6",
   "chainId": 4663,
-  "admittedAt": "2026-10-30T14:24:26.610Z",
+  "admittedAt": "2026-10-31T04:14:34.391Z",
   "activationPending": false,
-  "activatedAt": "2026-10-31T01:38:57.614Z"
+  "activatedAt": "2026-10-31T04:14:39.870Z"
 }

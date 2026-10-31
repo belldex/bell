@@ -1,0 +1,61 @@
+{
+  "capturedAt": "2026-10-31T05:10:27Z",
+  "source": "https://bell-keeper-b.asysyifaq25.workers.dev/status",
+  "workerVersion": "b3c4141c-e6d3-47a0-80ba-d35cd61ebd48",
+  "production": {
+    "alias": "https://bell-black.vercel.app",
+    "deploymentId": "dpl_BJqNzubtZTmrAXPqQod1LggbvMiG",
+    "deploymentUrl": "https://bell-41v0kt381-sifaqs-projects.vercel.app",
+    "readyState": "READY"
+  },
+  "status": {
+    "mode": "chainlink",
+    "chainId": 4663,
+    "blockNumber": 102306702,
+    "blockTimestamp": 1793423427,
+    "checkedAt": 1793423427,
+    "freshnessLimitSeconds": 120,
+    "status": "closed-anchor-missing",
+    "assets": {
+      "AAPL": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419842,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 33554,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793389873
+      },
+      "NVDA": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419847,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 32907,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793390520
+      },
+      "TSLA": {
+        "phase": 5,
+        "session": "CLOSED",
+        "intervalStart": 1793419852,
+        "intervalEnd": 1793581200,
+        "sessionFeedFresh": null,
+        "feedAgeSeconds": 36077,
+        "status": "closed-anchor-missing",
+        "anchorValid": false,
+        "anchorValidUntil": 0,
+        "freshnessLimitSeconds": 120,
+        "updatedAt": 1793387350
+      }
+    }
+  }
+}

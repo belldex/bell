@@ -6,23 +6,14 @@
  * agreement, deployer funding, role separation, and that every external address the deploy binds
  * to actually has code on chain.
  */
-import { readFileSync } from 'node:fs';
 import { createPublicClient, http, parseAbi, formatEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { loadEnvFile } from './env-loader.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const CANONICAL_PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
 
-function loadEnv() {
-  const env = { ...process.env };
-  for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (m && !env[m[1]]) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
-  }
-  return env;
-}
-
-const env = loadEnv();
+const env = loadEnvFile();
 // Configurable floor so the same preflight can gate a funded deploy and still report a useful
 // readiness summary on a fresh wallet. The default stays a real budget, not a token amount.
 // Current measured protocol-stack simulation is about 0.00208 ETH; allow ~3x headroom for gas

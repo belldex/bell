@@ -13,6 +13,7 @@ interface IBellEvents {
     event PoolCreated(address indexed hook, bytes32 indexed poolId, bytes32 configHash, address indexed creator, address recipient);
     event SeedCaptured(bytes32 indexed poolId, uint128 principal0, uint128 principal1);
     event PoolActivated(bytes32 indexed poolId, uint256 tokenId, bytes32 positionKey);
+    event PoolStaged(bytes32 indexed poolId, uint256 tokenId, bytes32 positionKey);
     event ModeCheckpoint(bytes32 indexed poolId, uint8 mode, uint256 reasons, uint64 closureNonce, uint64 reopenCandidateAt);
     event ClosureStarted(bytes32 indexed poolId, uint64 nonce);
     event ClosureEnded(bytes32 indexed poolId, uint64 nonce);

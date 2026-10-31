@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "bbe491421e2724393316d10bc4a58e488237383e3ed2a0a5424ed0e450f58020",
+  "abiSha256": "9daed0099c8332232ad797757561a2291d1264085794da7593954aec4eb68265",
   "interfaces": {
     "AggregatorV3Interface": [
       {
@@ -921,6 +921,31 @@
           {
             "indexed": true,
             "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "tokenId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "bytes32",
+            "name": "positionKey",
+            "type": "bytes32"
+          }
+        ],
+        "name": "PoolStaged",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "bytes32",
             "name": "assetId",
             "type": "bytes32"
           },
@@ -1137,6 +1162,101 @@
         ],
         "name": "activatePool",
         "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "activateStagedPool",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "canSwap",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint8",
+                "name": "mode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "phase",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint16",
+                "name": "flags",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint256",
+                "name": "reasonBits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint24",
+                "name": "lpFeeUnits",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint16",
+                "name": "bandBps",
+                "type": "uint16"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveTradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "effectiveWindowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "rollingRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureRemaining",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "referencePrice18",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint64",
+                "name": "validUntil",
+                "type": "uint64"
+              },
+              {
+                "internalType": "uint64",
+                "name": "closureNonce",
+                "type": "uint64"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "configHash",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "stateHash",
+                "type": "bytes32"
+              }
+            ],
+            "internalType": "struct PolicyView",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
         "stateMutability": "nonpayable",
         "type": "function"
       },

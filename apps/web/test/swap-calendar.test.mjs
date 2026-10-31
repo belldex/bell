@@ -7,10 +7,9 @@ test('market-free phase uses the onchain anchor without requesting a new stock q
   assert.equal(phaseLabel(5), 'Weekend reference');
 });
 
-test('supported market sessions continue to request fresh signed quotes', () => {
-  for (const phase of [1, 2, 3]) assert.equal(quoteSourceForPhase(phase), 'signed-quote');
-  assert.equal(quoteSourceForPhase(4), 'unavailable');
-  assert.equal(phaseLabel(4), 'Overnight source unavailable');
+test('every active market session uses the onchain Chainlink feed', () => {
+  for (const phase of [1, 2, 3, 4]) assert.equal(quoteSourceForPhase(phase), 'chainlink-feed');
+  assert.equal(phaseLabel(4), 'Overnight');
 });
 
 test('unknown phase is unavailable instead of silently using a stale anchor', () => {

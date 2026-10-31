@@ -23,6 +23,7 @@ import { hashCalendarLeaf, verifyMerkleProof } from '../../packages/protocol/src
 import { buildCalendarDataset } from '../calendar/calendar-builder.mjs';
 import { buildEtMarketIntervals } from '../calendar/et-market-calendar.mjs';
 import { planCalendarCoverageStart, planMainnetCalendarTimeline } from '../calendar/mainnet-timeline.mjs';
+import { loadEnvFile } from './env-loader.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const ZERO32 = `0x${'0'.repeat(64)}`;
@@ -34,15 +35,6 @@ import CalendarArtifact from '../../contracts/out/CalendarRegistry.sol/CalendarR
 const CALENDAR_ABI = CalendarArtifact.abi;
 
 const ROOT_STATUS = { 0: 'NONE', 1: 'QUEUED', 2: 'DONE', 3: 'CANCELLED' };
-
-function loadEnv(text) {
-  const env = {};
-  for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
-  }
-  return env;
-}
 
 function readState() {
   if (!existsSync(STATE_PATH_ASSET)) return null;
@@ -58,7 +50,7 @@ function writeState(next) {
   writeFileSync(STATE_PATH_ASSET, `${JSON.stringify({ ...next, assetId, assetLabel, updatedAt: new Date().toISOString() }, null, 2)}\n`);
 }
 
-const env = loadEnv(readFileSync('.env', 'utf8'));
+const env = loadEnvFile();
 for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI', 'BELL_CALENDAR_DAYS', 'BELL_CAPABILITY_MASK']) {
   if (process.env[name] !== undefined) env[name] = process.env[name];
 }
@@ -206,8 +198,8 @@ if (command === 'plan') {
   const year = new Date(coverageStart * 1000).getUTCFullYear();
 
   const intervals = buildEtMarketIntervals(coverageStart, coverageEnd);
-  const provenanceHash = keccak256(stringToHex('BELL_MAINNET_US_EASTERN_SESSIONS_V1'));
-  const capabilityMask = Number(env.BELL_CAPABILITY_MASK || 0b110); // PRE + REGULAR
+  const provenanceHash = keccak256(stringToHex('BELL_RH_245_NYSE_2026_2028_V2'));
+  const capabilityMask = Number(env.BELL_CAPABILITY_MASK || 0b11110); // PRE + REGULAR + POST + OVERNIGHT
   const dataset = buildCalendarDataset({
     schemaVersion: 1,
     chainId: String(chainId),
@@ -220,8 +212,8 @@ if (command === 'plan') {
     datasetProvenance: {
       timezone: 'America/New_York',
       timezoneDatabaseVersion: '2026a',
-      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_SELF_DECLARED_SESSION_TABLE')),
-      sources: [{ sourceId: 'bell-session-table', version: 'v1', hash: provenanceHash }],
+      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_PUBLIC_NYSE_CALENDAR_2026_2028')),
+      sources: [{ sourceId: 'nyse-calendar', version: '2026-2028', hash: provenanceHash }],
     },
     intervals: intervals.map((interval) => ({
       start: String(interval.start),
@@ -326,7 +318,7 @@ if (command === 'plan') {
 
   // Rebuild the same dataset the queue committed, so the proof matches the stored root.
   const intervals = buildEtMarketIntervals(state.coverageStart, state.coverageEnd);
-  const provenanceHash = keccak256(stringToHex('BELL_MAINNET_US_EASTERN_SESSIONS_V1'));
+  const provenanceHash = keccak256(stringToHex('BELL_RH_245_NYSE_2026_2028_V2'));
   const dataset = buildCalendarDataset({
     schemaVersion: 1,
     chainId: String(chainId),
@@ -335,12 +327,12 @@ if (command === 'plan') {
     year: state.year,
     coverageStart: String(state.coverageStart),
     coverageEnd: String(state.coverageEnd),
-    capabilityMask: Number(env.BELL_CAPABILITY_MASK || 0b110),
+    capabilityMask: Number(env.BELL_CAPABILITY_MASK || 0b11110),
     datasetProvenance: {
       timezone: 'America/New_York',
       timezoneDatabaseVersion: '2026a',
-      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_SELF_DECLARED_SESSION_TABLE')),
-      sources: [{ sourceId: 'bell-session-table', version: 'v1', hash: provenanceHash }],
+      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_PUBLIC_NYSE_CALENDAR_2026_2028')),
+      sources: [{ sourceId: 'nyse-calendar', version: '2026-2028', hash: provenanceHash }],
     },
     intervals: intervals.map((i) => ({ start: String(i.start), end: String(i.end), phase: i.phase, provenanceHash })),
   });

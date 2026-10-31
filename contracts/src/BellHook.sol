@@ -322,7 +322,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         returns (bytes4)
     {
         _requireBoundKey(key);
-        if (_state.lifecycle == uint8(Lifecycle.LIVE)) {
+        if (_state.lifecycle == uint8(Lifecycle.LIVE) || _state.lifecycle == uint8(Lifecycle.STAGED)) {
             _validatePublicIncrease(sender, hookData);
             return IHooks.beforeAddLiquidity.selector;
         }
@@ -342,7 +342,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         bytes calldata
     ) internal override returns (bytes4, BalanceDelta) {
         _requireBoundKey(key);
-        if (_state.lifecycle == uint8(Lifecycle.LIVE)) {
+        if (_state.lifecycle == uint8(Lifecycle.LIVE) || _state.lifecycle == uint8(Lifecycle.STAGED)) {
             // Pinned core calls afterAdd only after the matching beforeAdd succeeded in this unlock.
             // LIVE cannot transition back to SEEDING; no state from a PUBLIC add is seed accounting.
             return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
@@ -570,27 +570,25 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         if (block.timestamp > type(uint64).max || block.timestamp < PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS) {
             revert BadSeed();
         }
-        BellPolicyOracle.DependencyEvaluation memory bootstrap = policyOracle.bootstrap(_policyInput());
-        if (bootstrap.reasons != 0 || !bootstrap.phaseSet || bootstrap.phase == PolicyConstants.PHASE_CLOSED
-            || !bootstrap.allLegsHealthy || bootstrap.validUntil <= block.timestamp || bootstrap.stockMask == 0) {
-            revert BadSeed();
-        }
-        for (uint256 i; i < 2; ++i) {
-            // forge-lint: disable-next-line(incorrect-shift)
-            if ((bootstrap.stockMask & uint8(1 << i)) == 0) continue;
-            if (bootstrap.healthySince[i] == 0 || uint256(bootstrap.healthySince[i]) + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS > block.timestamp
-                || bootstrap.observations[i] == 0) revert BadSeed();
-        }
+        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) =
+            _activationStatus();
+        if (activationStatus == 0) revert BadSeed();
 
         _seed.activated = true;
+        if (activationStatus == 3) {
+            _state.lifecycle = uint8(Lifecycle.STAGED);
+            _state.mode = uint8(Mode.SETUP);
+            _state.bellStart = 0;
+            return;
+        }
+
         uint64 activationTime = uint64(block.timestamp);
         _state.lifecycle = uint8(Lifecycle.LIVE);
-        // Until M05-05 installs the swap guard/cap/reference path, the production gate remains HALTED/SETUP.
         _state.mode = uint8(Mode.HALTED);
         _state.bellStart = activationTime;
-        _state.oldValidUntil = bootstrap.validUntil;
-        _state.lastOpenObservations = bootstrap.observations;
-        _state.reopenBaseObservations = bootstrap.observations;
+        _state.oldValidUntil = validUntil;
+        _state.lastOpenObservations = observations;
+        _state.reopenBaseObservations = observations;
     }
 
     // -------------------------------------------------------------------------
@@ -607,7 +605,43 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// vector produced by the same evaluator as `getPolicy`. It never touches `_buckets` or `_episodeGross`, so
     /// pause/fault checkpoints cannot reset or refill accounting.
     function refreshState() external override returns (PolicyView memory policy) {
+        if (_state.lifecycle == uint8(Lifecycle.STAGED)) {
+            (bool activated, PolicyView memory stagedPolicy) = _activateStagedPool();
+            if (activated) return stagedPolicy;
+            return _evaluatePolicy(false).policy;
+        }
         return _checkpointPolicy();
+    }
+
+    /// @notice Permissionless activation for a fully seeded pool created while its oracle inputs were unavailable.
+    /// @dev It only transitions after the same current policy oracle proves healthy open inputs or valid close anchors.
+    function activateStagedPool() external override returns (PolicyView memory policy) {
+        (, policy) = _activateStagedPool();
+    }
+
+    function _activateStagedPool() private returns (bool activated, PolicyView memory policy) {
+        if (_state.lifecycle != uint8(Lifecycle.STAGED) || !_seed.activated || !_seed.captured
+            || _seed.modificationPending || block.timestamp > type(uint64).max) {
+            return (false, _evaluatePolicy(false).policy);
+        }
+        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) =
+            _activationStatus();
+        if (activationStatus != 1 && activationStatus != 2) return (false, _evaluatePolicy(false).policy);
+        _state.lifecycle = uint8(Lifecycle.LIVE);
+        _state.bellStart = uint64(block.timestamp);
+        _state.oldValidUntil = validUntil;
+        _state.lastOpenObservations = observations;
+        _state.reopenBaseObservations = observations;
+        _state.mode = activationStatus == 2 ? uint8(Mode.HALTED) : uint8(Mode.ACTIVE);
+        policy = _checkpointPolicy();
+        return (true, policy);
+    }
+
+    function _activationStatus() private view returns (uint8, uint64, uint64[2] memory) {
+        PoolKey memory key = poolKey();
+        (uint160 sqrtPriceX96,,,) = StateLibrary.getSlot0(poolManager, key.toId());
+        uint8[2] memory decimals = [_readDecimals(_token0), _readDecimals(_token1)];
+        return policyOracle.activationStatus(_policyInput(), sqrtPriceX96, decimals);
     }
 
     /// @notice Apply a complete pool stock update set and commit the ordinary policy/recovery checkpoint.
@@ -676,6 +710,10 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
             policy.mode = uint8(Mode.RECOVERING);
             policy.canSwap = false;
             policy.reasonBits = o.reasonBits | ReasonBits.RECOVERY_PENDING;
+        } else if (!checkpoint && o.beginLatch) {
+            // The view can report a proven CLOSED interval, but only refreshState may commit its latch/nonce.
+            // Keep canSwap false until that checkpoint makes the closure budget episode persistent.
+            policy.canSwap = false;
         }
         policy.phase = o.phase;
         policy.flags = o.flags;

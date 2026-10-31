@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-10-31T05:23:02Z",
+  "project": "bell",
+  "productionAlias": "https://bell-black.vercel.app",
+  "deploymentId": "dpl_8hZFZddGGi6nbRpVSywqivCJsEBH",
+  "deploymentUrl": "https://bell-rjyravr6f-sifaqs-projects.vercel.app",
+  "readyState": "READY",
+  "sourceCommit": "f884ad8",
+  "productionHtmlChecks": {
+    "sessionSpecificFreshnessPresent": true,
+    "obsoleteUniversal120SecondClaimAbsent": true
+  },
+  "worker": {
+    "url": "https://bell-keeper-b.asysyifaq25.workers.dev",
+    "version": "d738c2b2-dcaf-4b51-9dcf-800554ad8f88",
+    "mainnetReadEvidence": "evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json"
+  }
+}

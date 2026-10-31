@@ -3,14 +3,15 @@ pragma solidity 0.8.26;
 
 import {BellHook} from "./BellHook.sol";
 import {BellHookDeployer} from "./BellHookDeployer.sol";
-import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, LiquidityMode, PoolClass} from "./types/ProtocolTypes.sol";
+import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Anchor, LiquidityMode, PoolClass, Lifecycle} from "./types/ProtocolTypes.sol";
 import {TreasuryAdapter} from "./TreasuryAdapter.sol";
-import {IBellPoolFactory, IAssetRegistry, ISessionRegistry} from "./interfaces/IBellProtocol.sol";
+import {IBellPoolFactory, IAssetRegistry, ISessionRegistry, ICalendarRegistry} from "./interfaces/IBellProtocol.sol";
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
 import {PositionReceipt, IPositionReceiptManager} from "./libraries/PositionReceipt.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
 import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {WidePriceMath} from "./libraries/WidePriceMath.sol";
+import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {ChainlinkTokenReferenceAdapter} from "./adapters/ChainlinkTokenReferenceAdapter.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
@@ -148,7 +149,14 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             _verifySpent(request.config.token1, starting[1], request.amountMax[1], principal[1]);
             bytes32 positionKey = keccak256(abi.encodePacked(address(positionManager), request.tickLower, request.tickUpper, bytes32(tokenId)));
             BellHook(hook).activatePool(requestHash, tokenId);
-            emit PoolActivated(id, tokenId, positionKey);
+            if (BellHook(hook).state().lifecycle == uint8(Lifecycle.STAGED)) {
+                emit PoolStaged(id, tokenId, positionKey);
+            } else {
+                emit PoolActivated(id, tokenId, positionKey);
+                if (BellHook(hook).getPolicy().phase == PolicyConstants.PHASE_CLOSED) {
+                    BellHook(hook).refreshState();
+                }
+            }
             _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
             emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
             _refund(request.config.token0, starting[0], request.amountMax[0] - principal[0]);
@@ -164,7 +172,14 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             if (!BellHook(hook).seedCaptured()) revert InvalidRequest();
             uint128[2] memory principal = BellHook(hook).seedPrincipal();
             BellHook(hook).activatePool(requestHash, 0);
-            emit PoolActivated(id, 0, positionKey);
+            if (BellHook(hook).state().lifecycle == uint8(Lifecycle.STAGED)) {
+                emit PoolStaged(id, 0, positionKey);
+            } else {
+                emit PoolActivated(id, 0, positionKey);
+                if (BellHook(hook).getPolicy().phase == PolicyConstants.PHASE_CLOSED) {
+                    BellHook(hook).refreshState();
+                }
+            }
             _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
             emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
             result = CreateResult(hook, id, 0, positionKey, request.liquidity, principal);
@@ -191,8 +206,8 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             || r.maxServiceFee < serviceFee) revert InvalidRequest();
         if (r.sqrtPriceX96 <= TickMath.getSqrtPriceAtTick(r.tickLower)
             || r.sqrtPriceX96 >= TickMath.getSqrtPriceAtTick(r.tickUpper)) revert InvalidRequest();
-        bool stock0 = _admitted(r.config.assetRegistry, r.config.asset0, r.config.token0, r.config.poolClass);
-        bool stock1 = _admitted(r.config.assetRegistry, r.config.asset1, r.config.token1, r.config.poolClass);
+        bool stock0 = _admitted(r.config.assetRegistry, r.config.calendarRegistry, r.config.asset0, r.config.token0, r.config.poolClass);
+        bool stock1 = _admitted(r.config.assetRegistry, r.config.calendarRegistry, r.config.asset1, r.config.token1, r.config.poolClass);
         if (!stock0 && !stock1) revert InvalidConfiguration();
         // SESSION_ONLY requires exactly one verified stock. PRICE_GUARDED can guard a stock/non-stock pair
         // or two stocks, but a pool without any stock is not a BELL product pool.
@@ -218,19 +233,49 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             || (stock1 && ChainlinkTokenReferenceAdapter(adapter1).stockToken() != r.config.token1)) {
             revert InvalidConfiguration();
         }
-        uint128 price0 = ChainlinkTokenReferenceAdapter(adapter0).referencePrice();
-        uint128 price1 = ChainlinkTokenReferenceAdapter(adapter1).referencePrice();
+        (uint128 price0, bool ready0, bool frozen0) = _referencePrice(r.config, r.config.asset0, adapter0, stock0);
+        (uint128 price1, bool ready1, bool frozen1) = _referencePrice(r.config, r.config.asset1, adapter1, stock1);
+        // A closed pool with no close anchor is created in STAGED state. Its user-selected initial
+        // ratio is never tradable until a later activation proves both references and the price band.
+        if (!ready0 || !ready1) return;
         uint8 decimals0 = IERC20Metadata(r.config.token0).decimals();
         uint8 decimals1 = IERC20Metadata(r.config.token1).decimals();
         // Full-precision band math shared with the swap path: the reference ratio is
         // (P0 * 10^d1) / (P1 * 10^d0) on the raw price axis, exactly the convention
         // WidePriceMath.isWithinPriceBand compares sqrtPriceX96^2 against.
-        if (!WidePriceMath.isWithinPriceBand(r.sqrtPriceX96, price0, price1, decimals0, decimals1, PolicyConstants.ACTIVE_BAND_BPS)) {
+        uint16 band = frozen0 || frozen1 ? PolicyConstants.FROZEN_STOCK_BAND_BPS : PolicyConstants.ACTIVE_BAND_BPS;
+        if (!WidePriceMath.isWithinPriceBand(r.sqrtPriceX96, price0, price1, decimals0, decimals1, band)) {
             revert InitialPriceOutOfBand();
         }
     }
 
-    function _admitted(address registry, bytes32 id, address token, uint8 poolClass) private view returns(bool) {
+    function _referencePrice(PoolConfig calldata config, bytes32 assetId, address adapter, bool stock)
+        private view returns (uint128 price, bool ready, bool frozen)
+    {
+        if (stock) {
+            try ICalendarRegistry(config.calendarRegistry).currentInterval(assetId) returns (CalendarLeaf memory interval) {
+                if (interval.phase == PolicyConstants.PHASE_CLOSED && interval.provenanceHash != bytes32(0)
+                    && block.timestamp >= interval.start && block.timestamp < interval.end) {
+                    bytes32 boundary = CalendarProof.hashLeaf(block.chainid, config.calendarRegistry, interval);
+                    (Anchor memory anchor, bool valid, uint256 reasons, uint64 validUntil) =
+                        ISessionRegistry(hookDeployer.sessionRegistry()).anchorStatus(assetId, boundary);
+                    if (valid && reasons == 0 && validUntil > block.timestamp && anchor.price18 != 0) {
+                        return (anchor.price18, true, true);
+                    }
+                    return (0, false, true);
+                }
+            } catch {
+                return (0, false, false);
+            }
+        }
+        try ChainlinkTokenReferenceAdapter(adapter).referencePrice() returns (uint128 current) {
+            return (current, current != 0, false);
+        } catch {
+            return (0, false, false);
+        }
+    }
+
+    function _admitted(address registry, address calendarRegistry, bytes32 id, address token, uint8 poolClass) private view returns(bool) {
         if (id == bytes32(0) || IAssetRegistry(registry).descriptorIdForToken(token) != id) revert InvalidConfiguration();
         AssetDescriptor memory d = IAssetRegistry(registry).descriptor(id);
         if (d.id != id || d.token != token || d.expectedCodeHash != token.codehash || d.evidenceHash == bytes32(0)
@@ -241,9 +286,20 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         // the live adapter and its in-band price ratio immediately after admission.
         if (poolClass == uint8(PoolClass.PRICE_GUARDED) && !d.isStock) return false;
         HealthView memory h = ISessionRegistry(hookDeployer.sessionRegistry()).health(id);
-        if (!h.ready || h.reasonBits != 0 || h.validUntil <= block.timestamp) revert InvalidConfiguration();
+        if (!h.ready || h.reasonBits != 0 || h.validUntil <= block.timestamp) {
+            if (!_plannedClosed(calendarRegistry, id)) revert InvalidConfiguration();
+        }
         return d.isStock;
         // The hook performs the full calendar, pause, stock capability and joint-health checks at activation.
+    }
+
+    function _plannedClosed(address calendarRegistry, bytes32 assetId) private view returns (bool) {
+        try ICalendarRegistry(calendarRegistry).currentInterval(assetId) returns (CalendarLeaf memory interval) {
+            return interval.phase == PolicyConstants.PHASE_CLOSED && interval.provenanceHash != bytes32(0)
+                && block.timestamp >= interval.start && block.timestamp < interval.end;
+        } catch {
+            return false;
+        }
     }
 
     function _mint(CreateRequest calldata r, PoolKey memory key) private {

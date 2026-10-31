@@ -139,7 +139,7 @@ export function Hero() {
             data-reveal
             className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
           >
-            A Uniswap v4 hook layer for tokenized-stock pools. Fees, flow budgets, and recovery rules follow the bourse session, open, extended, overnight, and weekend, so LPs are never priced as if the market never sleeps.
+            A Uniswap v4 hook layer for pools that include Robinhood Stock Tokens. Session-specific fees and flow budgets apply; Chainlink freshness is capped at 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale rounds stop swaps.
           </p>
           <div data-reveal className="mt-8 flex flex-wrap items-center gap-3.5">
             <ButtonLink href="/pools" size="lg">
@@ -151,7 +151,7 @@ export function Hero() {
           </div>
           <div data-reveal className="mt-6 flex items-center gap-2 text-xs text-dim">
             <span className="h-1.5 w-1.5 rounded-full bg-ion" />
-            <span>Preview build · Contracts in development · All pool metrics are sample data</span>
+            <span>Mainnet contracts deployed · No live pool · Freshness can be intermittent</span>
           </div>
         </div>
       </div>

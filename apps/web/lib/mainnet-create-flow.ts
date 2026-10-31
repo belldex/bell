@@ -3,11 +3,10 @@ import {
   type Address, type EIP1193Provider,
 } from 'viem';
 import { makeClients } from './wallet';
-import { MAINNET, oracleUpdate, tokenAbi } from './mainnet-live';
+import { MAINNET, tokenAbi } from './mainnet-live';
 import assetQueue from '../../../evidence/deploy/mainnet-4663-asset-queue.json';
 import deployment from '../../../evidence/deploy/mainnet-4663.json';
 import references from '../../../evidence/deploy/mainnet-4663-reference-adapters.json';
-import yahooAdapters from '../../../evidence/deploy/mainnet-4663-stock-adapters.json';
 import abiManifest from '../../../packages/protocol/generated/abi-manifest.json';
 // @ts-expect-error Shared script module is browser-safe and keeps the factory profile math canonical.
 import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqrtPriceFromAmounts, deriveTickBounds } from '../../../scripts/deploy/mainnet-pool-config.mjs';
@@ -21,7 +20,7 @@ import { createPricePathForPhases } from './create-calendar.mjs';
 import { hashCalendarLeaf } from '@bell/protocol/calendar';
 
 const factoryAbi = abiManifest.interfaces.IBellPoolFactory as Abi;
-const factoryEventAbi = abiManifest.interfaces.IBellEvents.filter((item: any) => item.type === 'event' && ['PoolCreated', 'PoolActivated'].includes(item.name)) as Abi;
+const factoryEventAbi = abiManifest.interfaces.IBellEvents.filter((item: any) => item.type === 'event' && ['PoolCreated', 'PoolActivated', 'PoolStaged'].includes(item.name)) as Abi;
 const registryAbi = parseAbi([
   'function descriptorIdForToken(address token) view returns (bytes32)',
   'function descriptor(bytes32 id) view returns ((bytes32 id,address token,bool isStock,uint8 decimals,uint8 capabilityMask,address tokenPriceAdapter,address regularAdapter,address extendedAdapter,address overnightAdapter,address secondaryAdapter,bytes32 expectedCodeHash,bytes32 implementationFingerprint,bytes32 evidenceHash))',
@@ -51,13 +50,12 @@ export type CreateSelection = {
   wrapWeth: boolean;
 };
 export type CreateStage = { key: string; message: string; hash?: `0x${string}` };
-export type CreateResult = { hook: Address; poolId: `0x${string}`; tokenId: bigint; createHash: `0x${string}`; healthHash: `0x${string}` | null; principal: readonly [bigint, bigint]; token0: Address; token1: Address };
+export type CreateResult = { hook: Address; poolId: `0x${string}`; tokenId: bigint; createHash: `0x${string}`; healthHash: `0x${string}` | null; principal: readonly [bigint, bigint]; staged: boolean; token0: Address; token1: Address };
 
 const publish = (fn: (stage: CreateStage) => void, key: string, message: string, hash?: `0x${string}`) => fn({ key, message, ...(hash ? { hash } : {}) });
 const walletFactory = (deployment as any).poolFactory as Address;
 const queue = assetQueue as any;
 const refs = references as any;
-const adapters = yahooAdapters as any;
 
 export function admittedPair(stockSymbol: string, counterSymbol: string) {
   return resolveAdmittedPair({ stockSymbol, counterSymbol, assetQueue: queue });
@@ -148,10 +146,10 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const calendarPhases = calendarIntervals.map((interval: any) => Number(interval.phase));
   const pricePath = createPricePathForPhases(calendarPhases);
   if (pricePath === 'unavailable') {
-    throw new Error(calendarPhases.includes(4)
-      ? 'An overnight stock price source is not configured for this pool yet.'
-      : 'Stock legs do not share one supported Mainnet price phase. Refresh the calendar and try again.');
+    throw new Error('Stock legs do not share one supported Mainnet price phase. Refresh the calendar and try again.');
   }
+  const closePrices = new Map<string, bigint>();
+  let missingCloseAnchor = false;
   for (const [i, interval] of calendarIntervals.entries()) {
     const data = interval as any;
     if (data.assetId.toLowerCase() !== stockLegs[i].assetId.toLowerCase() || data.end <= block.timestamp) {
@@ -163,26 +161,50 @@ export async function createMainnetPool({ provider, account, selection, onStage 
         assetId: stockLegs[i].assetId, year: Number(data.year), index: Number(data.index),
         start: data.start, end: data.end, phase: Number(data.phase), provenanceHash: data.provenanceHash,
       });
-      const [, valid, , validUntil] = await client.readContract({
+      const [anchor, valid, , validUntil] = await client.readContract({
         address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'anchorStatus',
         args: [stockLegs[i].assetId, boundaryHash],
-      }) as readonly [unknown, boolean, bigint, bigint];
+      }) as readonly [any, boolean, bigint, bigint];
       if (!valid || validUntil <= block.timestamp) {
-        throw new Error(`A verified close reference is not available for ${stockLegs[i].symbol}; pool creation resumes after the next valid market close.`);
+        missingCloseAnchor = true;
+      } else if (BigInt(anchor.price18) > 0n) {
+        closePrices.set(stockLegs[i].assetId.toLowerCase(), BigInt(anchor.price18));
+      } else {
+        missingCloseAnchor = true;
       }
-    } else if (data.phase < 1 || data.phase > 3) {
-      throw new Error(`No fresh signed stock price source is configured for ${stockLegs[i].symbol} in phase ${data.phase}`);
+    } else if (data.phase < 1 || data.phase > 4) {
+      throw new Error(`No fresh onchain stock price source is configured for ${stockLegs[i].symbol} in phase ${data.phase}`);
     }
   }
   const [amount0, amount1] = config.amountMax as readonly [bigint, bigint];
-  const sqrtPriceX96 = selection.poolClass === 0
-    ? deriveInitialSqrtPrice({
-        price0_18: await client.readContract({ address: config.config.referenceAdapter0, abi: referenceAbi, functionName: 'referencePrice' }) as bigint,
-        price1_18: await client.readContract({ address: config.config.referenceAdapter1, abi: referenceAbi, functionName: 'referencePrice' }) as bigint,
+  let sqrtPriceX96: bigint;
+  if (selection.poolClass === 0) {
+    try {
+      const priceFor = async (assetId: `0x${string}`, adapter: Address) => {
+        const anchored = closePrices.get(assetId.toLowerCase());
+        if (anchored) return anchored;
+        return await client.readContract({ address: adapter, abi: referenceAbi, functionName: 'referencePrice' }) as bigint;
+      };
+      const [price0, price1] = await Promise.all([
+        priceFor(config.config.asset0 as `0x${string}`, config.config.referenceAdapter0 as Address),
+        priceFor(config.config.asset1 as `0x${string}`, config.config.referenceAdapter1 as Address),
+      ]);
+      sqrtPriceX96 = deriveInitialSqrtPrice({
+        price0_18: price0, price1_18: price1,
         decimals0: Number(config.token0.toLowerCase() === tokenA.token.toLowerCase() ? decimalsA : decimalsB),
         decimals1: Number(config.token1.toLowerCase() === tokenA.token.toLowerCase() ? decimalsA : decimalsB),
-      })
-    : deriveSqrtPriceFromAmounts({ amount0, amount1 });
+      });
+    } catch (error) {
+      if (pricePath !== 'anchor') throw error;
+      sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
+      missingCloseAnchor = true;
+    }
+  } else {
+    sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
+  }
+  if (pricePath === 'anchor' && missingCloseAnchor) {
+    publish(onStage, 'health', 'No verified close price is available yet. The pool will be seeded in STAGED mode and swaps stay locked until a valid price anchor is captured.');
+  }
   const { tickLower, tickUpper } = deriveTickBounds({ sqrtPriceX96, tickSpacing: 60, halfWidth: 6000 });
 
   const [nonce, nativeBalance, balance0, balance1, feeBalance] = await Promise.all([
@@ -238,22 +260,14 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   }
 
   let healthHash: `0x${string}` | null = null;
-  if (pricePath === 'signed-quote') {
-    emit('health', 'Fetching fresh signed Mainnet quotes for every stock leg…');
-    const updates = await Promise.all(stockLegs.map(async (leg: any) => {
-      const response = await fetch(`${MAINNET.quoteUrl}?symbol=${encodeURIComponent(leg.symbol)}`, { cache: 'no-store' });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error ?? `Quote Worker returned HTTP ${response.status} for ${leg.symbol}`);
-      if (body.assetId?.toLowerCase() !== leg.assetId.toLowerCase()) throw new Error(`Worker quote for ${leg.symbol} has a different admitted asset ID`);
-      return oracleUpdate(body);
-    }));
-    if (updates.length !== stockLegs.length || new Set(updates.map((update: any) => update.assetId.toLowerCase())).size !== stockLegs.length) throw new Error('Fresh signed quote bundles must cover every stock leg exactly once');
-    const payload = encodeOraclePullUpdates(updates);
+  if (pricePath === 'chainlink-feed') {
+    emit('health', 'Reading every stock leg from its current onchain Chainlink feed…');
+    const payload = encodeOraclePullUpdates([]);
     const healthSimulation: any = await client.simulateContract({
       address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'applyPoolOracleUpdates',
       args: [config.asset0, config.asset1, payload, false], account,
     } as any);
-    emit('health', 'Confirm the fresh quote and session-health update in your wallet…');
+    emit('health', 'Confirm the onchain feed freshness check in your wallet…');
     healthHash = await walletClient.writeContract(healthSimulation.request as any);
     emit('health', 'Waiting for SessionRegistry health confirmation…', healthHash);
     const healthReceipt = await client.waitForTransactionReceipt({ hash: healthHash });
@@ -266,7 +280,7 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const currentAccounts = await walletClient.getAddresses();
   if (!currentAccounts.some((address) => address.toLowerCase() === account.toLowerCase())) throw new Error('Connected wallet changed during pool creation; restart the flow');
   const latestBlock = await client.getBlock();
-  if (pricePath === 'signed-quote') {
+  if (pricePath === 'chainlink-feed') {
     const healthViews = await Promise.all(stockLegs.map((leg: any) => client.readContract({ address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'health', args: [leg.assetId] })));
     for (const [i, health] of healthViews.entries()) {
       const state: any = health;
@@ -284,7 +298,9 @@ export async function createMainnetPool({ provider, account, selection, onStage 
         address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'anchorStatus',
         args: [stockLegs[i].assetId, boundaryHash],
       }) as readonly [unknown, boolean, bigint, bigint];
-      if (!valid || validUntil <= latestBlock.timestamp) throw new Error(`Verified close reference expired for ${stockLegs[i].symbol}; restart pool creation after a supported market close.`);
+      if ((!valid || validUntil <= latestBlock.timestamp) && pricePath !== 'anchor') {
+        throw new Error(`Verified close reference expired for ${stockLegs[i].symbol}; restart pool creation after a supported market close.`);
+      }
     }
   }
   const deadline = latestBlock.timestamp + 1200n;
@@ -310,13 +326,20 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   });
   const created: any = decoded.find((event: any) => event?.eventName === 'PoolCreated');
   const activated: any = decoded.find((event: any) => event?.eventName === 'PoolActivated');
-  if (!created || !activated || created.args.creator.toLowerCase() !== account.toLowerCase() || created.args.recipient.toLowerCase() !== account.toLowerCase() || created.args.poolId.toLowerCase() !== activated.args.poolId.toLowerCase() || created.args.poolId.toLowerCase() !== predictedPoolId.toLowerCase() || created.args.hook.toLowerCase() !== mined.hook.toLowerCase()) {
-    throw new Error(`Transaction succeeded but PoolCreated/PoolActivated recipient evidence is missing: ${explorer}/tx/${createHash}`);
+  const stagedEvent: any = decoded.find((event: any) => event?.eventName === 'PoolStaged');
+  const completion = activated ?? stagedEvent;
+  if (!created || !completion || created.args.creator.toLowerCase() !== account.toLowerCase() || created.args.recipient.toLowerCase() !== account.toLowerCase() || created.args.poolId.toLowerCase() !== completion.args.poolId.toLowerCase() || created.args.poolId.toLowerCase() !== predictedPoolId.toLowerCase() || created.args.hook.toLowerCase() !== mined.hook.toLowerCase()) {
+    throw new Error(`Transaction succeeded but PoolCreated and activation/staging evidence is missing: ${explorer}/tx/${createHash}`);
   }
-  const tokenId = BigInt(activated.args.tokenId);
-  const owner = await client.readContract({ address: (deployment as any).positionManager, abi: parseAbi(['function ownerOf(uint256 tokenId) view returns (address)']), functionName: 'ownerOf', args: [tokenId] });
-  if (owner.toLowerCase() !== account.toLowerCase()) throw new Error(`Position NFT owner check failed; inspect ${explorer}/tx/${createHash}`);
+  const tokenId = BigInt(completion.args.tokenId);
+  if (tokenId > 0n) {
+    const owner = await client.readContract({ address: (deployment as any).positionManager, abi: parseAbi(['function ownerOf(uint256 tokenId) view returns (address)']), functionName: 'ownerOf', args: [tokenId] });
+    if (owner.toLowerCase() !== account.toLowerCase()) throw new Error(`Position NFT owner check failed; inspect ${explorer}/tx/${createHash}`);
+  }
   const principal = await client.readContract({ address: created.args.hook, abi: seedAbi, functionName: 'seedPrincipal' }) as readonly [bigint, bigint];
-  emit('complete', `Pool created and seeded in block ${receipt.blockNumber}. Position NFT #${tokenId} belongs to your wallet.`, createHash);
-  return { hook: created.args.hook as Address, poolId: created.args.poolId as `0x${string}`, tokenId, createHash, healthHash, principal, token0: config.token0 as Address, token1: config.token1 as Address };
+  const staged = Boolean(stagedEvent);
+  emit('complete', staged
+    ? `Pool created and seeded in block ${receipt.blockNumber}. It is STAGED; swaps stay locked until a valid price source is available.`
+    : `Pool created and seeded in block ${receipt.blockNumber}. Position NFT #${tokenId} belongs to your wallet.`, createHash);
+  return { hook: created.args.hook as Address, poolId: created.args.poolId as `0x${string}`, tokenId, createHash, healthHash, principal, staged, token0: config.token0 as Address, token1: config.token1 as Address };
 }

@@ -2,62 +2,108 @@
 
 Single source of truth. Every claim is backed by a transaction or on-chain state.
 
-## Mainnet snapshot — Robinhood Chain 4663
+## Current Mainnet deployment — Robinhood Chain 4663 (2026-10-31 04:38 UTC)
 
-The 11-contract protocol stack is deployed and verified at block `101806323` (manifest hash
-`0xf4a8e9cd8baeca87530d7ab52b45c58dd2bff08123f1097e5348f06dd46a3bb4`). The Yahoo verifier and
-AAPL/NVDA/TSLA adapters, Chainlink reference adapters, WETH/USDG and all three stock admissions, and
-their calendars are active. MEME (`0x385F4f8ae47651ce5F58F5265395a669f8281e18`) was separately reviewed and admitted to AssetRegistry for `SESSION_ONLY` use. Admission transactions: queue `0x1661ba1d4f352553d5b1a4ec8020b8e51d0aa9e1503bd93a81d6c6f2b59bfec1`, activation `0x9eefcc4c0c93c4c645d6795fbde4c870a136871af689d8ade32bd97f07b6b0c8`; descriptor `0x42c37e7e9a00925ae632b808beaec5d21a822eef271cd35f27935ca9a45bd46f`. This is an admission review, not a security audit or fair-value assessment. MEME has no independent price source and no `PRICE_GUARDED` option. See `evidence/deploy/mainnet-4663-counterasset-meme-review.json` and
-`evidence/deploy/mainnet-4663-verification.json`, and related evidence files.
+The replacement 11-contract protocol stack is deployed and code-verified at block `102269681`.
+Manifest hash: `0x3751ed73b05955f178f588033df5ba2e96da083a64d81faa074a876b7a624bc6`.
+Pinned Chainlink session adapters are deployed for AAPL, NVDA, and TSLA. The active AssetRegistry
+contains those stocks, WETH, USDG, and MEME. MEME is unpriced, has capability mask zero, and can only
+be used in a `SESSION_ONLY` pool; admission is not a token audit or fair-value assessment.
 
-The Cloudflare pull quote Worker is deployed at `https://bell-keeper-b.asysyifaq25.workers.dev`
-(version `de1f0d82-98ef-4963-8ad8-ca94915806c0`). `/quote?symbol=AAPL|NVDA|TSLA` signs fresh
-bundles only for configured PRE/REGULAR/POST phases; phase 5 returns “no Yahoo source” intentionally.
-The swap UI uses no new stock quote during phase 5 and asks the router to validate the historical
-close anchor instead. Overnight phase 4 is not configured for live quotes. Yahoo quotes still pass
-symbol, currency, phase, observation-age, and onchain high-water checks. `/pools` returned HTTP 200
-with an empty pool list at block `102238721`; no live pool has been created yet. The app displays
-that real empty state and falls back to the connected wallet's RPC if the public directory is unavailable.
+All three stock descriptors and their 2026 calendar roots are active. Each calendar currently reports
+phase 5 (CLOSED) through Monday 2026-11-02 01:00 UTC and includes PRE, REGULAR, POST, and OVERNIGHT
+leaves through 2026-12-30. BELL policy limits stock input age to 60 seconds in REGULAR, 120 seconds in
+PRE/POST, and 300 seconds in OVERNIGHT. The Chainlink session adapter independently rejects any round
+120 seconds old or older, so the effective Chainlink limits are 60 seconds in REGULAR and under 120
+seconds in PRE/POST/OVERNIGHT. The Worker now reports and applies those same effective per-session
+limits; stale rounds fail closed. No valid close anchor has been captured for the new registry, so
+closed-session swaps remain unavailable until a supported close is captured.
 
-### Session-aware maintenance rollout — 2026-10-31
+Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (latest version `d738c2b2-dcaf-4b51-9dcf-800554ad8f88`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, boundary cron schedules, and effective per-session freshness reporting. `/status` reads current phase, session-adapter freshness, closed-anchor validity, and read-only feed age directly from Mainnet; its latest snapshot is `evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`. `/quote?symbol=AAPL` returns 410 by design. The latest `/pools` read at block `102311401` returned an empty list; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI reads each asset's effective freshness limit from Worker status. Production alias `https://bell-black.vercel.app` is READY on Vercel deployment `dpl_8hZFZddGGi6nbRpVSywqivCJsEBH` (`https://bell-rjyravr6f-sifaqs-projects.vercel.app`); authenticated production HTML now states the session-specific freshness limits. Deployment proof: `evidence/deploy/production-ui-session-freshness-2026-10-31.json`.
 
-`CalendarRegistry.activateInterval` was permissionlessly called for AAPL, NVDA, and TSLA after all
-three current intervals had expired. The active phase is 5 through `2026-11-02T09:00:00Z` (04:00
-Eastern Standard Time). Transactions: AAPL `0xbf3a3c7682c3207e3e1fa74db48c44062b501b6a7aa4f60082281fa9e226dd30`,
-NVDA `0x95733483fb9b8a5a4646b6a10bc358d945be608ec475e4dd67acd6d8b0bcbdfd`; TSLA activation:
-block `102233690`. Each calendar activation used about 130,900 gas and cost about `0.00000262 ETH` at the observed fee.
+Deployment evidence is in `evidence/deploy/mainnet-4663.json`,
+`evidence/deploy/mainnet-4663-verification.json`,
+`evidence/deploy/mainnet-4663-chainlink-session-adapters.json`,
+`evidence/deploy/mainnet-4663-asset-queue.json`, and the per-asset calendar-state files.
 
-The prior Friday close anchor is missing for all three assets (`anchorStatus` reason bit 2048), so
-weekend swap and weekend pool creation remain unavailable until a valid close is captured. Cloudflare
-now has one weekday UTC cron that advances expired calendar intervals near 04:00, 09:30, and 16:00
-Eastern, and submits signed source updates plus `captureClose` during the five minutes before 16:00.
-It uses `BELL_TRANSACTION_PRIVATE_KEY`; `0.002 ETH` was moved from the funded deployment wallet to
-that dedicated relayer (`0x01219888c2c11b1078c0a396faf3bc26bba742b5c5dea5a6db524ace62561c23`). It
-does not publish stock prices every few minutes. The first scheduled close capture after deployment
-is Monday 2026-11-02 at 15:55 Eastern (2026-11-02 20:55 UTC); the anchor is valid only if live source,
-direct reference, and onchain checks all pass.
+Historical feed cadence was audited from up to each stock feed's latest 100 onchain rounds at block
+`102291723` (`2026-10-31T04:43:45Z`); the complete report is
+`evidence/deploy/mainnet-4663-session-feed-history.json`.
+Rounds were observed during PRE, REGULAR, POST, and OVERNIGHT for all three stocks, but observed round
+availability is not the same as a fresh quote: estimated time coverage under the deployed 120-second gate
+was about 1.3–5.6% under a 120-second freshness window in session groups with enough adjacent rounds to
+estimate it. This is an upper bound for REGULAR, where the effective limit is 60 seconds; most sampled
+within-session gaps were far longer than 120 seconds. This limited historical sample therefore does not
+establish continuous 24/5 swap availability. The onchain Data Feed path needs no separate keeper update
+transaction, but swaps and pool creation fail closed when the active session's effective freshness limit
+is exceeded.
 
-The published calendar roots cover only through 2026-12-29 and use the weekday session template; no
-holiday or early-close table is committed. Queue an accurately sourced replacement before coverage
-ends. Live overnight equities also remain unavailable: the active descriptors do not include an
-overnight stream, and the Chainlink report probe returned Unauthorized. Weekend/overnight use is a
-frozen, validated reference with live pricing for other assets, not a live stock market quote.
+Provider research as of 2026-10-31: Chainlink documents Data Feeds as heartbeat/deviation-triggered updates,
+not streaming, and warns that some heartbeats last several hours
+([Data Feeds overview](https://docs.chain.link/data-feeds/overview)). Data Streams gives sub-second reports,
+but requires API credentials and subscription billing; Chainlink's published free tier ended on 2026-09-01
+([credentials](https://docs.chain.link/data-streams/tutorials/ts-sdk-fetch),
+[subscription billing](https://docs.chain.link/data-streams/tutorials/evm-onchain-report-verification),
+[free-tier notice](https://docs.chain.link/changelog)). Chainlink announced 24/7 RWA pricing on 2026-10-29;
+closed-market prices are blended from perp venues, and the post says to contact Chainlink for integration,
+so no public entitlement or price is established
+([Chainlink 24/7 announcement](https://chain.link/blog/introducing-chainlink-24-7)). Robinhood documents a
+15-second-cache `/prices/{symbol}` API, but its public terms broadly limit incorporating its Services and
+materials into applications; this project has not switched production feeds to that API without explicit
+permission ([API docs](https://docs.robinhood.com/chain/stock-token-apis/),
+[terms](https://docs.robinhood.com/chain/terms-of-service/)).
 
-Registry health expires after 120 seconds, so it needs a fresh prepare close to pool creation. No fixed
-seed amount is selected. The Create UI reads the current service fee, recipient, wallet balances and gas
-quote live; the creator chooses seed amounts and must have the tokens plus fee and native gas. Seed
-preflight derives the opening price from the sorted seed ratio for `SESSION_ONLY`, mines the predicted
-Hook, previews PoolId/ticks/caps, and checks the resulting PoolCreated event against that prediction.
+Alternative-provider check on 2026-10-31: Pyth Core and Pyth Pro verifier contracts are deployed on
+Robinhood Chain, and Pyth Core currently charges no EVM update-verification fee. However, Pyth's own
+sponsored-push-feed list does not include Robinhood Chain, so an app would need to obtain signed stock
+updates and submit them with transactions. Pyth Pro's API key and feed access require a paid service plan
+for production; the free plan is view-only with no API access or redistribution rights. The listed Starter
+plan is $500/month and covers crypto, while equities are listed under Pro starting at $2,500/month; Pyth
+Indices' 24/7 data has custom pricing. A free trial key is available for evaluation but does not grant
+production redistribution rights. This does not provide a free production source for AAPL/NVDA/TSLA.
+Sources: [Pyth contract addresses](https://docs.pyth.network/pro/contract-addresses),
+[sponsored feeds](https://docs.pyth.network/pro/sponsored-feeds),
+[on-chain fees](https://docs.pyth.network/pro/on-chain-fees),
+[Pyth pricing](https://app.pyth.com/products),
+[Pyth API key](https://docs.pyth.network/pro/acquire-api-key).
 
-The web `/pools`, `/pool`, and `/swap` routes now use the Mainnet factory/policy API, signed quote
-bundles, wallet token balance/allowance reads, exact-input and exact-output swap modes, token approval,
-BellRouter simulation, and transaction receipt/explorer links. Create supports active registry assets,
-including MEME only as `SESSION_ONLY`. Pool detail shows live market phase, policy validity, caps,
-remaining budgets, PoolId and indexed block. Position removal accepts per-token minimum outputs. A live
-swap cannot run until a Mainnet pool has been created and seeded. The signed pull design
-and implementation details are in `docs/superpowers/specs/2026-10-30-pull-oracle-design.md`.
+A fresh, read-only Data Streams API check at `2026-10-31T04:57:50Z` confirms credential A still
+authenticates, but its authorized feed list is empty; the configured credential B variable has no value.
+No Robinhood AAPL, NVDA, or TSLA stream is available to this account, and no subscription was created.
+Evidence: `evidence/runtime/chainlink-entitlement-live-2026-10-31.json`. Chainlink's 24/5 U.S. Equities
+Streams provide separate Regular, Extended, and Overnight reports, selectable across the
+PRE/REGULAR/POST/OVERNIGHT calendar, but the live report path cannot be activated on this account until
+access is provisioned ([24/5 Streams release](https://docs.chain.link/changelog/245-us-equities-streams-now-available),
+[Robinhood Chain verifier](https://docs.robinhood.com/chain/data-streams/)). The free onchain Data Feed
+remains configured for all sessions and needs no keeper transaction; its updates cannot satisfy BELL's
+120-second onchain freshness gates reliably, as measured in the historical round audit above.
 
----
+The live Chainlink reference directory was also checked at `2026-10-31T05:00:06Z`. It lists exactly
+one 24/5 onchain Data Feed proxy for each of AAPL, NVDA, and TSLA, each with `marketHours=us_equities_24/5`,
+an 86,400-second heartbeat, and a 0.5% deviation threshold. The same proxy is therefore correctly wired
+through BELL's phase-scoped adapters; there are no separate PRE/REGULAR/POST/OVERNIGHT Data Feed proxies
+to switch among. This push feed may go many minutes or hours without a new round, so BELL's independent
+120-second execution guard intentionally fails closed in those gaps. Snapshot:
+`evidence/runtime/chainlink-robinhood-feed-directory-2026-10-31.json`.
+
+Fresh production read at `2026-10-31T05:18:49Z` confirms the Worker reads Mainnet at block
+`102311380`; all three assets are CLOSED with `closed-anchor-missing`, and `/pools` is empty at block
+`102311401`. Feed ages were 34,056 seconds for AAPL, 33,409 for NVDA, and 36,579 for TSLA against the
+120-second adapter limit. The effective active-session thresholds now match the policy in Worker code:
+REGULAR is 60 seconds, PRE/POST/OVERNIGHT are capped at 120 seconds by the adapter. The currently closed
+market does not exercise these active-session code paths on production; they are covered by the 70-test
+Worker suite. The previous 24/5 close-capture window is no longer open, so its anchor
+cannot be backfilled now. The Worker has a transaction key and boundary cron, but `captureClose` requires
+the phase adapter to pass the 120-second gate and the direct adapter to pass its separate 600-second
+gate. Friday's latest sampled rounds were 15:51 ET for AAPL, 16:02 ET for NVDA, and 15:09 ET for TSLA;
+the next weekly CLOSED boundary was 20:00 ET, when those inputs were hours old. That feed cadence cannot
+produce a valid close anchor under the current strict policy. Live snapshot:
+`evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`.
+
+## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
+
+The following block documents the deployment that existed before the migration above. Its signed
+Yahoo quote Worker and old registry addresses are not the active Mainnet configuration.
 
 ## Testnet history — REGULAR rehearsal trace 2026-10-28
 

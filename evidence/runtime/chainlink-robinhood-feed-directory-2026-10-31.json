@@ -1,0 +1,38 @@
+{
+  "capturedAt": "2026-10-31T05:00:06Z",
+  "source": "https://reference-data-directory.vercel.app/feeds-robinhood-mainnet.json",
+  "notes": [
+    "One Chainlink Data Feed proxy is listed per AAPL, NVDA, and TSLA; there are no separate onchain Data Feed proxies per PRE, REGULAR, POST, or OVERNIGHT session.",
+    "Each listed feed is classified us_equities_24/5, with a configured 86400-second heartbeat and 0.5 percent deviation threshold.",
+    "These onchain Data Feeds are distinct from the three per-instrument Chainlink Data Streams reports (Regular, Extended, Overnight)."
+  ],
+  "feeds": {
+    "AAPL": {
+      "name": "Robinhood AAPL / USD",
+      "proxy": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
+      "deliveryChannel": "DF",
+      "marketHours": "us_equities_24/5",
+      "heartbeatSeconds": 86400,
+      "deviationPercent": 0.5,
+      "listedFeedCountForSymbol": 1
+    },
+    "NVDA": {
+      "name": "Robinhood NVDA / USD",
+      "proxy": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+      "deliveryChannel": "DF",
+      "marketHours": "us_equities_24/5",
+      "heartbeatSeconds": 86400,
+      "deviationPercent": 0.5,
+      "listedFeedCountForSymbol": 1
+    },
+    "TSLA": {
+      "name": "Robinhood TSLA / USD",
+      "proxy": "0x4A1166a659A55625345e9515b32adECea5547C38",
+      "deliveryChannel": "DF",
+      "marketHours": "us_equities_24/5",
+      "heartbeatSeconds": 86400,
+      "deviationPercent": 0.5,
+      "listedFeedCountForSymbol": 1
+    }
+  }
+}

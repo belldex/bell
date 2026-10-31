@@ -6,7 +6,7 @@ import { SessionFeeCurve } from "./session-fee-curve";
 import { TokenLogo } from "@/components/ui/TokenLogo";
 
 const ROBINHOOD_MAINNET_CHAIN_ID = 4663;
-const MAINNET_POOL_SNAPSHOT_BLOCK = 102201201;
+const MAINNET_POOL_SNAPSHOT_BLOCK = 102288657;
 
 /* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
 
@@ -37,7 +37,7 @@ const STEPS = [
     where: "A verified session selects the base fee",
     text: "The pool starts from a session-specific LP fee. Less-supported hours carry a higher base fee and tighter gross-flow limits.",
     reads: ["Base LP fee", "Per-trade cap", "Rolling-flow cap"],
-    stops: "PRE, POST and OVERNIGHT need a supported, healthy feed.",
+    stops: "Chainlink freshness is capped at 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT; stale data halts swaps.",
   },
   {
     name: "Bound the flow",
@@ -111,7 +111,7 @@ export function PathSection() {
             From market signal <em className="o">to swap decision.</em>
           </h2>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            BELL is a Uniswap v4 hook for tokenized-stock pools. It checks market conditions, sets the pool’s fee and flow limits, then allows a swap only while the required data stays valid.
+            BELL is a Uniswap v4 hook for pools that include Robinhood Stock Tokens. It checks the market phase, sets the pool’s fee and flow limits, then allows a swap only while the Chainlink round passes its session gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Historical updates can be too sparse to keep swaps available throughout a session.
           </p>
         </div>
 
@@ -286,10 +286,10 @@ export function ProductPathsSection() {
 
 /* Session fees and operating conditions: distinct, documented BELL sessions. */
 const SESSIONS = [
-  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Supported extended-hours feed · tighter limits" },
-  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Healthy stock stream · regular session" },
-  { name: "After-hours", code: "POST", rate: "0.30%", note: "Supported extended-hours feed · tighter limits" },
-  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Healthy feed · smallest active-session limits" },
+  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Fresh Chainlink round required · may halt" },
+  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Fresh Chainlink round required · may halt" },
+  { name: "After-hours", code: "POST", rate: "0.30%", note: "Fresh Chainlink round required · may halt" },
+  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Fresh Chainlink round required · may halt" },
   { name: "Scheduled close", code: "CLOSED", rate: "1.00%", note: "Proven close · historical anchor · finite budget" },
 ] as const;
 
@@ -373,19 +373,19 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     name: "Mainnet contracts",
     status: "live",
     items: [
-      "Protocol contracts and AAPL, NVDA, and TSLA adapters are deployed on Robinhood Chain 4663",
-      "USDG, WETH, and MEME are admitted counterassets; MEME is SESSION_ONLY only",
-      "Every pool still requires fresh signed reports and a successful create-and-seed transaction",
+      "Protocol contracts, Chainlink adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
+      "PRE, REGULAR, POST and OVERNIGHT use phase-specific feed scopes; stale rounds fail closed",
+      "The new factory has no pool yet; create and seed are wallet-confirmed transactions",
     ],
   },
   {
-    n: "PULL DATA",
-    name: "Signed quotes, pool and position discovery",
+    n: "ONCHAIN FEEDS",
+    name: "Four-session Chainlink adapter scopes",
     status: "live",
     items: [
-      "Public signed quote bundles, pool discovery and wallet position reads are available",
-      "Mainnet pull mode does not run periodic onchain report transactions",
-      "Yahoo source data rights are not verified; independent audit is not complete",
+      "Session adapter scopes use onchain Chainlink AggregatorV3 stock feeds for PRE, REGULAR, POST and OVERNIGHT",
+      "Every active-session swap checks its feed onchain; the effective age limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT",
+      "Feeds may pause or go stale off-hours; an independent security audit is not complete",
     ],
   },
   {
@@ -420,7 +420,7 @@ export function RoadmapSection() {
           Contracts are deployed. <em className="o">Liquidity is not.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          The Mainnet protocol and quote service are live on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}), but the factory has no pools yet. There is no seeded liquidity or completed Mainnet swap.
+          The protocol, Chainlink adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Adapter scopes cover PRE, REGULAR, POST and OVERNIGHT, but historical rounds rarely remain within the effective gate (60 seconds in REGULAR and under 120 seconds in the other sessions); continuous 24/5 swap availability is not established. The factory has no pool, seeded liquidity or completed Mainnet swap.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -455,7 +455,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-        <p className="lp-road__summary"><span>Current state</span>Contracts and the signed-quote Worker are deployed. The pool directory is empty; data rights and independent security review remain unverified.</p>
+      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, four session adapter scopes, asset descriptors and calendar roots are deployed. Freshness can be intermittent; no pool has been created or funded, and an independent security review is not complete.</p>
       </div>
     </section>
   );
@@ -473,19 +473,21 @@ export function FactsSection() {
           </div>
           <div className="lp-facts__stamp">
             <span className="lp-facts__stamp-label">Directory checked</span>
-            <time dateTime="2026-10-31T02:04:21Z"><span>31 Oct 2026</span><strong>02:04 UTC</strong></time>
+            <time dateTime="2026-10-31T04:38:00Z"><span>31 Oct 2026</span><strong>04:38 UTC</strong></time>
             <span className="lp-facts__stamp-note">Worker response · block {MAINNET_POOL_SNAPSHOT_BLOCK}</span>
           </div>
         </header>
         <dl className="lp-facts__grid" data-lp-reveal>
           <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
           <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
-          <div className="lp-fact" data-spot><dt>Quote service</dt><dd>Live · pull mode · no periodic report transactions</dd></div>
+          <div className="lp-fact" data-spot><dt>Price source</dt><dd>Robinhood Chainlink AggregatorV3 · read onchain during swaps</dd></div>
           <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty at block {MAINNET_POOL_SNAPSHOT_BLOCK} · no pool or liquidity</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
-          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
           <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
-          <div className="lp-fact" data-spot><dt>Data rights</dt><dd>Yahoo source rights are not verified</dd></div>
+          <div className="lp-fact" data-spot><dt>Feed freshness</dt><dd>REGULAR ≤60s · PRE/POST/OVERNIGHT &lt;120s · stale feed blocks swaps</dd></div>
+          <div className="lp-fact" data-spot><dt>Session readiness</dt><dd>PRE · REGULAR · POST · OVERNIGHT configured · fresh rounds can be intermittent</dd></div>
+          <div className="lp-fact" data-spot><dt>Closed-session anchor</dt><dd>Not captured for the active registry · closed swaps blocked</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
           <div className="lp-fact" data-spot><dt>Pool classes</dt><dd>PRICE_GUARDED where both live references pass · SESSION_ONLY for one-stock pairs</dd></div>
         </dl>

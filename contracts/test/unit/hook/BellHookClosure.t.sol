@@ -329,7 +329,7 @@ contract BellHookClosureTest {
         PolicyView memory policy = hook.refreshState();
         VmClosure.Log[] memory logs = vm.getRecordedLogs();
         require(policy.mode == uint8(Mode.CLOSED), "closed mode");
-        require(!policy.canSwap, "closed canSwap");
+        require(policy.canSwap, "valid closure canSwap");
         require(policy.reasonBits == 0, "closed reasons");
         require(policy.closureNonce == 1, "nonce");
         require(hook.state().closedLatched, "latch");

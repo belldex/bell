@@ -97,8 +97,8 @@ export function phaseAtWeekMinute(m: number): Exclude<MarketPhase, 'UNKNOWN'> {
   if (t < 4 * 60) return 'OVERNIGHT';
   if (t < 9 * 60 + 30) return 'PRE';
   if (t < 16 * 60) return 'REGULAR';
-  if (t < 20 * 60) return 'POST';
-  return day === 4 ? 'CLOSED' : 'OVERNIGHT'; // Friday 20:00 closes the trading week
+  if (t < (day === 4 ? 17 : 20) * 60) return 'POST';
+  return day === 4 ? 'CLOSED' : 'OVERNIGHT'; // Friday closes at the Chainlink feed cutoff
 }
 
 /** Seconds since the latest bell start (regular open Mon–Fri, weekly reopen), or null. */

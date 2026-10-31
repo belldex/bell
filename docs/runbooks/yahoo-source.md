@@ -1,4 +1,8 @@
-# Yahoo Public Quote Source (active path)
+# Yahoo Public Quote Source (testnet rehearsal; not active Mainnet path)
+
+This runbook documents the Yahoo/EIP-712 rehearsal integration. Mainnet currently uses the Robinhood
+Chainlink onchain `us_equities_24/5` Data Feeds; see `docs/CURRENT-STATE.md` and
+`docs/runbooks/data-rights.md` for the active source and strict freshness behavior.
 
 This path uses neither `CANDLESTICK_API` nor Chainlink Data Streams. Its source is the public Yahoo Finance
 chart endpoint:

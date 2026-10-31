@@ -20,22 +20,22 @@ const pixel = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bell-black.vercel.app'),
-  title: { default: 'BELL: Session-aware tokenized-stock liquidity', template: '%s · BELL' },
+  title: { default: 'BELL: Session-aware Robinhood Stock Token liquidity', template: '%s · BELL' },
   description:
-    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
   icons: {
     icon: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
     apple: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
   },
   openGraph: {
-    title: 'BELL: Session-aware tokenized-stock liquidity',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    title: 'BELL: Session-aware Robinhood Stock Token liquidity',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'BELL: Session-aware tokenized-stock liquidity',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    title: 'BELL: Session-aware Robinhood Stock Token liquidity',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

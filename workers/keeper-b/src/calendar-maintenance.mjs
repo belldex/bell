@@ -4,7 +4,7 @@ import { buildCalendarDataset } from '../../../scripts/calendar/calendar-builder
 import { buildEtMarketIntervals } from '../../../scripts/calendar/et-market-calendar.mjs';
 
 const ZERO32 = `0x${'0'.repeat(64)}`;
-const TABLE_PROVENANCE = keccak256(stringToHex('BELL_MAINNET_US_EASTERN_SESSIONS_V1'));
+const TABLE_PROVENANCE = keccak256(stringToHex('BELL_RH_245_NYSE_2026_2028_V2'));
 
 /** Rebuild the already-published calendar commitment and return proofs for its live leaf. */
 export function buildCalendarActivation({ config, chainId, calendarRegistry, assetId, nowSeconds }) {
@@ -18,8 +18,8 @@ export function buildCalendarActivation({ config, chainId, calendarRegistry, ass
     coverageStart: String(coverageStart), coverageEnd: String(coverageEnd), capabilityMask,
     datasetProvenance: {
       timezone: 'America/New_York', timezoneDatabaseVersion: '2026a',
-      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_SELF_DECLARED_SESSION_TABLE')),
-      sources: [{ sourceId: 'bell-session-table', version: 'v1', hash: TABLE_PROVENANCE }],
+      sourceRightsEvidenceHash: keccak256(stringToHex('BELL_PUBLIC_NYSE_CALENDAR_2026_2028')),
+      sources: [{ sourceId: 'nyse-calendar', version: '2026-2028', hash: TABLE_PROVENANCE }],
     },
     intervals: buildEtMarketIntervals(coverageStart, coverageEnd).map((interval) => ({
       start: String(interval.start), end: String(interval.end), phase: interval.phase, provenanceHash: TABLE_PROVENANCE,

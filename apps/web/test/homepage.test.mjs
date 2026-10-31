@@ -13,8 +13,9 @@ test('landing route composes the current BELL landing page without redirecting',
 
 test('page metadata no longer reports outdated asset admission status', async () => {
   const layout = await read('../app/layout.tsx');
-  assert.match(layout, /Session-aware tokenized-stock liquidity/);
-  assert.match(layout, /Check the live pool directory before trading/);
+  assert.match(layout, /Session-aware Robinhood Stock Token liquidity/);
+  assert.match(layout, /60 seconds in REGULAR.{0,100}120 seconds in PRE/is);
+  assert.doesNotMatch(layout, /signed quotes/i);
   assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
 });
 
@@ -33,7 +34,9 @@ test('served landing and legal copy describe Mainnet and enabled wallet flows tr
   assert.match(landing, /Worker/i);
   assert.match(footer, /Create pool/i);
   assert.match(terms, /wallet/i);
-  assert.match(privacy, /quote/i);
+  assert.match(privacy, /Worker|session-feed/i);
+  assert.match(publicCopy, /not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc\./i);
+  assert.doesNotMatch(publicCopy, /tokenized[- ]stocks?|tokenized[- ]equities/i);
 });
 
 test('copied template build artifacts are absent', async () => {
@@ -79,13 +82,11 @@ test('pool detail is resolved from Mainnet events and links to the selected live
   assert.doesNotMatch(detail, /from ['"]@\/lib\/fixtures/);
 });
 
-test('swap gets signed stock bundles and verifies the bundle belongs to each pool asset', async () => {
+test('swap reads Chainlink stock prices onchain without Worker-signed bundles', async () => {
   const swap = await read('../app/(app)/swap/page.tsx');
-  assert.match(swap, /MAINNET\.quoteUrl/);
-  assert.match(swap, /body\.assetId\?\.toLowerCase\(\)/);
-  assert.match(swap, /oracleUpdate\(body\)/);
-  const adapter = await read('../lib/mainnet-live.ts');
-  assert.match(adapter, /directSignature: bundle\.directSignature/);
+  assert.match(swap, /source === 'chainlink-feed'/);
+  assert.match(swap, /return \[\]/);
+  assert.doesNotMatch(swap, /MAINNET\.quoteUrl|oracleUpdate\(body\)/);
   assert.match(swap, /simulateContract/);
   assert.doesNotMatch(swap, /const RATE:|Illustrative quote|Preview only/);
 });
@@ -108,7 +109,7 @@ test('asset and pool pickers expose real token logos and pair identities', async
   const swap = await read('../app/(app)/swap/page.tsx');
   assert.match(create, /<LogoSelect/);
   assert.match(create, /symbols: \[asset\.symbol\]/);
-  assert.match(create, /SESSION_ONLY ONLY/);
+  assert.match(create, /ADMITTED COUNTERASSET/);
   assert.match(create, /useState\(''\)/);
   assert.match(swap, /<LogoSelect/);
   assert.match(swap, /symbols: \[item\.legs\[0\]\.symbol, item\.legs\[1\]\.symbol\]/);
@@ -120,8 +121,9 @@ test('landing connects live product routes and explains verified limits', async 
   const closing = await read('../components/landing/gyevo/final-reveal.tsx');
   const copy = `${landing}\n${closing}`;
   for (const path of ['/pools', '/create', '/swap', '/positions', '/protocol']) assert.ok(copy.includes(path), `landing should link to ${path}`);
-  assert.match(copy, /MEME.{0,80}SESSION_ONLY|SESSION_ONLY.{0,80}MEME/is);
-  assert.match(copy, /data rights/i);
+  assert.match(copy, /Chainlink.{0,100}(PRE|REGULAR|POST|OVERNIGHT)|PRE.{0,100}Chainlink/is);
+  assert.match(copy, /60 seconds in REGULAR/i);
+  assert.match(copy, /120 seconds/i);
   assert.match(copy, /audit/i);
   assert.match(copy, /empty|no pool.{0,50}created/is);
   assert.match(copy, /illustrative|example/i);
@@ -132,16 +134,28 @@ test('Mainnet banner and protocol page separate ready wallet flows from missing 
   const protocol = await read('../app/(app)/protocol/page.tsx');
   const shell = await read('../components/app/AppShell.tsx');
   const copy = `${banner}\n${protocol}\n${shell}`;
-  assert.match(banner, /MEME.{0,60}SESSION_ONLY|SESSION_ONLY.{0,60}MEME/is);
-  assert.match(copy, /No active Mainnet pool|pool directory is empty|no pools have been created/i);
+  assert.match(banner, /Chainlink/i);
+  assert.match(copy, /No active Mainnet pool|pool directory is empty|no pools have been created|no Mainnet pool or swap exists/i);
   assert.match(protocol, /wallet.{0,40}position|position.{0,40}wallet/i);
   assert.match(shell, /Manage wallet positions|Manage LP positions/i);
   assert.doesNotMatch(copy, /asset admission.{0,35}unverified|pool creation remain unavailable|not wired in this frontend|Sample LP positions/i);
 });
 
+test('Mainnet banner reads live per-asset Chainlink session freshness from the Worker', async () => {
+  const banner = await read('../components/app/MainnetStatusBanner.tsx');
+  const status = await read('../components/app/MainnetSessionFeedStatus.tsx');
+  assert.match(banner, /MainnetSessionFeedStatus/);
+  assert.match(status, /MAINNET\.quoteUrl\.replace\(\/\\\/quote\$\/|\/status/);
+  assert.match(status, /feedAgeSeconds/);
+  assert.match(status, /sessionFeedFresh/);
+  assert.match(status, /anchorValid/);
+  assert.match(status, /last feed/);
+  assert.match(status, /aria-live/);
+});
+
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
   const worker = await read('../../../workers/keeper-b/src/index.ts');
-  assert.match(worker, /\['\/quote', '\/pools', '\/positions'\]/);
+  assert.match(worker, /\['\/quote', '\/pools', '\/positions', '\/status'\]/);
   assert.match(worker, /access-control-allow-origin', '\*'/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /BELL_POOL_FACTORY/);
