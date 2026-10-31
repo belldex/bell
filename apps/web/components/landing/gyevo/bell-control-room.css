@@ -630,7 +630,8 @@
   .lp--bell .lp-fx[data-mode="pinned"] .fxv--bojagi { min-height:0; }
   .lp--bell .lp-fx[data-mode="pinned"] .fxv__side { min-height:clamp(17rem,34svh,22rem); padding:clamp(.8rem,1.4vw,1.4rem); }
 }
-@media (max-width:1119px) {
+/* Eight chapter links need more breathing room than a laptop-width header can offer. */
+@media (max-width:1279px) {
   .lp--bell .lp-nav__links { display:none; }
   .lp--bell .lp-menu-btn { display:grid; }
 }

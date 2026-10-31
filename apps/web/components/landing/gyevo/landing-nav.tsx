@@ -85,7 +85,7 @@ export function LandingNav({ appName }: { appName: string }) {
       if (e.key === "Escape") setOpen(false);
     };
     const onResize = () => {
-      if (window.innerWidth >= 1120) setOpen(false);
+      if (window.innerWidth >= 1280) setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
