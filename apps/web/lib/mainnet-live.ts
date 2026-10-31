@@ -10,6 +10,7 @@ export const MAINNET = {
   factory: '0x7bd927dbe86fe403463e543cad2804386b66e730' as Address,
   router: '0x2dbcb85d5703d7e2f69f05955f0d461b38d148eb' as Address,
   weth: '0x0bd7d308f8e1639fab988df18a8011f41eacad73' as Address,
+  calendarRegistry: '0xba9b5142f282dde204805d66fddb5d6256080926' as Address,
   sessionRegistry: '0xe2380390ee342ad42dc463d6518f1e67cc5a52c3' as Address,
   quoteUrl: 'https://bell-keeper-b.asysyifaq25.workers.dev/quote',
   deploymentBlock: 101800000n,

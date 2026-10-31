@@ -161,6 +161,9 @@ test('pool creation is wired to the wallet, live Registry, approvals, factory si
   assert.match(flow, /applyPoolOracleUpdates/);
   assert.match(flow, /functionName: 'approve'/);
   assert.match(flow, /functionName: 'createAndSeed'/);
+  assert.match(flow, /createPricePathForPhases/);
+  assert.match(flow, /functionName: 'anchorStatus'/);
+  assert.match(flow, /verified historical close reference/i);
   assert.match(flow, /Object\.entries\(queue\.counterassets/);
   assert.match(flow, /SESSION_ONLY/);
   assert.match(flow, /simulateContract/);
