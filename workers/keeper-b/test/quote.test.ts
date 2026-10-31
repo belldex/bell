@@ -94,6 +94,9 @@ describe('read-only pull quote bundles', () => {
     await expect(runQuote(env, 'AAPL', options())).rejects.toThrow(message);
   });
   it('rejects unknown symbols', async () => { await expect(runQuote(env, 'MSFT', options())).rejects.toThrow(/symbol/i); });
+  it('disables Worker-signed stock quotes when contracts read Chainlink feeds directly', async () => {
+    await expect(runQuote({ ...env, BELL_ORACLE_MODE: 'chainlink' }, 'AAPL', options())).rejects.toThrow(/onchain Chainlink/i);
+  });
   it.each([0, 4, 5])('rejects unsupported calendar phase %s', async phase => { rpc.phase = phase; await expect(runQuote(env, 'AAPL', options())).rejects.toThrow(/phase/); });
   it.each([{ observedAt: 1_799_999_880 }, { phase: 'PRE' }, { symbol: 'NVDA' }, { observedAt: 1_800_000_001 }])('rejects stale or mismatched quote %j', async overrides => {
     await expect(runQuote(env, 'AAPL', options({ fetchQuote: async () => quote('AAPL', overrides) }))).rejects.toThrow();

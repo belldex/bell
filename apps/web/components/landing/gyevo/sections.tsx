@@ -6,7 +6,7 @@ import { SessionFeeCurve } from "./session-fee-curve";
 import { TokenLogo } from "@/components/ui/TokenLogo";
 
 const ROBINHOOD_MAINNET_CHAIN_ID = 4663;
-const MAINNET_POOL_SNAPSHOT_BLOCK = 102201201;
+const MAINNET_POOL_SNAPSHOT_BLOCK = 102275789;
 
 /* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
 
@@ -283,19 +283,19 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     name: "Mainnet contracts",
     status: "live",
     items: [
-      "Protocol contracts and AAPL, NVDA, and TSLA adapters are deployed on Robinhood Chain 4663",
-      "USDG, WETH, and MEME are admitted counterassets; MEME is SESSION_ONLY only",
-      "Every pool still requires fresh signed reports and a successful create-and-seed transaction",
+      "Protocol contracts, Chainlink adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
+      "PRE, REGULAR, POST and OVERNIGHT use phase-specific feed scopes; stale rounds fail closed",
+      "The new factory has no pool yet; create and seed are wallet-confirmed transactions",
     ],
   },
   {
-    n: "PULL DATA",
-    name: "Signed quotes, pool and position discovery",
+    n: "ONCHAIN FEEDS",
+    name: "Four-session Chainlink feeds",
     status: "live",
     items: [
-      "Public signed quote bundles, pool discovery and wallet position reads are available",
-      "Mainnet pull mode does not run periodic onchain report transactions",
-      "Yahoo source data rights are not verified; independent audit is not complete",
+      "Robinhood Chainlink AggregatorV3 feeds are wired for PRE, REGULAR, POST and OVERNIGHT",
+      "Every active-session swap checks its feed onchain; rounds older than 120 seconds fail closed",
+      "Feeds may pause or go stale off-hours; an independent security audit is not complete",
     ],
   },
   {
@@ -330,7 +330,7 @@ export function RoadmapSection() {
           Contracts are deployed. <em className="o">Liquidity is not.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          The Mainnet protocol and quote service are live on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}), but the factory has no pools yet. There is no seeded liquidity or completed Mainnet swap.
+          The protocol, Chainlink session adapters, admitted assets and 60-day calendars are live on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). The factory has no pools yet, so there is no seeded liquidity or completed Mainnet swap.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -365,7 +365,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-        <p className="lp-road__summary"><span>Current state</span>Contracts and the signed-quote Worker are deployed. The pool directory is empty; data rights and independent security review remain unverified.</p>
+      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, all four session feeds, asset descriptors and calendar roots are deployed. No pool has been created or funded; an independent security review is not complete.</p>
       </div>
     </section>
   );
@@ -383,19 +383,20 @@ export function FactsSection() {
           </div>
           <div className="lp-facts__stamp">
             <span className="lp-facts__stamp-label">Directory checked</span>
-            <time dateTime="2026-10-31T02:04:21Z"><span>31 Oct 2026</span><strong>02:04 UTC</strong></time>
+            <time dateTime="2026-10-31T04:15:00Z"><span>31 Oct 2026</span><strong>04:15 UTC</strong></time>
             <span className="lp-facts__stamp-note">Worker response · block {MAINNET_POOL_SNAPSHOT_BLOCK}</span>
           </div>
         </header>
         <dl className="lp-facts__grid" data-lp-reveal>
           <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
           <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
-          <div className="lp-fact" data-spot><dt>Quote service</dt><dd>Live · pull mode · no periodic report transactions</dd></div>
+          <div className="lp-fact" data-spot><dt>Price source</dt><dd>Robinhood Chainlink AggregatorV3 · read onchain during swaps</dd></div>
           <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty at block {MAINNET_POOL_SNAPSHOT_BLOCK} · no pool or liquidity</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
-          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME admitted</dd></div>
+          <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
           <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
-          <div className="lp-fact" data-spot><dt>Data rights</dt><dd>Yahoo source rights are not verified</dd></div>
+          <div className="lp-fact" data-spot><dt>Feed freshness</dt><dd>At most 120 seconds · stale feed blocks swaps</dd></div>
+          <div className="lp-fact" data-spot><dt>Off-hours</dt><dd>PRE · REGULAR · POST · OVERNIGHT · may halt if feed is stale</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
           <div className="lp-fact" data-spot><dt>Pool classes</dt><dd>PRICE_GUARDED where both live references pass · SESSION_ONLY for one-stock pairs</dd></div>
         </dl>

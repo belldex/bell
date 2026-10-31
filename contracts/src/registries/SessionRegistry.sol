@@ -19,6 +19,12 @@ interface ISessionDecoder {
     function decodeVerified(bytes calldata report) external returns (SourceSample memory);
 }
 
+interface ISessionChainlinkSample {
+    function readCurrent() external view returns (SourceSample memory);
+    function sourceConfigHash() external view returns (bytes32);
+    function fingerprint() external view returns (bytes32);
+}
+
 interface ISessionDirectSource {
     function sourceConfigHash() external view returns (bytes32);
     function fingerprint() external view returns (bytes32);
@@ -59,7 +65,6 @@ library PoolOracleUpdates {
                 abi.decode(payload, (address, bytes32, OraclePullUpdate[]));
             if (keccak256(payload) != keccak256(abi.encode(payer, requestHash, decoded))) revert ContextMismatch();
             updates = decoded;
-            if (updates.length == 0) return;
         } else {
             updates = abi.decode(payload, (OraclePullUpdate[]));
         }
@@ -75,7 +80,13 @@ library PoolOracleUpdates {
         uint8 stockMask = (descriptor0.isStock ? uint8(1) : uint8(0))
             | (descriptor1.isStock ? uint8(2) : uint8(0));
         uint256 requiredCount = (descriptor0.isStock ? 1 : 0) + (descriptor1.isStock ? 1 : 0);
-        if (requiredCount == 0 || updates.length != requiredCount) revert ContextMismatch();
+        if (requiredCount == 0) revert ContextMismatch();
+        if (updates.length == 0) {
+            if (descriptor0.isStock) _refreshOnchainFeed(assets, registry, asset0);
+            if (descriptor1.isStock) _refreshOnchainFeed(assets, registry, asset1);
+            return;
+        }
+        if (updates.length != requiredCount) revert ContextMismatch();
         uint8 seen;
         for (uint256 i; i < updates.length; ++i) {
             bytes32 assetId = updates[i].assetId;
@@ -89,6 +100,16 @@ library PoolOracleUpdates {
             registry.refreshStockWithReports(update.assetId, update.directSample, update.directSignature, update.reports);
             if (update.closeBoundaryHash != bytes32(0)) registry.captureClose(update.assetId, update.closeBoundaryHash);
         }
+    }
+
+    function _refreshOnchainFeed(IAssetRegistry assets, ISessionRegistry registry, bytes32 assetId) private {
+        SourceWire[] memory wires = abi.decode(assets.sourceConfig(assetId), (SourceWire[]));
+        uint8 scopes;
+        for (uint256 i; i < wires.length; ++i) {
+            if (wires[i].kind == 5 && wires[i].phaseScope >= 1 && wires[i].phaseScope <= 3) scopes |= uint8(1 << wires[i].phaseScope);
+        }
+        if (scopes != 0x0e) revert ContextMismatch();
+        registry.refreshHealth(assetId);
     }
 }
 
@@ -416,6 +437,22 @@ contract SessionRegistry is ISessionRegistry, IBellEvents, IBellErrors {
         uint8 requiredScope = phase == PolicyConstants.PHASE_REGULAR ? 1 : phase == PolicyConstants.PHASE_OVERNIGHT ? 3 : 2;
         for (uint256 i; i < wires.length; ++i) {
             SourceWire memory wire = wires[i];
+            if (wire.kind == 5 && wire.phaseScope == requiredScope) {
+                sample = _latestByPhase[assetId][phase];
+                try ISessionChainlinkSample(adapter).sourceConfigHash() returns (bytes32 liveConfigHash) {
+                    if (liveConfigHash != SourceConfigHash.hash(wire)) return (false, sample, ReasonBits.FINGERPRINT_CHANGED);
+                } catch { return (false, sample, ReasonBits.FINGERPRINT_CHANGED); }
+                try ISessionChainlinkSample(adapter).fingerprint() returns (bytes32 liveFingerprint) {
+                    if (liveFingerprint == ZERO32) return (false, sample, ReasonBits.FINGERPRINT_CHANGED);
+                } catch { return (false, sample, ReasonBits.FINGERPRINT_CHANGED); }
+                try ISessionChainlinkSample(adapter).readCurrent() returns (SourceSample memory current) {
+                    current.phase = phase;
+                    if (current.feedId != wire.feedId || !_validStockSample(current, phase)) {
+                        return (false, current, ReasonBits.REPORT_INVALID_OR_STALE);
+                    }
+                    return (true, current, 0);
+                } catch { return (false, sample, ReasonBits.REPORT_INVALID_OR_STALE); }
+            }
             if (wire.kind != KIND_V11 || wire.phaseScope != requiredScope) continue;
             (bool configOk, bytes32 configHash) = _readAdapterWord(adapter, ISessionDirectSource.sourceConfigHash.selector);
             (bool fingerprintOk, bytes32 fingerprint) = _readAdapterWord(adapter, ISessionDirectSource.fingerprint.selector);

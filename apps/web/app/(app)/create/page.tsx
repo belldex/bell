@@ -112,7 +112,7 @@ export default function CreatePage() {
     <header className="max-w-3xl">
       <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create · Robinhood Chain Mainnet</p>
       <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Create and seed a live pool.</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">Only admitted assets can proceed. The app checks the live factory, reads reference prices, gets signed quote bundles, updates health, simulates the exact request, then asks your wallet to create and seed.</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted">Only admitted assets can proceed. The app checks the live factory, reads the Chainlink reference onchain, verifies session health, simulates the exact request, then asks your wallet to create and seed.</p>
     </header>
 
     <ol className="mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
@@ -128,7 +128,7 @@ export default function CreatePage() {
         <div className="flex items-center gap-4 border-b border-line pb-5"><TokenPair symbols={[stockSymbol, counterSymbol]} size={32}/><div><p className="font-mono text-[10px] uppercase text-dim">Selected pair</p><p className="mt-1 text-lg text-ink">{stockSymbol} / {counterSymbol}</p></div></div>
         <div className="grid gap-5 sm:grid-cols-2">
           <div><span id="stock-token-label" className="text-[10px] uppercase tracking-[0.14em] text-dim">Stock token</span><LogoSelect id="stock-token" labelId="stock-token-label" value={stockSymbol} className="mt-2" options={stockOptions.map((asset) => ({ value: asset.symbol, label: asset.symbol, detail: 'ADMITTED STOCK', symbols: [asset.symbol] }))} onChange={(symbol) => { setStockSymbol(symbol); if (symbol === counterSymbol) setCounterSymbol(symbol === 'AAPL' ? 'USDG' : 'AAPL'); }}/></div>
-          <div><span id="counterasset-label" className="text-[10px] uppercase tracking-[0.14em] text-dim">Counterasset</span><LogoSelect id="counterasset" labelId="counterasset-label" value={counterSymbol} className="mt-2" options={counterOptions.map((asset) => ({ value: asset.symbol, label: asset.symbol, detail: asset.symbol === 'MEME' ? 'SESSION_ONLY ONLY' : asset.isStock ? 'ADMITTED STOCK' : 'ADMITTED COUNTERASSET', symbols: [asset.symbol] }))} onChange={setCounterSymbol}/></div>
+          <div><span id="counterasset-label" className="text-[10px] uppercase tracking-[0.14em] text-dim">Counterasset</span><LogoSelect id="counterasset" labelId="counterasset-label" value={counterSymbol} className="mt-2" options={counterOptions.map((asset) => ({ value: asset.symbol, label: asset.symbol, detail: asset.isStock ? 'ADMITTED STOCK' : 'ADMITTED COUNTERASSET', symbols: [asset.symbol] }))} onChange={setCounterSymbol}/></div>
         </div>
         <div className="border border-line bg-bg-1 p-4"><p className="font-mono text-[10px] uppercase text-muted">Live asset set</p><p className="mt-2 text-sm text-ink">{MAINNET_ASSET_OPTIONS.map((asset) => asset.symbol).join(' · ')}</p><p className="mt-2 text-xs text-dim">Token addresses and descriptor IDs are rechecked against the Mainnet AssetRegistry before any approval.</p></div>
       </div>}
@@ -142,7 +142,7 @@ export default function CreatePage() {
           </button>)}
           {allowedClasses.length === 0 && <p role="alert" className="border border-down/30 p-4 text-sm text-down">No pool class is supported for this pair on the deployed Mainnet factory.</p>}
         </div>
-        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries session controls only; it has no independent price protection for the counterasset. The seed ratio sets the opening price. MEME is admitted only for this pool class and can be highly volatile.</p>}
+        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries session controls only; it has no independent price protection for the counterasset. The seed ratio sets the opening price, so choose an admitted counterasset you understand.</p>}
         {poolClass === 0 && <p className="border border-line bg-bg-1 p-4 text-sm text-muted">Opening price uses current onchain reference adapter values. The factory will reject stale feeds or a price outside its configured band.</p>}
       </div>}
 

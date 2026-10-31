@@ -3,11 +3,10 @@ import {
   type Address, type EIP1193Provider,
 } from 'viem';
 import { makeClients } from './wallet';
-import { MAINNET, oracleUpdate, tokenAbi } from './mainnet-live';
+import { MAINNET, tokenAbi } from './mainnet-live';
 import assetQueue from '../../../evidence/deploy/mainnet-4663-asset-queue.json';
 import deployment from '../../../evidence/deploy/mainnet-4663.json';
 import references from '../../../evidence/deploy/mainnet-4663-reference-adapters.json';
-import yahooAdapters from '../../../evidence/deploy/mainnet-4663-stock-adapters.json';
 import abiManifest from '../../../packages/protocol/generated/abi-manifest.json';
 // @ts-expect-error Shared script module is browser-safe and keeps the factory profile math canonical.
 import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqrtPriceFromAmounts, deriveTickBounds } from '../../../scripts/deploy/mainnet-pool-config.mjs';
@@ -57,7 +56,6 @@ const publish = (fn: (stage: CreateStage) => void, key: string, message: string,
 const walletFactory = (deployment as any).poolFactory as Address;
 const queue = assetQueue as any;
 const refs = references as any;
-const adapters = yahooAdapters as any;
 
 export function admittedPair(stockSymbol: string, counterSymbol: string) {
   return resolveAdmittedPair({ stockSymbol, counterSymbol, assetQueue: queue });
@@ -148,9 +146,7 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const calendarPhases = calendarIntervals.map((interval: any) => Number(interval.phase));
   const pricePath = createPricePathForPhases(calendarPhases);
   if (pricePath === 'unavailable') {
-    throw new Error(calendarPhases.includes(4)
-      ? 'An overnight stock price source is not configured for this pool yet.'
-      : 'Stock legs do not share one supported Mainnet price phase. Refresh the calendar and try again.');
+    throw new Error('Stock legs do not share one supported Mainnet price phase. Refresh the calendar and try again.');
   }
   for (const [i, interval] of calendarIntervals.entries()) {
     const data = interval as any;
@@ -170,8 +166,8 @@ export async function createMainnetPool({ provider, account, selection, onStage 
       if (!valid || validUntil <= block.timestamp) {
         throw new Error(`A verified close reference is not available for ${stockLegs[i].symbol}; pool creation resumes after the next valid market close.`);
       }
-    } else if (data.phase < 1 || data.phase > 3) {
-      throw new Error(`No fresh signed stock price source is configured for ${stockLegs[i].symbol} in phase ${data.phase}`);
+    } else if (data.phase < 1 || data.phase > 4) {
+      throw new Error(`No fresh onchain stock price source is configured for ${stockLegs[i].symbol} in phase ${data.phase}`);
     }
   }
   const [amount0, amount1] = config.amountMax as readonly [bigint, bigint];
@@ -238,22 +234,14 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   }
 
   let healthHash: `0x${string}` | null = null;
-  if (pricePath === 'signed-quote') {
-    emit('health', 'Fetching fresh signed Mainnet quotes for every stock leg…');
-    const updates = await Promise.all(stockLegs.map(async (leg: any) => {
-      const response = await fetch(`${MAINNET.quoteUrl}?symbol=${encodeURIComponent(leg.symbol)}`, { cache: 'no-store' });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error ?? `Quote Worker returned HTTP ${response.status} for ${leg.symbol}`);
-      if (body.assetId?.toLowerCase() !== leg.assetId.toLowerCase()) throw new Error(`Worker quote for ${leg.symbol} has a different admitted asset ID`);
-      return oracleUpdate(body);
-    }));
-    if (updates.length !== stockLegs.length || new Set(updates.map((update: any) => update.assetId.toLowerCase())).size !== stockLegs.length) throw new Error('Fresh signed quote bundles must cover every stock leg exactly once');
-    const payload = encodeOraclePullUpdates(updates);
+  if (pricePath === 'chainlink-feed') {
+    emit('health', 'Reading every stock leg from its current onchain Chainlink feed…');
+    const payload = encodeOraclePullUpdates([]);
     const healthSimulation: any = await client.simulateContract({
       address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'applyPoolOracleUpdates',
       args: [config.asset0, config.asset1, payload, false], account,
     } as any);
-    emit('health', 'Confirm the fresh quote and session-health update in your wallet…');
+    emit('health', 'Confirm the onchain feed freshness check in your wallet…');
     healthHash = await walletClient.writeContract(healthSimulation.request as any);
     emit('health', 'Waiting for SessionRegistry health confirmation…', healthHash);
     const healthReceipt = await client.waitForTransactionReceipt({ hash: healthHash });
@@ -266,7 +254,7 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const currentAccounts = await walletClient.getAddresses();
   if (!currentAccounts.some((address) => address.toLowerCase() === account.toLowerCase())) throw new Error('Connected wallet changed during pool creation; restart the flow');
   const latestBlock = await client.getBlock();
-  if (pricePath === 'signed-quote') {
+  if (pricePath === 'chainlink-feed') {
     const healthViews = await Promise.all(stockLegs.map((leg: any) => client.readContract({ address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'health', args: [leg.assetId] })));
     for (const [i, health] of healthViews.entries()) {
       const state: any = health;

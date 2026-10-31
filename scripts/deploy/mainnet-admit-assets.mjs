@@ -19,6 +19,8 @@ import { createPublicClient, createWalletClient, http, keccak256, stringToHex, p
 import { privateKeyToAccount } from 'viem/accounts';
 import { encodeSourceWires } from '../../packages/protocol/src/source-codec.mjs';
 import { canonicalTokenId } from '../../packages/protocol/src/identity.mjs';
+import { loadEnvFile } from './env-loader.mjs';
+import { buildReviewedSessionOnlyCounterasset } from './mainnet-counterasset-admission.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const ZERO32 = `0x${'0'.repeat(64)}`;
@@ -41,16 +43,7 @@ const ERC20_ABI = parseAbi([
 
 const STATUS = { 1: 'QUEUED', 2: 'DONE', 3: 'CANCELLED' };
 
-function loadEnv(text) {
-  const env = {};
-  for (const line of text.split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
-  }
-  return env;
-}
-
-const env = loadEnv(readFileSync('.env', 'utf8'));
+const env = loadEnvFile();
 for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI', 'BELL_CAPABILITY_MASK']) {
   if (process.env[name] !== undefined) env[name] = process.env[name];
 }
@@ -229,7 +222,8 @@ if (command === 'status') {
   }
   console.log(JSON.stringify(out, null, 2));
 } else if (command === 'queue') {
-  const adapters = readJson('evidence/deploy/mainnet-4663-stock-adapters.json');
+  const adapters = readJson('evidence/deploy/mainnet-4663-chainlink-session-adapters.json')
+    ?? readJson('evidence/deploy/mainnet-4663-stock-adapters.json');
   if (!adapters?.assets) {
     throw new Error('evidence/deploy/mainnet-4663-stock-adapters.json with an `assets` map is required; run mainnet-yahoo-stack.mjs first');
   }
@@ -262,6 +256,29 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
     ? state.usdg
     : await queueAsset({ label: 'USDG', token: usdgAddress, isStock: false, capabilityMask: 0, adapters: {} });
   state.usdg = { ...usdg, token: usdgAddress };
+  state.counterassets = state.counterassets ?? {};
+  const memeReview = readJson('evidence/deploy/mainnet-4663-counterasset-meme-review.json');
+  if (!memeReview) throw new Error('reviewed MEME admission evidence is missing');
+  const memeOnchain = await describeToken(memeReview.token.address);
+  const memeDescriptor = buildReviewedSessionOnlyCounterasset({
+    review: memeReview,
+    chainId,
+    onchain: { address: memeReview.token.address, symbol: memeOnchain.symbol, decimals: memeOnchain.decimals, codeHash: memeOnchain.codeHash },
+  });
+  console.log('\\n=== MEME SESSION_ONLY counterasset ===');
+  const memeSaved = state.counterassets.MEME;
+  const meme = memeSaved?.alreadyActive || await hasPendingOperation(memeSaved)
+    ? memeSaved
+    : await queueAsset({
+      label: memeDescriptor.symbol,
+      token: memeDescriptor.token,
+      isStock: false,
+      capabilityMask: memeDescriptor.capabilityMask,
+      adapters: memeDescriptor.adapters,
+      sourceConfig: memeDescriptor.sourceConfig,
+      evidenceHash: memeDescriptor.evidenceHash,
+    });
+  state.counterassets.MEME = { ...meme, token: memeDescriptor.token, symbol: memeDescriptor.symbol, isStock: false };
   const queuedStocks = {};
   for (const symbol of stocks) {
     const perSymbol = adapters.assets[symbol];
@@ -273,23 +290,22 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
         label: symbol,
         token: perSymbol.stockToken,
         isStock: true,
-        // PRE | REGULAR | POST per the brief's session scope; Yahoo has no overnight feed, so
-        // OVERNIGHT capability is deliberately not requested (fail-closed rather than unbacked).
-        capabilityMask: Number(env.BELL_CAPABILITY_MASK || perSymbol.capabilityMask || 0b1110),
+        // Chainlink onchain session wires back PRE, REGULAR, POST, and OVERNIGHT.
+        capabilityMask: Number(env.BELL_CAPABILITY_MASK || perSymbol.capabilityMask || 0b11110),
         adapters: {
           tokenPrice: perSymbol.directAdapter,
           regular: perSymbol.regularAdapter,
           extended: perSymbol.extendedAdapter,
           overnight: perSymbol.overnightAdapter,
         },
-        sourceConfig: encodeSourceWires([perSymbol.directWire, perSymbol.regularWire, perSymbol.extendedWire].filter(Boolean)),
+        sourceConfig: encodeSourceWires([perSymbol.directWire, perSymbol.regularWire, perSymbol.extendedWire, perSymbol.overnightWire].filter(Boolean)),
       });
     queuedStocks[symbol] = { ...stock, token: perSymbol.stockToken, symbol };
     state.stocks = { ...(state.stocks ?? {}), [symbol]: queuedStocks[symbol] };
     writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
   }
 
-  const allEtas = [weth.eta, usdg.eta, ...Object.values(queuedStocks).map((s) => s.eta)].filter((v) => Number.isSafeInteger(v));
+  const allEtas = [weth.eta, usdg.eta, meme.eta, ...Object.values(queuedStocks).map((s) => s.eta)].filter((v) => Number.isSafeInteger(v));
   const eta = allEtas.length ? Math.max(...allEtas) : now;
   state.chainId = chainId;
   state.registryAddress = registryAddress;
@@ -300,7 +316,9 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
   writeFileSync(QUEUE_PATH, `${JSON.stringify({
     weth: { token: wethAddress, descriptorId: weth.descriptorId, isStock: false },
     usdg: { token: usdgAddress, descriptorId: usdg.descriptorId, isStock: false },
-    counterassets: {},
+    counterassets: Object.fromEntries(Object.entries(state.counterassets).map(([symbol, entry]) => [symbol, {
+      symbol, token: entry.token, descriptorId: entry.descriptorId, isStock: false, active: Boolean(entry.alreadyActive),
+    }])),
     stocks: Object.fromEntries(Object.entries(queuedStocks).map(([symbol, s]) => [symbol, {
       symbol,
       token: s.token,
@@ -309,11 +327,12 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
       directAdapter: adapters.assets[symbol].directAdapter,
       regularAdapter: adapters.assets[symbol].regularAdapter,
       extendedAdapter: adapters.assets[symbol].extendedAdapter,
+      overnightAdapter: adapters.assets[symbol].overnightAdapter,
     }])),
     registryAddress,
     chainId,
     admittedAt: new Date().toISOString(),
-    activationPending: [weth, usdg, ...Object.values(queuedStocks)].some((entry) => Boolean(entry.operationId)),
+    activationPending: [weth, usdg, meme, ...Object.values(queuedStocks)].some((entry) => Boolean(entry.operationId)),
   }, null, 2)}\n`);
   console.log(`\nQueued ${Object.keys(queuedStocks).length} stock assets + WETH + USDG. Activate at or after ${new Date(eta * 1000).toISOString()}.`);
 } else if (command === 'activate') {
@@ -324,6 +343,7 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
   // activation can follow immediately; each step is idempotent and re-read on-chain status.
   const entries = [
     ['weth', state.weth], ['usdg', state.usdg],
+    ...Object.entries(state.counterassets ?? {}).map(([symbol, entry]) => ['counterasset:' + symbol, entry]),
     ...Object.entries(state.stocks ?? {}).map(([symbol, entry]) => [`stock:${symbol}`, entry]),
   ];
   for (const [key, entry] of entries) {
@@ -370,6 +390,10 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
     });
     if (key === 'weth') state.weth = { ...entry, descriptorId, active: true };
     else if (key === 'usdg') state.usdg = { ...entry, descriptorId, active: true };
+    else if (key.startsWith('counterasset:')) {
+      const symbol = key.slice('counterasset:'.length);
+      state.counterassets = { ...(state.counterassets ?? {}), [symbol]: { ...entry, descriptorId, active: true } };
+    }
     else {
       const symbol = key.slice('stock:'.length);
       state.stocks = { ...(state.stocks ?? {}), [symbol]: { ...entry, descriptorId, active: true } };
@@ -381,6 +405,9 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
   queue.weth.descriptorId = state.weth.descriptorId;
   queue.usdg = { ...(queue.usdg ?? {}), ...state.usdg, token: usdgAddress, descriptorId: state.usdg.descriptorId, isStock: false };
   queue.counterassets = queue.counterassets ?? {};
+  for (const [symbol, entry] of Object.entries(state.counterassets ?? {})) {
+    queue.counterassets[symbol] = { symbol, token: entry.token, descriptorId: entry.descriptorId, isStock: false, active: Boolean(entry.active || entry.alreadyActive) };
+  }
   for (const [symbol, entry] of Object.entries(state.stocks ?? {})) {
     queue.stocks = { ...(queue.stocks ?? {}), [symbol]: { ...(queue.stocks?.[symbol] ?? {}), descriptorId: entry.descriptorId } };
   }
@@ -388,7 +415,7 @@ const state = saved?.registryAddress?.toLowerCase() === registryAddress.toLowerC
   queue.activatedAt = new Date().toISOString();
   writeFileSync(QUEUE_PATH, `${JSON.stringify(queue, null, 2)}\n`);
   writeFileSync(STATE_PATH, `${JSON.stringify({ ...state, stage: 'ACTIVE', activatedAt: now }, null, 2)}\n`);
-  console.log('WETH, USDG and all stock descriptors are ACTIVE on mainnet.');
+  console.log('WETH, USDG, MEME (SESSION_ONLY), and all stock descriptors are ACTIVE on mainnet.');
 } else {
   console.error(`Unknown command "${command}". Use status | queue | activate`);
   process.exit(1);

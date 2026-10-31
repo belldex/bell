@@ -22,20 +22,20 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://bell-black.vercel.app'),
   title: { default: 'BELL: Session-aware tokenized-stock liquidity', template: '%s · BELL' },
   description:
-    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet. Contracts read Chainlink equity feeds across four market sessions and stop when data is stale.',
   icons: {
     icon: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
     apple: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
   },
   openGraph: {
     title: 'BELL: Session-aware tokenized-stock liquidity',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet. Contracts check Chainlink equity feeds across four market sessions and stop when data is stale.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'BELL: Session-aware tokenized-stock liquidity',
-    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
+    description: 'A Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet. Contracts check Chainlink equity feeds across four market sessions and stop when data is stale.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

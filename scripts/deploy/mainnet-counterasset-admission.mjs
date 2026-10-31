@@ -1,43 +1,49 @@
-import { encodeAbiParameters, keccak256, stringToHex } from 'viem';
+import { keccak256, stringToHex } from 'viem';
 
-const ZERO_ADDRESS = `0x${'0'.repeat(40)}`;
-const ZERO32 = `0x${'0'.repeat(64)}`;
 const ADDRESS = /^0x[0-9a-f]{40}$/i;
 const BYTES32 = /^0x[0-9a-f]{64}$/i;
 
-function same(a, b) { return String(a).toLowerCase() === String(b).toLowerCase(); }
-
-export function validateCounterassetObservation(candidate, observed, { allowAlreadyActive = false } = {}) {
-  for (const field of ['symbol', 'name', 'token', 'tokenCodeHash', 'implementation', 'implementationCodeHash']) {
-    if (!candidate?.[field] || !observed?.[field] || !same(candidate[field], observed[field])) {
-      throw new Error(`counterasset ${field} does not match its reviewed evidence`);
-    }
+/** Bind a reviewed, unpriced SESSION_ONLY counterasset admission to its current Mainnet code. */
+export function buildReviewedSessionOnlyCounterasset({ review, chainId, onchain }) {
+  if (Number(chainId) !== 4663 || Number(review?.chainId) !== 4663) {
+    throw new Error('counterasset review and RPC must both be Robinhood Chain Mainnet (4663)');
   }
-  if (Number(observed.chainId) !== 4663 || Number(candidate.chainId) !== 4663) throw new Error('counterasset is not on Robinhood Chain Mainnet');
-  if (Number(observed.decimals) !== Number(candidate.decimals) || Number(observed.decimals) > 18) throw new Error('counterasset decimals do not match reviewed evidence');
-  if (observed.clone !== true) throw new Error('counterasset clone runtime does not match the reviewed EIP-1167 implementation');
-  if (observed.registryDescriptorId && !same(observed.registryDescriptorId, ZERO32) && !allowAlreadyActive) throw new Error('counterasset is already admitted; use its active registry descriptor');
-  if (candidate.isStock !== false || Number(candidate.capabilityMask ?? 0) !== 0) throw new Error('counterasset evidence must not grant stock capabilities');
-  if (!BYTES32.test(candidate.evidenceHash ?? '') || same(candidate.evidenceHash, ZERO32)) throw new Error('counterasset evidence hash is missing');
-  return { eligible: true, poolClasses: ['SESSION_ONLY'] };
-}
+  if (review?.schemaVersion !== 1 || review.status !== 'ADMITTED') {
+    throw new Error('counterasset review is not an admitted schema-v1 record');
+  }
 
-export function buildCounterassetDescriptor(candidate) {
-  if (!ADDRESS.test(candidate.token ?? '') || !ADDRESS.test(candidate.implementation ?? '')
-    || !BYTES32.test(candidate.tokenCodeHash ?? '') || !BYTES32.test(candidate.implementationCodeHash ?? '')
-    || !BYTES32.test(candidate.evidenceHash ?? '')) throw new TypeError('counterasset candidate is malformed');
-  const implementationFingerprint = keccak256(encodeAbiParameters(
-    [{ type: 'address' }, { type: 'bytes32' }],
-    [candidate.implementation, candidate.implementationCodeHash],
-  ));
+  const token = review.token;
+  const policy = review.admissionPolicy;
+  if (!ADDRESS.test(token?.address ?? '') || !ADDRESS.test(onchain?.address ?? '')
+    || token.address.toLowerCase() !== onchain.address.toLowerCase()) {
+    throw new Error('reviewed token address differs from the Mainnet token');
+  }
+  if (String(token.symbol).toUpperCase() !== String(onchain.symbol).toUpperCase()) {
+    throw new Error('reviewed token symbol differs from the Mainnet token');
+  }
+  if (Number(token.decimals) !== Number(onchain.decimals)) {
+    throw new Error('reviewed token decimals differ from the Mainnet token');
+  }
+  if (!BYTES32.test(token.runtimeCodeHash ?? '') || !BYTES32.test(onchain.codeHash ?? '')
+    || token.runtimeCodeHash.toLowerCase() !== onchain.codeHash.toLowerCase()) {
+    throw new Error('reviewed token runtime code hash differs from the Mainnet token');
+  }
+  if (policy?.isStock !== false || Number(policy.capabilityMask) !== 0
+    || policy.allowedPoolClass !== 'SESSION_ONLY' || policy.sourceConfig !== '0x'
+    || policy.referenceAdapter !== null) {
+    throw new Error('counterasset review must remain unpriced and SESSION_ONLY');
+  }
+
+  const address = onchain.address;
+  const codeHash = onchain.codeHash.toLowerCase();
   return {
-    id: ZERO32, token: candidate.token, isStock: false, decimals: Number(candidate.decimals), capabilityMask: 0,
-    tokenPriceAdapter: ZERO_ADDRESS, regularAdapter: ZERO_ADDRESS, extendedAdapter: ZERO_ADDRESS,
-    overnightAdapter: ZERO_ADDRESS, secondaryAdapter: ZERO_ADDRESS,
-    expectedCodeHash: candidate.tokenCodeHash, implementationFingerprint, evidenceHash: candidate.evidenceHash,
+    symbol: String(onchain.symbol).toUpperCase(),
+    token: address,
+    decimals: Number(onchain.decimals),
+    isStock: false,
+    capabilityMask: 0,
+    sourceConfig: '0x',
+    adapters: {},
+    evidenceHash: keccak256(stringToHex('BELL_SESSION_ONLY_COUNTERASSET:' + address.toLowerCase() + ':' + codeHash)),
   };
-}
-
-export function counterassetEvidenceHash(evidence) {
-  return keccak256(stringToHex(JSON.stringify(evidence)));
 }

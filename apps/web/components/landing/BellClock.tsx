@@ -29,8 +29,8 @@ const KEYS: Array<[number, number]> = [
   [0.36, wm(0, 9, 36)],
   [0.48, wm(0, 16, 5)],
   [0.58, wm(0, 20, 30)],
-  [0.7, wm(4, 19, 55)],
-  [0.74, wm(4, 20, 5)],
+  [0.7, wm(4, 16, 55)],
+  [0.74, wm(4, 17, 5)],
   [0.88, wm(6, 19, 55)],
   [0.94, wm(6, 20, 0)],
   [1.0, wm(6, 20, 10)],
@@ -49,23 +49,23 @@ function weekMinuteAt(p: number): number {
 
 const CAPTIONS: Array<[number, string]> = [
   [0.0, 'Overnight. Thin books, so the pool charges 0.50% and allows a quarter of its normal trade size.'],
-  [0.1, 'Pre-market opens. The extended stream must be healthy; fee 0.30%, half-size limits.'],
+  [0.1, 'Pre-market opens. The onchain Chainlink feed must be fresh; fee 0.30%, half-size limits.'],
   [0.22, 'Nine-thirty approaches. The pool is about to reopen into the regular session.'],
   [0.26, 'The bell. Fee jumps to 1.00% and decays in a straight line over 300 seconds.'],
   [0.36, 'Regular session. 0.05% and the full per-trade and rolling limits.'],
-  [0.48, 'Post-market. 0.30%, half-size limits, extended stream required.'],
+  [0.48, 'Post-market. 0.30%, half-size limits, fresh onchain Chainlink feed required.'],
   [0.58, 'Overnight again. 0.50%, back to a quarter of the limits and never back to 0.05%.'],
-  [0.7, 'Friday 20:00 ET: the trading week ends. Tuesday to Thursday repeat the same day.'],
+  [0.7, 'Friday 17:00 ET: BELL closes when the Chainlink feed window ends. Tuesday to Thursday repeat the same day.'],
   [0.74, 'Weekend. Closed state: 1.00%, one-fifth trade size and one fixed budget for the whole episode.'],
   [0.88, 'Nothing here invents a stock price. Trading is bounded around the last valid close anchor.'],
   [0.94, 'Sunday 20:00 ET. A fresh bell, but the episode only ends after verified recovery.'],
 ];
 
 const REQUIREMENT: Record<Exclude<MarketPhase, 'UNKNOWN'>, string> = {
-  REGULAR: 'Active stock stream healthy · mid price ≤ 60 s old',
-  PRE: 'Extended stream healthy · mid price ≤ 120 s old',
-  POST: 'Extended stream healthy · mid price ≤ 120 s old',
-  OVERNIGHT: 'Overnight stream healthy · mid price ≤ 300 s old',
+  REGULAR: 'Onchain Chainlink round fresh · ≤ 120 s old',
+  PRE: 'Onchain Chainlink round fresh · ≤ 120 s old',
+  POST: 'Onchain Chainlink round fresh · ≤ 120 s old',
+  OVERNIGHT: 'Onchain Chainlink round fresh · ≤ 120 s old',
   CLOSED: 'Committed closure context · close anchor ≤ 96 h old · episode budget',
 };
 

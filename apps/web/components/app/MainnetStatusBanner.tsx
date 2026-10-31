@@ -12,7 +12,7 @@ export function MainnetStatusBanner() {
         <p>Robinhood Chain <span>·</span> Mainnet</p>
         <strong>Contracts and asset registry live <span>4663</span></strong>
       </div>
-      <p className="app-mainnet-status__disclosure">AAPL, NVDA, TSLA, USDG, WETH and MEME are admitted; MEME is SESSION_ONLY only. Create, quote and wallet-position flows are connected, but the pool directory is empty, so no Mainnet swap can run yet. Yahoo data rights and an independent audit are unverified.</p>
+      <p className="app-mainnet-status__disclosure">AAPL, NVDA, TSLA, USDG and WETH are admitted; MEME is available only for SESSION_ONLY pools with no independent price protection. Four-session Chainlink feeds are checked directly by the contracts and stale rounds block swaps. No Mainnet pool or swap exists yet. An independent security audit is not complete.</p>
       <a className="app-mainnet-status__explorer" href="https://robinhoodchain.blockscout.com/" target="_blank" rel="noreferrer noopener">Explorer ↗</a>
       <details className="app-mainnet-status__contracts">
         <summary>Contract addresses</summary>

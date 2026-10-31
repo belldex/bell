@@ -13,6 +13,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { createPublicClient, http } from 'viem';
 import { buildVerification } from './verify-testnet-deployment.mjs';
+import { loadEnvFile } from './env-loader.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const MANIFEST_URL = new URL('../../evidence/deploy/mainnet-4663.json', import.meta.url);
@@ -41,8 +42,8 @@ const same = (a, b) => typeof a === 'string' && typeof b === 'string' && a.toLow
 
 async function main() {
   const checkOnly = process.argv.includes('--check');
-  const env = loadEnv(await readFile(new URL('../../.env', import.meta.url), 'utf8').catch(() => ''));
-  const rpcUrl = process.env.RH_MAINNET_RPC_PRIMARY || env.RH_MAINNET_RPC_PRIMARY;
+  const env = loadEnvFile({ filePath: process.env.BELL_ENV_FILE || new URL('../../.env', import.meta.url) });
+  const rpcUrl = env.RH_MAINNET_RPC_PRIMARY;
   if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 
   const manifest = JSON.parse(await readFile(MANIFEST_URL, 'utf8'));

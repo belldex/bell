@@ -13,27 +13,16 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { formatDeployManifest } from './deploy-manifest.mjs';
 import { buildForgeArgs, cleanupDryRunArtifacts } from './mainnet-dry-run-cleanup.mjs';
+import { loadEnvFile } from './env-loader.mjs';
 
 const ROOT_URL = new URL('../../', import.meta.url);
 const MANIFEST_PATH = new URL('evidence/deploy/mainnet-4663.json', ROOT_URL);
 const MAINNET_CHAIN_ID = 4663;
 
-async function loadEnv() {
-  const env = { ...process.env };
-  try {
-    const raw = await readFile(new URL('.env', ROOT_URL), 'utf8');
-    for (const line of raw.split(/\r?\n/)) {
-      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-      if (m && !env[m[1]]) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
-    }
-  } catch {}
-  return env;
-}
-
 const args = process.argv.slice(2);
 const broadcast = args.includes('--broadcast');
 const skipPreflight = args.includes('--skip-preflight');
-const env = await loadEnv();
+const env = loadEnvFile({ filePath: process.env.BELL_ENV_FILE || fileURLToPath(new URL('.env', ROOT_URL)) });
 const previousManifest = await readFile(MANIFEST_PATH).catch((error) => {
   if (error.code === 'ENOENT') return null;
   throw error;

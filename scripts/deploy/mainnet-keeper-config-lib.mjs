@@ -91,6 +91,70 @@ export function buildMainnetKeeperVars({ manifest, broadcast, adapters, assets, 
   };
 }
 
+/** Build Chainlink-mode Worker vars exclusively from live deployment/admission/calendar evidence. */
+export function buildMainnetChainlinkKeeperVars({ manifest, verification, adapters, assets, assetState, calendarStates }) {
+  requireChain(manifest, 'manifest');
+  requireChain(verification, 'verification');
+  requireChain(adapters, 'Chainlink session adapters');
+  requireChain(assets, 'asset queue');
+  requireChain(assetState, 'asset state');
+  if (assets.activationPending) throw new Error('asset admission is still pending');
+  if (assetState.stage !== 'ACTIVE') throw new Error('asset state is ' + (assetState.stage ?? 'missing') + ', expected ACTIVE');
+  const verifiedAtBlock = Number(verification.blocks?.verifiedAtBlock);
+  if (!Number.isSafeInteger(verifiedAtBlock) || verifiedAtBlock < 1) {
+    throw new Error('Mainnet verification evidence has no verifiedAtBlock');
+  }
+  const symbols = Object.keys(assets.stocks ?? {}).sort();
+  if (symbols.length === 0) throw new Error('asset queue has no admitted stocks');
+  const stockAssets = [];
+  const roots = {};
+  for (const symbol of symbols) {
+    const asset = assets.stocks[symbol];
+    const active = assetState.stocks?.[symbol];
+    if (asset.active === false || !(active?.active || active?.alreadyActive)) {
+      throw new Error(symbol + ' asset descriptor is not active');
+    }
+    if (active.descriptorId?.toLowerCase() !== asset.descriptorId?.toLowerCase()) {
+      throw new Error(symbol + ' descriptor differs between queue and active-state evidence');
+    }
+    requireBytes32(asset.descriptorId, symbol + ' descriptorId');
+    const source = adapters.assets?.[symbol];
+    if (!source) throw new Error(symbol + ' Chainlink adapter evidence is missing');
+    for (const key of ['directAdapter', 'regularAdapter', 'extendedAdapter', 'overnightAdapter']) {
+      requireAddress(source[key], symbol + ' ' + key);
+    }
+    const calendar = calendarStates?.[symbol];
+    requireChain(calendar, symbol + ' calendar');
+    if (calendar.assetLabel !== symbol || !['ROOT_ACTIVE', 'INTERVAL_ACTIVE'].includes(calendar.stage)) {
+      throw new Error(symbol + ' calendar root is not active (stage=' + (calendar.stage ?? 'missing') + ')');
+    }
+    const root = requireBytes32(calendar.root, symbol + ' calendar root');
+    const year = Number(calendar.year);
+    const coverageStart = Number(calendar.coverageStart);
+    const coverageEnd = Number(calendar.coverageEnd);
+    if (!Number.isInteger(year) || year < 2020 || year > 2200
+      || !Number.isSafeInteger(coverageStart) || !Number.isSafeInteger(coverageEnd) || coverageStart >= coverageEnd) {
+      throw new Error(symbol + ' calendar coverage is invalid');
+    }
+    stockAssets.push({ symbol, assetId: asset.descriptorId });
+    roots[symbol] = { root, year, coverageStart, coverageEnd, capabilityMask: Number(asset.capabilityMask ?? 0b11110) };
+  }
+  const counterassetId = requireBytes32(assets.weth?.descriptorId, 'WETH descriptorId');
+  return {
+    BELL_ORACLE_MODE: 'chainlink',
+    BELL_EXPECTED_CHAIN_ID: String(CHAIN_ID),
+    BELL_POOL_FACTORY: requireAddress(manifest.poolFactory, 'PoolFactory'),
+    BELL_POOL_SCAN_FROM_BLOCK: String(verifiedAtBlock),
+    BELL_POSITION_MANAGER: requireAddress(manifest.positionManager, 'PositionManager'),
+    BELL_STOCK_ASSETS: JSON.stringify(stockAssets),
+    BELL_MAINNET_ASSETS: '{}',
+    BELL_CALENDAR_REGISTRY: requireAddress(manifest.calendarRegistry, 'CalendarRegistry'),
+    BELL_SESSION_REGISTRY: requireAddress(manifest.sessionRegistry, 'SessionRegistry'),
+    BELL_CALENDAR_COUNTER_ASSET_ID: counterassetId,
+    BELL_CALENDAR_ROOTS: JSON.stringify(roots),
+  };
+}
+
 /** Replace Wrangler's vars object while respecting braces inside quoted JSON-valued strings. */
 export function replaceWranglerVars(source, vars) {
   const marker = source.indexOf('"vars"');

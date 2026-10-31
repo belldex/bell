@@ -20,6 +20,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
     uint8 private constant SOURCE_AGGREGATOR_QUOTE = 2;
     uint8 private constant SOURCE_STREAM_V11 = 3;
     uint8 private constant SOURCE_SECONDARY_TOKEN = 4;
+    uint8 private constant SOURCE_CHAINLINK_SESSION = 5;
     uint8 private constant BASIS_UNDERLYING = 1;
     uint8 private constant BASIS_TOKEN_ADJUSTED = 2;
     uint8 private constant BASIS_QUOTE_USD = 3;
@@ -230,7 +231,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         bool tokenAdjusted;
         for (uint256 i; i < wires.length; ++i) {
             SourceWire memory wire = wires[i];
-            if (wire.kind < 1 || wire.kind > 4 || wire.phaseScope > 4 || wire.decimals > 18 || wire.endpoint == address(0)
+            if (wire.kind < 1 || wire.kind > 5 || wire.phaseScope > 4 || wire.decimals > 18 || wire.endpoint == address(0)
                 || wire.endpoint.code.length == 0 || wire.expectedCodeHash == ZERO32 || wire.endpoint.codehash != wire.expectedCodeHash
                 || wire.expectedImplementation == address(0) || wire.expectedImplementation.code.length == 0
                 || wire.canonicalTokenId != keccak256(abi.encode(block.chainid, descriptor_.token))) revert BadConfig(ERR_SOURCE_WIRE);
@@ -252,6 +253,10 @@ contract AssetRegistry is IBellEvents, IBellErrors {
                     || (wire.schema != 11 && wire.schema != 12) || wire.feedId == ZERO32 || wire.priceBasis != 1) {
                     revert BadConfig(ERR_V11_SOURCE);
                 }
+                streamMask |= uint8(1) << wire.phaseScope;
+            } else if (wire.kind == SOURCE_CHAINLINK_SESSION) {
+                if (!descriptor_.isStock || wire.phaseScope < 1 || wire.phaseScope > 3 || wire.schema != 1
+                    || wire.feedId == ZERO32 || wire.priceBasis != 1 || wire.heartbeatSec != 86400) revert BadConfig(ERR_V11_SOURCE);
                 streamMask |= uint8(1) << wire.phaseScope;
             } else if (!descriptor_.isStock || wire.phaseScope != 4 || wire.schema == 0 || wire.feedId == ZERO32 || wire.priceBasis != 4) {
                 revert BadConfig(ERR_SECONDARY_SOURCE);
@@ -275,9 +280,9 @@ contract AssetRegistry is IBellEvents, IBellErrors {
     function _assertAdapterBinding(AssetDescriptor calldata descriptor_, SourceWire memory wire) private view {
         address adapter;
         if (wire.kind == 1 || wire.kind == 2) adapter = descriptor_.tokenPriceAdapter;
-        else if (wire.kind == 3 && wire.phaseScope == 1) adapter = descriptor_.regularAdapter;
-        else if (wire.kind == 3 && wire.phaseScope == 2) adapter = descriptor_.extendedAdapter;
-        else if (wire.kind == 3 && wire.phaseScope == 3) adapter = descriptor_.overnightAdapter;
+        else if ((wire.kind == 3 || wire.kind == SOURCE_CHAINLINK_SESSION) && wire.phaseScope == 1) adapter = descriptor_.regularAdapter;
+        else if ((wire.kind == 3 || wire.kind == SOURCE_CHAINLINK_SESSION) && wire.phaseScope == 2) adapter = descriptor_.extendedAdapter;
+        else if ((wire.kind == 3 || wire.kind == SOURCE_CHAINLINK_SESSION) && wire.phaseScope == 3) adapter = descriptor_.overnightAdapter;
         else if (wire.kind == 4) adapter = descriptor_.secondaryAdapter;
         if (adapter == address(0) || adapter.code.length == 0) revert BadConfig(ERR_ADAPTER_CODE);
         (bool hashOk, bytes memory hashData) = adapter.staticcall{gas: PolicyConstants.MAX_STATIC_CALL_GAS}(

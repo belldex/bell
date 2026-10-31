@@ -28,7 +28,7 @@ function validateWires(wires) {
     if (!wire || typeof wire !== 'object') throw new TypeError('SourceWire must be an object');
     const numericFields = [wire.kind, wire.phaseScope, wire.schema, wire.decimals, wire.priceBasis, wire.heartbeatSec];
     if (numericFields.some((value) => !Number.isSafeInteger(value) || value < 0)) throw new RangeError('SourceWire numeric field is invalid');
-    if (wire.kind < 1 || wire.kind > 4 || wire.phaseScope > 4 || wire.schema > 65535
+    if (wire.kind < 1 || wire.kind > 5 || wire.phaseScope > 4 || wire.schema > 65535
       || wire.decimals > 18 || wire.priceBasis < 1 || wire.priceBasis > 4 || wire.heartbeatSec > 0xffffffff) {
       throw new RangeError('SourceWire field is outside its ABI domain');
     }
@@ -43,6 +43,7 @@ function validateWires(wires) {
     if ((wire.kind === 1 && (wire.phaseScope !== 0 || wire.schema !== 0 || wire.feedId.toLowerCase() !== ZERO32 || wire.priceBasis !== 2))
       || (wire.kind === 2 && (wire.phaseScope !== 0 || wire.schema !== 0 || wire.feedId.toLowerCase() !== ZERO32 || wire.priceBasis !== 3))
       || (wire.kind === 3 && (wire.phaseScope < 1 || wire.phaseScope > 3 || (wire.schema !== 11 && wire.schema !== 12) || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 1))
+      || (wire.kind === 5 && (wire.phaseScope < 1 || wire.phaseScope > 3 || wire.schema !== 1 || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 1 || wire.heartbeatSec !== 86400))
       || (wire.kind === 4 && (wire.phaseScope !== 4 || wire.schema === 0 || wire.feedId.toLowerCase() === ZERO32 || wire.priceBasis !== 4))) {
       throw new Error('SourceWire kind, phase scope, schema, feed ID, and price basis are inconsistent');
     }
