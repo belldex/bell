@@ -24,8 +24,8 @@ export const metadata: Metadata = {
   description:
     'BELL is a Uniswap v4 hook for tokenized-stock pools on Robinhood Chain Mainnet, with wallet-based pool creation, signed quotes and liquidity management. Check the live pool directory before trading.',
   icons: {
-    icon: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
-    apple: [{ url: '/assets/bell-logo.png', type: 'image/png' }],
+    icon: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
+    apple: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
   },
   openGraph: {
     title: 'BELL: Session-aware tokenized-stock liquidity',
