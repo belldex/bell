@@ -2,10 +2,10 @@ import Link from 'next/link';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 
 const sections = [
-  { id: 'sessions', category: 'Fee engine', title: 'Session fee', body: 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown session or unhealthy source state fails closed.', short: 'Session fee' },
+  { id: 'sessions', category: 'Fee engine', title: 'Session fee', body: 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown calendar state fails closed; a stale stock input sends PRICE_GUARDED to its AMM fallback, while SESSION_ONLY stays independent of feed freshness.', short: 'Session fee' },
   { id: 'budgets', category: 'Flow control', title: 'Flow budgets', body: 'Per-trade T, rolling W, and closure-episode C are raw token units per currency. Adding liquidity never raises caps or refills spent budgets.', short: 'Flow budgets' },
-  { id: 'price-guarded', category: 'Pool class', code: 'PRICE_GUARDED', title: 'Independent price guard', body: 'Requires reviewed independent price references for both assets and enforces a reference band. Closed stock pricing uses a provenance-bound historical close anchor.', short: 'Price guarded' },
-  { id: 'session-only', category: 'Pool class', code: 'SESSION_ONLY', title: 'Session controls', body: 'Enforces session controls and raw-unit flow limits but does not provide independent counterasset price protection or USD valuation.', short: 'Session only' },
+  { id: 'price-guarded', category: 'Pool class', code: 'PRICE_GUARDED', title: 'Independent price guard', body: 'Requires reviewed independent references for both assets and enforces a price band while they are valid. If references are stale or unavailable, swaps continue on the AMM price with a 1% fee and the strictest flow caps. Closed-session fallback is bounded by the calendar interval and closure budget.', short: 'Price guarded' },
+  { id: 'session-only', category: 'Pool class', code: 'SESSION_ONLY', title: 'Session controls', body: 'Uses the AMM price at all times and does not depend on stock-feed freshness. Session fees and raw-unit flow limits still apply, but there is no independent counterasset price protection or USD valuation.', short: 'Session only' },
   { id: 'closure', category: 'Recovery', title: 'Recovery and exit', body: 'Trading resumes only after required fresh checkpoints and recovery delay. The connected Positions page discovers wallet-owned BELL NFTs and offers direct add, minimum-output in-kind removal, and fee collection through PositionManager.', short: 'Recovery and exit' },
 ];
 
@@ -17,7 +17,7 @@ export default function ProtocolPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ion">Protocol / Robinhood Chain mainnet</p>
           <h1 className="mt-3 max-w-[900px] font-display text-[36px] font-bold leading-[1.04] tracking-[-0.05em] text-ink sm:text-[48px]">Policy rules, made explicit.</h1>
         </div>
-          <p className="max-w-[560px] text-sm leading-relaxed text-muted">BELL contracts and AAPL, NVDA, TSLA, USDG, WETH, and MEME admissions are active on Robinhood Chain Mainnet. MEME is `SESSION_ONLY` only. No Mainnet pool has been created yet, so pool policy values appear after a market exists.</p>
+          <p className="max-w-[560px] text-sm leading-relaxed text-muted">BELL contracts and AAPL, NVDA, TSLA, USDG, WETH, and MEME admissions are active on Robinhood Chain Mainnet. MEME is `SESSION_ONLY` only. Each pool exposes its current protection mode, fee policy, and limits from the hook.</p>
       </div>
 
       <nav className="app-protocol-index" aria-label="Protocol topics">

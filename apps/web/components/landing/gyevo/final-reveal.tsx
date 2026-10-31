@@ -111,7 +111,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
-                Mainnet session-aware pools for admitted Robinhood Stock Tokens AAPL, NVDA, and TSLA, with USDG, WETH, and MEME counterassets. MEME is SESSION_ONLY with no independent price protection. Fresh Chainlink rounds are intermittent and stale data blocks swaps. Check the live feed status and pool directory before trading.
+                Mainnet PRICE_GUARDED and SESSION_ONLY pools for AAPL, NVDA, and TSLA with USDG, WETH, and MEME counterassets. PRICE_GUARDED discloses when it falls back to the AMM price; SESSION_ONLY always uses that price. Fees and flow limits apply in every supported session.
               </p>
               <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
                 <span className="lp-ecosystem__item">

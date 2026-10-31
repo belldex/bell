@@ -37,30 +37,32 @@ export function MainnetSessionFeedStatus() {
   }, []);
 
   const assets = feedStatus?.assets ? Object.entries(feedStatus.assets).sort(([a], [b]) => a.localeCompare(b)) : [];
-  const gated = assets.filter(([, item]) => item.session === 'CLOSED' ? item.anchorValid !== true : item.sessionFeedFresh !== true).length;
+  const attentionCount = assets.filter(([, item]) => item.session === 'CLOSED' ? item.anchorValid !== true : item.sessionFeedFresh !== true).length;
   const summary = unavailable
     ? 'Status unavailable'
     : !feedStatus
       ? 'Checking feeds'
-      : gated > 0
-        ? `${gated} ${gated === 1 ? 'feed' : 'feeds'} gated`
+      : attentionCount > 0
+        ? `${attentionCount} ${attentionCount === 1 ? 'feed update' : 'feed updates'} unavailable`
         : 'Feeds current';
-  const state = unavailable || gated > 0 ? 'attention' : feedStatus ? 'ready' : 'pending';
+  const state = unavailable || attentionCount > 0 ? 'attention' : feedStatus ? 'ready' : 'pending';
 
   return (
     <details className="app-session-feeds" aria-live="polite">
-      <summary data-state={state}><span>Session feeds</span><strong>{summary}</strong></summary>
+      <summary data-state={state}><span>Chainlink feeds</span><strong>{summary}</strong></summary>
       <div className="app-session-feeds__panel">
-        {unavailable && <p>Live feed status is temporarily unavailable. The router still enforces onchain checks.</p>}
+        {unavailable && <p>Live feed status is temporarily unavailable. Each pool still enforces its own onchain policy.</p>}
         {!feedStatus && !unavailable && <p>Reading the current session and feed freshness…</p>}
         {assets.length > 0 && <ul>
           {assets.map(([symbol, item]) => {
             const age = item.feedAgeSeconds === null ? '' : `${item.feedAgeSeconds}s / ${item.freshnessLimitSeconds ?? 120}s`;
-            const detail = item.session === 'CLOSED'
-              ? item.anchorValid ? 'close anchor verified' : 'close anchor missing'
-              : item.sessionFeedFresh ? `fresh · ${age}` : `stale · ${age || 'no recent round'}`;
-            const isGated = item.session === 'CLOSED' ? item.anchorValid !== true : item.sessionFeedFresh !== true;
-            return <li key={symbol} data-state={isGated ? 'attention' : 'ready'}><span>{symbol}</span><span>{item.session}</span><strong>{detail}</strong></li>;
+            const outsideFeedWindow = item.session === 'CLOSED';
+            const displaySession = outsideFeedWindow ? 'Off-hours' : item.session;
+            const detail = outsideFeedWindow
+              ? item.anchorValid ? 'reference available' : 'AMM fallback · SESSION_ONLY is independent of feed'
+              : item.sessionFeedFresh ? `fresh · ${age}` : `stale · ${age || 'no recent round'} · PRICE_GUARDED may use AMM fallback; SESSION_ONLY ignores feed age`;
+            const feedUnavailable = outsideFeedWindow ? item.anchorValid !== true : item.sessionFeedFresh !== true;
+            return <li key={symbol} data-state={feedUnavailable ? 'attention' : 'ready'}><span>{symbol}</span><span>{displaySession}</span><strong>{detail}</strong></li>;
           })}
         </ul>}
       </div>

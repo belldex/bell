@@ -187,9 +187,27 @@ const SESSION_ABI = parseAbi([
   'function health(bytes32) view returns ((bool ready, uint256 reasonBits, uint64 healthySince, uint64 validUntil, uint64 baselineObservation, uint64 latestObservation))',
   'function latestSample(bytes32, uint8) view returns ((bytes32 descriptorId, bytes32 feedId, uint8 phase, uint128 price18, uint64 observedAt, uint64 inputAt, uint64 validFrom, uint64 expiresAt, uint64 validUntil, bytes32 reportHash))',
 ]);
+const HOOK_ABI = parseAbi([
+  'function poolKey() view returns ((address currency0, address currency1, uint24 fee, int24 tickSpacing, address hooks))',
+  'function configHash() view returns (bytes32)',
+  'function config() view returns ((address token0, address token1, bytes32 asset0, bytes32 asset1, address poolManager, address positionManager, address factory, address assetRegistry, address calendarRegistry, address safetyController, address treasuryAdapter, uint8 poolClass, uint8 liquidityMode, uint8 referenceMode, int24 tickSpacing, uint128[2] tradeCap, uint128[2] windowCap, uint128[2] closureCap, bytes32 policyId, address referenceAdapter0, address referenceAdapter1))',
+  'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] effectiveTradeCap, uint128[2] effectiveWindowCap, uint128[2] rollingRemaining, uint128[2] closureRemaining, uint128[2] referencePrice18, uint64 validUntil, uint64 closureNonce, bytes32 configHash, bytes32 dependencyHash))',
+  'function state() view returns ((uint8 lifecycle, uint8 mode, bool closedLatched, uint64 closureNonce, uint64 reopenCandidateAt, uint64 oldValidUntil, uint64[2] reopenBaseObservations, uint64[2] lastOpenObservations, uint64 pauseNonce, uint64 bellStart, uint64 corporateUntil))',
+  'function buckets() view returns ((uint64 epoch, uint128[2] currentGross, uint128[2] previousGross))',
+]);
+const [hookKey, hookConfig, hookPolicy, hookState, buckets] = await Promise.all([
+  c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'poolKey' }),
+  c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'config' }),
+  c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'getPolicy' }),
+  c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'state' }),
+  c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'buckets' }),
+]);
+const isPriceGuarded = Number(hookConfig.poolClass) === 0;
+const fallbackMode = isPriceGuarded && (hookPolicy.flags & 2) !== 0;
 const interval = await c.readContract({
   address: manifest.calendarRegistry, abi: CAL_ABI, functionName: 'currentInterval', args: [stockAsset.descriptorId],
 });
+const feedEvidenceRequired = isPriceGuarded && !fallbackMode && Number(interval.phase) !== 5;
 check('calendar.assetMatches', String(interval.assetId).toLowerCase() === stockAsset.descriptorId.toLowerCase(), interval.assetId);
 check('calendar.activeNow', Number(interval.start) <= now && now < Number(interval.end), `${interval.start}..${interval.end} vs ${now}`);
 let pairStockInterval = null;
@@ -200,19 +218,26 @@ if (pairIsStock) {
   check('calendar.counterStockAssetMatches', String(pairStockInterval.assetId).toLowerCase() === pairAsset.descriptorId.toLowerCase(), pairStockInterval.assetId);
   check('calendar.counterStockActiveNow', Number(pairStockInterval.start) <= now && now < Number(pairStockInterval.end), `${pairStockInterval.start}..${pairStockInterval.end} vs ${now}`);
 }
-// 6. Session health and the report behind it.
+// 6. Session health and the report behind it. These are required only when active PRICE_GUARDED
+// protection uses a live stock source; fallback, CLOSED, and SESSION_ONLY policy do not require them.
 const health = await c.readContract({
   address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [stockAsset.descriptorId],
 });
-check('health.hasEverBeenReady', health.ready || Number(health.healthySince) > 0, `ready=${health.ready}`);
-check('health.noBlockingReasons', Number(health.reasonBits) === 0, String(health.reasonBits));
-check('health.hasObservation', Number(health.latestObservation) > 0, String(health.latestObservation));
+check('health.hasEverBeenReady', !feedEvidenceRequired || health.ready || Number(health.healthySince) > 0,
+  feedEvidenceRequired ? `ready=${health.ready}` : 'not required by the current AMM-only policy');
+check('health.noBlockingReasons', !feedEvidenceRequired || Number(health.reasonBits) === 0,
+  feedEvidenceRequired ? String(health.reasonBits) : 'not required by the current AMM-only policy');
+check('health.hasObservation', !feedEvidenceRequired || Number(health.latestObservation) > 0,
+  feedEvidenceRequired ? String(health.latestObservation) : 'not required by the current AMM-only policy');
 const pairHealth = pairIsStock ? await c.readContract({
     address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'health', args: [pairAsset.descriptorId],
   }) : null;
 if (pairHealth) {
-  check('health.counterStockReady', pairHealth.ready && Number(pairHealth.reasonBits) === 0 && Number(pairHealth.validUntil) > now,
-    `ready=${pairHealth.ready} reasons=${pairHealth.reasonBits} validUntil=${pairHealth.validUntil}`);
+  check('health.counterStockReady', !feedEvidenceRequired
+      || pairHealth.ready && Number(pairHealth.reasonBits) === 0 && Number(pairHealth.validUntil) > now,
+    feedEvidenceRequired
+      ? `ready=${pairHealth.ready} reasons=${pairHealth.reasonBits} validUntil=${pairHealth.validUntil}`
+      : 'not required by the current AMM-only policy');
 }
 
 for (const [label, id, marketInterval] of [['stock', stockAsset.descriptorId, interval], ...(pairHealth ? [['counterStock', pairAsset.descriptorId, pairStockInterval]] : [])]) {
@@ -220,58 +245,65 @@ for (const [label, id, marketInterval] of [['stock', stockAsset.descriptorId, in
     address: manifest.sessionRegistry, abi: SESSION_ABI, functionName: 'latestSample',
     args: [id, Number(marketInterval.phase)],
   });
-  check(`report:${label}.exists`, sample.reportHash !== Z, 'reportHash');
-  check(`report:${label}.priceNonZero`, sample.price18 > 0n, String(sample.price18));
-  check(`report:${label}.phaseMatchesCalendar`, Number(sample.phase) === Number(marketInterval.phase), `${sample.phase} vs ${marketInterval.phase}`);
-  check(`report:${label}.freshness`, now - Number(sample.observedAt) < 3600, `${now - Number(sample.observedAt)}s old`);
+  const required = feedEvidenceRequired;
+  check(`report:${label}.exists`, !required || sample.reportHash !== Z, required ? 'reportHash' : 'not required by the current AMM-only policy');
+  check(`report:${label}.priceNonZero`, !required || sample.price18 > 0n, required ? String(sample.price18) : 'not required by the current AMM-only policy');
+  check(`report:${label}.phaseMatchesCalendar`, !required || Number(sample.phase) === Number(marketInterval.phase),
+    required ? `${sample.phase} vs ${marketInterval.phase}` : 'not required by the current AMM-only policy');
+  check(`report:${label}.freshness`, !required || now - Number(sample.observedAt) < 3600,
+    required ? `${now - Number(sample.observedAt)}s old` : 'not required by the current AMM-only policy');
 }
 
 // 7. Hook state and policy.
-const HOOK_ABI = parseAbi([
-  'function poolKey() view returns ((address currency0, address currency1, uint24 fee, int24 tickSpacing, address hooks))',
-  'function configHash() view returns (bytes32)',
-  'function config() view returns ((address token0, address token1, bytes32 asset0, bytes32 asset1, address poolManager, address positionManager, address factory, address assetRegistry, address calendarRegistry, address safetyController, address treasuryAdapter, uint8 poolClass, uint8 liquidityMode, uint8 referenceMode, int24 tickSpacing, uint128[2] tradeCap, uint128[2] windowCap, uint128[2] closureCap, bytes32 policyId, address referenceAdapter0, address referenceAdapter1))',
-  'function getPolicy() view returns ((bool canSwap, uint8 mode, uint8 phase, uint16 flags, uint256 reasonBits, uint24 lpFeeUnits, uint16 bandBps, uint128[2] a, uint128[2] b, uint128[2] c, uint128[2] d, uint128[2] e, uint64 f, uint64 g, bytes32 h, bytes32 i))',
-  'function state() view returns ((uint8 lifecycle, uint8 mode, bool closedLatched, uint64 closureNonce, uint64 reopenCandidateAt, uint64 oldValidUntil, uint64[2] reopenBaseObservations, uint64[2] lastOpenObservations, uint64 pauseNonce, uint64 bellStart, uint64 corporateUntil))',
-  'function buckets() view returns ((uint64 epoch, uint128[2] currentGross, uint128[2] previousGross))',
-]);
-const hookKey = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'poolKey' });
-const hookConfig = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'config' });
-const hookPolicy = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'getPolicy' });
-const hookState = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'state' });
-const buckets = await c.readContract({ address: pool.hook, abi: HOOK_ABI, functionName: 'buckets' });
-
 check('hook.selfInKey', String(hookKey.hooks).toLowerCase() === pool.hook.toLowerCase(), hookKey.hooks);
 check('hook.configToken0', String(hookConfig.token0).toLowerCase() === pool.token0.toLowerCase(), hookConfig.token0);
 check('hook.configToken1', String(hookConfig.token1).toLowerCase() === pool.token1.toLowerCase(), hookConfig.token1);
-const isPriceGuarded = Number(hookConfig.poolClass) === 0;
 check('hook.poolClassMatchesEvidence',
   isPriceGuarded === (pool.poolClass === 0),
   `hook=${hookConfig.poolClass} evidence=${pool.poolClass}`);
 if (isPriceGuarded) {
-  // PRICE_GUARDED: both reference adapters must exist and produce a live in-band reference now.
+  check('priceGuard.referenceAdaptersConfigured',
+    hookConfig.referenceAdapter0 !== ZERO_ADDRESS && hookConfig.referenceAdapter1 !== ZERO_ADDRESS,
+    `${hookConfig.referenceAdapter0}/${hookConfig.referenceAdapter1}`);
+  if (fallbackMode) {
+    check('priceGuard.fallbackFlag', Number(hookPolicy.flags) === 2, String(hookPolicy.flags));
+    check('priceGuard.fallbackFee', hookPolicy.lpFeeUnits === 10000, String(hookPolicy.lpFeeUnits));
+    check('priceGuard.fallbackReferencesHidden', hookPolicy.referencePrice18.every((price) => price === 0n),
+      hookPolicy.referencePrice18.map(String).join('/'));
+    check('priceGuard.strictFallbackCaps',
+      hookPolicy.effectiveTradeCap.every((cap, i) => cap === hookConfig.tradeCap[i] / 5n)
+        && hookPolicy.effectiveWindowCap.every((cap, i) => cap === hookConfig.windowCap[i] / 4n),
+      `trade=${hookPolicy.effectiveTradeCap.map(String).join('/')} window=${hookPolicy.effectiveWindowCap.map(String).join('/')}`);
+  } else {
+    check('priceGuard.activeFlag', Number(hookPolicy.flags) === 1, String(hookPolicy.flags));
+    // Active PRICE_GUARDED requires both reference adapters to produce a live price.
   const REF_ABI = parseAbi(['function referencePrice() view returns (uint128)']);
   const [ref0, ref1] = await Promise.all([
     c.readContract({ address: hookConfig.referenceAdapter0, abi: REF_ABI, functionName: 'referencePrice' }).catch(() => 0n),
     c.readContract({ address: hookConfig.referenceAdapter1, abi: REF_ABI, functionName: 'referencePrice' }).catch(() => 0n),
   ]);
   check('priceGuard.referenceAdaptersLive', ref0 > 0n && ref1 > 0n, `${ref0}/${ref1}`);
+  }
 } else {
   check('sessionOnly.noReferenceAdapters',
     String(hookConfig.referenceAdapter0) === Z.slice(0, 42) && String(hookConfig.referenceAdapter1) === Z.slice(0, 42),
     `${hookConfig.referenceAdapter0}/${hookConfig.referenceAdapter1}`);
+  check('sessionOnly.protectionNotApplicable', Number(hookPolicy.flags) === 4, String(hookPolicy.flags));
 }
 check('hook.lifecycleLive', Number(hookState.lifecycle) === 2, String(hookState.lifecycle));
 check('hook.bellStartSet', Number(hookState.bellStart) > 0, String(hookState.bellStart));
-check('hook.notLatched', !hookState.closedLatched, 'closedLatched');
-check('hook.policyCoherent', hookPolicy.canSwap === (hookPolicy.mode === 1), `canSwap=${hookPolicy.canSwap} mode=${hookPolicy.mode}`);
-check('hook.noReasonBitsWhenActive', !(hookPolicy.mode === 1 && hookPolicy.reasonBits !== 0n), `reasons=${hookPolicy.reasonBits}`);
+check('hook.latchedOnlyForClosedMode', !hookState.closedLatched || Number(hookPolicy.phase) === 5 && hookPolicy.mode === 2,
+  `latched=${hookState.closedLatched} mode=${hookPolicy.mode} phase=${hookPolicy.phase}`);
+const canSwapByMode = hookPolicy.mode === 1 || hookPolicy.mode === 2 && hookState.closedLatched;
+check('hook.policyCoherent', hookPolicy.canSwap === canSwapByMode, `canSwap=${hookPolicy.canSwap} mode=${hookPolicy.mode}`);
+check('hook.noReasonBitsWhenTradable', !hookPolicy.canSwap || hookPolicy.reasonBits === 0n, `reasons=${hookPolicy.reasonBits}`);
 
 // 8. A real swap happened, and it went through the router, not the rehearsal executor.
 check('swap.atLeastOneSwapExecuted', buckets.currentGross[0] > 0n || buckets.currentGross[1] > 0n, `gross=${buckets.currentGross.map(String).join(',')}`);
 check('swap.grossBoundedByWindowCap',
-  buckets.currentGross[0] <= hookConfig.windowCap[0] && buckets.currentGross[1] <= hookConfig.windowCap[1],
-  `gross=${buckets.currentGross.map(String).join(',')} caps=${hookConfig.windowCap.map(String).join(',')}`);
+  buckets.currentGross[0] + buckets.previousGross[0] <= hookPolicy.effectiveWindowCap[0]
+    && buckets.currentGross[1] + buckets.previousGross[1] <= hookPolicy.effectiveWindowCap[1],
+  `gross=${[0, 1].map((i) => buckets.currentGross[i] + buckets.previousGross[i]).join(',')} caps=${hookPolicy.effectiveWindowCap.map(String).join(',')}`);
 check('swap.evidenceIsForThisPool', swap.poolId?.toLowerCase() === pool.poolId.toLowerCase(), `${swap.poolId} vs ${pool.poolId}`);
 check('swap.wentThroughRouter', swap.router?.toLowerCase() === manifest.router.toLowerCase(), `${swap.router}`);
 const swapReceipt = await c.getTransactionReceipt({ hash: swap.swapTx }).catch(() => null);

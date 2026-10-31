@@ -5,6 +5,7 @@ import {PoolOracleUpdates} from "../../../src/registries/SessionRegistry.sol";
 import {IAssetRegistry, ISessionRegistry} from "../../../src/interfaces/IBellProtocol.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {SafetyController} from "../../../src/SafetyController.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
@@ -56,7 +57,12 @@ contract MockHookToken {
 contract MockHookDependency {}
 
 contract MockHookReferenceAdapter {
-    function referencePrice() external pure returns (uint128) { return 1e18; }
+    bool public unavailable;
+    function setUnavailable(bool value) external { unavailable = value; }
+    function referencePrice() external view returns (uint128) {
+        if (unavailable) revert("STALE_REFERENCE");
+        return 1e18;
+    }
 }
 
 contract MockHookPositionManager {
@@ -338,6 +344,7 @@ contract BellHookLifecycleTest {
     bytes32 private templateCodeHash;
     BellHook private hook;
     BellPolicyOracle private oracle;
+    BellModeEvaluator private modeEvaluator;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -359,6 +366,7 @@ contract BellHookLifecycleTest {
         referenceAdapter = new MockHookReferenceAdapter();
         templateCodeHash = keccak256(type(BellHook).creationCode);
         oracle = new BellPolicyOracle();
+        modeEvaluator = new BellModeEvaluator();
         _installHealthyState();
         hook = _deployHook();
     }
@@ -420,47 +428,38 @@ contract BellHookLifecycleTest {
         _rejectPullSwap(updates);
     }
 
-    function testPullPreparePreservesRecoverySeparationAndObservationAdvance() external {
+    function testSessionOnlyPullDoesNotRequireStaleHealthRecovery() external {
         _pullLive();
         hook.refreshState();
         vm.warp(block.timestamp + 501);
-        sessions.setHealth(asset1, _healthyHealth());
-        uint64 start = uint64(block.timestamp);
         OraclePullUpdate[] memory updates = _pullUpdates(asset0);
         PolicyView memory policy = _preparePull(updates);
-        require(policy.mode == uint8(Mode.RECOVERING) && !policy.canSwap, "first quote bypassed recovery");
-        require(hook.state().reopenCandidateAt == start, "missing recovery checkpoint");
-        vm.warp(start + 59);
-        policy = hook.refreshState();
-        require(policy.mode == uint8(Mode.RECOVERING), "released before 60 seconds");
-        vm.warp(start + 60);
-        policy = hook.refreshState();
-        require(policy.mode == uint8(Mode.RECOVERING), "observation separation bypassed");
-        policy = _preparePull(_pullUpdates(asset0));
-        require(policy.canSwap && hook.state().reopenCandidateAt == 0, "advanced quote did not release");
+        require(policy.mode == uint8(Mode.ACTIVE) && policy.canSwap, "SESSION_ONLY depended on stock health freshness");
+        require(policy.flags & 4 != 0, "SESSION_ONLY protection status");
+        require(hook.state().reopenCandidateAt == 0, "SESSION_ONLY entered feed recovery");
     }
 
-    function testPullExpiredSwapRollsBackWarmupUpdates() external {
+    function testSessionOnlySwapRemainsAvailableWhenReporterHealthIsStale() external {
         _pullLive();
         hook.refreshState();
         vm.warp(block.timestamp + 501);
-        sessions.setHealth(asset1, _healthyHealth());
         OraclePullUpdate[] memory updates = _pullUpdates(asset0);
         PoolKey memory key = hook.poolKey();
         vm.prank(address(manager));
-        (bool ok, bytes memory reason) = address(hook).call(abi.encodeCall(IHooks.beforeSwap,
+        (bool ok,) = address(hook).call(abi.encodeCall(IHooks.beforeSwap,
             (factory, key, _swapParams(), abi.encode(address(this), bytes32("request"), updates))));
-        require(!ok && bytes4(reason) == IBellErrors.PolicyBlocked.selector, "stale swap rejection");
-        require(sessions.pullPayloadHash(asset0) == bytes32(0), "reverting swap persisted update");
-        require(hook.state().reopenCandidateAt == 0, "reverting swap persisted warmup");
+        require(ok, "SESSION_ONLY stale reporter health blocked swap");
+        require(sessions.pullPayloadHash(asset0) != bytes32(0), "fresh pull was not applied");
+        require(hook.getPolicy().canSwap && hook.state().reopenCandidateAt == 0, "SESSION_ONLY entered feed recovery");
     }
 
-    function testPullSuccessfulSwapsCheckpointContinuousFreshnessAcrossOldDeadline() external {
+    function testSessionOnlySwapsContinuePastStockHealthDeadline() external {
         _pullLive();
         _preparePull(_pullUpdates(asset0));
         uint64 originalDeadline = hook.state().oldValidUntil;
+        uint64 initialHealthDeadline = uint64(block.timestamp + 500);
         PoolKey memory key = hook.poolKey();
-        for (uint256 i; i < 3; ++i) {
+        for (uint256 i; i < 10; ++i) {
             vm.warp(block.timestamp + 60);
             bytes memory data = abi.encode(address(this), bytes32(i), _pullUpdates(asset0));
             vm.prank(address(manager));
@@ -468,9 +467,9 @@ contract BellHookLifecycleTest {
             vm.prank(address(manager));
             hook.afterSwap(factory, key, _swapParams(), toBalanceDelta(-1, 1), data);
         }
-        require(block.timestamp > originalDeadline, "did not cross initial deadline");
-        require(hook.state().oldValidUntil == block.timestamp + 120, "successful swap did not checkpoint freshness");
-        require(hook.getPolicy().canSwap, "continuous fresh swaps entered recovery");
+        require(block.timestamp > initialHealthDeadline, "did not cross initial health deadline");
+        require(hook.state().oldValidUntil == originalDeadline, "SESSION_ONLY policy deadline depends on feed refresh");
+        require(hook.getPolicy().canSwap, "continuous swaps entered feed recovery");
     }
 
     function testPullOptionalCloseCaptureRunsAfterReportsAndPropagatesValidation() external {
@@ -829,7 +828,7 @@ contract BellHookLifecycleTest {
         require(policy.reasonBits == 0, "no blocking reasons");
         require(policy.canSwap, "canSwap must be true for a healthy live pool");
         require(policy.phase == PolicyConstants.PHASE_REGULAR, "phase");
-        require(policy.validUntil == uint64(block.timestamp + 500), "validUntil");
+        require(policy.validUntil == uint64(block.timestamp + 1000), "validUntil");
 
         // The wiring is real: beforeSwap returns the session fee with the override flag set.
         PoolKey memory key = hook.poolKey();
@@ -843,6 +842,108 @@ contract BellHookLifecycleTest {
         require(refreshed.canSwap, "refresh canSwap");
         require(keccak256(abi.encode(refreshed)) == keccak256(abi.encode(policy)), "view/checkpoint parity");
         require(hook.state().mode == uint8(Mode.ACTIVE), "stored mode");
+    }
+
+    function testSessionOnlyPoolCanSwapDuringOpenSessionWithoutFreshStockFeed() external {
+        PoolConfig memory config = _config();
+        config.poolClass = uint8(PoolClass.SESSION_ONLY);
+        hook = _deployHookConfig(config);
+        _seedAndActivate();
+        sessions.setHealth(asset0, _unhealthyHealth(ReasonBits.REPORT_INVALID_OR_STALE));
+
+        PolicyView memory policy = hook.refreshState();
+        require(policy.mode == uint8(Mode.ACTIVE), "stale session-only mode");
+        require(policy.canSwap, "stale session-only swap");
+        require(policy.reasonBits == 0, "stale data is informational for session-only");
+    }
+
+    function testSessionOnlyPoolCanActivateAndSwapInClosedPhaseWithoutAnchor() external {
+        PoolConfig memory config = _config();
+        config.poolClass = uint8(PoolClass.SESSION_ONLY);
+        hook = _deployHookConfig(config);
+        calendar.setLeaf(_leaf(asset0, PolicyConstants.PHASE_CLOSED, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
+        _seedAndActivate();
+
+        PolicyView memory policy = hook.refreshState();
+        require(policy.mode == uint8(Mode.CLOSED), "closed session-only mode");
+        require(policy.canSwap, "closed session-only swap");
+        require(policy.reasonBits == 0, "closed session-only reasons");
+    }
+
+    function testPriceGuardedPoolFallsBackWhenReferencesAreUnavailable() external {
+        _seedAndActivate();
+        referenceAdapter.setUnavailable(true);
+
+        PolicyView memory policy = hook.refreshState();
+        require(policy.canSwap, "fallback swap");
+        require(policy.flags & 2 != 0, "fallback flag");
+        require(policy.referencePrice18[0] == 0 && policy.referencePrice18[1] == 0, "stale reference exposed");
+        require(policy.lpFeeUnits == PolicyConstants.BELL_MAXIMUM_FEE_UNITS, "fallback fee");
+        require(policy.effectiveTradeCap[0] == 200_000, "strict trade cap");
+        require(policy.effectiveWindowCap[0] == 2_500_000, "strict window cap");
+
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,, uint24 fee) = hook.beforeSwap(factory, key, _swapParams(), "");
+        require(selector == IHooks.beforeSwap.selector, "fallback swap reverted");
+        require(fee & LPFeeLibrary.OVERRIDE_FEE_FLAG != 0, "fallback fee flag");
+        require(fee & LPFeeLibrary.REMOVE_OVERRIDE_MASK == PolicyConstants.FEE_CLOSED, "fallback fee amount");
+    }
+
+    function testPriceGuardedPoolFallsBackWhenStockReportIsStale() external {
+        _seedAndActivate();
+        sessions.setHealth(asset0, _unhealthyHealth(ReasonBits.REPORT_INVALID_OR_STALE));
+
+        PolicyView memory policy = hook.getPolicy();
+        require(policy.canSwap, "stale report fallback swap");
+        require(policy.flags & 2 != 0, "stale report fallback flag");
+        require(policy.referencePrice18[0] == 0 && policy.referencePrice18[1] == 0, "fallback reference exposed");
+
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,, uint24 fee) = hook.beforeSwap(factory, key, _swapParams(), "");
+        require(selector == IHooks.beforeSwap.selector, "stale report fallback reverted");
+        require(fee & LPFeeLibrary.REMOVE_OVERRIDE_MASK == PolicyConstants.FEE_CLOSED, "stale report fallback fee");
+    }
+
+    function testPriceGuardedPoolCanSwapInClosedPhaseWithoutAnchor() external {
+        _seedAndActivate();
+        referenceAdapter.setUnavailable(true);
+        calendar.setLeaf(_leaf(asset0, PolicyConstants.PHASE_CLOSED, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
+
+        PolicyView memory pending = hook.getPolicy();
+        require(!pending.canSwap && pending.mode == uint8(Mode.CLOSED), "closed latch checkpoint required");
+        hook.refreshState();
+
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,, uint24 fee) = hook.beforeSwap(factory, key, _swapParams(), "");
+        require(selector == IHooks.beforeSwap.selector, "closed fallback swap reverted");
+        require(fee & LPFeeLibrary.REMOVE_OVERRIDE_MASK == PolicyConstants.FEE_CLOSED, "closed fallback fee");
+        require(hook.state().closedLatched, "closed fallback was not checkpointed");
+    }
+
+    function testPriceGuardedClosedFallbackRecoversAfterTimeCheckpoints() external {
+        _seedAndActivate();
+        referenceAdapter.setUnavailable(true);
+        calendar.setLeaf(_leaf(asset0, PolicyConstants.PHASE_CLOSED, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
+        hook.refreshState();
+        require(hook.state().closedLatched, "closed fallback was not latched");
+
+        calendar.setLeaf(_leaf(asset0, PolicyConstants.PHASE_PRE, uint64(block.timestamp - 100), uint64(block.timestamp + 1000)));
+        PolicyView memory candidate = hook.getPolicy();
+        require(!candidate.canSwap && candidate.reasonBits & ReasonBits.RECOVERY_PENDING != 0, "recovery candidate required");
+        hook.refreshState();
+        vm.warp(block.timestamp + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS);
+        PolicyView memory ready = hook.refreshState();
+        require(ready.mode == uint8(Mode.ACTIVE) && ready.canSwap, "fallback recovery did not reopen");
+        require(!hook.state().closedLatched, "closure latch remained set");
+
+        PoolKey memory key = hook.poolKey();
+        vm.prank(address(manager));
+        (bytes4 selector,, uint24 fee) = hook.beforeSwap(factory, key, _swapParams(), "");
+        require(selector == IHooks.beforeSwap.selector, "reopened fallback swap reverted");
+        require(fee & LPFeeLibrary.REMOVE_OVERRIDE_MASK == PolicyConstants.FEE_CLOSED, "reopened fallback fee");
     }
 
     function testCountersPreservedAcrossPauseAndFaultCheckpoints() external {
@@ -1461,7 +1562,7 @@ contract BellHookLifecycleTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle, modeEvaluator));
     }
 
     function _deployHook() internal returns (BellHook) {

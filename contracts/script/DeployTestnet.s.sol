@@ -8,6 +8,7 @@ import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
 import {BellHook} from "../src/BellHook.sol";
 import {BellHookDeployer} from "../src/BellHookDeployer.sol";
 import {BellPolicyOracle} from "../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../src/BellModeEvaluator.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
 import {BellRouter} from "../src/BellRouter.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
@@ -60,6 +61,7 @@ contract DeployTestnet {
         address sessionRegistry;
         address poolManager;
         address positionManager;
+        address modeEvaluator;
         address hookDeployer;
         address poolFactory;
         address weth;
@@ -170,9 +172,10 @@ contract DeployTestnet {
         // One shared oracle for the whole deployment: each hook receives it instead of creating its own,
         // which keeps per-hook initcode inside the EIP-3860 limit.
         address policyOracle = address(new BellPolicyOracle());
+        d.modeEvaluator = address(new BellModeEvaluator());
         address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
         d.hookDeployer = address(new BellHookDeployer(
-            futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle
+            futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle, d.modeEvaluator
         ));
         d.poolFactory = address(new BellPoolFactory(
             _profile(d, futureFactory), BellHookDeployer(d.hookDeployer), feeToken, roles.recipient
@@ -220,6 +223,7 @@ contract DeployTestnet {
             '",\n  "poolManager": "', _hex(d.poolManager),
             '",\n  "positionManager": "', _hex(d.positionManager),
             '",\n  "hookDeployer": "', _hex(d.hookDeployer),
+            '",\n  "modeEvaluator": "', _hex(d.modeEvaluator),
             '",\n  "poolFactory": "', _hex(d.poolFactory),
             '",\n  "weth": "', _hex(d.weth),
             '",\n  "router": "', _hex(d.router),

@@ -20,6 +20,8 @@ contract BellHookDeployer {
     /// requires one bit to be set, so a salt could otherwise land the hook on an address that never
     /// receives swap callbacks: guards would be skipped silently while the pool still activates.
     uint160 internal constant EXPECTED_HOOK_MASK = 0x2cc0;
+    /// @dev Pinned BellModeEvaluator runtime; update this and its regression test only when the evaluator changes.
+    bytes32 public constant MODE_EVALUATOR_CODE_HASH = 0x92eea1dad5569d6564affd33158c41b668fcecd6d0574da8c618d9093fcc432c;
 
     address public immutable factory;
     address public immutable sessionRegistry;
@@ -29,16 +31,19 @@ contract BellHookDeployer {
     /// @notice Shared per-deployment policy oracle. Passing one instance to every hook keeps each hook's
     /// initcode inside the EIP-3860 limit instead of embedding a second contract creation.
     address public immutable policyOracle;
+    address public immutable modeEvaluator;
 
-    constructor(address factory_, address sessionRegistry_, bytes32 templateCodeHash_, address policyOracle_) {
+    constructor(address factory_, address sessionRegistry_, bytes32 templateCodeHash_, address policyOracle_, address modeEvaluator_) {
         // The deployer may be deployed first against the factory's precomputed CREATE/CREATE2 address.
         if (factory_ == address(0) || sessionRegistry_ == address(0)
             || sessionRegistry_.code.length == 0 || templateCodeHash_ == bytes32(0)) revert Unauthorized();
         if (policyOracle_ == address(0) || policyOracle_.code.length == 0) revert Unauthorized();
+        if (modeEvaluator_ == address(0) || modeEvaluator_.codehash != MODE_EVALUATOR_CODE_HASH) revert Unauthorized();
         factory = factory_;
         sessionRegistry = sessionRegistry_;
         templateCodeHash = templateCodeHash_;
         policyOracle = policyOracle_;
+        modeEvaluator = modeEvaluator_;
         // Creation code exists only in this constructor, never in deployer's runtime bytecode.
         bytes memory code = type(BellHook).creationCode;
         if (keccak256(code) != templateCodeHash_) revert Unauthorized();
@@ -79,6 +84,6 @@ contract BellHookDeployer {
             extcodecopy(first, add(code, 32), 1, length0)
             extcodecopy(second, add(add(code, 32), length0), 1, length1)
         }
-        return abi.encodePacked(code, abi.encode(config, key, templateCodeHash, sessionRegistry, policyOracle));
+        return abi.encodePacked(code, abi.encode(config, key, templateCodeHash, sessionRegistry, policyOracle, modeEvaluator));
     }
 }

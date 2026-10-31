@@ -3,6 +3,7 @@ import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
 import {CalendarProof} from "../../../src/libraries/CalendarProof.sol";
@@ -229,6 +230,7 @@ contract BellHookClosureStatefulInvariantsTest {
     bytes32 private templateCodeHash;
     BellHook private hook;
     BellPolicyOracle private oracle;
+    BellModeEvaluator private modeEvaluator;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -453,7 +455,7 @@ contract BellHookClosureStatefulInvariantsTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle, modeEvaluator));
     }
 
     function _config() private view returns (PoolConfig memory config) {
@@ -492,6 +494,7 @@ contract BellHookClosureStatefulInvariantsTest {
         // The oracle must exist before the address is predicted, otherwise creating it inside the
         // deployHook argument consumes the nonce that `_nextValidAddress` just pinned.
         oracle = new BellPolicyOracle();
+        modeEvaluator = new BellModeEvaluator();
         (uint64 nonce, address predicted) = _nextValidAddress();
         vm.setNonce(address(this), nonce);
         deployed = BellHook(this.deployHook(_config(), _key(), templateCodeHash, address(sessions)));

@@ -28,7 +28,7 @@ const STEPS = [
     where: "The session must be knowable",
     text: "BELL checks the exchange calendar, the stock identity and the timestamp on its market feed. All three must describe the same supported session.",
     reads: ["Exchange calendar", "Stock identity", "Feed freshness"],
-    stops: "No matching session, unsupported stock, or stale feed.",
+    stops: "Unknown calendar, unsupported asset, or failed safety check.",
   },
   {
     name: "Price for that session",
@@ -37,7 +37,7 @@ const STEPS = [
     where: "A verified session selects the base fee",
     text: "The pool starts from a session-specific LP fee. Less-supported hours carry a higher base fee and tighter gross-flow limits.",
     reads: ["Base LP fee", "Per-trade cap", "Rolling-flow cap"],
-    stops: "Chainlink freshness is capped at 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT; stale data halts swaps.",
+    stops: "PRICE_GUARDED switches to AMM-only fallback at 1% with strict caps; SESSION_ONLY always uses the AMM price.",
   },
   {
     name: "Bound the flow",
@@ -305,7 +305,7 @@ export function SessionSection() {
           </h2>
           </div>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            BELL verifies the exchange session and stock feed before a swap. That state sets the pool&apos;s base LP fee and flow limits; stale or unsupported data stops execution.
+            The exchange session sets the base LP fee and flow limits. PRICE_GUARDED uses independent references while valid, then switches to a clearly flagged AMM-only fallback if they fail; SESSION_ONLY always uses the AMM price.
           </p>
         </header>
 
@@ -326,7 +326,7 @@ export function SessionSection() {
               </li>
             ))}
           </ol>
-          <p className="lp-lend__foot"><span>UNKNOWN</span><span>Unverified session or stale stock data halts swaps.</span></p>
+          <p className="lp-lend__foot"><span>UNKNOWN</span><span>Unknown calendar, invalid safety state, or pause blocks swaps.</span></p>
         </figure>
 
         <footer className="lp-lend__bottom">
@@ -374,7 +374,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "live",
     items: [
       "Protocol contracts, Chainlink adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
-      "PRE, REGULAR, POST and OVERNIGHT use phase-specific feed scopes; stale rounds fail closed",
+      "PRICE_GUARDED uses price bands while references are valid, then an explicit AMM fallback at the maximum fee and strictest caps",
       "The new factory has no pool yet; create and seed are wallet-confirmed transactions",
     ],
   },
@@ -384,7 +384,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "live",
     items: [
       "Session adapter scopes use onchain Chainlink AggregatorV3 stock feeds for PRE, REGULAR, POST and OVERNIGHT",
-      "Every active-session swap checks its feed onchain; the effective age limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT",
+      "SESSION_ONLY does not require feed freshness; PRICE_GUARDED exposes whether protection is active or in AMM fallback",
       "Feeds may pause or go stale off-hours; an independent security audit is not complete",
     ],
   },
@@ -395,7 +395,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     items: [
       "No Mainnet pool, seeded position, or completed Mainnet swap exists yet",
       "The wallet-connected create flow is ready; it has not been used to seed a pool yet",
-      "Session-only pools carry no independent counterasset price protection",
+      "SESSION_ONLY pools have no independent price protection; PRICE_GUARDED pools disclose their active fallback state",
     ],
   },
 ];
@@ -485,9 +485,9 @@ export function FactsSection() {
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
           <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
-          <div className="lp-fact" data-spot><dt>Feed freshness</dt><dd>REGULAR ≤60s · PRE/POST/OVERNIGHT &lt;120s · stale feed blocks swaps</dd></div>
+          <div className="lp-fact" data-spot><dt>Stale feed policy</dt><dd>SESSION_ONLY swaps stay open · higher fees and bounded flow limits</dd></div>
           <div className="lp-fact" data-spot><dt>Session readiness</dt><dd>PRE · REGULAR · POST · OVERNIGHT configured · fresh rounds can be intermittent</dd></div>
-          <div className="lp-fact" data-spot><dt>Closed-session anchor</dt><dd>Not captured for the active registry · closed swaps blocked</dd></div>
+          <div className="lp-fact" data-spot><dt>Closed-session anchor</dt><dd>Not captured · PRICE_GUARDED uses its AMM fallback</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
           <div className="lp-fact" data-spot><dt>Pool classes</dt><dd>PRICE_GUARDED where both live references pass · SESSION_ONLY for one-stock pairs</dd></div>
         </dl>

@@ -1,30 +1,45 @@
 # BELL — Current State (Mainnet snapshot 2026-10-31)
 
-Single source of truth. Every claim is backed by a transaction or on-chain state.
+Single source of truth. Mainnet claims below are checked against deployment evidence and live chain reads.
 
-## Current Mainnet deployment — Robinhood Chain 4663 (2026-10-31 04:38 UTC)
+## Current Mainnet — Robinhood Chain 4663
 
-The replacement 11-contract protocol stack is deployed and code-verified at block `102269681`.
-Manifest hash: `0x3751ed73b05955f178f588033df5ba2e96da083a64d81faa074a876b7a624bc6`.
-Pinned Chainlink session adapters are deployed for AAPL, NVDA, and TSLA. The active AssetRegistry
-contains those stocks, WETH, USDG, and MEME. MEME is unpriced, has capability mask zero, and can only
-be used in a `SESSION_ONLY` pool; admission is not a token audit or fair-value assessment.
+The always-available policy implementation was deployed on 2026-10-31. Four CREATE transactions confirmed
+in blocks `102445453` and `102445459`; total receipt cost was `0.000447757730788 ETH`. The production factory is
+`0x5bf1aa3913c59215ea90a3fb9482bf6f32d8152b`, hook deployer
+`0x0f3c8be6e701b4466e0181cd6cde0814880cbc9e`, policy oracle
+`0xc0f60f0aa9ef9f6eaca1a33f25d39575be80bf1c`, and mode evaluator
+`0x59599f115df4588de4a17e195a28c5f7fa6930be`. Factory profile hash:
+`0xbc951f9a7e952b147dfbcab956f4b45aff23c55c69b264d7849858898d1d0265`. The registries, PoolManager,
+PositionManager, WETH, fee token, and router are reused from the verified Mainnet deployment. Verification is
+recorded in `evidence/deploy/mainnet-4663-verification.json` at block `102445470`.
 
-All three stock descriptors and their 2026 calendar roots are active. Each calendar currently reports
-phase 5 (CLOSED) through Monday 2026-11-02 01:00 UTC and includes PRE, REGULAR, POST, and OVERNIGHT
-leaves through 2026-12-30. BELL policy limits stock input age to 60 seconds in REGULAR, 120 seconds in
-PRE/POST, and 300 seconds in OVERNIGHT. The Chainlink session adapter independently rejects any round
-120 seconds old or older, so the effective Chainlink limits are 60 seconds in REGULAR and under 120
-seconds in PRE/POST/OVERNIGHT. The Worker now reports and applies those same effective per-session
-limits; stale rounds fail closed. No valid close anchor has been captured for the new registry, so
-closed-session swaps remain unavailable until a supported close is captured.
+Two pool classes are available. `PRICE_GUARDED` uses its independent reference and price band while those
+inputs are valid; when required stock inputs or references are unavailable, including when no usable close
+anchor exists, policy marks the pool as AMM-only fallback, removes reference prices, charges the 1% fallback
+fee, and applies the existing strict caps (one fifth per trade and one quarter of the rolling cap).
+`SESSION_ONLY` always uses the AMM price and does not require stock-feed freshness or a close anchor. Both
+classes still enforce asset identity/admission, calendar validity, pause state, pool lifecycle, actual
+transaction bounds, and available liquidity. Fees and caps do not guarantee a maximum loss; price divergence,
+slippage, liquidity depth, and arbitrage remain economic risks.
 
-Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed (latest version `d738c2b2-dcaf-4b51-9dcf-800554ad8f88`) with Chainlink mode, the new factory/registries, stock IDs, calendar roots, Mainnet RPC, boundary cron schedules, and effective per-session freshness reporting. `/status` reads current phase, session-adapter freshness, closed-anchor validity, and read-only feed age directly from Mainnet; its latest snapshot is `evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`. `/quote?symbol=AAPL` returns 410 by design. The latest `/pools` read at block `102311401` returned an empty list; the current factory has no pool, liquidity position, or Mainnet swap. The wallet UI reads each asset's effective freshness limit from Worker status. Production alias `https://bell-black.vercel.app` is READY on Vercel deployment `dpl_8hZFZddGGi6nbRpVSywqivCJsEBH` (`https://bell-rjyravr6f-sifaqs-projects.vercel.app`); authenticated production HTML now states the session-specific freshness limits. Deployment proof: `evidence/deploy/production-ui-session-freshness-2026-10-31.json`.
+Cloudflare Worker `https://bell-keeper-b.asysyifaq25.workers.dev` is deployed with the new factory and a scan
+start block of `102445470` (version `856cdc23-0c51-41a7-94ae-99c2590de48d`). `/status` and `/pools` return
+Mainnet data. `/quote` returns 410 by design: swap estimates are simulated through the live BellRouter and
+pool policy is read from the hook; the Worker does not sign quotes. The latest `/pools` read returned no
+pools, so no Mainnet liquidity position or swap exists yet. The app supports pool creation, seeding, and
+swaps; the first live pool still needs its creator to choose seed amounts and submit the wallet transactions.
 
-Deployment evidence is in `evidence/deploy/mainnet-4663.json`,
+Deployment and verification records: `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-verification.json`,
-`evidence/deploy/mainnet-4663-chainlink-session-adapters.json`,
-`evidence/deploy/mainnet-4663-asset-queue.json`, and the per-asset calendar-state files.
+`contracts/broadcast/UpgradeMainnetFactory.s.sol/4663/run-latest.json`,
+and `workers/keeper-b/wrangler.jsonc`.
+
+## Historical Mainnet snapshot — previous Chainlink policy
+
+The following research and production snapshot predates the current always-available policy deployment. Its
+feed freshness conclusions describe the earlier policy and must not be used to claim that the current
+`SESSION_ONLY` or fallback classes require a fresh Chainlink report.
 
 Historical feed cadence was audited from up to each stock feed's latest 100 onchain rounds at block
 `102291723` (`2026-10-31T04:43:45Z`); the complete report is
@@ -100,7 +115,7 @@ the next weekly CLOSED boundary was 20:00 ET, when those inputs were hours old. 
 produce a valid close anchor under the current strict policy. Live snapshot:
 `evidence/deploy/mainnet-4663-live-status-2026-10-31T0518Z.json`.
 
-## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
+### Pre-Chainlink migration snapshot (superseded)
 
 The following block documents the deployment that existed before the migration above. Its signed
 Yahoo quote Worker and old registry addresses are not the active Mainnet configuration.

@@ -131,7 +131,11 @@ contract BellSwapEvaluatorTest {
         c = _context(); c.validUntil = c.timestamp; _rejectPrepare(evaluator,c);
         c = _context(); c.bellStart = c.timestamp+1; _rejectPrepare(evaluator,c);
         c = _context(); c.closedLatched = true; _rejectPrepare(evaluator,c);
-        c = _context(); c.poolClass = 0; _rejectPrepare(evaluator,c); // zero reference cannot be priced
+        c = _context(); c.poolClass = 0;
+        IBellSwapEvaluator.Snapshot memory fallbackSnapshot = evaluator.prepare(c, keccak256("binding"), true, -100);
+        require(fallbackSnapshot.guarded && fallbackSnapshot.lpFeeUnits == 10000
+            && fallbackSnapshot.effectiveTradeCap[0] == 200 && fallbackSnapshot.effectiveWindowCap[0] == 1250,
+            "empty reference context did not calculate bounded AMM fallback");
         c = _context(); c.decimals[1] = 19; _rejectPrepare(evaluator,c);
     }
 

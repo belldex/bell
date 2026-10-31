@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {CreateRequest, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf} from "../../../src/types/ProtocolTypes.sol";
 import {MockAssetRegistry, MockCalendarRegistry, MockSessionRegistry, MockSafetyController} from "../../unit/hook/BellHookLifecycle.t.sol";
@@ -110,6 +111,7 @@ contract TreasuryAdapterStatefulInvariantsTest {
         sessions = new MockSessionRegistry();
         calendar = new MockCalendarRegistry();
         safety = new MockSafetyController();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
 
         uint64 n0 = vm.getNonce(address(this));
         address predictedDeployer = vm.computeCreateAddress(address(this), n0);
@@ -129,7 +131,7 @@ contract TreasuryAdapterStatefulInvariantsTest {
         });
         _configureRegistries();
 
-        BellHookDeployer deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
+        BellHookDeployer deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted), address(modeEvaluator));
         PoolKey memory key = PoolKey(Currency.wrap(config.token0), Currency.wrap(config.token1), LPFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(0)));
         bytes32 initHash = deployer.initCodeHash(config, key);
         bytes32 createSalt = _mine(predictedDeployer, initHash);

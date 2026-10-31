@@ -14,7 +14,8 @@ test('landing route composes the current BELL landing page without redirecting',
 test('page metadata no longer reports outdated asset admission status', async () => {
   const layout = await read('../app/layout.tsx');
   assert.match(layout, /Session-aware Robinhood Stock Token liquidity/);
-  assert.match(layout, /60 seconds in REGULAR.{0,100}120 seconds in PRE/is);
+  assert.match(layout, /1% AMM fallback when unavailable/);
+  assert.match(layout, /SESSION_ONLY always uses the AMM price/);
   assert.doesNotMatch(layout, /signed quotes/i);
   assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
 });
@@ -131,17 +132,19 @@ test('landing connects live product routes and explains verified limits', async 
 
 test('Mainnet banner and protocol page separate ready wallet flows from missing liquidity', async () => {
   const banner = await read('../components/app/MainnetStatusBanner.tsx');
+  const feedStatus = await read('../components/app/MainnetSessionFeedStatus.tsx');
   const protocol = await read('../app/(app)/protocol/page.tsx');
+  const pools = await read('../app/(app)/pools/page.tsx');
   const shell = await read('../components/app/AppShell.tsx');
-  const copy = `${banner}\n${protocol}\n${shell}`;
-  assert.match(banner, /Chainlink/i);
-  assert.match(copy, /No active Mainnet pool|pool directory is empty|no pools have been created|no Mainnet pool or swap exists/i);
+  const copy = `${banner}\n${feedStatus}\n${protocol}\n${pools}\n${shell}`;
+  assert.match(feedStatus, /Chainlink/i);
+  assert.match(copy, /No Mainnet pools yet|Awaiting first PoolCreated event/i);
   assert.match(protocol, /wallet.{0,40}position|position.{0,40}wallet/i);
   assert.match(shell, /Manage wallet positions|Manage LP positions/i);
   assert.doesNotMatch(copy, /asset admission.{0,35}unverified|pool creation remain unavailable|not wired in this frontend|Sample LP positions/i);
 });
 
-test('Mainnet banner reads live per-asset Chainlink session freshness from the Worker', async () => {
+test('Mainnet banner reads live per-asset Chainlink freshness from the Worker', async () => {
   const banner = await read('../components/app/MainnetStatusBanner.tsx');
   const status = await read('../components/app/MainnetSessionFeedStatus.tsx');
   assert.match(banner, /MainnetSessionFeedStatus/);
@@ -149,7 +152,10 @@ test('Mainnet banner reads live per-asset Chainlink session freshness from the W
   assert.match(status, /feedAgeSeconds/);
   assert.match(status, /sessionFeedFresh/);
   assert.match(status, /anchorValid/);
-  assert.match(status, /last feed/);
+  assert.match(status, /feed updates/);
+  assert.match(status, /Off-hours/);
+  assert.doesNotMatch(status, /close anchor missing|>CLOSED</i);
+  assert.match(status, /stale ·/);
   assert.match(status, /aria-live/);
 });
 
@@ -177,7 +183,7 @@ test('pool creation is wired to the wallet, live Registry, approvals, factory si
   assert.match(flow, /functionName: 'createAndSeed'/);
   assert.match(flow, /createPricePathForPhases/);
   assert.match(flow, /functionName: 'anchorStatus'/);
-  assert.match(flow, /verified historical close reference/i);
+  assert.match(flow, /factory will activate the pool under fallback policy/i);
   assert.match(flow, /Object\.entries\(queue\.counterassets/);
   assert.match(flow, /SESSION_ONLY/);
   assert.match(flow, /simulateContract/);

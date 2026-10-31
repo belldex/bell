@@ -2,13 +2,13 @@
   "chainId": 4663,
   "verifiedAt": "2026-10-31",
   "status": "PRODUCTION_DEPLOYED",
-  "sourceCommit": "72f2e6f",
-  "manifestHash": "0xe9ccc6b0031c1e94fc32d9295b091b292dfdb8a5b3fc3173535784824c6a6aa9",
+  "sourceCommit": "015fd14",
+  "manifestHash": "0xc7a3b6ac10a6e5bfac449e36058889f8d12dd89bcf73474f59adebd4ab8510b9",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "blocks": {
-    "first": 102269264,
-    "last": 102269298,
-    "verifiedAtBlock": 102355141
+    "first": null,
+    "last": null,
+    "verifiedAtBlock": 102445470
   },
   "contracts": {
     "safetyController": {
@@ -42,14 +42,14 @@
       "codeHash": "0x27cad064438e815b2fc990ed3a4e17868720b71225f657a10457e34cbb6166b6"
     },
     "hookDeployer": {
-      "address": "0x4de343295ab68a62f25b965494fc6cf3b3c03334",
-      "codeBytes": 3169,
-      "codeHash": "0xb68d1ab2f4b1c99b618fcc6552ee0eb9f2860b8ba5d7be5b4933c30035755fee"
+      "address": "0x0f3c8be6e701b4466e0181cd6cde0814880cbc9e",
+      "codeBytes": 3305,
+      "codeHash": "0x3a508fc14998d450273d3008bf09b6ff5662776d2f3f4069327c03737e6164a6"
     },
     "poolFactory": {
-      "address": "0xed367cd54af9eafa0e7512555f5f8bf77a0a2090",
+      "address": "0x5bf1aa3913c59215ea90a3fb9482bf6f32d8152b",
       "codeBytes": 22564,
-      "codeHash": "0x9b21eaa9492fade60a7ad8dbaf851f386e49a397b56cc96e94aa3c6207c1f5a3"
+      "codeHash": "0xb8afc9039ee7b05a078b4856f21eb5ad53e4ee024066483d4da3d5fd290f95c5"
     },
     "weth": {
       "address": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
@@ -60,6 +60,11 @@
       "address": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
       "codeBytes": 9505,
       "codeHash": "0x38148d7db1d6656af4f566752832450cc8f61db7ca8c56331b355b7dfabab036"
+    },
+    "modeEvaluator": {
+      "address": "0x59599f115df4588de4a17e195a28c5f7fa6930be",
+      "codeBytes": 15254,
+      "codeHash": "0x92eea1dad5569d6564affd33158c41b668fcecd6d0574da8c618d9093fcc432c"
     },
     "feeToken": {
       "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -75,16 +80,17 @@
     "positionManager.poolManager": "0x8b26FEfa276860592D45114Cb30B335DdDd87B56",
     "positionManager.WETH9": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
     "positionManager.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "poolFactory.hookDeployer": "0x4DE343295Ab68A62f25b965494FC6CF3b3c03334",
+    "poolFactory.hookDeployer": "0x0F3C8bE6E701b4466e0181Cd6CDe0814880cbc9E",
     "poolFactory.positionManager": "0x84da249Aafa359886C6A2Ae1ebDC78a6059B662D",
     "poolFactory.serviceToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-    "hookDeployer.factory": "0xEd367cD54aF9EAFa0e7512555f5f8BF77A0A2090",
+    "hookDeployer.factory": "0x5bf1aa3913C59215ea90a3fb9482Bf6f32D8152B",
     "hookDeployer.sessionRegistry": "0x5F1b0212dc6167CBC1883f910640A685B1243795",
     "sessionRegistry.assetRegistry": "0x0D9C0c8b2065b08A8aD4Abc861eB128385Ef18C6",
     "sessionRegistry.calendarRegistry": "0x394983BfF2715d57197389F323d807b0D61c05a3",
     "assetRegistry.safetyController": "0x7243cF13f0308edd4A0397551042FeA3Cf9da179",
     "calendarRegistry.safetyController": "0x7243cF13f0308edd4A0397551042FeA3Cf9da179",
     "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "hookDeployer.modeEvaluator": "0x59599F115df4588DE4a17E195a28c5F7fa6930bE",
     "safetyController.roles": {
       "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
       "guardian": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
@@ -94,22 +100,22 @@
     "factory.liquidityMode": 0,
     "factory.serviceFee": "49000000",
     "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
-    "factory.profileHash": "0xbada2e703cb6b45935944c26ac1b0b71c884889e98ebbe3320e2357f85410f0f",
-    "hookDeployer.templateCodeHash": "0xaff993c6066c5881fe9f5ebb6e1744d0a47c02f061a5d87904f72acaa680ee93",
+    "factory.profileHash": "0xbc951f9a7e952b147dfbcab956f4b45aff23c55c69b264d7849858898d1d0265",
+    "hookDeployer.templateCodeHash": "0xbd519d12f737d9148118ea9464130a439d265da4dc5dcb6d6f52d023115e3238",
     "weth.symbol": "WETH",
     "weth.decimals": 18
   },
   "gas": {
-    "txCount": 10,
-    "used": "42348794",
-    "priceWei": "20042000",
-    "costEth": "0.000848754529348"
+    "txCount": 0,
+    "used": "0",
+    "priceWei": "0",
+    "costEth": "0"
   },
   "notCovered": [
-    "PRICE_GUARDED pool class remains blocked until an independent reference pair is admitted",
+    "Neither pool class guarantees a fixed or maximum loss; AMM liquidity, price divergence, arbitrage, and market depth remain economic risks",
     "Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0): the TREASURY_ONLY path has no live deployment",
-    "No pool exists at deploy time: that needs an admitted stock descriptor, an activated calendar root, and a healthy source",
-    "The keeper is not pointed at these addresses until evidence/deploy/mainnet-4663.json is wired into its configuration",
+    "A pool still requires admitted assets, a valid calendar, user seed funds, and available swap liquidity",
+    "The keeper provides public status and pool discovery; pool swaps read their policy directly from the deployed hook",
     "PoolManager ownership is held by the deployer; a handover to governance has not run",
     "Stock token rights and entitlements are NOT verified by this script; it only proves the contracts are wired"
   ]

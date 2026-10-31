@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
 import {CalendarProof} from "../../../src/libraries/CalendarProof.sol";
@@ -284,6 +285,7 @@ contract BellHookClosureTest {
     bytes32 private templateCodeHash;
     BellHook private hook;
     BellPolicyOracle private oracle;
+    BellModeEvaluator private modeEvaluator;
 
     function setUp() external {
         vm.warp(1_700_000_000);
@@ -302,6 +304,7 @@ contract BellHookClosureTest {
         sessions = new MockClosureSessions();
         templateCodeHash = keccak256(type(BellHook).creationCode);
         oracle = new BellPolicyOracle();
+        modeEvaluator = new BellModeEvaluator();
         _installBaseState();
         hook = _deployHook();
     }
@@ -1211,7 +1214,7 @@ contract BellHookClosureTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle, modeEvaluator));
     }
 
     function testSyntheticStateHelpersWritePackedFields() external {

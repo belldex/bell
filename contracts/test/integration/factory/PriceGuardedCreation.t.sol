@@ -5,6 +5,7 @@ import {BellPoolFactory} from "../../../src/BellPoolFactory.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {ChainlinkTokenReferenceAdapter} from "../../../src/adapters/ChainlinkTokenReferenceAdapter.sol";
 import {PolicyConstants} from "../../../src/libraries/PolicyConstants.sol";
 import {CalendarProof} from "../../../src/libraries/CalendarProof.sol";
@@ -138,8 +139,9 @@ contract PriceGuardedCreationTest {
         stockAdapter = new ChainlinkTokenReferenceAdapter(
             address(new GuardStubAggregator(STOCK_ANSWER, 8)), 86400, 8, "stock reference", address(stock));
 
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle));
+        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle), address(modeEvaluator));
         PoolConfig memory c = _config(future);
         factory = new BellPoolFactory(c, deployer, address(usdg), SERVICE);
         require(address(factory) == future, "factory prediction");
@@ -196,30 +198,16 @@ contract PriceGuardedCreationTest {
         require(factory.nonces(address(this)) == 1, "nonce");
     }
 
-    function testClosedMarketCreationStagesUntilValidOracleContextReturns() external {
+    function testClosedMarketCreationActivatesWithAmmonFallback() external {
         calendar.setLeaf(CalendarLeaf(request.config.asset0, 2026, 1, 90_000, 200_000,
             PolicyConstants.PHASE_CLOSED, keccak256("closed-fixture")));
         CreateResult memory r = factory.createAndSeed(request);
-        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.STAGED), "pool was not staged");
-        require(!BellHook(r.hook).getPolicy().canSwap, "staged pool can swap");
-
-        vm.warp(200_001);
-        GuardStubAggregator(address(stockAdapter.feed())).setUpdatedAt(block.timestamp);
-        GuardStubAggregator(address(counterAdapter.feed())).setUpdatedAt(block.timestamp);
-        sessions.setHealth(request.config.asset0, HealthView(true, 0, 200_000, 300_000, 200_000, 200_001));
-        calendar.setLeaf(CalendarLeaf(request.config.asset0, 2026, 2, 200_000, 300_000,
-            PolicyConstants.PHASE_REGULAR, keccak256("open-fixture")));
-        vm.warp(200_061);
-        GuardStubAggregator(address(stockAdapter.feed())).setUpdatedAt(block.timestamp);
-        GuardStubAggregator(address(counterAdapter.feed())).setUpdatedAt(block.timestamp);
-        sessions.setHealth(request.config.asset0, HealthView(true, 0, 200_000, 300_000, 200_001, 200_061));
-        GuardStubAggregator(address(stockAdapter.feed())).setAnswer(STOCK_ANSWER * 2);
-        BellHook(r.hook).activateStagedPool();
-        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.STAGED), "out-of-band pool activated");
-        GuardStubAggregator(address(stockAdapter.feed())).setAnswer(STOCK_ANSWER);
-        PolicyView memory activated = BellHook(r.hook).activateStagedPool();
-        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "pool did not activate");
-        require(activated.mode == uint8(Mode.ACTIVE) && activated.canSwap, "fresh open pool not tradable");
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "fallback pool was staged");
+        PolicyView memory pending = BellHook(r.hook).getPolicy();
+        require(pending.flags & 2 != 0, "closed fallback flag missing");
+        require(pending.canSwap && BellHook(r.hook).state().closedLatched, "closed fallback not committed");
+        PolicyView memory activated = BellHook(r.hook).refreshState();
+        require(activated.mode == uint8(Mode.CLOSED) && activated.canSwap, "closed fallback not tradable after checkpoint");
     }
 
     function testPriceGuardedPoolUsesVerifiedFrozenStockReferenceDuringClosure() external {
@@ -361,11 +349,11 @@ contract PriceGuardedCreationTest {
 
     function testStaleFeedIsRejectedAtCreation() external {
         GuardStubAggregator(address(stockAdapter.feed())).setBroken(true);
-        // A dead feed reverts the whole creation (the adapter's typed error bubbles up); it must
-        // never admit a pool priced against nothing.
-        bytes memory reason = _mustFail(request);
-        require(bytes4(reason) != BellPoolFactory.InvalidRequest.selector, "dead feed admitted");
-        require(factory.nonces(address(this)) == 0, "state consumed");
+        CreateResult memory result = factory.createAndSeed(request);
+        PolicyView memory policy = BellHook(result.hook).getPolicy();
+        require(BellHook(result.hook).state().lifecycle == uint8(Lifecycle.LIVE), "fallback pool was not activated");
+        require(policy.canSwap && policy.flags & 2 != 0, "stale reference fallback missing");
+        require(policy.referencePrice18[0] == 0 && policy.referencePrice18[1] == 0, "stale reference exposed");
     }
 
     // -----------------------------------------------------------------------
@@ -375,8 +363,9 @@ contract PriceGuardedCreationTest {
     /// @dev Re-deploys deployer + factory against the edited config and refreshes the request.
     function _redeploy(PoolConfig memory c) private {
         oracle = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle));
+        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle), address(modeEvaluator));
         c.factory = future;
         factory = new BellPoolFactory(c, deployer, address(usdg), SERVICE);
         request.config = c;

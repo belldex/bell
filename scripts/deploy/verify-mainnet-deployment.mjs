@@ -11,20 +11,23 @@
  *   node scripts/deploy/verify-mainnet-deployment.mjs --check    # exit 1 if evidence is stale
  */
 import { readFile, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { createPublicClient, http } from 'viem';
 import { buildVerification } from './verify-testnet-deployment.mjs';
 import { loadEnvFile } from './env-loader.mjs';
+import { fileURLToPath } from 'node:url';
 
 const MAINNET_CHAIN_ID = 4663;
 const MANIFEST_URL = new URL('../../evidence/deploy/mainnet-4663.json', import.meta.url);
 const VERIFICATION_URL = new URL('../../evidence/deploy/mainnet-4663-verification.json', import.meta.url);
-const BROADCAST_URL = new URL('../../contracts/broadcast/DeployTestnet.s.sol/4663/run-latest.json', import.meta.url);
+const BROADCAST_URL = new URL('../../contracts/broadcast/UpgradeMainnetFactory.s.sol/4663/run-latest.json', import.meta.url);
+const REPOSITORY_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
 const MAINNET_NOT_COVERED = [
-  'PRICE_GUARDED pool class remains blocked until an independent reference pair is admitted',
+  'Neither pool class guarantees a fixed or maximum loss; AMM liquidity, price divergence, arbitrage, and market depth remain economic risks',
   'Deployed profile is PUBLIC only (liquidityMode=0, treasuryAdapter=0): the TREASURY_ONLY path has no live deployment',
-  'No pool exists at deploy time: that needs an admitted stock descriptor, an activated calendar root, and a healthy source',
-  'The keeper is not pointed at these addresses until evidence/deploy/mainnet-4663.json is wired into its configuration',
+  'A pool still requires admitted assets, a valid calendar, user seed funds, and available swap liquidity',
+  'The keeper provides public status and pool discovery; pool swaps read their policy directly from the deployed hook',
   'PoolManager ownership is held by the deployer; a handover to governance has not run',
   'Stock token rights and entitlements are NOT verified by this script; it only proves the contracts are wired',
 ];
@@ -51,12 +54,17 @@ async function main() {
     throw new Error(`manifest chainId is ${manifest.chainId}, expected ${MAINNET_CHAIN_ID}`);
   }
   const broadcast = JSON.parse(await readFile(BROADCAST_URL, 'utf8').catch(() => 'null'));
+  const sourceCommit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: REPOSITORY_ROOT,
+    encoding: 'utf8',
+  }).trim();
   const client = createPublicClient({ transport: http(rpcUrl) });
 
   const next = await buildVerification({
     manifest,
     client,
     broadcast: broadcast?.receipts ? broadcast : null,
+    sourceCommit,
     verifiedAt: new Date().toISOString().slice(0, 10),
     expectedChainId: MAINNET_CHAIN_ID,
     status: 'PRODUCTION_DEPLOYED',

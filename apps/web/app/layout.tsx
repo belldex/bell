@@ -22,20 +22,20 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://bell-black.vercel.app'),
   title: { default: 'BELL: Session-aware Robinhood Stock Token liquidity', template: '%s · BELL' },
   description:
-    'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
+    'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. PRICE_GUARDED uses independent references while valid and a 1% AMM fallback when unavailable; SESSION_ONLY always uses the AMM price.',
   icons: {
     icon: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
     apple: [{ url: '/assets/bell-logo-transparent.png', type: 'image/png' }],
   },
   openGraph: {
     title: 'BELL: Session-aware Robinhood Stock Token liquidity',
-    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. PRICE_GUARDED uses independent references while valid and a 1% AMM fallback when unavailable; SESSION_ONLY always uses the AMM price.',
     images: ['/assets/hero-bell.jpg'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'BELL: Session-aware Robinhood Stock Token liquidity',
-    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. Chainlink freshness is session-specific: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale data halts swaps.',
+    description: 'An independent Uniswap v4 protocol for Robinhood Stock Token pools on Robinhood Chain Mainnet. PRICE_GUARDED uses independent references while valid and a 1% AMM fallback when unavailable; SESSION_ONLY always uses the AMM price.',
     images: ['/assets/hero-bell.jpg'],
   },
 };

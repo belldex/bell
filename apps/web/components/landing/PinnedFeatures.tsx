@@ -90,7 +90,7 @@ function RiskVisual() {
       <div className="bell-visual-caption"><span>Before a swap</span><b>POLICY CHECK</b></div>
       <div className="bell-risk-flow"><div><span>Market state</span><b>Verified</b></div><i /><div><span>Pool policy</span><b>In bounds</b></div><i /><div className="bell-risk-allow"><ShieldCheck size={18} /><b>Allow swap</b></div></div>
       <div className="bell-risk-meters"><div><span>Per-trade cap</span><i><b style={{ width: '58%' }} /></i><strong>58%</strong></div><div><span>Rolling budget</span><i><b style={{ width: '34%' }} /></i><strong>34%</strong></div></div>
-      <div className="bell-visual-foot"><span><Gauge size={14} /> Stale input → halt</span><span>Illustrative policy view</span></div>
+      <div className="bell-visual-foot"><span><Gauge size={14} /> Stale → AMM fallback</span><span>Illustrative policy view</span></div>
     </div>
   );
 }

@@ -4,13 +4,15 @@ pragma solidity 0.8.26;
 import {IAssetRegistry} from "./interfaces/IBellProtocol.sol";
 import {ISessionRegistry, ISafetyController} from "./interfaces/IBellProtocol.sol";
 import {ICalendarRegistry} from "./interfaces/IBellProtocol.sol";
-import {Anchor, AssetDescriptor, Buckets, CalendarLeaf, HealthView, Lifecycle, Mode, PoolClass, PoolState, ReasonBits, SourceSample} from "./types/ProtocolTypes.sol";
+import {Anchor, AssetDescriptor, Buckets, CalendarLeaf, HealthView, Lifecycle, Mode, PoolClass, PoolState, PolicyFlags, ReasonBits, SourceSample} from "./types/ProtocolTypes.sol";
 import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {ModePolicy} from "./libraries/ModePolicy.sol";
 import {CalendarProof} from "./libraries/CalendarProof.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
 import {WidePriceMath} from "./libraries/WidePriceMath.sol";
+import {FlowBudget} from "./libraries/FlowBudget.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
+import {BellPolicyDependencyReader} from "./BellPolicyDependencyReader.sol";
 
 /// @dev Narrow local surface of ChainlinkTokenReferenceAdapter consumed with bounded staticcalls.
 interface IChainlinkTokenReference {
@@ -28,6 +30,10 @@ interface IChainlinkTokenReference {
 /// The instance is constructed by each hook, so it is immutable per pool like the hook itself. It holds no
 /// storage at all: every input arrives in calldata, and a failed read is reported as a blocking reason exactly
 /// as before, never as a healthy default.
+interface IBellPolicyDependencyReader {
+    function evaluateDependencies(bytes calldata encodedInput) external view returns (bytes memory);
+}
+
 contract BellPolicyOracle {
     struct Input {
         bytes32 configHash;
@@ -87,48 +93,10 @@ contract BellPolicyOracle {
         bool poolPauseOk;
     }
 
-    struct AssetEvaluation {
-        uint256 reasons;
-        uint64 validUntil;
-        uint8 phase;
-        bool phaseSet;
-        bool isStock;
-        uint64 healthySince;
-        uint128 closeReferencePrice;
-        bool plannedClosed;
-        bool activeHealthy;
-        bool legHealthy;
-        bool closureContextOk;
-        bool unexpectedClosed;
-        uint64 observation;
-        bytes32 observationHash;
-    }
-
-    struct DependencyEvaluation {
-        uint256 reasons;
-        uint64 validUntil;
-        uint8 phase;
-        bool phaseSet;
-        bool anyPlannedClosed;
-        bool allLegsHealthy;
-        bool closureContextValid;
-        bool unexpectedClosed;
-        uint8 stockMask;
-        uint64[2] observations;
-        uint64[2] healthySince;
-        uint128[2] closeReferencePrices;
-        uint64 poolPauseNonce;
-        bool poolPauseOk;
-        bytes32 dependencyHash;
-    }
-
-    struct AssetObservations {
-        bytes32 pauseState;
-        bytes32 descriptor;
-        bytes32 calendar;
-        bytes32 anchor;
-        bytes32 health;
-        bytes32 closedReport;
+    struct ActivationCheck {
+        uint128[2] references;
+        uint256 referenceReasons;
+        bool fallbackMode;
     }
 
     /// @notice Full evaluation for one pool snapshot. Pure view: no writes, no external mutation.
@@ -137,13 +105,13 @@ contract BellPolicyOracle {
         view
         returns (Output memory output)
     {
-        DependencyEvaluation memory deps = _evaluateDependencies(input);
+        DependencyEvaluation memory deps = _dependency(input);
 
         // PRICE_GUARDED reference reads happen before the decision so a failed/stale feed is a
-        // recorded blocking reason inside the same dependency aggregation, never a revert of the
-        // whole evaluate and never a healthy default.
+        // recorded fallback condition or blocking reason, never a revert of the whole evaluate.
         (uint128[2] memory referencePrices, uint256 referenceReasons) = _referencePrices(input, deps);
-        deps.reasons |= referenceReasons;
+        bool priceProtectionFallback = _priceProtectionFallback(input, deps, referenceReasons, false);
+        uint256 blockingReasons = deps.reasons | referenceReasons;
 
         ModePolicy.Context memory context;
         context.lifecycle = input.state.lifecycle;
@@ -157,13 +125,23 @@ contract BellPolicyOracle {
         context.oldValidUntil = input.state.oldValidUntil;
         context.reopenBaseObservations = input.state.reopenBaseObservations;
         context.lastOpenObservations = input.state.lastOpenObservations;
-        context.anyPlannedClosed = deps.anyPlannedClosed;
-        context.allLegsHealthy = deps.allLegsHealthy;
-        context.closureContextValid = deps.closureContextValid;
-        context.unexpectedClosed = deps.unexpectedClosed;
-        context.dependencyReasons = deps.reasons;
-        context.validUntil = deps.validUntil;
+        context.anyPlannedClosed = priceProtectionFallback && deps.phase == PolicyConstants.PHASE_CLOSED
+            ? true : deps.anyPlannedClosed;
+        context.allLegsHealthy = priceProtectionFallback || deps.allLegsHealthy;
+        context.closureContextValid = priceProtectionFallback && deps.phase == PolicyConstants.PHASE_CLOSED
+            ? true : deps.closureContextValid;
+        context.unexpectedClosed = priceProtectionFallback ? false : deps.unexpectedClosed;
+        context.dependencyReasons = priceProtectionFallback ? 0 : blockingReasons;
+        context.validUntil = priceProtectionFallback ? deps.fallbackValidUntil : deps.validUntil;
+        context.priceProtectionFallback = priceProtectionFallback;
         context.observations = deps.observations;
+        if (priceProtectionFallback) {
+            for (uint256 i; i < 2; ++i) {
+                // A synthetic monotonic observation supports the recovery ledger while the external quote is
+                // unavailable. It is time evidence only; it is never passed off as a price observation.
+                if ((deps.stockMask & uint8(1 << i)) != 0) context.observations[i] = input.nowTime;
+            }
+        }
         context.stockMask = deps.stockMask;
         context.nowTime = input.nowTime;
         context.executionReady = input.executionReady;
@@ -187,22 +165,29 @@ contract BellPolicyOracle {
         // A pre-live pool has no actionable phase. Report the session phase only once LIVE so callers cannot
         // mistake a SETUP view for a tradable session.
         output.phase = input.state.lifecycle == uint8(Lifecycle.LIVE) && deps.phaseSet ? deps.phase : PolicyConstants.PHASE_UNKNOWN;
-        output.flags = 0;
+        output.flags = input.state.lifecycle != uint8(Lifecycle.LIVE) ? 0
+            : input.poolClass == uint8(PoolClass.SESSION_ONLY)
+                ? PolicyFlags.PRICE_PROTECTION_NOT_APPLICABLE
+                : priceProtectionFallback ? PolicyFlags.PRICE_PROTECTION_FALLBACK : PolicyFlags.PRICE_PROTECTION_ACTIVE;
         output.lpFeeUnits = 0;
         output.bandBps = 0;
         output.effectiveTradeCap = [_tradeCap(input, 0), _tradeCap(input, 1)];
         output.effectiveWindowCap = [_windowCap(input, 0), _windowCap(input, 1)];
+        if (priceProtectionFallback) {
+            output.lpFeeUnits = PolicyConstants.FEE_CLOSED;
+            (output.effectiveTradeCap, output.effectiveWindowCap) = _fallbackLimits(input, deps.phase);
+        }
         output.rollingRemaining = [
-            _rollingRemaining(_windowCap(input, 0), currentGross[0], previousGross[0]),
-            _rollingRemaining(_windowCap(input, 1), currentGross[1], previousGross[1])
+            _rollingRemaining(output.effectiveWindowCap[0], currentGross[0], previousGross[0]),
+            _rollingRemaining(output.effectiveWindowCap[1], currentGross[1], previousGross[1])
         ];
         output.closureRemaining = [
             _closureRemaining(input, episodeGross[0], 0),
             _closureRemaining(input, episodeGross[1], 1)
         ];
-        output.referencePrice18 = referencePrices;
-        output.validUntil =
-            input.state.lifecycle == uint8(Lifecycle.LIVE) && deps.validUntil != type(uint64).max ? deps.validUntil : 0;
+        output.referencePrice18 = priceProtectionFallback ? [uint128(0), uint128(0)] : referencePrices;
+        output.validUntil = input.state.lifecycle == uint8(Lifecycle.LIVE)
+            && context.validUntil != type(uint64).max ? context.validUntil : 0;
         output.closureNonce = input.state.closureNonce;
         output.configHash = input.configHash;
         output.pauseNonce = deps.poolPauseNonce;
@@ -233,8 +218,31 @@ contract BellPolicyOracle {
             ? deps.closeReferencePrices[1]
             : _readReferencePrice(input.referenceAdapter1);
         // A zero price means the bounded read failed, returned out of domain or reported a stale
-        // feed (the adapter reverts); either way the side cannot anchor a price and blocks trading.
+        // feed (the adapter reverts). Eligible pools may use the explicit AMM fallback; other
+        // contexts preserve this reason and remain blocked.
         if (prices[0] == 0 || prices[1] == 0) reasons = ReasonBits.PRICE_INPUT_INVALID_OR_STALE;
+    }
+
+    function _priceProtectionFallback(
+        Input calldata input,
+        DependencyEvaluation memory deps,
+        uint256 referenceReasons,
+        bool activation
+    ) private pure returns (bool) {
+        if (input.poolClass != uint8(PoolClass.PRICE_GUARDED)
+            || input.referenceAdapter0 == address(0) || input.referenceAdapter1 == address(0)
+            || (activation
+                ? input.state.lifecycle != uint8(Lifecycle.SEEDING)
+                : input.state.lifecycle != uint8(Lifecycle.LIVE) || input.state.bellStart == 0)
+            || !deps.phaseSet || deps.stockMask == 0) return false;
+        uint256 reasons = deps.reasons | referenceReasons;
+        uint256 fallbackReasons = ReasonBits.REPORT_INVALID_OR_STALE | ReasonBits.PRICE_INPUT_INVALID_OR_STALE;
+        if (deps.phase == PolicyConstants.PHASE_CLOSED) {
+            fallbackReasons |= ReasonBits.UNEXPECTED_CLOSED | ReasonBits.ANCHOR_MISSING_OR_EXPIRED;
+        } else if (deps.phase < PolicyConstants.PHASE_PRE || deps.phase > PolicyConstants.PHASE_OVERNIGHT) {
+            return false;
+        }
+        return reasons != 0 && reasons & ~fallbackReasons == 0 && deps.fallbackValidUntil > input.nowTime;
     }
 
     /// @dev Selector-only staticcall with the house gas bound; returndata must be one uint128 word.
@@ -255,6 +263,12 @@ contract BellPolicyOracle {
 
     function _windowCap(Input calldata input, uint256 i) private pure returns (uint128) {
         return input.windowCap[i];
+    }
+
+    function _fallbackLimits(Input calldata input, uint8 phase)
+        private pure returns (uint128[2] memory trade, uint128[2] memory window)
+    {
+        return FlowBudget.effectiveLimits(input.tradeCap, input.windowCap, phase, true);
     }
 
     function _rollingRemaining(uint128 cap, uint128 currentGross, uint128 previousGross) private pure returns (uint128) {
@@ -285,8 +299,13 @@ contract BellPolicyOracle {
         BellPolicyOracle.Output memory o = this.evaluate(
             input, [uint128(0), uint128(0)], [uint128(0), uint128(0)], [uint128(0), uint128(0)]
         );
-        if (!o.canSwap) revert PolicyBlocked(o.reasonBits);
-        if (input.poolClass == uint8(PoolClass.PRICE_GUARDED)
+        if (!o.canSwap || o.beginLatch || o.releaseLatch || o.releaseRecovery) {
+            uint256 reason = o.reasonBits;
+            if (o.beginLatch || o.releaseLatch || o.releaseRecovery) reason |= ReasonBits.RECOVERY_PENDING;
+            revert PolicyBlocked(reason);
+        }
+        bool fallbackMode = (o.flags & PolicyFlags.PRICE_PROTECTION_FALLBACK) != 0;
+        if (input.poolClass == uint8(PoolClass.PRICE_GUARDED) && !fallbackMode
             && (o.referencePrice18[0] == 0 || o.referencePrice18[1] == 0)) {
             revert PolicyBlocked(ReasonBits.PRICE_INPUT_INVALID_OR_STALE);
         }
@@ -340,7 +359,7 @@ contract BellPolicyOracle {
 
     /// @notice Dependency-only projection used by activation. Same reads, no decision.
     function bootstrap(Input calldata input) external view returns (DependencyEvaluation memory) {
-        return _evaluateDependencies(input);
+        return _dependency(input);
     }
 
     /// @notice Validates fully seeded pool activation and returns 1=open, 2=verified close, 3=closed staging.
@@ -349,7 +368,7 @@ contract BellPolicyOracle {
     function activationStatus(Input calldata input, uint160 poolSqrtPriceX96, uint8[2] calldata decimals)
         external view returns (uint8 status, uint64 validUntil, uint64[2] memory observations)
     {
-        DependencyEvaluation memory deps = _evaluateDependencies(input);
+        DependencyEvaluation memory deps = _dependency(input);
         return _classifyActivation(input, deps, poolSqrtPriceX96, decimals);
     }
 
@@ -359,9 +378,53 @@ contract BellPolicyOracle {
         uint160 poolSqrtPriceX96,
         uint8[2] calldata decimals
     ) private view returns (uint8 status, uint64 validUntil, uint64[2] memory observations) {
-        (uint128[2] memory refs, uint256 refReasons) = _referencePrices(input, deps);
-        bool refsReady = refReasons == 0 && (input.poolClass != uint8(PoolClass.PRICE_GUARDED)
-            || (refs[0] != 0 && refs[1] != 0));
+        ActivationCheck memory check;
+        (check.references, check.referenceReasons) = _referencePrices(input, deps);
+        check.fallbackMode = _priceProtectionFallback(input, deps, check.referenceReasons, true);
+        if (check.fallbackMode) {
+            deps.reasons = 0;
+            deps.validUntil = deps.fallbackValidUntil;
+            deps.allLegsHealthy = true;
+            if (deps.phase == PolicyConstants.PHASE_CLOSED) {
+                deps.anyPlannedClosed = true;
+                deps.closureContextValid = true;
+                deps.unexpectedClosed = false;
+            }
+            for (uint256 i; i < 2; ++i) {
+                // The activation observations record only that fallback policy was checked at this time.
+                if ((deps.stockMask & uint8(1 << i)) != 0) deps.observations[i] = uint64(block.timestamp);
+            }
+            check.references = [uint128(0), uint128(0)];
+            check.referenceReasons = 0;
+        }
+        status = _activationReadiness(input, deps, check);
+        if (status == 1 || status == 2) {
+            uint16 band = status == 2 ? PolicyConstants.FROZEN_STOCK_BAND_BPS : PolicyConstants.ACTIVE_BAND_BPS;
+            if (!check.fallbackMode && input.poolClass == uint8(PoolClass.PRICE_GUARDED)
+                && (check.referenceReasons != 0
+                    || !_isActivationPriceWithinBand(poolSqrtPriceX96, check.references, decimals, band))) {
+                status = 0;
+            }
+        }
+        validUntil = deps.validUntil;
+        observations = deps.observations;
+        if (status == 1 && input.poolClass != uint8(PoolClass.SESSION_ONLY) && !check.fallbackMode) {
+            for (uint256 i; i < 2; ++i) {
+                // forge-lint: disable-next-line(incorrect-shift)
+                if ((deps.stockMask & uint8(1 << i)) == 0) continue;
+                if (deps.healthySince[i] == 0
+                    || uint256(deps.healthySince[i]) + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS > block.timestamp
+                    || deps.observations[i] == 0) status = 0;
+            }
+        }
+    }
+
+    function _activationReadiness(Input calldata input, DependencyEvaluation memory deps, ActivationCheck memory check)
+        private view returns (uint8 status)
+    {
+        bool refsReady = check.fallbackMode || (check.referenceReasons == 0
+            && (input.poolClass != uint8(PoolClass.PRICE_GUARDED)
+                || (check.references[0] != 0 && check.references[1] != 0)));
         bool openReady = deps.reasons == 0 && refsReady && deps.phaseSet
             && deps.phase != PolicyConstants.PHASE_CLOSED && deps.allLegsHealthy
             && deps.validUntil > block.timestamp && deps.stockMask != 0;
@@ -374,29 +437,11 @@ contract BellPolicyOracle {
         bool canStageClosed = deps.phaseSet && deps.phase == PolicyConstants.PHASE_CLOSED
             && deps.stockMask != 0 && deps.reasons & ~(ReasonBits.UNEXPECTED_CLOSED
                 | ReasonBits.ANCHOR_MISSING_OR_EXPIRED) == 0
-            && (deps.reasons | refReasons) & ~stageReasons == 0;
+            && (deps.reasons | check.referenceReasons) & ~stageReasons == 0;
 
         if (openReady) status = 1;
         else if (closedReady) status = 2;
         else if (canStageClosed) status = 3;
-        if (status == 1 || status == 2) {
-            uint16 band = status == 2 ? PolicyConstants.FROZEN_STOCK_BAND_BPS : PolicyConstants.ACTIVE_BAND_BPS;
-            if (input.poolClass == uint8(PoolClass.PRICE_GUARDED)
-                && (refReasons != 0 || !_isActivationPriceWithinBand(poolSqrtPriceX96, refs, decimals, band))) {
-                status = 0;
-            }
-        }
-        validUntil = deps.validUntil;
-        observations = deps.observations;
-        if (status == 1) {
-            for (uint256 i; i < 2; ++i) {
-                // forge-lint: disable-next-line(incorrect-shift)
-                if ((deps.stockMask & uint8(1 << i)) == 0) continue;
-                if (deps.healthySince[i] == 0
-                    || uint256(deps.healthySince[i]) + PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS > block.timestamp
-                    || deps.observations[i] == 0) status = 0;
-            }
-        }
     }
 
     function _isActivationPriceWithinBand(
@@ -411,508 +456,36 @@ contract BellPolicyOracle {
             );
     }
 
-    function _evaluateDependencies(Input calldata input) private view returns (DependencyEvaluation memory deps) {
-        deps.validUntil = type(uint64).max;
-        deps.phase = PolicyConstants.PHASE_UNKNOWN;
-        bytes32 poolPauseObservation;
-
-        if (input.nowTime == 0) deps.reasons |= ReasonBits.SETUP;
-
-        {
-            (bool ok, bool paused, uint64 nonce) =
-                _readPauseState(input.safetyController, ModePolicy.targetId(1, input.hook));
-            if (!ok) {
-                deps.reasons |= ReasonBits.SETUP;
-            } else {
-                deps.poolPauseOk = true;
-                deps.poolPauseNonce = nonce;
-                poolPauseObservation = keccak256(abi.encode(paused, nonce));
-                if (paused) deps.reasons |= ReasonBits.MANUAL_PAUSE;
-            }
-        }
-
-        AssetEvaluation memory e0 = _evaluateAsset(input, input.asset0, input.token0);
-        AssetEvaluation memory e1 = _evaluateAsset(input, input.asset1, input.token1);
-        deps.reasons |= e0.reasons | e1.reasons;
-
-        deps.stockMask = (e0.isStock ? uint8(1) : uint8(0)) | (e1.isStock ? uint8(2) : uint8(0));
-        deps.observations[0] = e0.observation;
-        deps.observations[1] = e1.observation;
-        deps.healthySince[0] = e0.healthySince;
-        deps.healthySince[1] = e1.healthySince;
-        deps.closeReferencePrices[0] = e0.closeReferencePrice;
-        deps.closeReferencePrices[1] = e1.closeReferencePrice;
-        deps.anyPlannedClosed = e0.plannedClosed || e1.plannedClosed;
-        deps.unexpectedClosed = e0.unexpectedClosed || e1.unexpectedClosed;
-        deps.allLegsHealthy = e0.legHealthy && e1.legHealthy;
-        deps.closureContextValid = deps.anyPlannedClosed && e0.closureContextOk && e1.closureContextOk;
-
-        if (e0.isStock && e0.phaseSet) {
-            deps.phase = e0.phase;
-            deps.phaseSet = true;
-        }
-        if (e1.isStock && e1.phaseSet) {
-            if (!deps.phaseSet) {
-                deps.phase = e1.phase;
-                deps.phaseSet = true;
-            } else if (deps.phase != e1.phase) {
-                if (deps.phase == PolicyConstants.PHASE_CLOSED || e1.phase == PolicyConstants.PHASE_CLOSED) {
-                    deps.phase = PolicyConstants.PHASE_CLOSED;
-                } else {
-                    deps.reasons |= ReasonBits.CALENDAR_CONFLICT;
-                }
-            }
-        }
-        if (e0.validUntil < deps.validUntil) deps.validUntil = e0.validUntil;
-        if (e1.validUntil < deps.validUntil) deps.validUntil = e1.validUntil;
-
-        if (deps.stockMask == 0) deps.reasons |= ReasonBits.CALENDAR_MISSING;
-
-        deps.dependencyHash = keccak256(abi.encode(e0.observationHash, e1.observationHash, poolPauseObservation));
+    struct DependencyEvaluation {
+        uint256 reasons;
+        uint64 validUntil;
+        uint64 fallbackValidUntil;
+        uint8 phase;
+        bool phaseSet;
+        bool anyPlannedClosed;
+        bool allLegsHealthy;
+        bool closureContextValid;
+        bool unexpectedClosed;
+        uint8 stockMask;
+        uint64[2] observations;
+        uint64[2] healthySince;
+        uint128[2] closeReferencePrices;
+        uint64 poolPauseNonce;
+        bool poolPauseOk;
+        bytes32 dependencyHash;
     }
 
-    function _evaluateAsset(Input calldata input, bytes32 assetId, address token)
-        private
-        view
-        returns (AssetEvaluation memory result)
-    {
-        result.validUntil = type(uint64).max;
-        AssetObservations memory observations;
 
-        (bool pauseOk, bool paused, uint64 pauseNonce) = _readPauseState(input.safetyController, ModePolicy.targetId(2, token));
-        if (!pauseOk) {
-            _addReason(result, ReasonBits.SETUP);
-        } else {
-            observations.pauseState = keccak256(abi.encode(paused, pauseNonce));
-            if (paused) _addReason(result, ReasonBits.ASSET_PAUSE);
-        }
+    address public immutable dependencyReader;
 
-        (bool descriptorOk, AssetDescriptor memory descriptor_) = _readDescriptor(input.assetRegistry, assetId);
-        if (descriptorOk) observations.descriptor = keccak256(abi.encode(descriptor_));
-        if (!descriptorOk || descriptor_.id == bytes32(0) || descriptor_.token == address(0)) {
-            _addReason(result, ReasonBits.SETUP);
-        } else if (descriptor_.id != assetId || descriptor_.token != token) {
-            _addReason(result, ReasonBits.FINGERPRINT_CHANGED);
-        } else {
-            result.isStock = descriptor_.isStock;
-            result.closureContextOk = !descriptor_.isStock;
-            if (
-                descriptor_.expectedCodeHash != token.codehash || descriptor_.implementationFingerprint == bytes32(0)
-                    || descriptor_.evidenceHash == bytes32(0)
-            ) {
-                _addReason(result, ReasonBits.FINGERPRINT_CHANGED);
-            }
-            if (descriptor_.isStock) {
-                _evaluateStockCalendar(input, result, assetId, descriptor_, observations);
-            }
-        }
-
-        bool referencePricedCounter = descriptorOk && input.poolClass == uint8(PoolClass.PRICE_GUARDED)
-            && !descriptor_.isStock && input.referenceAdapter0 != address(0) && input.referenceAdapter1 != address(0);
-        if (descriptorOk && (AssetPolicy.oraclelessCounterasset(descriptor_, input.poolClass) || referencePricedCounter)) {
-            // SESSION_ONLY explicitly accepts an oracleless counterasset. PRICE_GUARDED
-            // non-stock assets instead rely on their required per-pool Chainlink adapter,
-            // checked by _referencePrices; they must not need stock-session report health.
-            result.legHealthy = true;
-        } else {
-            _evaluateAssetHealth(input, result, assetId, observations);
-        }
-
-        result.observationHash = keccak256(
-            abi.encode(
-                assetId,
-                token,
-                observations.pauseState,
-                observations.descriptor,
-                observations.calendar,
-                observations.anchor,
-                observations.health,
-                observations.closedReport
-            )
-        );
+    constructor() {
+        dependencyReader = address(new BellPolicyDependencyReader());
     }
 
-    function _evaluateStockCalendar(
-        Input calldata input,
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        AssetDescriptor memory descriptor_,
-        AssetObservations memory observations
-    ) private view {
-        (uint8 calendarStatus, CalendarLeaf memory interval) = _readCalendar(input.calendarRegistry, assetId);
-        observations.calendar =
-            calendarStatus == 0 ? keccak256(abi.encode(interval)) : keccak256(abi.encode(calendarStatus));
-        if (calendarStatus == 1) {
-            _addReason(result, ReasonBits.CALENDAR_MISSING);
-            result.validUntil = 0;
-            return;
-        }
-        if (calendarStatus == 2) {
-            _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            result.validUntil = 0;
-            return;
-        }
-
-        result.phase = interval.phase;
-        result.phaseSet = true;
-        if (interval.phase == PolicyConstants.PHASE_CLOSED) {
-            observations.anchor = _evaluatePlannedClosure(input, result, assetId, interval);
-            return;
-        }
-        uint8 phaseBit = uint8(1 << interval.phase);
-        if ((descriptor_.capabilityMask & phaseBit) == 0) {
-            _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            result.validUntil = 0;
-            return;
-        }
-        result.closureContextOk = true;
-        if (interval.end < result.validUntil) result.validUntil = interval.end;
+    function _dependency(Input calldata input) private view returns (DependencyEvaluation memory deps) {
+        bytes memory encoded = IBellPolicyDependencyReader(dependencyReader).evaluateDependencies(abi.encode(input));
+        deps = abi.decode(encoded, (DependencyEvaluation));
     }
 
-    function _evaluateAssetHealth(
-        Input calldata input,
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        AssetObservations memory observations
-    ) private view {
-        bool skipHealth = result.isStock && result.phaseSet && result.phase == PolicyConstants.PHASE_CLOSED;
-        if (skipHealth) return;
 
-        (bool healthOk, HealthView memory health_) = _readHealth(input.sessionRegistry, assetId);
-        if (!healthOk) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.validUntil = 0;
-            return;
-        }
-
-        observations.health = keccak256(abi.encode(health_));
-        _addReason(result, health_.reasonBits);
-        if (ModePolicy.hasUnknownReason(health_.reasonBits)) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-        }
-        if (!health_.ready) {
-            if (health_.reasonBits == 0) _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.validUntil = 0;
-            return;
-        }
-        if (
-            health_.reasonBits != 0 || health_.healthySince == 0 || health_.validUntil <= input.nowTime
-                || health_.healthySince > input.nowTime || health_.baselineObservation == 0
-                || health_.latestObservation == 0 || health_.baselineObservation > input.nowTime
-                || health_.latestObservation > input.nowTime
-        ) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-        }
-        if (health_.validUntil < result.validUntil) result.validUntil = health_.validUntil;
-        if (result.reasons != 0) return;
-
-        result.activeHealthy = true;
-        result.legHealthy = true;
-        result.healthySince = health_.healthySince;
-        result.observation = health_.latestObservation;
-        if (result.isStock) {
-            _rejectUnexpectedClosedReport(input, result, assetId, health_.latestObservation, observations);
-        }
-    }
-
-    function _rejectUnexpectedClosedReport(
-        Input calldata input,
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        uint64 activeObservation,
-        AssetObservations memory observations
-    ) private view {
-        (bool sampleOk, SourceSample memory closedSample) =
-            _readLatestSample(input.sessionRegistry, assetId, PolicyConstants.PHASE_CLOSED);
-        observations.closedReport = keccak256(abi.encode(sampleOk, closedSample));
-        if (!sampleOk) {
-            _addReason(result, ReasonBits.REPORT_INVALID_OR_STALE);
-            result.activeHealthy = false;
-            result.legHealthy = false;
-            return;
-        }
-        if (
-            closedSample.phase == PolicyConstants.PHASE_CLOSED && closedSample.observedAt != 0
-                && closedSample.observedAt <= input.nowTime
-                && input.nowTime - closedSample.observedAt < PolicyConstants.MAX_REPORT_AGE_SECONDS
-                && closedSample.observedAt >= activeObservation
-        ) {
-            result.unexpectedClosed = true;
-            result.activeHealthy = false;
-            result.legHealthy = false;
-            _addReason(result, ReasonBits.UNEXPECTED_CLOSED);
-        }
-    }
-
-    function _evaluatePlannedClosure(
-        Input calldata input,
-        AssetEvaluation memory result,
-        bytes32 assetId,
-        CalendarLeaf memory interval
-    ) private view returns (bytes32 anchorObservation) {
-        bytes32 boundary = CalendarProof.hashLeaf(block.chainid, input.calendarRegistry, interval);
-        (bool anchorOk, uint256 anchorReasons, uint64 anchorValidUntil, Anchor memory anchor) =
-            _readAnchorStatus(input.sessionRegistry, assetId, boundary);
-        anchorObservation = keccak256(abi.encode(anchorOk, anchorReasons, anchorValidUntil, anchor));
-
-        bool contextOk = anchorOk && anchorReasons == 0 && anchor.assetId == assetId && anchor.boundaryHash == boundary
-            && anchor.price18 != 0 && anchor.multiplier18 != 0 && anchor.sourceHash != bytes32(0)
-            && anchor.closureStart == interval.start && anchor.capturedAt < anchor.closureStart
-            && anchor.observedAt <= anchor.capturedAt && anchor.inputAt <= anchor.capturedAt
-            && anchor.inputAt <= input.nowTime && anchor.observedAt <= input.nowTime
-            && anchorValidUntil > input.nowTime;
-
-        if (contextOk) {
-            (uint8 nextStatus, CalendarLeaf memory next) = _readNextCalendar(input.calendarRegistry, assetId);
-            if (
-                nextStatus == 2
-                    || (nextStatus == 0
-                        && (next.assetId != assetId || next.start != interval.end || next.end <= next.start
-                            || next.phase < PolicyConstants.PHASE_PRE
-                            || next.phase > PolicyConstants.PHASE_CLOSED
-                            || next.provenanceHash == bytes32(0)))
-            ) {
-                contextOk = false;
-                _addReason(result, ReasonBits.CALENDAR_CONFLICT);
-            }
-        }
-
-        if (contextOk) {
-            result.plannedClosed = true;
-            result.closureContextOk = true;
-            result.legHealthy = true;
-            result.closeReferencePrice = anchor.price18;
-            if (anchorValidUntil < result.validUntil) result.validUntil = anchorValidUntil;
-            if (interval.end < result.validUntil) result.validUntil = interval.end;
-        } else {
-            result.unexpectedClosed = true;
-            result.closureContextOk = false;
-            _addReason(result, ReasonBits.UNEXPECTED_CLOSED);
-            _addReason(result, anchorReasons == 0 ? ReasonBits.ANCHOR_MISSING_OR_EXPIRED : anchorReasons);
-            result.validUntil = 0;
-        }
-    }
-
-    function _addReason(AssetEvaluation memory result, uint256 reason) private pure {
-        result.reasons |= reason;
-    }
-
-    function _readPauseState(address controller, bytes32 target)
-        private
-        view
-        returns (bool success, bool paused, uint64 nonce)
-    {
-        bytes memory callData = abi.encodeWithSelector(ISafetyController.pauseState.selector, target);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        uint256 pausedWord;
-        uint256 nonceWord;
-        assembly ("memory-safe") {
-            let ptr := mload(0x40)
-            mstore(0x40, add(ptr, 64))
-            success := staticcall(gasLimit, controller, add(callData, 32), mload(callData), ptr, 64)
-            if iszero(eq(returndatasize(), 64)) { success := 0 }
-            if success {
-                pausedWord := mload(ptr)
-                nonceWord := mload(add(ptr, 32))
-            }
-        }
-        if (!success || pausedWord > 1 || nonceWord > type(uint64).max) return (false, false, 0);
-        paused = pausedWord == 1;
-        nonce = uint64(nonceWord);
-        if (paused && nonce == 0) return (false, false, 0);
-    }
-
-    function _readDescriptor(address registry, bytes32 assetId)
-        private
-        view
-        returns (bool success, AssetDescriptor memory descriptor_)
-    {
-        bytes memory callData = abi.encodeWithSelector(IAssetRegistry.descriptor.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        assembly ("memory-safe") {
-            descriptor_ := mload(0x40)
-            mstore(0x40, add(descriptor_, 416))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), descriptor_, 416)
-            if iszero(eq(returndatasize(), 416)) { success := 0 }
-            if success {
-                if shr(160, mload(add(descriptor_, 32))) { success := 0 }
-                if or(gt(mload(add(descriptor_, 64)), 1), gt(mload(add(descriptor_, 96)), 18)) { success := 0 }
-                if and(mload(add(descriptor_, 128)), not(0x1e)) { success := 0 }
-            }
-        }
-    }
-
-    function _readHealth(address registry, bytes32 assetId)
-        private
-        view
-        returns (bool success, HealthView memory health_)
-    {
-        bytes memory callData = abi.encodeWithSelector(ISessionRegistry.health.selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        assembly ("memory-safe") {
-            health_ := mload(0x40)
-            mstore(0x40, add(health_, 192))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), health_, 192)
-            if iszero(eq(returndatasize(), 192)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(health_), 1),
-                    or(
-                        gt(mload(add(health_, 64)), 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(health_, 96)), 0xffffffffffffffff),
-                            or(
-                                gt(mload(add(health_, 128)), 0xffffffffffffffff),
-                                gt(mload(add(health_, 160)), 0xffffffffffffffff)
-                            )
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
-    }
-
-    function _readCalendar(address registry, bytes32 assetId)
-        private
-        view
-        returns (uint8 status, CalendarLeaf memory interval)
-    {
-        (bool success, CalendarLeaf memory leaf) = _readLeaf(registry, ICalendarRegistry.currentInterval.selector, assetId);
-        interval = leaf;
-        if (!success) return (1, interval);
-        if (interval.assetId == bytes32(0) || interval.end <= interval.start) return (1, interval);
-        if (interval.assetId != assetId) return (2, interval);
-        if (interval.start > block.timestamp || interval.end <= block.timestamp) return (1, interval);
-        if (interval.phase < PolicyConstants.PHASE_PRE || interval.phase > PolicyConstants.PHASE_CLOSED) {
-            return (2, interval);
-        }
-        if (interval.provenanceHash == bytes32(0)) return (2, interval);
-        return (0, interval);
-    }
-
-    function _readNextCalendar(address registry, bytes32 assetId)
-        private
-        view
-        returns (uint8 status, CalendarLeaf memory interval)
-    {
-        (bool success, CalendarLeaf memory leaf) = _readLeaf(registry, ICalendarRegistry.nextInterval.selector, assetId);
-        interval = leaf;
-        if (!success) return (2, interval);
-        if (interval.assetId == bytes32(0)) return (1, interval);
-        if (
-            interval.assetId != assetId || interval.end <= interval.start || interval.phase < PolicyConstants.PHASE_PRE
-                || interval.phase > PolicyConstants.PHASE_CLOSED || interval.provenanceHash == bytes32(0)
-        ) return (2, interval);
-        return (0, interval);
-    }
-
-    function _readLeaf(address registry, bytes4 selector, bytes32 assetId)
-        private
-        view
-        returns (bool success, CalendarLeaf memory interval)
-    {
-        bytes memory callData = abi.encodeWithSelector(selector, assetId);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        assembly ("memory-safe") {
-            interval := mload(0x40)
-            mstore(0x40, add(interval, 224))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), interval, 224)
-            if iszero(eq(returndatasize(), 224)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(add(interval, 32)), 0xffffffff),
-                    or(
-                        gt(mload(add(interval, 64)), 0xffffffff),
-                        or(
-                            gt(mload(add(interval, 96)), 0xffffffffffffffff),
-                            gt(mload(add(interval, 128)), 0xffffffffffffffff)
-                        )
-                    )
-                ) { success := 0 }
-                if gt(mload(add(interval, 160)), 0xff) { success := 0 }
-            }
-        }
-    }
-
-    function _readAnchorStatus(address registry, bytes32 assetId, bytes32 boundaryHash)
-        private
-        view
-        returns (bool success, uint256 reasons, uint64 validUntil, Anchor memory anchor)
-    {
-        bytes memory callData =
-            abi.encodeWithSelector(ISessionRegistry.anchorStatus.selector, assetId, boundaryHash);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        uint256 validWord;
-        uint256 validUntilWord;
-        assembly ("memory-safe") {
-            anchor := mload(0x40)
-            mstore(0x40, add(anchor, 384))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), anchor, 384)
-            if iszero(eq(returndatasize(), 384)) { success := 0 }
-            if success {
-                validWord := mload(add(anchor, 288))
-                reasons := mload(add(anchor, 320))
-                validUntilWord := mload(add(anchor, 352))
-                if or(
-                    gt(validWord, 1),
-                    or(
-                        gt(validUntilWord, 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(anchor, 64)), 0xffffffffffffffffffffffffffffffff),
-                            or(
-                                gt(mload(add(anchor, 96)), 0xffffffffffffffffffffffffffffffff),
-                                or(
-                                    gt(mload(add(anchor, 128)), 0xffffffffffffffff),
-                                    or(
-                                        gt(mload(add(anchor, 160)), 0xffffffffffffffff),
-                                        or(
-                                            gt(mload(add(anchor, 192)), 0xffffffffffffffff),
-                                            gt(mload(add(anchor, 224)), 0xffffffffffffffff)
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
-        if (!success) return (false, 0, 0, anchor);
-        validUntil = uint64(validUntilWord);
-        success = validWord == 1;
-    }
-
-    function _readLatestSample(address registry, bytes32 assetId, uint8 phase)
-        private
-        view
-        returns (bool success, SourceSample memory sample)
-    {
-        bytes memory callData = abi.encodeWithSelector(ISessionRegistry.latestSample.selector, assetId, phase);
-        uint256 gasLimit = PolicyConstants.MAX_STATIC_CALL_GAS;
-        assembly ("memory-safe") {
-            sample := mload(0x40)
-            mstore(0x40, add(sample, 320))
-            success := staticcall(gasLimit, registry, add(callData, 32), mload(callData), sample, 320)
-            if iszero(eq(returndatasize(), 320)) { success := 0 }
-            if success {
-                if or(
-                    gt(mload(add(sample, 64)), 0xff),
-                    gt(mload(add(sample, 96)), 0xffffffffffffffffffffffffffffffff)
-                ) { success := 0 }
-                if or(
-                    or(
-                        gt(mload(add(sample, 128)), 0xffffffffffffffff),
-                        gt(mload(add(sample, 160)), 0xffffffffffffffff)
-                    ),
-                    or(
-                        gt(mload(add(sample, 192)), 0xffffffffffffffff),
-                        or(
-                            gt(mload(add(sample, 224)), 0xffffffffffffffff),
-                            gt(mload(add(sample, 256)), 0xffffffffffffffff)
-                        )
-                    )
-                ) { success := 0 }
-            }
-        }
-    }
 }

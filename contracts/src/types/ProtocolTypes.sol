@@ -185,6 +185,12 @@ struct PolicyView {
     bytes32 stateHash;
 }
 
+library PolicyFlags {
+    uint16 internal constant PRICE_PROTECTION_ACTIVE = 1 << 0;
+    uint16 internal constant PRICE_PROTECTION_FALLBACK = 1 << 1;
+    uint16 internal constant PRICE_PROTECTION_NOT_APPLICABLE = 1 << 2;
+}
+
 struct CreateRequest {
     PoolConfig config;
     bytes32 salt;

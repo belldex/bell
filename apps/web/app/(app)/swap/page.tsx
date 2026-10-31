@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { parseUnits } from 'viem';
 import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, RefreshCw } from 'lucide-react';
 import { makeClients, useWallet } from '@/lib/wallet';
-import { MAINNET, displayAmount, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
+import { MAINNET, displayAmount, hookAbi, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
 // @ts-expect-error Shared decision helper is browser-safe and covered by node:test.
 import { phaseLabel, quoteSourceForPhase } from '@/lib/swap-calendar.mjs';
@@ -52,6 +52,11 @@ function SwapInner() {
     try { return token && amount ? parseUnits(amount, token.decimals) : 0n; } catch { return 0n; }
   }, [amount, exactInput, input, output]);
   const approvalAmount = quote?.maxIn ?? (exactInput ? rawSpecified : 0n);
+  const protectionFallback = Boolean(pool && pool.poolClass === 0 && (pool.policy.flags & 2) !== 0);
+  const protectionLabel = !pool || pool.poolClass === 1 ? 'Not applicable' : protectionFallback ? 'AMM-only fallback' : 'Price protection active';
+  const needsPolicyCheckpoint = Boolean(pool && !pool.policy.canSwap
+    && (((pool.policy.reasonBits & (1n << 12n)) !== 0n)
+      || (pool.policy.phase === 5 && pool.policy.mode === 2)));
 
   const loadWalletState = useCallback(async () => {
     if (!account || !input) { setBalance(null); setAllowance(null); return; }
@@ -77,7 +82,7 @@ function SwapInner() {
 
   const requestQuote = async () => {
     if (!pool || !input || !output || rawSpecified <= 0n) throw new Error(`Enter a valid ${exactInput ? 'input' : 'output'} amount`);
-    if (pool.lifecycle === 3) { setError('This pool is staged. Swaps unlock after the hook verifies fresh price inputs or a valid close reference.'); return; }
+    if (pool.lifecycle === 3) { setError('This pool is staged. Refresh its policy state; swaps unlock when the factory activates it.'); return; }
     if (wrongChain) throw new Error('Switch your wallet to Robinhood Chain Mainnet first');
     const anchored = quoteSourceForPhase(pool.policy.phase) === 'anchor';
     const onchainFeed = quoteSourceForPhase(pool.policy.phase) === 'chainlink-feed';
@@ -102,7 +107,7 @@ function SwapInner() {
       const { maxIn, minOut } = calculateSwapBounds({ exactInput, amountIn, amountOut, slippageBps: slippage });
       if (minOut <= 0n) throw new Error('Router simulation returned zero minimum output');
       setQuote({ amountIn, amountOut, maxIn, minOut, stamp: Date.now() });
-      setMessage(`${anchored ? 'Weekend-reference' : onchainFeed ? 'Fresh onchain-feed' : 'Live-price'} router simulation succeeded. Review ${exactInput ? 'minimum output' : 'maximum input'}, approve, then submit.`);
+      setMessage(`${protectionFallback ? 'AMM-only fallback' : pool.poolClass === 1 ? 'SESSION_ONLY AMM' : anchored ? 'Verified-reference' : onchainFeed ? 'Fresh onchain-feed' : 'Live-price'} router simulation succeeded. Review ${exactInput ? 'minimum output' : 'maximum input'}, approve, then submit.`);
       await loadWalletState();
     } catch (e) { const err = e as Error & { shortMessage?: string }; setError(err.shortMessage ?? err.message ?? 'Could not quote this swap'); setMessage(''); }
     finally { setBusy(false); }
@@ -153,14 +158,32 @@ function SwapInner() {
     finally { setBusy(false); }
   };
 
+  const checkpointPolicy = async () => {
+    if (!account || !provider || !pool) return;
+    setBusy(true); setError(''); setMessage('Confirm the onchain policy checkpoint in your wallet…');
+    try {
+      const { publicClient: client, walletClient } = makeClients(provider);
+      const simulation = await client.simulateContract({ address: pool.hook, abi: hookAbi, functionName: 'refreshState', account } as any);
+      const hash = await walletClient.writeContract(simulation.request as any);
+      setMessage('Waiting for the recovery checkpoint…');
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') throw new Error('Policy checkpoint reverted');
+      setMessage(`Policy checkpoint confirmed in block ${receipt.blockNumber}. Refreshing live policy…`);
+      setRefreshKey((value) => value + 1);
+    } catch (e) { const err = e as Error & { shortMessage?: string }; setError(err.shortMessage ?? err.message ?? 'Could not checkpoint policy'); setMessage(''); }
+    finally { setBusy(false); }
+  };
+
   return <div className="app-swap-page mx-auto max-w-[1200px]">
-    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against deployed policy. During PRE, REGULAR, POST, and OVERNIGHT, the contract reads Chainlink’s onchain price feed and applies the session gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Feed updates can be intermittent. Closed-session swaps require a verified stored close reference and remain bounded by the closure budget.</p></header>
+    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against the deployed hook. PRICE_GUARDED pools enforce an independent price band while references are valid; stale or unavailable inputs switch that pool to a 1% AMM-only fallback with strict flow caps. SESSION_ONLY pools always use the AMM price. Fees, flow limits, pause state, and closure budgets are enforced onchain.</p></header>
     {pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">No live pool to swap yet</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">No pool has been created on Mainnet. This screen reads the factory; it will enable trading after a pool and liquidity exist.</p><Link href="/pools" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Check live pools</Link></section>}
     {pools.length > 0 && pool && input && output && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
       <section className="border border-line bg-surface/60 p-5 sm:p-7">
         <label id="swap-live-pool-label" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Live pool</label>
-        <LogoSelect id="swap-live-pool" labelId="swap-live-pool-label" value={pool.hook} className="mt-2" options={pools.map((item) => ({ value: item.hook, label: `${item.legs[0].symbol} / ${item.legs[1].symbol}`, detail: `${item.poolClass === 0 ? 'PRICE_GUARDED' : 'SESSION_ONLY'} · ${item.lifecycle === 3 ? 'STAGED · SWAPS LOCKED' : item.policy.canSwap ? 'TRADABLE' : 'POLICY BLOCKED'}`, symbols: [item.legs[0].symbol, item.legs[1].symbol] }))} onChange={(hook) => { setPool(pools.find((item) => item.hook === hook) ?? null); setQuote(null); setError(''); }}/>
-        {pool.lifecycle === 3 && <p className="mt-4 border border-warn/40 bg-warn/5 p-3 text-sm text-warn">Pool seeded; swaps are locked until verified price inputs become available. Refresh pool state to check activation.</p>}
+        <LogoSelect id="swap-live-pool" labelId="swap-live-pool-label" value={pool.hook} className="mt-2" options={pools.map((item) => ({ value: item.hook, label: `${item.legs[0].symbol} / ${item.legs[1].symbol}`, detail: `${item.poolClass === 0 ? 'PRICE_GUARDED' : 'SESSION_ONLY'} · ${item.lifecycle === 3 ? 'STAGED' : item.policy.flags & 2 ? 'AMM FALLBACK' : item.policy.canSwap ? 'TRADABLE' : 'POLICY BLOCKED'}`, symbols: [item.legs[0].symbol, item.legs[1].symbol] }))} onChange={(hook) => { setPool(pools.find((item) => item.hook === hook) ?? null); setQuote(null); setError(''); }}/>
+        {pool.lifecycle === 3 && <p className="mt-4 border border-warn/40 bg-warn/5 p-3 text-sm text-warn">Pool is staged and not tradable yet. Refresh its policy state to check whether the factory has activated it.</p>}
+        {protectionFallback && <p className="mt-4 border border-warn/40 bg-warn/5 p-3 text-sm text-warn">External price protection is currently unavailable. This pool is using its AMM price with a 1% fee and the strictest flow caps. The pool price can diverge from the stock price.</p>}
+        {needsPolicyCheckpoint && <div className="mt-4 border border-warn/40 bg-warn/5 p-3 text-sm text-warn"><p>{(pool.policy.reasonBits & (1n << 12n)) !== 0n ? 'Policy recovery needs a checkpoint. After the first checkpoint, wait at least 60 seconds for the next valid time observation, then checkpoint again.' : 'The hook needs to commit the scheduled CLOSED state before swaps can use the closed-session fallback.'}</p>{account && !wrongChain && <button type="button" disabled={busy} onClick={() => void checkpointPolicy()} className="mt-3 min-h-10 border border-warn/50 px-3 font-mono text-[10px] uppercase disabled:opacity-50">{busy ? 'Working…' : 'Checkpoint policy'}</button>}</div>}
         <div className="mb-4 flex gap-2" role="group" aria-label="Swap amount mode"><button type="button" aria-pressed={exactInput} onClick={() => { setExactInput(true); setAmount(''); setQuote(null); }} className={`border px-3 py-2 font-mono text-[10px] uppercase ${exactInput ? 'border-ion text-ion' : 'border-line text-muted'}`}>Exact input</button><button type="button" aria-pressed={!exactInput} onClick={() => { setExactInput(false); setAmount(''); setQuote(null); }} className={`border px-3 py-2 font-mono text-[10px] uppercase ${!exactInput ? 'border-ion text-ion' : 'border-line text-muted'}`}>Exact output</button></div>
         <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3"><div className="border border-line bg-bg-1 p-4"><label htmlFor="swap-amount" className="font-mono text-[10px] uppercase text-dim">{exactInput ? 'You pay' : 'You receive'}</label><div className="mt-2 flex items-center gap-2"><input id="swap-amount" inputMode="decimal" value={amount} onChange={(e) => { setAmount(e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')); setQuote(null); }} placeholder="0.0" className="num min-w-0 flex-1 bg-transparent text-2xl text-ink outline-none"/><b className="text-sm text-ink">{exactInput ? input.symbol : output.symbol}</b></div><p className="mt-2 text-xs text-dim">Input balance: {balance === null ? 'connect wallet' : `${displayAmount(balance, input.decimals)} ${input.symbol}`}</p></div>
           <button type="button" onClick={() => { setDirection((v) => !v); setQuote(null); }} aria-label="Reverse swap direction" className="grid h-10 w-10 place-items-center border border-line text-ion"><ArrowDownUp size={16}/></button>
@@ -176,7 +199,17 @@ function SwapInner() {
         {error && <p role="alert" className="mt-4 flex items-start gap-2 border border-down/30 bg-down/5 p-3 text-sm text-down"><AlertTriangle size={16} className="mt-0.5 shrink-0"/>{error}</p>}
         {txHash && <a className="mt-4 inline-flex items-center gap-2 text-sm text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${txHash}`} target="_blank" rel="noreferrer">View transaction <ExternalLink size={14}/></a>}
       </section>
-      <aside className="space-y-4"><section className="border border-line bg-surface/50 p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Onchain policy</h2><p className="mt-3 text-lg text-ink">{pool.lifecycle === 3 ? 'Staged · waiting for verified price' : pool.policy.canSwap ? 'Currently tradable' : pool.policy.phase === 5 ? 'Verified close anchor required or policy blocked' : 'Fresh Chainlink round required or policy blocked'}</p><p className="mt-2 text-xs leading-relaxed text-muted">The router simulates every swap. During PRE, REGULAR, POST, and OVERNIGHT it checks the Chainlink round directly onchain; the effective limit is 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. During a closed session it requires a stored close reference and enforces the closure budget.</p><dl className="mt-4 space-y-2 text-sm"><div className="flex justify-between gap-3"><dt className="text-dim">Lifecycle</dt><dd className="text-ink">{pool.lifecycle === 3 ? 'Staged' : 'Live'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Mode · phase</dt><dd className="text-ink">{['Halted', 'Active', 'Market-free', 'Recovering', 'Setup'][pool.policy.mode] ?? pool.policy.mode} · {phaseLabel(pool.policy.phase)}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Pool fee</dt><dd className="text-ink">{(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">{pool.policy.phase === 5 ? 'Stock reference' : 'Chainlink feed'}</dt><dd className="text-ink">{pool.policy.phase === 5 ? 'Stored historical reference' : quote ? 'Fresh in simulation' : 'Checked by router'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">{exactInput ? 'Minimum received' : 'Maximum paid'}</dt><dd className="text-ink">{quote ? exactInput ? `${displayAmount(quote.minOut, output.decimals)} ${output.symbol}` : `${displayAmount(quote.maxIn, input.decimals)} ${input.symbol}` : '—'}</dd></div><div className="flex justify-between gap-3"><dt className="text-dim">Valid until</dt><dd className="text-ink">{pool.policy.validUntil ? new Date(Number(pool.policy.validUntil) * 1000).toLocaleString() : '—'}</dd></div></dl></section>
+      <aside className="space-y-4"><section className="border border-line bg-surface/50 p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Onchain policy</h2><p className="mt-3 text-lg text-ink">{pool.lifecycle === 3 ? 'Staged · swaps unavailable' : pool.policy.canSwap ? 'Currently tradable' : 'Policy blocks this swap'}</p><p className="mt-2 text-xs leading-relaxed text-muted">The router simulates every swap. PRICE_GUARDED uses external references and a price band while protected; if those inputs are stale, it falls back to the AMM price with a 1% fee and strict flow caps. SESSION_ONLY always uses the AMM price. CLOSED sessions use the configured closure policy and finite flow budget.</p><dl className="mt-4 space-y-2 text-sm">
+        <div className="flex justify-between gap-3"><dt className="text-dim">Lifecycle</dt><dd className="text-ink">{pool.lifecycle === 3 ? 'Staged' : 'Live'}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Price protection</dt><dd className="text-ink">{protectionLabel}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Mode · phase</dt><dd className="text-ink">{['Halted', 'Active', 'Market-free', 'Recovering', 'Setup'][pool.policy.mode] ?? pool.policy.mode} · {phaseLabel(pool.policy.phase)}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Pool fee</dt><dd className="text-ink">{protectionFallback ? '1.000% fallback maximum' : quote ? 'Applied in router simulation' : 'Calculated onchain'}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Per-trade cap</dt><dd className="text-right text-ink">{displayAmount(pool.policy.effectiveTradeCap[0], pool.legs[0].decimals)} {pool.legs[0].symbol} / {displayAmount(pool.policy.effectiveTradeCap[1], pool.legs[1].decimals)} {pool.legs[1].symbol}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Rolling room</dt><dd className="text-right text-ink">{displayAmount(pool.policy.rollingRemaining[0], pool.legs[0].decimals)} {pool.legs[0].symbol} / {displayAmount(pool.policy.rollingRemaining[1], pool.legs[1].decimals)} {pool.legs[1].symbol}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">{pool.policy.phase === 5 ? 'Stock reference' : 'Price input'}</dt><dd className="text-ink">{protectionFallback ? 'Unavailable · AMM fallback' : pool.poolClass === 1 ? 'Pool AMM price' : quote ? 'Checked in simulation' : 'Checked by router'}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">{exactInput ? 'Minimum received' : 'Maximum paid'}</dt><dd className="text-ink">{quote ? exactInput ? `${displayAmount(quote.minOut, output.decimals)} ${output.symbol}` : `${displayAmount(quote.maxIn, input.decimals)} ${input.symbol}` : '—'}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-dim">Valid until</dt><dd className="text-ink">{pool.policy.validUntil ? new Date(Number(pool.policy.validUntil) * 1000).toLocaleString() : '—'}</dd></div>
+      </dl></section>
         <section className="border border-line p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Live contract</h2><p className="mt-3 break-all font-mono text-xs text-dim">Hook: {pool.hook}</p><p className="mt-2 break-all font-mono text-xs text-dim">Pool ID: {pool.poolId}</p><a className="mt-4 inline-flex items-center gap-2 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/address/${pool.hook}`} target="_blank" rel="noreferrer">Open in explorer <ExternalLink size={13}/></a></section>
         <button type="button" onClick={() => { setQuote(null); setError(''); setRefreshKey((v) => v + 1); }} className="inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted"><RefreshCw size={14}/>Refresh pool</button>
       </aside>

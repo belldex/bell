@@ -20,7 +20,7 @@ export function MainnetStatusBanner() {
         <details className="app-mainnet-status__details">
           <summary>Network details</summary>
           <div className="app-mainnet-status__details-panel">
-            <p className="app-mainnet-status__disclosure">BELL admits Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG, WETH, and MEME. Mainnet pools use SESSION_ONLY pricing: swaps stay available when stock feeds are stale, with session fees and bounded flow limits. The seed ratio sets the opening price; there is no independent price protection. No Mainnet pool or swap exists yet, and an independent security audit is not complete. BELL is independent and is not affiliated with Robinhood Markets, Inc.</p>
+            <p className="app-mainnet-status__disclosure">BELL admits Robinhood Stock Tokens AAPL, NVDA and TSLA, USDG, WETH, and MEME. PRICE_GUARDED pools apply an independent price band while references are valid, then use an explicitly flagged AMM-only fallback with a 1% fee and strict flow caps when those inputs are unavailable. SESSION_ONLY pools always use the AMM price and have no independent price protection. Pool status is shown from the deployed hook. An independent security audit is not complete. BELL is independent and is not affiliated with Robinhood Markets, Inc.</p>
             <details className="app-mainnet-status__contracts">
               <summary>Contract addresses</summary>
               <dl>

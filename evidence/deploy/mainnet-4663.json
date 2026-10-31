@@ -10,10 +10,11 @@
   "sessionRegistry": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
   "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
   "positionManager": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
-  "hookDeployer": "0x4de343295ab68a62f25b965494fc6cf3b3c03334",
-  "poolFactory": "0xed367cd54af9eafa0e7512555f5f8bf77a0a2090",
+  "hookDeployer": "0x0f3c8be6e701b4466e0181cd6cde0814880cbc9e",
+  "poolFactory": "0x5bf1aa3913c59215ea90a3fb9482bf6f32d8152b",
   "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
   "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+  "modeEvaluator": "0x59599f115df4588de4a17e195a28c5f7fa6930be",
   "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "status": "PRODUCTION",
   "note": "Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused."

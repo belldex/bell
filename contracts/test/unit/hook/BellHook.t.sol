@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {
     PoolConfig,
     PoolState,
@@ -109,6 +110,7 @@ contract BellHookTest {
 
     PoolManager private manager;
     BellPolicyOracle private oracle;
+    BellModeEvaluator private modeEvaluator;
     PoolManager private otherManager;
     address private token0;
     address private token1;
@@ -130,6 +132,7 @@ contract BellHookTest {
     function setUp() external {
         manager = new PoolManager(address(this));
         oracle = new BellPolicyOracle();
+        modeEvaluator = new BellModeEvaluator();
         otherManager = new PoolManager(address(this));
         address tokenA = address(new BellHookTokenMock(18));
         address tokenB = address(new BellHookTokenMock(6));
@@ -745,7 +748,7 @@ contract BellHookTest {
         external
         returns (address)
     {
-        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle));
+        return address(new BellHook(config, key, templateHash, sessionRegistry, oracle, modeEvaluator));
     }
 
     function _deployHook(PoolConfig memory config, PoolKey memory key, bytes32 templateHash)

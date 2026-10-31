@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {PoolConfig, LiquidityMode, PoolClass} from "../../../src/types/ProtocolTypes.sol";
 import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
@@ -37,7 +38,7 @@ contract BellHookDeployerTest {
         address a = address(new HookDeployerMockDependency());
         address b = address(new HookDeployerMockDependency());
         (token0, token1) = a < b ? (a, b) : (b, a);
-        deployer = new BellHookDeployer(address(this), dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle()));
+        deployer = new BellHookDeployer(address(this), dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle()), address(new BellModeEvaluator()));
         config = PoolConfig({
             token0: token0,
             token1: token1,
@@ -92,23 +93,27 @@ contract BellHookDeployerTest {
         require(address(BellHook(hook).modeEvaluator()).code.length <= 24576,"evaluator exceeds EIP-170");
     }
 
+    function testModeEvaluatorCodeHashMatchesPinnedDeployerHash() external view {
+        require(keccak256(type(BellModeEvaluator).runtimeCode) == deployer.MODE_EVALUATOR_CODE_HASH(), "mode evaluator code hash drift");
+    }
+
     function testInitcodeSizeGatesHookAndDeployer() external view {
-        bytes memory hookArguments = abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle());
+        bytes memory hookArguments = abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle(), deployer.modeEvaluator());
         require(type(BellHook).creationCode.length + hookArguments.length <= 49152, "hook exceeds EIP-3860");
-        bytes memory deployerArguments = abi.encode(address(this), dependency, keccak256(type(BellHook).creationCode), deployer.policyOracle());
+        bytes memory deployerArguments = abi.encode(address(this), dependency, keccak256(type(BellHook).creationCode), deployer.policyOracle(), deployer.modeEvaluator());
         require(type(BellHookDeployer).creationCode.length + deployerArguments.length <= 49152, "deployer exceeds EIP-3860");
     }
 
     function testTransportPreservesExactPinnedCreationCodeHash() external view {
         bytes32 expected = keccak256(abi.encodePacked(type(BellHook).creationCode,
-            abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle())));
+            abi.encode(config, key, keccak256(type(BellHook).creationCode), dependency, deployer.policyOracle(), deployer.modeEvaluator())));
         require(deployer.initCodeHash(config,key) == expected,"creation transport changed bytes");
     }
 
     function testDeployerCanBindFutureFactoryAddressBeforeFactoryDeployment() external {
         address futureFactory = address(0xFACADE);
         BellHookDeployer futureDeployer = new BellHookDeployer(
-            futureFactory, dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle())
+            futureFactory, dependency, keccak256(type(BellHook).creationCode), address(new BellPolicyOracle()), address(new BellModeEvaluator())
         );
         require(futureDeployer.factory() == futureFactory, "future factory binding");
     }

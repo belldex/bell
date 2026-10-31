@@ -10,16 +10,16 @@ import {PolicyConstants} from "./libraries/PolicyConstants.sol";
 import {IBellSwapEvaluator} from "./types/SwapEvaluation.sol";
 import {Buckets, Mode, PoolClass} from "./types/ProtocolTypes.sol";
 
-/// @notice Stateless, non-upgradeable transport for canonical mode and swap arithmetic.
-/// @dev Each hook constructs and immutably binds its own instance. Calls are STATICCALLs,
-/// not delegatecalls; no hook storage, permission, policy input or guard moves to this contract.
+/// @notice Stateless, non-upgradeable shared calculator for canonical mode and swap arithmetic.
+/// @dev Hooks immutably bind the deployment-wide instance. Calls are STATICCALLs, not delegatecalls;
+/// no hook storage, permission, policy input or guard moves to this contract.
 contract BellModeEvaluator is IBellSwapEvaluator {
     error InvalidActualDelta();
     error InvalidSwapContext();
     error InvalidPricePath();
 
-    /// @dev This is a pure calculator, NOT reference admission. No caller can authorize a BellHook swap
-    /// by calling it. Until authenticated reference/corporate snapshots are available, BellHook stays gated.
+    /// @dev This is only a pure calculator, not reference admission or policy authorization. The hook
+    /// authenticates the policy snapshot before supplying this context.
     function prepare(Context calldata context, bytes32 callbackHash, bool zeroForOne, int256 amountSpecified)
         external pure returns (Snapshot memory)
     {
@@ -49,8 +49,10 @@ contract BellModeEvaluator is IBellSwapEvaluator {
         snapshot.callbackHash = callbackHash;
         snapshot.zeroForOne = zeroForOne;
         snapshot.amountSpecified = amountSpecified;
+        bool priceProtectionFallback = c.poolClass == uint8(PoolClass.PRICE_GUARDED)
+            && c.referencePrice18[0] == 0 && c.referencePrice18[1] == 0;
         bool repricing;
-        if (c.poolClass == uint8(PoolClass.PRICE_GUARDED)) {
+        if (c.poolClass == uint8(PoolClass.PRICE_GUARDED) && !priceProtectionFallback) {
             snapshot.bandBps = c.frozenStock ? PolicyConstants.FROZEN_STOCK_BAND_BPS : PolicyConstants.ACTIVE_BAND_BPS;
             repricing = !WidePriceMath.isWithinPriceBand(c.preSqrtPriceX96, c.referencePrice18[0],
                 c.referencePrice18[1], c.decimals[0], c.decimals[1], snapshot.bandBps);
@@ -60,9 +62,11 @@ contract BellModeEvaluator is IBellSwapEvaluator {
         }
         uint64 elapsed = c.timestamp - c.bellStart;
         bool corporate = c.corporateUntil > c.timestamp;
-        snapshot.guarded = corporate || repricing || elapsed < PolicyConstants.BELL_DURATION_SECONDS;
+        snapshot.guarded = priceProtectionFallback || corporate || repricing
+            || elapsed < PolicyConstants.BELL_DURATION_SECONDS;
         uint24 baseFee;
-        if (c.phase == PolicyConstants.PHASE_REGULAR) baseFee = PolicyConstants.FEE_REGULAR;
+        if (priceProtectionFallback) baseFee = PolicyConstants.FEE_CLOSED;
+        else if (c.phase == PolicyConstants.PHASE_REGULAR) baseFee = PolicyConstants.FEE_REGULAR;
         else if (c.phase == PolicyConstants.PHASE_PRE) baseFee = PolicyConstants.FEE_PRE;
         else if (c.phase == PolicyConstants.PHASE_POST) baseFee = PolicyConstants.FEE_POST;
         else if (c.phase == PolicyConstants.PHASE_OVERNIGHT) baseFee = PolicyConstants.FEE_OVERNIGHT;
@@ -100,7 +104,9 @@ contract BellModeEvaluator is IBellSwapEvaluator {
             || keccak256(abi.encode(snapshot)) != keccak256(abi.encode(_prepare(snapshot.context,
                 snapshot.callbackHash, snapshot.zeroForOne, snapshot.amountSpecified)))) revert InvalidSwapContext();
         Context calldata c = snapshot.context;
-        if (c.poolClass == uint8(PoolClass.PRICE_GUARDED)
+        bool priceProtectionFallback = c.poolClass == uint8(PoolClass.PRICE_GUARDED)
+            && c.referencePrice18[0] == 0 && c.referencePrice18[1] == 0;
+        if (c.poolClass == uint8(PoolClass.PRICE_GUARDED) && !priceProtectionFallback
             && !WidePriceMath.allowsPricePath(c.preSqrtPriceX96, postSqrtPriceX96,
                 c.referencePrice18[0], c.referencePrice18[1], c.decimals[0], c.decimals[1], snapshot.bandBps)) {
             revert InvalidPricePath();

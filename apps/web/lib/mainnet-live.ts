@@ -22,7 +22,7 @@ export const MAINNET = {
 } as const;
 
 export const routerAbi = manifest.interfaces.IBellRouter as Abi;
-const hookAbi = manifest.interfaces.IBellHook as Abi;
+export const hookAbi = manifest.interfaces.IBellHook as Abi;
 export const tokenAbi = parseAbi([
   'function symbol() view returns (string)',
   'function decimals() view returns (uint8)',
@@ -48,7 +48,7 @@ export type LivePool = {
   tickSpacing: number;
   tradeCap: readonly [bigint, bigint];
   windowCap: readonly [bigint, bigint];
-  policy: Record<string, unknown> & { canSwap: boolean; mode: number; phase: number; lpFeeUnits: number; reasonBits: bigint; effectiveTradeCap: readonly [bigint, bigint]; effectiveWindowCap: readonly [bigint, bigint]; rollingRemaining: readonly [bigint, bigint]; closureRemaining: readonly [bigint, bigint]; validUntil: bigint };
+  policy: Record<string, unknown> & { canSwap: boolean; mode: number; phase: number; flags: number; lpFeeUnits: number; reasonBits: bigint; effectiveTradeCap: readonly [bigint, bigint]; effectiveWindowCap: readonly [bigint, bigint]; rollingRemaining: readonly [bigint, bigint]; closureRemaining: readonly [bigint, bigint]; validUntil: bigint };
   directoryBlockNumber?: bigint;
   createdAtBlock?: bigint;
   legs: readonly [{ address: Address; symbol: string; decimals: number }, { address: Address; symbol: string; decimals: number }];
@@ -69,6 +69,7 @@ export async function readLivePools(): Promise<LivePool[]> {
       tradeCap: pool.tradeCap.map(BigInt), windowCap: pool.windowCap.map(BigInt),
       policy: {
         ...pool.policy,
+        flags: Number(pool.policy.flags ?? 0),
         reasonBits: BigInt(pool.policy.reasonBits), validUntil: BigInt(pool.policy.validUntil),
         effectiveTradeCap: pool.policy.effectiveTradeCap.map(BigInt),
         effectiveWindowCap: pool.policy.effectiveWindowCap.map(BigInt),

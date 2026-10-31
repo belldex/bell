@@ -139,7 +139,7 @@ export function Hero() {
             data-reveal
             className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg"
           >
-            A Uniswap v4 hook layer for pools that include Robinhood Stock Tokens. Session-specific fees and flow budgets apply; Chainlink freshness is capped at 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Stale rounds stop swaps.
+            A Uniswap v4 hook layer for pools that include Robinhood Stock Tokens. Swaps stay open across sessions; fresh feeds add price protection, while stale feeds switch to a 1% AMM fallback with tighter flow limits.
           </p>
           <div data-reveal className="mt-8 flex flex-wrap items-center gap-3.5">
             <ButtonLink href="/pools" size="lg">

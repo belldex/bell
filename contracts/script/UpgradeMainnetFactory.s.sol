@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellHook} from "../src/BellHook.sol";
 import {BellPolicyOracle} from "../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../src/BellModeEvaluator.sol";
 import {BellHookDeployer} from "../src/BellHookDeployer.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
 import {PoolConfig} from "../src/types/ProtocolTypes.sol";
@@ -27,6 +28,7 @@ contract UpgradeMainnetFactory {
 
     struct Result {
         address policyOracle;
+        address modeEvaluator;
         address hookDeployer;
         address poolFactory;
         bytes32 profileHash;
@@ -52,10 +54,11 @@ contract UpgradeMainnetFactory {
 
         vm.startBroadcast(pk);
         result.policyOracle = address(new BellPolicyOracle());
+        result.modeEvaluator = address(new BellModeEvaluator());
         uint64 factoryNonce = vm.getNonce(config.deployer) + 1;
         address futureFactory = vm.computeCreateAddress(config.deployer, factoryNonce);
         result.hookDeployer = address(new BellHookDeployer(
-            futureFactory, config.sessionRegistry, keccak256(type(BellHook).creationCode), result.policyOracle
+            futureFactory, config.sessionRegistry, keccak256(type(BellHook).creationCode), result.policyOracle, result.modeEvaluator
         ));
         profile.factory = futureFactory;
         BellPoolFactory deployedFactory = new BellPoolFactory(
@@ -68,6 +71,7 @@ contract UpgradeMainnetFactory {
 
         string memory output = string.concat(
             '{"policyOracle":"', vm.toString(result.policyOracle),
+            '","modeEvaluator":"', vm.toString(result.modeEvaluator),
             '","hookDeployer":"', vm.toString(result.hookDeployer),
             '","poolFactory":"', vm.toString(result.poolFactory),
             '","profileHash":"', _hex(result.profileHash), '"}'

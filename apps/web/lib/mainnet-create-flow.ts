@@ -12,8 +12,6 @@ import abiManifest from '../../../packages/protocol/generated/abi-manifest.json'
 import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqrtPriceFromAmounts, deriveTickBounds } from '../../../scripts/deploy/mainnet-pool-config.mjs';
 // @ts-expect-error Browser-safe mirror is cross-checked against the canonical salt miner.
 import { resolveAdmittedPair, poolClassesForPair, mineHookSalt } from './mainnet-create-helpers.mjs';
-// @ts-expect-error Workspace package export.
-import { encodeOraclePullUpdates } from '@bell/protocol/swap-codec';
 // @ts-expect-error Shared phase policy is browser-safe and covered by node:test.
 import { createPricePathForPhases } from './create-calendar.mjs';
 // @ts-expect-error Workspace package export.
@@ -194,16 +192,15 @@ export async function createMainnetPool({ provider, account, selection, onStage 
         decimals0: Number(config.token0.toLowerCase() === tokenA.token.toLowerCase() ? decimalsA : decimalsB),
         decimals1: Number(config.token1.toLowerCase() === tokenA.token.toLowerCase() ? decimalsA : decimalsB),
       });
-    } catch (error) {
-      if (pricePath !== 'anchor') throw error;
+    } catch {
       sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
       missingCloseAnchor = true;
     }
   } else {
     sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
   }
-  if (pricePath === 'anchor' && missingCloseAnchor) {
-    publish(onStage, 'health', 'No verified close price is available yet. The pool will be seeded in STAGED mode and swaps stay locked until a valid price anchor is captured.');
+  if (selection.poolClass === 0 && missingCloseAnchor) {
+    publish(onStage, 'health', 'No reference price is available. The seed ratio will set the initial AMM price; the pool will use its disclosed fallback policy until live protection inputs return.');
   }
   const { tickLower, tickUpper } = deriveTickBounds({ sqrtPriceX96, tickSpacing: 60, halfWidth: 6000 });
 
@@ -259,34 +256,18 @@ export async function createMainnetPool({ provider, account, selection, onStage 
     if (receipt.status !== 'success') throw new Error(`Token approval reverted: ${explorer}/tx/${hash}`);
   }
 
-  let healthHash: `0x${string}` | null = null;
-  if (pricePath === 'chainlink-feed') {
-    emit('health', 'Reading every stock leg from its current onchain Chainlink feed…');
-    const payload = encodeOraclePullUpdates([]);
-    const healthSimulation: any = await client.simulateContract({
-      address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'applyPoolOracleUpdates',
-      args: [config.asset0, config.asset1, payload, false], account,
-    } as any);
-    emit('health', 'Confirm the onchain feed freshness check in your wallet…');
-    healthHash = await walletClient.writeContract(healthSimulation.request as any);
-    emit('health', 'Waiting for SessionRegistry health confirmation…', healthHash);
-    const healthReceipt = await client.waitForTransactionReceipt({ hash: healthHash });
-    if (healthReceipt.status !== 'success') throw new Error(`Session health update reverted: ${explorer}/tx/${healthHash}`);
-  } else {
-    emit('health', 'Using each stock leg’s verified historical close reference…');
-  }
+  const healthHash: `0x${string}` | null = null;
+  emit('health', selection.poolClass === 1
+    ? 'SESSION_ONLY uses the AMM price and does not require a stock-feed update.'
+    : missingCloseAnchor
+      ? 'No external reference is available. The factory will activate the pool under fallback policy if its safety checks pass.'
+      : 'The factory will verify its configured price-protection inputs during pool creation.');
 
   if (await client.getChainId() !== MAINNET.chainId) throw new Error('Wallet changed away from Robinhood Chain Mainnet; restart pool creation');
   const currentAccounts = await walletClient.getAddresses();
   if (!currentAccounts.some((address) => address.toLowerCase() === account.toLowerCase())) throw new Error('Connected wallet changed during pool creation; restart the flow');
   const latestBlock = await client.getBlock();
-  if (pricePath === 'chainlink-feed') {
-    const healthViews = await Promise.all(stockLegs.map((leg: any) => client.readContract({ address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'health', args: [leg.assetId] })));
-    for (const [i, health] of healthViews.entries()) {
-      const state: any = health;
-      if (!state.ready || state.reasonBits !== 0n || state.validUntil <= latestBlock.timestamp) throw new Error(`Fresh SessionRegistry health is not ready for ${stockLegs[i].symbol}`);
-    }
-  } else {
+  if (pricePath === 'anchor') {
     for (const [i, interval] of calendarIntervals.entries()) {
       const data = interval as any;
       const boundaryHash = hashCalendarLeaf({
@@ -298,9 +279,8 @@ export async function createMainnetPool({ provider, account, selection, onStage 
         address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'anchorStatus',
         args: [stockLegs[i].assetId, boundaryHash],
       }) as readonly [unknown, boolean, bigint, bigint];
-      if ((!valid || validUntil <= latestBlock.timestamp) && pricePath !== 'anchor') {
-        throw new Error(`Verified close reference expired for ${stockLegs[i].symbol}; restart pool creation after a supported market close.`);
-      }
+      // A missing close anchor activates the contract's explicitly flagged AMM-only fallback.
+      void valid; void validUntil;
     }
   }
   const deadline = latestBlock.timestamp + 1200n;
@@ -339,7 +319,7 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const principal = await client.readContract({ address: created.args.hook, abi: seedAbi, functionName: 'seedPrincipal' }) as readonly [bigint, bigint];
   const staged = Boolean(stagedEvent);
   emit('complete', staged
-    ? `Pool created and seeded in block ${receipt.blockNumber}. It is STAGED; swaps stay locked until a valid price source is available.`
+    ? `Pool created and seeded in block ${receipt.blockNumber}. It is STAGED; refresh the live pool status to see when onchain policy activates swaps.`
     : `Pool created and seeded in block ${receipt.blockNumber}. Position NFT #${tokenId} belongs to your wallet.`, createHash);
   return { hook: created.args.hook as Address, poolId: created.args.poolId as `0x${string}`, tokenId, createHash, healthHash, principal, staged, token0: config.token0 as Address, token1: config.token1 as Address };
 }

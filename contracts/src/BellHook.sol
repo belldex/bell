@@ -227,17 +227,19 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         PoolKey memory key_,
         bytes32 templateCodeHash_,
         address sessionRegistry_,
-        BellPolicyOracle policyOracle_
+        BellPolicyOracle policyOracle_,
+        BellModeEvaluator modeEvaluator_
     ) BaseHook(IPoolManager(config_.poolManager)) {
         if (templateCodeHash_ == bytes32(0)) revert BadConfig(ERR_TEMPLATE_CODE_HASH);
         _validateDependencies(config_);
         _requireContract(sessionRegistry_, ERR_SESSION_REGISTRY);
         _validateConfig(config_, key_);
-        // Reject malformed/unbounded dependencies before paying to construct the immutable calculator.
-        modeEvaluator = new BellModeEvaluator();
-        // One shared oracle per deployment keeps the hook initcode inside the EIP-3860 limit.
+        // Both evaluators are shared per deployment. Keeping their creation bytecode outside this
+        // template keeps hook and deployer initcode within the EIP-3860 limit.
         if (address(policyOracle_).code.length == 0) revert BadConfig(ERR_POLICY_ORACLE);
         policyOracle = policyOracle_;
+        if (address(modeEvaluator_).code.length == 0) revert BadConfig(ERR_POLICY_ORACLE);
+        modeEvaluator = modeEvaluator_;
         _token0 = config_.token0;
         _token1 = config_.token1;
         _asset0 = config_.asset0;

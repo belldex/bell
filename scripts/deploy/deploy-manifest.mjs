@@ -49,6 +49,14 @@ export function validateDeployManifest(raw) {
     validated[field] = val.toLowerCase();
   }
 
+  if (raw.modeEvaluator !== undefined && raw.modeEvaluator !== null) {
+    if (typeof raw.modeEvaluator !== 'string' || !ADDRESS_RE.test(raw.modeEvaluator)) {
+      throw new TypeError('modeEvaluator must be a valid 40-hex address');
+    }
+    if (raw.modeEvaluator.toLowerCase() === ZERO_ADDRESS) throw new RangeError('modeEvaluator cannot be zero address');
+    validated.modeEvaluator = raw.modeEvaluator.toLowerCase();
+  }
+
   // Optional fee token
   if (raw.feeToken !== undefined && raw.feeToken !== null) {
     if (typeof raw.feeToken !== 'string' || !ADDRESS_RE.test(raw.feeToken)) {

@@ -106,10 +106,9 @@ try {
   }
 
   const balance = await client.getBalance({ address: account.address });
-  const requiredWithMargin = estimatedWei * 110n / 100n;
   console.log(`Available deployer balance: ${formatEther(balance)} ETH`);
-  if (balance < requiredWithMargin) {
-    throw new Error(`Insufficient deployer ETH: need at least ${formatEther(requiredWithMargin)} ETH including 10% gas margin`);
+  if (balance < estimatedWei) {
+    throw new Error(`Insufficient deployer ETH: simulation estimates ${formatEther(estimatedWei)} ETH`);
   }
 
   console.log('Broadcasting the verified factory/template upgrade…');
@@ -121,6 +120,7 @@ try {
   const updated = {
     ...manifest,
     hookDeployer: result.hookDeployer,
+    modeEvaluator: result.modeEvaluator,
     poolFactory: result.poolFactory,
     note: 'Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused.',
   };

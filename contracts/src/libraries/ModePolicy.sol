@@ -43,6 +43,7 @@ library ModePolicy {
         uint8 stockMask;
         uint64 nowTime;
         bool executionReady;
+        bool priceProtectionFallback;
     }
 
     /// @dev Result of one decision. `beginLatch`/`releaseLatch` are transitions that only a checkpoint may
@@ -95,6 +96,74 @@ library ModePolicy {
             decision.mode = uint8(Mode.HALTED);
             decision.reasons |= ReasonBits.SETUP;
             _cancelCandidate(decision);
+            return decision;
+        }
+
+        if (context.priceProtectionFallback) {
+            if (decision.reasons != 0 || !context.phaseSet || context.validUntil == 0
+                || context.nowTime >= context.validUntil || !context.allLegsHealthy) {
+                _cancelCandidate(decision);
+                return decision;
+            }
+            if (context.phase == PolicyConstants.PHASE_CLOSED) {
+                if (!context.anyPlannedClosed || !context.closureContextValid) {
+                    decision.reasons |= ReasonBits.UNEXPECTED_CLOSED;
+                    _cancelCandidate(decision);
+                    return decision;
+                }
+                decision.mode = uint8(Mode.CLOSED);
+                decision.latch = true;
+                decision.canSwap = context.executionReady;
+                if (!context.closedLatched) {
+                    decision.beginLatch = true;
+                    decision.closureNonce = context.closureNonce + 1;
+                }
+                decision.reopenCandidateAt = 0;
+                decision.reopenBaseObservations = [uint64(0), uint64(0)];
+                return decision;
+            }
+            if (context.phase < PolicyConstants.PHASE_PRE || context.phase > PolicyConstants.PHASE_OVERNIGHT) {
+                decision.reasons |= ReasonBits.CALENDAR_CONFLICT;
+                _cancelCandidate(decision);
+                return decision;
+            }
+            if (context.closedLatched) {
+                // Keep the existing closure recovery delay when the calendar reopens. The fallback
+                // observation is only a time checkpoint; it does not claim a stock price was observed.
+                if (context.reopenCandidateAt == 0 || context.reopenCandidateAt > context.nowTime
+                    || context.nowTime >= context.oldValidUntil) {
+                    decision.mode = uint8(Mode.RECOVERING);
+                    decision.reasons |= ReasonBits.RECOVERY_PENDING;
+                    decision.reopenCandidateAt = context.nowTime;
+                    decision.reopenBaseObservations = context.observations;
+                    decision.oldValidUntil = context.validUntil;
+                    decision.lastOpenObservations = context.observations;
+                    return decision;
+                }
+                if (context.nowTime - context.reopenCandidateAt >= PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS
+                    && _observationsAdvanced(context.observations, context.reopenBaseObservations, context.stockMask)) {
+                    decision.latch = false;
+                    decision.releaseLatch = true;
+                    decision.reopenCandidateAt = 0;
+                    decision.reopenBaseObservations = [uint64(0), uint64(0)];
+                    decision.oldValidUntil = context.validUntil;
+                    decision.lastOpenObservations = context.observations;
+                    decision.mode = uint8(Mode.ACTIVE);
+                    decision.canSwap = context.executionReady;
+                    return decision;
+                }
+                decision.mode = uint8(Mode.RECOVERING);
+                decision.reasons |= ReasonBits.RECOVERY_PENDING;
+                decision.oldValidUntil = context.validUntil;
+                decision.lastOpenObservations = context.observations;
+                return decision;
+            }
+            decision.mode = uint8(Mode.ACTIVE);
+            decision.canSwap = context.executionReady;
+            decision.reopenCandidateAt = 0;
+            decision.reopenBaseObservations = [uint64(0), uint64(0)];
+            decision.oldValidUntil = context.validUntil;
+            decision.lastOpenObservations = context.observations;
             return decision;
         }
 

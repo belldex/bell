@@ -6,6 +6,7 @@ import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {ModePolicy} from "../../../src/libraries/ModePolicy.sol";
 import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Lifecycle, Mode, PolicyView, SourceWire, SourceSample} from "../../../src/types/ProtocolTypes.sol";
 import {AssetRegistry} from "../../../src/registries/AssetRegistry.sol";
@@ -138,8 +139,9 @@ contract BellPoolFactoryTest {
         MockCalendarRegistry calendar = new MockCalendarRegistry();
         MockSafetyController safety = new MockSafetyController();
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
+        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted), address(modeEvaluator));
         PoolConfig memory c = PoolConfig({token0:address(token0), token1:address(token1), asset0:bytes32(uint256(1)), asset1:bytes32(uint256(2)),
             poolManager:address(manager),positionManager:address(positions),factory:future,assetRegistry:address(assets),calendarRegistry:address(calendar),
             safetyController:address(safety),treasuryAdapter:address(0),poolClass:1,liquidityMode:0,referenceMode:0,tickSpacing:60,
@@ -233,8 +235,9 @@ contract BellPoolFactoryTest {
     function testFeeCurrencyCanOverlapLpWithoutUsingPrincipalOrForeignFunds() external {
         PoolConfig memory c = request.config;
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted));
+        deployer = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted),address(modeEvaluator));
         c.factory = future;
         factory = new BellPoolFactory(c,deployer,address(token0),SERVICE);
         request.config = c; request.salt = _mine(request);
@@ -249,8 +252,9 @@ contract BellPoolFactoryTest {
     function testPriceGuardedMissingAdaptersRejectedBeforeFunding() external {
         PoolConfig memory c = request.config;
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted));
+        deployer = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted),address(modeEvaluator));
         c.factory = future; c.poolClass = 0;
         factory = new BellPoolFactory(c,deployer,address(usdg),SERVICE);
         request.config = c; request.tickLower = -6000; request.tickUpper = 6000;
@@ -300,7 +304,10 @@ contract BellPoolFactoryTest {
         vm.warp(block.timestamp + 61); _refreshRealStock();
         request.deadline = uint64(block.timestamp + 100);
         require(realSessions.health(stockId).healthySince == block.timestamp,"health gap not reset");
-        require(bytes4(_rollback(request)) == bytes4(keccak256("BadSeed()")),"stock maturity bypassed");
+        CreateResult memory result = factory.createAndSeed(request);
+        PolicyView memory policy = BellHook(result.hook).getPolicy();
+        require(BellHook(result.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session-only pool did not activate");
+        require(policy.canSwap && policy.flags & 4 != 0, "session-only freshness gate remained active");
     }
     function testSessionOnlyRequiresExactlyOneAdmittedStock() external {
         AssetDescriptor memory d0 = assets.descriptor(request.config.asset0);
@@ -354,8 +361,9 @@ contract BellPoolFactoryTest {
         c.asset0 = stockFirst ? stockId : quoteId; c.asset1 = stockFirst ? quoteId : stockId;
         c.assetRegistry = address(realAssets); c.calendarRegistry = address(calendar); c.safetyController = address(realSafety);
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future,address(realSessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted));
+        deployer = new BellHookDeployer(future,address(realSessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted),address(modeEvaluator));
         c.factory = future; factory = new BellPoolFactory(c,deployer,address(usdg),SERVICE);
         request.config = c; request.deadline = uint64(block.timestamp + 100); request.salt = _mine(request);
         token0.approve(address(factory),type(uint256).max); token1.approve(address(factory),type(uint256).max); usdg.approve(address(factory),type(uint256).max);
@@ -392,8 +400,9 @@ contract BellPoolFactoryTest {
     function testMissingFeeTokenFailsClosedNotFreePilot() external {
         PoolConfig memory c = request.config;
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        BellHookDeployer d = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted));
+        BellHookDeployer d = new BellHookDeployer(future,address(sessions),keccak256(type(BellHook).creationCode),address(oracle_hoisted),address(modeEvaluator));
         c.factory = future;
         BellPoolFactory unbound = new BellPoolFactory(c,d,address(0),SERVICE);
         CreateRequest memory r = request; r.config = c;
@@ -643,6 +652,7 @@ contract BellPoolFactoryTest {
 
     function testTreasuryOnlyFactoryCanCreateAndSeedPool() external {
         oracle_hoisted = new BellPolicyOracle();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
         uint64 n0 = vm.getNonce(address(this));
         address predictedDeployer = vm.computeCreateAddress(address(this), n0);
         address predictedAdapter = vm.computeCreateAddress(address(this), n0 + 1);
@@ -654,7 +664,7 @@ contract BellPoolFactoryTest {
         tc.treasuryAdapter = predictedAdapter;
         tc.positionManager = address(manager);
 
-        BellHookDeployer tDeployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
+        BellHookDeployer tDeployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted), address(modeEvaluator));
         bytes32 initHash = tDeployer.initCodeHash(tc, PoolKey(Currency.wrap(tc.token0), Currency.wrap(tc.token1), LPFeeLibrary.DYNAMIC_FEE_FLAG, 60, IHooks(address(0))));
         bytes32 foundSalt = _mineTreasurySalt(predictedDeployer, predictedFactory, initHash);
         bytes32 create2Salt = keccak256(abi.encode(block.chainid, predictedFactory, address(this), uint64(0), foundSalt));

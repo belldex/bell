@@ -35,7 +35,7 @@ export default function CreatePage() {
   const [step, setStep] = useState(0);
   const [stockSymbol, setStockSymbol] = useState('AAPL');
   const [counterSymbol, setCounterSymbol] = useState('USDG');
-  const [poolClass, setPoolClass] = useState<0 | 1>(0);
+  const [poolClass, setPoolClass] = useState<0 | 1>(1);
   const [seedStock, setSeedStock] = useState('');
   const [seedCounter, setSeedCounter] = useState('');
   const [wrapWeth, setWrapWeth] = useState(false);
@@ -115,7 +115,7 @@ export default function CreatePage() {
     <header>
       <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Create · Robinhood Chain Mainnet</p>
       <h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Create and seed a pool anytime.</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">Only admitted assets can proceed. When the required live price or verified close anchor is unavailable, the pool can still be seeded in STAGED mode; swaps remain locked until onchain policy can verify a safe reference.</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted">Choose whether the pool uses external price protection when references are healthy or runs as an AMM at all times. Both classes are fixed at creation and use onchain flow limits.</p>
     </header>
 
     <ol className="mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
@@ -138,15 +138,18 @@ export default function CreatePage() {
 
       {step === 1 && <div className="space-y-5">
         <h2 className="font-display text-3xl text-ink">Choose the permanent pool class.</h2>
-        <p className="text-sm leading-relaxed text-muted">Pool class cannot be changed after creation. Choose only among options supported by both selected assets and their live reference adapters.</p>
+        <p className="text-sm leading-relaxed text-muted">Pool class cannot be changed after creation. PRICE_GUARDED requires references for protection; SESSION_ONLY always uses the AMM price.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {([0, 1] as const).filter((value) => allowedClasses.includes(value)).map((value) => <button key={value} type="button" aria-pressed={poolClass === value} onClick={() => setPoolClass(value)} className={cn('border p-5 text-left', poolClass === value ? 'border-ion/60 bg-ion/[0.06]' : 'border-line')}>
-            <span className="font-mono text-[10px] uppercase text-ion">{classes[value]}</span><span className="mt-2 block text-sm text-ink">{value === 0 ? 'Independent reference guard' : 'Session rules only'}</span><span className="mt-2 block text-xs leading-relaxed text-muted">{value === 0 ? 'Both assets need a live Chainlink reference; the factory checks the opening price against the reference band.' : 'Exactly one stock leg. The opening price comes from your seed ratio and has no independent counterasset price protection.'}</span>
+            <span className="font-mono text-[10px] uppercase text-ion">{classes[value]}</span>
+            <span className="mt-2 block text-sm text-ink">{value === 0 ? 'Protected when references are healthy' : 'AMM-only, around the clock'}</span>
+            <span className="mt-2 block text-xs leading-relaxed text-muted">{value === 0
+              ? 'Checks external stock-price references and constrains price movement while those references are valid. If they are stale or unavailable, swaps use the AMM price with a 1% fee and the strictest flow caps.'
+              : 'Uses the AMM price and never depends on stock-feed freshness. Session-based fees and bounded flow limits still apply; there is no independent stock-price protection.'}</span>
           </button>)}
           {allowedClasses.length === 0 && <p role="alert" className="border border-down/30 p-4 text-sm text-down">No pool class is supported for this pair on the deployed Mainnet factory.</p>}
         </div>
-        {poolClass === 1 && <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">SESSION_ONLY carries session controls only; it has no independent price protection for the counterasset. The seed ratio sets the opening price, so choose an admitted counterasset you understand.</p>}
-        {poolClass === 0 && <p className="border border-line bg-bg-1 p-4 text-sm text-muted">Opening price uses current onchain reference adapter values. The factory will reject stale feeds or a price outside its configured band.</p>}
+        <p className="border border-warn/30 bg-warn/5 p-4 text-sm text-warn">Neither class guarantees a maximum loss. Flow caps limit trade size and rolling volume; they do not protect the seed from price changes or arbitrage.</p>
       </div>}
 
       {step === 2 && <div className="space-y-6">

@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
+import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {CreateRequest, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Mode, PolicyView} from "../../../src/types/ProtocolTypes.sol";
 import {MockSessionAdapter, MockSessionQuoteSource} from "../../SessionRegistry.t.sol";
@@ -124,6 +125,7 @@ contract TreasuryAdapterTest {
         sessions = new MockSessionRegistry();
         calendar = new MockCalendarRegistry();
         safety = new MockSafetyController();
+        BellModeEvaluator modeEvaluator = new BellModeEvaluator();
 
         // Deployment order: deployer, adapter, seed factory. Predict all three addresses so the
         // adapter can be constructed against the predicted hook address (it has no code yet).
@@ -147,7 +149,7 @@ contract TreasuryAdapterTest {
         _admit(c.asset1, address(token1), false);
         calendar.setLeaf(CalendarLeaf(c.asset0, 2026, 0, 9000, 20000, 2, keccak256("fixture")));
 
-        deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted));
+        deployer = new BellHookDeployer(predictedFactory, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted), address(modeEvaluator));
         require(address(deployer) == predictedDeployer, "deployer prediction");
 
         PoolKey memory key = PoolKey(
