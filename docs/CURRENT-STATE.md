@@ -49,6 +49,17 @@ materials into applications; this project has not switched production feeds to t
 permission ([API docs](https://docs.robinhood.com/chain/stock-token-apis/),
 [terms](https://docs.robinhood.com/chain/terms-of-service/)).
 
+A fresh, read-only Data Streams API check at `2026-10-31T04:57:50Z` confirms credential A still
+authenticates, but its authorized feed list is empty; the configured credential B variable has no value.
+No Robinhood AAPL, NVDA, or TSLA stream is available to this account, and no subscription was created.
+Evidence: `evidence/runtime/chainlink-entitlement-live-2026-10-31.json`. Chainlink's 24/5 U.S. Equities
+Streams provide separate Regular, Extended, and Overnight reports, selectable across the
+PRE/REGULAR/POST/OVERNIGHT calendar, but the live report path cannot be activated on this account until
+access is provisioned ([24/5 Streams release](https://docs.chain.link/changelog/245-us-equities-streams-now-available),
+[Robinhood Chain verifier](https://docs.robinhood.com/chain/data-streams/)). The free onchain Data Feed
+remains configured for all sessions and needs no keeper transaction; its updates cannot satisfy BELL's
+120-second onchain freshness gates reliably, as measured in the historical round audit above.
+
 ## Superseded Mainnet snapshot — pre-Chainlink migration (historical)
 
 The following block documents the deployment that existed before the migration above. Its signed

@@ -1,0 +1,20 @@
+{
+  "capturedAt": "2026-10-31T04:57:50Z",
+  "endpoint": "https://api.dataengine.chain.link",
+  "credentialValuesRecorded": false,
+  "checks": {
+    "CHAINLINK_SOURCE_CREDENTIAL_A": {
+      "present": true,
+      "authentication": "accepted",
+      "subscribedFeedCount": 0,
+      "robinhoodAaplFeedAvailable": false,
+      "robinhoodNvdaFeedAvailable": false,
+      "robinhoodTslaFeedAvailable": false
+    },
+    "CHAINLINK_SOURCE_CREDENTIAL_B": {
+      "present": false,
+      "authentication": "not_checked"
+    }
+  },
+  "conclusion": "The configured mainnet identity authenticates but has no active Data Streams feed entitlement. The B variable is empty. This check did not modify subscriptions or make any request that incurs a charge."
+}
