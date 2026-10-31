@@ -15,6 +15,10 @@ import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqr
 import { resolveAdmittedPair, poolClassesForPair, mineHookSalt } from './mainnet-create-helpers.mjs';
 // @ts-expect-error Workspace package export.
 import { encodeOraclePullUpdates } from '@bell/protocol/swap-codec';
+// @ts-expect-error Shared phase policy is browser-safe and covered by node:test.
+import { createPricePathForPhases } from './create-calendar.mjs';
+// @ts-expect-error Workspace package export.
+import { hashCalendarLeaf } from '@bell/protocol/calendar';
 
 const factoryAbi = abiManifest.interfaces.IBellPoolFactory as Abi;
 const factoryEventAbi = abiManifest.interfaces.IBellEvents.filter((item: any) => item.type === 'event' && ['PoolCreated', 'PoolActivated'].includes(item.name)) as Abi;
@@ -25,6 +29,7 @@ const registryAbi = parseAbi([
 const sessionAbi = parseAbi([
   'function applyPoolOracleUpdates(bytes32 asset0,bytes32 asset1,bytes payload,bool swapEnvelope)',
   'function health(bytes32 assetId) view returns ((bool ready,uint256 reasonBits,uint64 healthySince,uint64 validUntil,uint64 baselineObservation,uint64 latestObservation))',
+  'function anchorStatus(bytes32,bytes32) view returns ((bytes32 assetId,bytes32 boundaryHash,uint128 price18,uint128 multiplier18,uint64 capturedAt,uint64 observedAt,uint64 inputAt,uint64 closureStart,bytes32 sourceHash),bool valid,uint256 reasons,uint64 validUntil)',
 ]);
 const calendarAbi = parseAbi(['function currentInterval(bytes32 assetId) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))']);
 const factoryReadAbi = parseAbi([
@@ -46,7 +51,7 @@ export type CreateSelection = {
   wrapWeth: boolean;
 };
 export type CreateStage = { key: string; message: string; hash?: `0x${string}` };
-export type CreateResult = { hook: Address; poolId: `0x${string}`; tokenId: bigint; createHash: `0x${string}`; healthHash: `0x${string}`; principal: readonly [bigint, bigint]; token0: Address; token1: Address };
+export type CreateResult = { hook: Address; poolId: `0x${string}`; tokenId: bigint; createHash: `0x${string}`; healthHash: `0x${string}` | null; principal: readonly [bigint, bigint]; token0: Address; token1: Address };
 
 const publish = (fn: (stage: CreateStage) => void, key: string, message: string, hash?: `0x${string}`) => fn({ key, message, ...(hash ? { hash } : {}) });
 const walletFactory = (deployment as any).poolFactory as Address;
@@ -140,10 +145,33 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   const calendarIntervals = await Promise.all(stockLegs.map((leg: any) => client.readContract({
     address: (deployment as any).calendarRegistry, abi: calendarAbi, functionName: 'currentInterval', args: [leg.assetId],
   })));
+  const calendarPhases = calendarIntervals.map((interval: any) => Number(interval.phase));
+  const pricePath = createPricePathForPhases(calendarPhases);
+  if (pricePath === 'unavailable') {
+    throw new Error(calendarPhases.includes(4)
+      ? 'An overnight stock price source is not configured for this pool yet.'
+      : 'Stock legs do not share one supported Mainnet price phase. Refresh the calendar and try again.');
+  }
   for (const [i, interval] of calendarIntervals.entries()) {
     const data = interval as any;
-    if (data.assetId.toLowerCase() !== stockLegs[i].assetId.toLowerCase() || data.end <= block.timestamp || Number(data.phase) === 5) {
-      throw new Error(`No live open market calendar interval is available for ${stockLegs[i].symbol}`);
+    if (data.assetId.toLowerCase() !== stockLegs[i].assetId.toLowerCase() || data.end <= block.timestamp) {
+      throw new Error(`No current Mainnet market interval is available for ${stockLegs[i].symbol}`);
+    }
+    if (pricePath === 'anchor') {
+      const boundaryHash = hashCalendarLeaf({
+        chainId: BigInt(MAINNET.chainId), calendarRegistry: MAINNET.calendarRegistry,
+        assetId: stockLegs[i].assetId, year: Number(data.year), index: Number(data.index),
+        start: data.start, end: data.end, phase: Number(data.phase), provenanceHash: data.provenanceHash,
+      });
+      const [, valid, , validUntil] = await client.readContract({
+        address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'anchorStatus',
+        args: [stockLegs[i].assetId, boundaryHash],
+      }) as readonly [unknown, boolean, bigint, bigint];
+      if (!valid || validUntil <= block.timestamp) {
+        throw new Error(`A verified close reference is not available for ${stockLegs[i].symbol}; pool creation resumes after the next valid market close.`);
+      }
+    } else if (data.phase < 1 || data.phase > 3) {
+      throw new Error(`No fresh signed stock price source is configured for ${stockLegs[i].symbol} in phase ${data.phase}`);
     }
   }
   const [amount0, amount1] = config.amountMax as readonly [bigint, bigint];
@@ -209,34 +237,55 @@ export async function createMainnetPool({ provider, account, selection, onStage 
     if (receipt.status !== 'success') throw new Error(`Token approval reverted: ${explorer}/tx/${hash}`);
   }
 
-  emit('health', 'Fetching fresh signed Mainnet quotes for every stock leg…');
-  const updates = await Promise.all(stockLegs.map(async (leg: any) => {
-    const response = await fetch(`${MAINNET.quoteUrl}?symbol=${encodeURIComponent(leg.symbol)}`, { cache: 'no-store' });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body?.error ?? `Quote Worker returned HTTP ${response.status} for ${leg.symbol}`);
-    if (body.assetId?.toLowerCase() !== leg.assetId.toLowerCase()) throw new Error(`Worker quote for ${leg.symbol} has a different admitted asset ID`);
-    return oracleUpdate(body);
-  }));
-  if (updates.length !== stockLegs.length || new Set(updates.map((update: any) => update.assetId.toLowerCase())).size !== stockLegs.length) throw new Error('Fresh signed quote bundles must cover every stock leg exactly once');
-  const payload = encodeOraclePullUpdates(updates);
-  const healthSimulation: any = await client.simulateContract({
-    address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'applyPoolOracleUpdates',
-    args: [config.asset0, config.asset1, payload, false], account,
-  } as any);
-  emit('health', 'Confirm the fresh quote and session-health update in your wallet…');
-  const healthHash = await walletClient.writeContract(healthSimulation.request as any);
-  emit('health', 'Waiting for SessionRegistry health confirmation…', healthHash);
-  const healthReceipt = await client.waitForTransactionReceipt({ hash: healthHash });
-  if (healthReceipt.status !== 'success') throw new Error(`Session health update reverted: ${explorer}/tx/${healthHash}`);
+  let healthHash: `0x${string}` | null = null;
+  if (pricePath === 'signed-quote') {
+    emit('health', 'Fetching fresh signed Mainnet quotes for every stock leg…');
+    const updates = await Promise.all(stockLegs.map(async (leg: any) => {
+      const response = await fetch(`${MAINNET.quoteUrl}?symbol=${encodeURIComponent(leg.symbol)}`, { cache: 'no-store' });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error ?? `Quote Worker returned HTTP ${response.status} for ${leg.symbol}`);
+      if (body.assetId?.toLowerCase() !== leg.assetId.toLowerCase()) throw new Error(`Worker quote for ${leg.symbol} has a different admitted asset ID`);
+      return oracleUpdate(body);
+    }));
+    if (updates.length !== stockLegs.length || new Set(updates.map((update: any) => update.assetId.toLowerCase())).size !== stockLegs.length) throw new Error('Fresh signed quote bundles must cover every stock leg exactly once');
+    const payload = encodeOraclePullUpdates(updates);
+    const healthSimulation: any = await client.simulateContract({
+      address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'applyPoolOracleUpdates',
+      args: [config.asset0, config.asset1, payload, false], account,
+    } as any);
+    emit('health', 'Confirm the fresh quote and session-health update in your wallet…');
+    healthHash = await walletClient.writeContract(healthSimulation.request as any);
+    emit('health', 'Waiting for SessionRegistry health confirmation…', healthHash);
+    const healthReceipt = await client.waitForTransactionReceipt({ hash: healthHash });
+    if (healthReceipt.status !== 'success') throw new Error(`Session health update reverted: ${explorer}/tx/${healthHash}`);
+  } else {
+    emit('health', 'Using each stock leg’s verified historical close reference…');
+  }
 
   if (await client.getChainId() !== MAINNET.chainId) throw new Error('Wallet changed away from Robinhood Chain Mainnet; restart pool creation');
   const currentAccounts = await walletClient.getAddresses();
   if (!currentAccounts.some((address) => address.toLowerCase() === account.toLowerCase())) throw new Error('Connected wallet changed during pool creation; restart the flow');
   const latestBlock = await client.getBlock();
-  const healthViews = await Promise.all(stockLegs.map((leg: any) => client.readContract({ address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'health', args: [leg.assetId] })));
-  for (const [i, health] of healthViews.entries()) {
-    const state: any = health;
-    if (!state.ready || state.reasonBits !== 0n || state.validUntil <= latestBlock.timestamp) throw new Error(`Fresh SessionRegistry health is not ready for ${stockLegs[i].symbol}`);
+  if (pricePath === 'signed-quote') {
+    const healthViews = await Promise.all(stockLegs.map((leg: any) => client.readContract({ address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'health', args: [leg.assetId] })));
+    for (const [i, health] of healthViews.entries()) {
+      const state: any = health;
+      if (!state.ready || state.reasonBits !== 0n || state.validUntil <= latestBlock.timestamp) throw new Error(`Fresh SessionRegistry health is not ready for ${stockLegs[i].symbol}`);
+    }
+  } else {
+    for (const [i, interval] of calendarIntervals.entries()) {
+      const data = interval as any;
+      const boundaryHash = hashCalendarLeaf({
+        chainId: BigInt(MAINNET.chainId), calendarRegistry: MAINNET.calendarRegistry, assetId: stockLegs[i].assetId,
+        year: Number(data.year), index: Number(data.index), start: data.start, end: data.end,
+        phase: Number(data.phase), provenanceHash: data.provenanceHash,
+      });
+      const [, valid, , validUntil] = await client.readContract({
+        address: MAINNET.sessionRegistry, abi: sessionAbi, functionName: 'anchorStatus',
+        args: [stockLegs[i].assetId, boundaryHash],
+      }) as readonly [unknown, boolean, bigint, bigint];
+      if (!valid || validUntil <= latestBlock.timestamp) throw new Error(`Verified close reference expired for ${stockLegs[i].symbol}; restart pool creation after a supported market close.`);
+    }
   }
   const deadline = latestBlock.timestamp + 1200n;
   const request = {
