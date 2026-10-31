@@ -31,6 +31,9 @@ Mainnet data. `/quote` returns 410 by design: swap estimates are simulated throu
 pool policy is read from the hook; the Worker does not sign quotes. The latest `/pools` read returned no
 pools, so no Mainnet liquidity position or swap exists yet. The app supports pool creation, seeding, and
 swaps; the first live pool still needs its creator to choose seed amounts and submit the wallet transactions.
+Vercel production alias `https://bell-black.vercel.app` is READY on deployment
+`dpl_HrMBfAzxS7981jTxRfKt7ys29iFs`; `/`, `/pools`, `/create`, `/swap`, and `/protocol` returned HTTP 200
+after deployment.
 
 Deployment and verification records: `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-verification.json`,
