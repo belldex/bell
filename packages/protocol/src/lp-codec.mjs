@@ -48,6 +48,11 @@ export function buildPublicLpTransaction(request) {
   const [a0, a1] = pair(operation === 'increase' ? request.amountMax : request.amountMin ?? (operation === 'collect' ? ['0', '0'] : undefined), 'amount bounds');
   // Pinned PM slippage checks exclude fees. Nonzero fee minima would be an untrue guarantee.
   if (operation === 'collect' && (a0 !== 0n || a1 !== 0n)) throw new RangeError('pinned PM does not enforce fee-collection minima');
+  // A remove is the only exit the pinned PM gates with amountMin. Zero on either leg accepts any
+  // price, so refuse to encode an unprotected exit instead of silently sending one.
+  if (operation === 'remove' && (a0 === 0n || a1 === 0n)) {
+    throw new RangeError('a remove requires a nonzero minimum for both legs; zero accepts any price');
+  }
   const params = [encodeAbiParameters([
     { type: 'uint256' }, { type: 'uint256' }, { type: 'uint128' }, { type: 'uint128' }, { type: 'bytes' },
   ], [tokenId, liquidity, a0, a1, '0x'])];

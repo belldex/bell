@@ -50,6 +50,27 @@ test('remove and fee collect encode in-kind TAKE_PAIR without policy/backend inp
   }
 });
 
+test('a remove cannot be encoded with zero slippage protection', () => {
+  // The pinned PM enforces amountMin as the only exit floor; both-zero means any price is accepted.
+  for (const amountMin of [['0', '0'], [0n, 0n], ['0', '5'], ['5', '0']]) {
+    assert.throws(() => buildPublicLpTransaction({
+      ...request, operation: 'remove', liquidity: request.liquidity, amountMin,
+    }), /minimum/, `expected zero minima ${amountMin.map(String).join('/')} to be rejected`);
+  }
+});
+
+test('a remove with both minima set is accepted and encodes them', () => {
+  const tx = buildPublicLpTransaction({
+    ...request, operation: 'remove', liquidity: request.liquidity, amountMin: ['7', '9'],
+  });
+  const { params } = decode(tx);
+  const [, , a0, a1] = decodeAbiParameters([
+    { type: 'uint256' }, { type: 'uint256' }, { type: 'uint128' }, { type: 'uint128' }, { type: 'bytes' },
+  ], params[0]);
+  assert.equal(a0, 7n);
+  assert.equal(a1, 9n);
+});
+
 test('rejects unbound payer, sentinel recipients, unsafe amounts, bad deadline and nonstandard actions', () => {
   for (const bad of [
     { payer: addr(99) }, { recipient: addr(0) }, { recipient: addr(1) }, { recipient: addr(2) },

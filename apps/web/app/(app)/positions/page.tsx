@@ -31,8 +31,8 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
   const [percent, setPercent] = useState(50);
   const [amount0, setAmount0] = useState('');
   const [amount1, setAmount1] = useState('');
-  const [minimum0, setMinimum0] = useState('0');
-  const [minimum1, setMinimum1] = useState('0');
+  const [minimum0, setMinimum0] = useState('');
+  const [minimum1, setMinimum1] = useState('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [hash, setHash] = useState('');
@@ -70,6 +70,9 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
       }
       const liquidity = operation === 'remove' ? position.liquidity * BigInt(percent) / 100n : 0n;
       if (operation === 'remove' && liquidity === 0n) throw new Error('Selected exit is below the smallest removable liquidity unit.');
+      if (operation === 'remove' && (minimums[0] === 0n || minimums[1] === 0n)) {
+        throw new Error(`Set a minimum ${position.pool.legs[0].symbol} and ${position.pool.legs[1].symbol} amount above zero before removing. A zero minimum accepts any price.`);
+      }
       const tx = buildPublicLpTransaction({
         operation, account: wallet.account, positionManager: manager, recipient: wallet.account,
         currency0: position.pool.token0, currency1: position.pool.token1,
@@ -96,7 +99,7 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
         <p className="mt-2 text-sm text-muted">BELL pool · hook {pool.hook.slice(0, 8)}…{pool.hook.slice(-6)}</p></div>
       <dl className="text-right text-sm"><dt className="text-xs uppercase text-dim">Position range</dt><dd className="mt-1 text-ink">{position.lower} to {position.upper} ticks</dd><dt className="mt-3 text-xs uppercase text-dim">Liquidity units</dt><dd className="mt-1 font-mono text-ink">{position.liquidity.toString()}</dd></dl>
     </div>
-    <p className="mt-5 text-sm text-muted">Current NFT ownership and liquidity units are read from Mainnet. Add uses your entered maximum amounts. Set minimum in-kind outputs before removing; the PositionManager reverts if either token amount falls below them. Collect sends accrued fees directly to your wallet; amounts are calculated on-chain when collected.</p>
+    <p className="mt-5 text-sm text-muted">Current NFT ownership and liquidity units are read from Mainnet. Add uses your entered maximum amounts. A removal requires a nonzero minimum for both tokens — that minimum is the only price floor the PositionManager enforces, and it reverts if either received amount falls short. Collect sends accrued fees directly to your wallet; amounts are calculated on-chain when collected.</p>
     <div className="mt-5 flex flex-wrap gap-2">
       <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')}><Plus className="h-4 w-4"/> Add liquidity</Button>
       <Button variant="outline" size="sm" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')}><Minus className="h-4 w-4"/> Remove liquidity</Button>
