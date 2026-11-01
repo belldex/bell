@@ -35,6 +35,22 @@ Vercel production alias `https://bell-black.vercel.app` is READY on deployment
 `dpl_HrMBfAzxS7981jTxRfKt7ys29iFs`; `/`, `/pools`, `/create`, `/swap`, and `/protocol` returned HTTP 200
 after deployment.
 
+### Worker environment notes (audited 2026-11-01)
+
+`BELL_MAINNET_ASSETS` is `{}` in the deployed Worker. That is intentional, not a defect: in
+`chainlink` mode nothing reads the per-asset Yahoo adapter map, because prices come from onchain
+feeds. The only consumer is the legacy Yahoo push tick, which is now disabled in chainlink mode and
+returns a truthful reason instead of a misleading configuration error.
+
+Two secrets are leftovers from the superseded Yahoo deployment and are unused in chainlink mode:
+`YAHOO_REPORTER_PRIVATE_KEY` and `BELL_DIRECT_WIRE_HASH`. They should be removed once the migration is
+considered final; leaving them costs nothing at runtime but keeps an unused signing key in the Worker.
+
+`BELL_TRANSACTION_PRIVATE_KEY` signs boundary maintenance (`captureClose`). Its address is
+`0x14B71d1BA5dE1e718B1f1e05c8ec0333FE1d0079`, which is deliberately separate from the deployer and the
+retired Yahoo reporter. It held `0.002 ETH` at audit time, so it needs monitoring if several boundary
+windows run back to back.
+
 Deployment and verification records: `evidence/deploy/mainnet-4663.json`,
 `evidence/deploy/mainnet-4663-verification.json`,
 `contracts/broadcast/UpgradeMainnetFactory.s.sol/4663/run-latest.json`,

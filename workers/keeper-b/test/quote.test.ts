@@ -108,6 +108,20 @@ describe('read-only pull quote bundles', () => {
     await expect(runQuote(env, 'AAPL', options())).rejects.toThrow(/observation/);
   });
   it('rejects the wrong chain', async () => { rpc.chainId = 46630; await expect(runQuote(env, 'AAPL', options())).rejects.toThrow(/chain/); });
+  it('disables the Yahoo push tick when the deployed policy reads Chainlink onchain', async () => {
+    const chainlinkEnv = { ...env, BELL_ORACLE_MODE: 'chainlink' };
+    // runTick would otherwise fall through to the Yahoo publish path and fail on missing Yahoo
+    // wiring, which reads as "keeper addresses are not configured" instead of the real reason.
+    expect(await runTick(chainlinkEnv)).toMatchObject({
+      status: 'skipped',
+      reason: expect.stringMatching(/chainlink/i),
+    });
+    for (const path of ['/tick', '/ensure-alarm']) {
+      const response = await worker.fetch(new Request(`https://bell.test${path}`), chainlinkEnv);
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({ error: expect.stringMatching(/chainlink/i) });
+    }
+  });
   it('disables push entry points and cancels persisted alarm loops in pull mode', async () => {
     expect(await runTick(env)).toMatchObject({ status: 'skipped', reason: expect.stringMatching(/pull/) });
     for (const path of ['/tick', '/ensure-alarm']) expect((await worker.fetch(new Request(`https://bell.test${path}`), env)).status).toBe(409);

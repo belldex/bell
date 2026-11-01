@@ -347,6 +347,12 @@ export async function runPositionCandidates(env, owner, { client } = {}) {
 /** Runs one keeper tick. Exported so it can be exercised without Cloudflare bindings. */
 export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000), fetchQuote = fetchYahooChartQuote } = {}) {
   if (env.BELL_ORACLE_MODE === 'pull') return { status: 'skipped', reason: 'scheduled transactions disabled in pull mode' };
+  // In Chainlink mode the deployed policy reads feeds onchain, so there is nothing for the Yahoo
+  // push path to publish. Returning early keeps the reason truthful instead of surfacing a missing
+  // Yahoo adapter as "keeper addresses are not configured".
+  if (env.BELL_ORACLE_MODE === 'chainlink') {
+    return { status: 'skipped', reason: 'Yahoo push publishing is disabled in chainlink mode; prices come from onchain feeds' };
+  }
   // The RPC is configuration, not a testnet assumption. BELL_RPC_URL wins; the testnet variable is
   // kept as a fallback so an existing deployment keeps working unchanged.
   const rpcUrl = env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
@@ -562,6 +568,9 @@ const worker = {
     }
     if (env.BELL_ORACLE_MODE === 'pull' && ['/tick', '/ensure-alarm'].includes(url.pathname)) {
       return json({ error: 'scheduled transactions disabled in pull mode' }, 409);
+    }
+    if (env.BELL_ORACLE_MODE === 'chainlink' && ['/tick', '/ensure-alarm'].includes(url.pathname)) {
+      return json({ error: 'Yahoo push entry points are disabled in chainlink mode; boundary maintenance runs on the cron schedule' }, 409);
     }
     if (env.BELL_TEST_MODE === '1' && url.pathname === '/__test/runtime') {
       // Shared-runtime vector: proves the same domain logic runs inside the Workers isolate.
