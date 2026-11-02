@@ -285,6 +285,12 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         // reference adapter, not by stock-session health. _validatePriceGuard validates
         // the live adapter and its in-band price ratio immediately after admission.
         if (poolClass == uint8(PoolClass.PRICE_GUARDED) && !d.isStock) return false;
+        // SESSION_ONLY is the always-on AMM class. The hook already trades it without stock health
+        // (see BellHookLifecycle.testSessionOnlySwapRemainsAvailableWhenReporterHealthIsStale), so
+        // admission must not demand a fresh feed here: doing so made the pool impossible to create
+        // during quiet feeds even though it would be tradable the instant it existed. Pause, identity
+        // and fingerprint checks above still apply.
+        if (poolClass == uint8(PoolClass.SESSION_ONLY)) return d.isStock;
         HealthView memory h = ISessionRegistry(hookDeployer.sessionRegistry()).health(id);
         if (!h.ready || h.reasonBits != 0 || h.validUntil <= block.timestamp) {
             if (!_plannedClosed(calendarRegistry, id)) revert InvalidConfiguration();

@@ -276,12 +276,42 @@ contract BellPoolFactoryTest {
         _useRealRegistries(false);
         _assertOraclelessSeed();
     }
-    function testRealRegistriesOraclelessDoesNotBypassStockHealth() external {
+    /// Stock health no longer gates SESSION_ONLY admission: the hook already trades that class
+    /// without a fresh feed, so the factory agrees. Pause and identity checks remain enforced
+    /// (see testRealRegistriesSessionOnlyStillRejectsPausedAsset and the Quote* cases below).
+    function testRealRegistriesOraclelessStockHealthIsInformationalForSessionOnly() external {
         _useRealRegistries(true);
         stockToken.setOraclePaused(true);
         realSessions.refreshHealth(stockId);
         require(!realSessions.health(stockId).ready,"stock pause not reflected");
-        require(bytes4(_rollback(request)) == BellPoolFactory.InvalidConfiguration.selector,"stock health bypass");
+        request.deadline = uint64(block.timestamp + 100);
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session-only pool did not activate");
+    }
+    /// SESSION_ONLY is the always-on AMM class: the hook already trades it without stock health
+    /// (BellHookLifecycle.testSessionOnlySwapRemainsAvailableWhenReporterHealthIsStale). The factory
+    /// admission must agree, otherwise a pool can never be created while feeds are quiet even though
+    /// it would be tradable the moment it existed.
+    function testRealRegistriesSessionOnlyCreatesWithoutStockHealth() external {
+        _useRealRegistries(true);
+        // Let every stock report age past the 120-second policy window, exactly like a quiet feed.
+        vm.warp(block.timestamp + 121);
+        realSessions.refreshHealth(stockId);
+        require(!realSessions.health(stockId).ready, "fixture unexpectedly healthy");
+        request.deadline = uint64(block.timestamp + 100);
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session-only pool did not activate");
+        require(BellHook(r.hook).getPolicy().canSwap, "session-only pool not tradable without health");
+    }
+    /// A paused asset must still block pool creation: pause is an operator stop, not feed freshness.
+    function testRealRegistriesSessionOnlyStillRejectsPausedAsset() external {
+        _useRealRegistries(true);
+        vm.warp(block.timestamp + 121);
+        realSessions.refreshHealth(stockId);
+        realSafety.setPause(ModePolicy.targetId(2,address(stockToken)),true,1);
+        request.deadline = uint64(block.timestamp + 100);
+        bytes4 sel = bytes4(_rollback(request));
+        require(sel == BellPoolFactory.InvalidConfiguration.selector || sel == bytes4(keccak256("BadSeed()")), "pause bypassed");
     }
     function testRealRegistriesOraclelessDoesNotBypassQuotePause() external {
         _useRealRegistries(true);
