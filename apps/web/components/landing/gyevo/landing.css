@@ -495,6 +495,7 @@
 .lp-story__g { display: grid; justify-items: inherit; }
 .lp-story__t--over { position: absolute; inset: 0 0 auto 0; }
 .lp-h .lp-story__t--over { inset: 0; display: grid; align-content: center; justify-items: inherit; }
+.lp-lede > .lp-story__t--over { position: static; inset: auto; }
 .lp-story__t[data-story-kind="head"] {
   --fi: clamp(0, calc((var(--s, 0) - var(--n) + 1 - .46) / .34), 1);
   --fo: clamp(0, calc(1 - (var(--s, 0) - var(--n) - .04) / .34), 1);
@@ -515,9 +516,14 @@
   translate: 0 calc((1 - var(--in)) * 18px);
 }
 .lp-lede {
+  display: grid;
+  grid-template-areas: "lede-stack";
   --in: clamp(0, calc((var(--c) - .5) * 3.4), 1);
   flex: 1 1 18rem; max-width: 40ch; font-size: clamp(.95rem, .91rem + .26vw, 1.08rem); color: var(--lp-muted);
   text-shadow: 0 1px 22px rgba(23, 23, 23, .95);
+}
+.lp-lede > .lp-story__t {
+  grid-area: lede-stack;
 }
 .lp-actions { --in: clamp(0, calc((var(--c) - .62) * 3.4), 1); display: flex; flex-wrap: wrap; gap: .75rem; flex: none; }
 .lp-ca {
@@ -526,7 +532,7 @@
   color: var(--lp-muted); font: 500 .68rem/1 var(--lp-font-mono); letter-spacing: .06em;
 }
 .lp-ca__label { color: #EEECE5; font-weight: 700; letter-spacing: .12em; }
-.lp-ca__address { max-width: 8.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #EEECE5; }
+.lp-ca__address { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #EEECE5; }
 .lp-ca__chain, .lp-ca__pending { color: var(--lp-dim); white-space: nowrap; }
 .lp-ca__copy {
   min-width: 5.3rem; padding: .45rem .65rem; border: 1px solid var(--lp-line-2); border-radius: 999px;
