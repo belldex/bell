@@ -19,7 +19,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, decodeEventLog 
 import { privateKeyToAccount } from 'viem/accounts';
 import FactoryArtifact from '../../contracts/out/BellPoolFactory.sol/BellPoolFactory.json' with { type: 'json' };
 import { mineHookSalt } from '../tooling/mine-hook-salt.mjs';
-import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, deriveSqrtPriceFromAmounts, deriveTickBounds, deriveFlowCaps, resolvePoolConfig } from './mainnet-pool-config.mjs';
+import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, deriveSqrtPriceFromAmounts, deriveTickBounds, deriveLiquidityForSeed, resolvePoolConfig } from './mainnet-pool-config.mjs';
 import { isPoolCreatePreflightReady } from './keeper-price-config.mjs';
 import { buildCreatePoolPreflight, validateCreatePoolBroadcastAuthorization } from './mainnet-create-pool-ops.mjs';
 
@@ -205,7 +205,6 @@ if ((poolClass === 0 || pairIsStock) && (!amount0Arg || !amount1Arg)) {
   throw new Error('PRICE_GUARDED and stock/stock pool setup require explicit --amount0 and --amount1 seed inventory');
 }
 
-const flowCaps = deriveFlowCaps({ seed0: amountAMax, seed1: amountBMax });
 const config = resolvePoolConfig({
   tokenA, assetA, tokenB, assetB,
   amountAMax, amountBMax,
@@ -218,9 +217,6 @@ const config = resolvePoolConfig({
   safetyController: manifest.safetyController,
   policyId: env.BELL_POLICY_ID || 'bell-mainnet-v1',
   poolClass,
-  tradeCap: flowCaps.tradeCap,
-  windowCap: flowCaps.windowCap,
-  closureCap: flowCaps.closureCap,
 });
 const factoryProfileHash = await publicClient.readContract({
   address: manifest.poolFactory,
@@ -338,8 +334,6 @@ const [poolNonce, chainBlock] = await Promise.all([
   publicClient.getBlock(),
 ]);
 const predictedDeadline = BigInt(Number(chainBlock.timestamp) + 1200);
-const token0Decimals = Number(await publicClient.readContract({ address: config.config.token0, abi: ERC20, functionName: 'decimals' }));
-const token1Decimals = Number(await publicClient.readContract({ address: config.config.token1, abi: ERC20, functionName: 'decimals' }));
 let initialSqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0: config.amountMax[0], amount1: config.amountMax[1] });
 if (poolClass === 0) {
   const REF_ABI = parseAbi(['function referencePrice() view returns (uint128)']);
@@ -389,7 +383,7 @@ const predictedRequest = {
   sqrtPriceX96: initialSqrtPriceX96,
   tickLower,
   tickUpper,
-  liquidity: 10n ** 15n,
+  liquidity: deriveLiquidityForSeed({ sqrtPriceX96: initialSqrtPriceX96, tickLower, tickUpper, amount0: config.amountMax[0], amount1: config.amountMax[1] }),
   amountMax: config.amountMax,
   maxServiceFee: serviceFee,
 };
@@ -504,7 +498,7 @@ const request = {
   sqrtPriceX96,
   tickLower,
   tickUpper,
-  liquidity: 10n ** 15n,
+  liquidity: deriveLiquidityForSeed({ sqrtPriceX96, tickLower, tickUpper, amount0: config.amountMax[0], amount1: config.amountMax[1] }),
   amountMax: config.amountMax,
   maxServiceFee: serviceFee,
 };

@@ -9,7 +9,7 @@ import deployment from '../../../evidence/deploy/mainnet-4663.json';
 import references from '../../../evidence/deploy/mainnet-4663-reference-adapters.json';
 import abiManifest from '../../../packages/protocol/generated/abi-manifest.json';
 // @ts-expect-error Shared script module is browser-safe and keeps the factory profile math canonical.
-import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqrtPriceFromAmounts, deriveTickBounds, deriveFlowCaps } from '../../../scripts/deploy/mainnet-pool-config.mjs';
+import { resolvePoolConfig, deriveProfileHash, deriveInitialSqrtPrice, deriveSqrtPriceFromAmounts, deriveTickBounds, deriveLiquidityForSeed } from '../../../scripts/deploy/mainnet-pool-config.mjs';
 // @ts-expect-error Browser-safe mirror is cross-checked against the canonical salt miner.
 import { resolveAdmittedPair, poolClassesForPair, mineHookSalt } from './mainnet-create-helpers.mjs';
 // @ts-expect-error Shared phase policy is browser-safe and covered by node:test.
@@ -124,8 +124,9 @@ export async function createMainnetPool({ provider, account, selection, onStage 
   }
   const amountMaxA = selection.amountStock;
   const amountMaxB = selection.amountCounter;
-  // Caps are raw token units, so derive them from the seed rather than a fixed integer.
-  const flowCaps = deriveFlowCaps({ seed0: amountMaxA, seed1: amountMaxB });
+  // Caps are raw token units in token0/token1 order. resolvePoolConfig derives and sorts them from
+  // the seed, so they cannot drift out of step with the pool's currency slots (a mismatch reverted
+  // createAndSeed with BadSeed because the closure cap sat on the wrong leg).
   const config = resolvePoolConfig({
     tokenA: tokenA.token, assetA: tokenA.assetId, tokenB: tokenB.token, assetB: tokenB.assetId,
     amountAMax: amountMaxA, amountBMax: amountMaxB,
@@ -135,7 +136,6 @@ export async function createMainnetPool({ provider, account, selection, onStage 
     factory: walletFactory, assetRegistry: (deployment as any).assetRegistry,
     calendarRegistry: (deployment as any).calendarRegistry, safetyController: (deployment as any).safetyController,
     policyId: 'bell-mainnet-v1', poolClass: selection.poolClass,
-    tradeCap: flowCaps.tradeCap, windowCap: flowCaps.windowCap, closureCap: flowCaps.closureCap,
   });
   const neutralProfileHash = deriveProfileHash({ ...config.config, poolClass: 0, referenceAdapter0: `0x${'0'.repeat(40)}`, referenceAdapter1: `0x${'0'.repeat(40)}` });
   if (profileHash.toLowerCase() !== neutralProfileHash.toLowerCase()) throw new Error('The requested pool configuration does not match the deployed factory profile');
@@ -199,6 +199,8 @@ export async function createMainnetPool({ provider, account, selection, onStage 
       missingCloseAnchor = true;
     }
   } else {
+    // SESSION_ONLY: the seed ratio is the opening price. Raw units already encode decimals, so the
+    // pool price is token1_raw/token0_raw and needs no decimal adjustment here.
     sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
   }
   if (selection.poolClass === 0 && missingCloseAnchor) {
@@ -286,9 +288,10 @@ export async function createMainnetPool({ provider, account, selection, onStage 
     }
   }
   const deadline = latestBlock.timestamp + 1200n;
+  const liquidity = deriveLiquidityForSeed({ sqrtPriceX96, tickLower, tickUpper, amount0, amount1 });
   const request = {
     config: config.config, salt: mined.requestSalt, nonce, deadline, recipient: account,
-    sqrtPriceX96, tickLower, tickUpper, liquidity: 10n ** 15n,
+    sqrtPriceX96, tickLower, tickUpper, liquidity,
     amountMax: config.amountMax, maxServiceFee: serviceFee,
   };
   const createSimulation: any = await client.simulateContract({ address: walletFactory, abi: factoryAbi, functionName: 'createAndSeed', args: [request], account } as any);
