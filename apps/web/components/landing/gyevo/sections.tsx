@@ -111,7 +111,7 @@ export function PathSection() {
             From market signal <em className="o">to swap decision.</em>
           </h2>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            BELL is a Uniswap v4 hook for pools that include Robinhood Stock Tokens. It checks the market phase, sets the pool’s fee and flow limits, then allows a swap only while the Chainlink round passes its session gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT. Historical updates can be too sparse to keep swaps available throughout a session.
+            A Uniswap v4 hook adapting pool fees and flow limits to market sessions. Swaps execute only while Chainlink stays fresh: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT.
           </p>
         </div>
 
