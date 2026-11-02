@@ -106,7 +106,7 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
   return <article className="glass border border-line bg-surface/75 p-6">
     <div className="flex flex-wrap justify-between gap-4">
       <div><p className="font-mono text-xs text-dim">Position NFT #{position.id.toString()}</p>
-        <Link href={`/pool/?id=${pool.poolId}`} className="mt-2 inline-flex items-center gap-3 font-display text-2xl text-ink"><TokenPair symbols={[pool.legs[0].symbol, pool.legs[1].symbol]} size={32}/>{pool.legs[0].symbol} / {pool.legs[1].symbol}</Link>
+        <Link href={`/pool/?hook=${pool.hook}`} className="mt-2 inline-flex items-center gap-3 font-display text-2xl text-ink"><TokenPair symbols={[pool.legs[0].symbol, pool.legs[1].symbol]} size={32}/>{pool.legs[0].symbol} / {pool.legs[1].symbol}</Link>
         <p className="mt-2 text-sm text-muted">BELL pool · hook {pool.hook.slice(0, 8)}…{pool.hook.slice(-6)}</p></div>
       <dl className="text-right text-sm"><dt className="text-xs uppercase text-dim">Position range</dt><dd className="mt-1 text-ink">{position.lower} to {position.upper} ticks</dd><dt className="mt-3 text-xs uppercase text-dim">Liquidity units</dt><dd className="mt-1 font-mono text-ink">{position.liquidity.toString()}</dd></dl>
     </div>
