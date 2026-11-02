@@ -221,12 +221,9 @@ export function DeployedContracts() {
     <section className="app-contracts-section" id="contracts" aria-labelledby="contracts-heading">
       <div className="app-contracts-section__header">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-ion" />
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ion">
-              Robinhood Chain Mainnet · Chain ID 4663
-            </p>
-          </div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ion">
+            Robinhood Chain Mainnet · Chain ID 4663
+          </p>
           <h2 id="contracts-heading" className="mt-2 font-display text-[26px] font-semibold tracking-[-0.03em] text-ink sm:text-[32px]">
             Deployed Active Contracts
           </h2>
