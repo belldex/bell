@@ -74,6 +74,9 @@ function SwapInner() {
 
   const buildUpdates = async () => {
     if (!pool) return [];
+    // A market-price pool prices from its own liquidity, so it needs no external update and no
+    // freshness gate. Sending one anyway would force the router through a feed the pool ignores.
+    if (pool.poolClass === 1) return [];
     const source = quoteSourceForPhase(pool.policy.phase);
     if (source === 'anchor' || source === 'chainlink-feed') return [];
     if (source === 'unavailable') throw new Error('No live price source is configured for this market phase. The router will only allow the swap if its onchain reference path is valid.');
