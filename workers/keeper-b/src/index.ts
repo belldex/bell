@@ -57,6 +57,9 @@ const HOOK_ABI = parseAbi([
   'function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] a,uint128[2] b,uint128[2] c,uint128[2] d,uint128[2] e,uint64 f,uint64 g,bytes32 h,bytes32 i))',
 ]);
 const POOL_CREATED_EVENT = parseAbiItem('event PoolCreated(address indexed hook,bytes32 indexed poolId,bytes32 configHash,address indexed creator,address recipient)');
+// Cloudflare Workers abort an invocation that exceeds 50 subrequests. Reserve headroom for the
+// chain-id, block-number and per-pool reads that follow the log scan.
+const POOL_SCAN_MAX_PAGES = 24;
 const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
 const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
 const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
@@ -250,15 +253,25 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   let logs;
   try {
     // Raw eth_getLogs avoids provider-specific event-filter encoding quirks while still asking
-    // the configured chain RPC for canonical event data. Use bounded parallel ranges to keep
-    // the public directory response fast without exceeding the provider's per-query log limit.
+    // the configured chain RPC for canonical event data. Cloudflare caps a single invocation at 50
+    // subrequests, so the scan must fit its whole page count inside that budget: widen the page
+    // size instead of firing one request per fixed window, and issue them sequentially.
+    const span = blockNumber >= fromBlock ? blockNumber - fromBlock + 1n : 0n;
     const ranges: Array<[bigint, bigint]> = [];
-    for (let start = fromBlock; start <= blockNumber; start += 20_000n) {
-      ranges.push([start, start + 19_999n < blockNumber ? start + 19_999n : blockNumber]);
+    if (span > 0n) {
+      const pages = BigInt(Math.min(POOL_SCAN_MAX_PAGES, Number(span)));
+      const pageSize = (span + pages - 1n) / pages;
+      for (let start = fromBlock; start <= blockNumber; start += pageSize) {
+        const end = start + pageSize - 1n < blockNumber ? start + pageSize - 1n : blockNumber;
+        ranges.push([start, end]);
+      }
     }
-    const chunks = await Promise.all(ranges.map(([start, end]) => chain.request({ method: 'eth_getLogs', params: [{
-      address: factory, fromBlock: toHex(start), toBlock: toHex(end), topics: [toEventSelector(POOL_CREATED_EVENT)],
-    }] } as any)));
+    const chunks: unknown[] = [];
+    for (const [start, end] of ranges) {
+      chunks.push(await chain.request({ method: 'eth_getLogs', params: [{
+        address: factory, fromBlock: toHex(start), toBlock: toHex(end), topics: [toEventSelector(POOL_CREATED_EVENT)],
+      }] } as any));
+    }
     logs = chunks.flatMap((chunk) => {
       if (!Array.isArray(chunk)) throw new Error('eth_getLogs returned a malformed result');
       return chunk;
@@ -332,14 +345,25 @@ export async function runPositionCandidates(env, owner, { client } = {}) {
   const start = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
   const ownerTopic = `0x${owner.slice(2).toLowerCase().padStart(64, '0')}`;
   const selector = toEventSelector(parseAbiItem('event Transfer(address indexed from,address indexed to,uint256 indexed tokenId)'));
+  // Same Cloudflare subrequest ceiling as the pool directory: size the pages to the budget and run
+  // them sequentially instead of firing one request per fixed window in parallel.
+  const span = latest >= start ? latest - start + 1n : 0n;
   const ranges: Array<[bigint, bigint]> = [];
-  for (let from = start; from <= latest; from += 20_000n) ranges.push([from, from + 19_999n < latest ? from + 19_999n : latest]);
-  const chunks = await Promise.all(ranges.map(([fromBlock, toBlock]) => chain.request({ method: 'eth_getLogs', params: [{
-    address: manager, fromBlock: toHex(fromBlock), toBlock: toHex(toBlock), topics: [selector, null, ownerTopic],
-  }] } as any)));
+  if (span > 0n) {
+    const pages = BigInt(Math.min(POOL_SCAN_MAX_PAGES, Number(span)));
+    const pageSize = (span + pages - 1n) / pages;
+    for (let from = start; from <= latest; from += pageSize) {
+      ranges.push([from, from + pageSize - 1n < latest ? from + pageSize - 1n : latest]);
+    }
+  }
   const candidates = new Set<string>();
-  for (const chunk of chunks) for (const log of Array.isArray(chunk) ? chunk : []) {
-    if (log.topics?.[3]) candidates.add(BigInt(log.topics[3]).toString());
+  for (const [fromBlock, toBlock] of ranges) {
+    const chunk = await chain.request({ method: 'eth_getLogs', params: [{
+      address: manager, fromBlock: toHex(fromBlock), toBlock: toHex(toBlock), topics: [selector, null, ownerTopic],
+    }] } as any);
+    for (const log of Array.isArray(chunk) ? chunk : []) {
+      if (log.topics?.[3]) candidates.add(BigInt(log.topics[3]).toString());
+    }
   }
   return { chainId: expectedChainId, owner: owner.toLowerCase(), blockNumber: latest.toString(), tokenIds: [...candidates] };
 }
