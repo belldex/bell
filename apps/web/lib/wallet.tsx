@@ -191,7 +191,9 @@ export const shortAddress = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 /** Exposed for later SDK wiring (M08/M11 integration); unused in preview mode. */
 export function makeClients(provider: EIP1193Provider) {
   return {
-    publicClient: createPublicClient({ transport: custom(provider) }),
-    walletClient: createWalletClient({ transport: custom(provider) }),
+    publicClient: createPublicClient({ transport: custom(provider), chain: robinhoodMainnet }),
+    // Pinning the chain removes the "No chain was provided" class of errors on write calls:
+    // viem then knows the chain for signing even when a caller omits the `chain` argument.
+    walletClient: createWalletClient({ transport: custom(provider), chain: robinhoodMainnet }),
   };
 }
