@@ -11,6 +11,7 @@ import { cn } from '@/lib/format';
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET } from '@/lib/mainnet-live';
 import { availablePoolClasses, createMainnetPool, MAINNET_ASSET_OPTIONS, type CreateStage, type CreateResult } from '@/lib/mainnet-create-flow';
+import { CreateProgressModal } from '@/components/create/CreateProgressModal';
 
 const STEPS = ['Pair', 'Pool class', 'Seed', 'Review & create'] as const;
 const STAGE_LABELS: Record<string, string> = {
@@ -67,6 +68,7 @@ export default function CreatePage() {
   const [stage, setStage] = useState<CreateStage | null>(null);
   const [history, setHistory] = useState<CreateStage[]>([]);
   const [result, setResult] = useState<CreateResult | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [feeLabel, setFeeLabel] = useState('Read from factory before signing');
   const [gasPrice, setGasPrice] = useState('');
   const [feeLoading, setFeeLoading] = useState(false);
@@ -115,7 +117,7 @@ export default function CreatePage() {
     if (!wallet.provider || !wallet.account) { await wallet.connect(); return; }
     if (wallet.wrongChain) { await wallet.switchChain(4663); return; }
     if (!stepOk[3]) return;
-    setBusy(true); setError(''); setStage(null); setHistory([]); setResult(null);
+    setBusy(true); setError(''); setStage(null); setHistory([]); setResult(null); setShowModal(true);
     try {
       const created = await createMainnetPool({
         provider: wallet.provider,
@@ -219,11 +221,45 @@ export default function CreatePage() {
 
     {wallet.wrongChain && <p role="alert" className="mt-4 border border-warn/30 bg-warn/5 p-4 text-sm text-warn">Switch your wallet to Robinhood Chain Mainnet (4663) to continue.</p>}
     {wallet.error && <p role="alert" className="mt-4 text-sm text-down">{wallet.error}</p>}
-    {error && <p role="alert" className="mt-4 flex items-start gap-2 border border-down/30 bg-down/5 p-4 text-sm text-down"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0"/>{error}</p>}
 
-    {(stage || history.length > 0) && <section className="mt-5 border border-line bg-surface/50 p-5" aria-live="polite"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Transaction progress</h2><ol className="mt-4 space-y-3">{history.map((item, index) => <li key={`${item.key}-${index}`} className="border-t border-line pt-3"><p className="text-sm text-ink">{STAGE_LABELS[item.key] ?? item.key}: {item.message}</p>{item.hash && <a className="mt-1 inline-flex items-center gap-1 text-xs text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${item.hash}`} target="_blank" rel="noreferrer">View transaction <ExternalLink className="h-3 w-3"/></a>}</li>)}</ol></section>}
+    {/* Compact banner to reopen transaction monitor if closed */}
+    {!showModal && (busy || history.length > 0 || error || result) && (
+      <button
+        type="button"
+        onClick={() => setShowModal(true)}
+        className="mt-5 flex w-full items-center justify-between border border-line bg-surface/60 p-4 font-mono text-xs text-muted hover:border-ion hover:text-ink transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          {busy ? (
+            <LoaderCircle className="h-4 w-4 animate-spin text-ion" />
+          ) : result ? (
+            <Check className="h-4 w-4 text-up" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 text-down" />
+          )}
+          <span className="font-semibold text-ink">Transaction progress:</span>
+          <span className="truncate max-w-md">
+            {result ? 'Pool created and seeded successfully' : error ? error : stage?.message ?? 'Execution pipeline active'}
+          </span>
+        </span>
+        <span className="text-ion underline shrink-0 ml-2">Open monitor ↗</span>
+      </button>
+    )}
 
-    {result && <section className="mt-5 border border-up/30 bg-up/5 p-6"><p className="font-mono text-xs uppercase text-up">{result.staged ? 'Pool seeded · staged' : 'Pool deployed and seeded'}</p><p className="mt-2 break-all font-mono text-xs text-ink">Hook {result.hook}</p><p className="mt-1 break-all font-mono text-xs text-dim">Pool ID {result.poolId}</p><p className="mt-2 text-sm text-muted">Position NFT #{result.tokenId} is owned by {wallet.account}. Seed used: {amountLabel(result.principal[0], result.token0.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol)} {result.token0.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol} and {amountLabel(result.principal[1], result.token1.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol)} {result.token1.toLowerCase() === stock.token.toLowerCase() ? stockSymbol : counterSymbol}.</p>{result.staged && <p className="mt-3 border border-warn/30 bg-warn/5 p-3 text-sm text-warn">Swaps are locked. The pool will become tradable only after the contract verifies healthy price data or a valid historical close anchor.</p>}<div className="mt-4 flex flex-wrap gap-4"><Link className="text-sm text-ion underline" href={`/pool?hook=${result.hook}`}>{result.staged ? 'View staged pool' : 'Open pool'}</Link><a className="inline-flex items-center gap-1 text-sm text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${result.createHash}`} target="_blank" rel="noreferrer">View creation transaction <ExternalLink className="h-3 w-3"/></a></div></section>}
+    {/* Animated Transaction Progress Modal */}
+    <CreateProgressModal
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      busy={busy}
+      stage={stage}
+      history={history}
+      error={error}
+      result={result}
+      stockSymbol={stockSymbol}
+      counterSymbol={counterSymbol}
+      poolClassName={classes[poolClass]}
+      onRetry={() => void startCreate()}
+    />
 
     <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-dim"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0"/>No private key leaves your wallet. The contracts read Chainlink prices directly onchain; approvals and pool creation are public Mainnet transactions that require your wallet confirmation.</p>
   </div>;
