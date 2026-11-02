@@ -45,6 +45,32 @@ function resolveReferenceAdapter(value, name) {
   return value.toLowerCase();
 }
 
+/**
+ * Derive the three flow caps from the seed, in raw token units.
+ *
+ * FlowBudget.settle compares raw gross deltas against these caps and reverts `TradeCapExceeded`
+ * when a swap exceeds them. They must therefore scale with the pool's own inventory: a literal
+ * small integer is 10^15 dust on an 18-decimal token and makes every swap revert.
+ *
+ * The factory also requires trade <= window and closure <= min(2*trade, window), so the ratios
+ * below (10% / 40% / 5%) keep those invariants by construction.
+ */
+export function deriveFlowCaps({ seed0, seed1 }) {
+  const legs = [seed0, seed1];
+  if (legs.some((v) => typeof v !== 'bigint' || v <= 0n)) {
+    throw new RangeError('both seeds must be positive bigints before caps can be derived');
+  }
+  const cap = (seed, numerator, denominator, minimum) => {
+    const value = (seed * numerator) / denominator;
+    return value < minimum ? minimum : value;
+  };
+  return Object.freeze({
+    tradeCap: Object.freeze(legs.map((s) => cap(s, 1n, 10n, 1n))),
+    windowCap: Object.freeze(legs.map((s) => cap(s, 4n, 10n, 1n))),
+    closureCap: Object.freeze(legs.map((s) => cap(s, 1n, 20n, 1n))),
+  });
+}
+
 /** Canonicalize any admitted token pair; each asset ID and price adapter follows its token. */
 export function sortPoolTokens({
   tokenA, assetA, tokenB, assetB,
@@ -73,9 +99,11 @@ export function resolvePoolConfig(input) {
     poolManager, positionManager, factory, assetRegistry, calendarRegistry, safetyController,
     policyId = 'bell-mainnet-v1',
     tickSpacing = 60,
-    tradeCap = [10n, 10n],
-    windowCap = [100n, 100n],
-    closureCap = [1n, 1n],
+    // Caps default to seed-derived values. A fixed integer would be token dust and make every
+    // swap revert TradeCapExceeded, so the default must follow the pool's own inventory.
+    tradeCap = undefined,
+    windowCap = undefined,
+    closureCap = undefined,
     poolClass = 1, // SESSION_ONLY by default; 0 = PRICE_GUARDED (requires both reference adapters)
   } = input;
 
@@ -95,6 +123,12 @@ export function resolvePoolConfig(input) {
 
   const tokenAIsToken0 = sorted.token0 === requireAddress(tokenA, 'tokenA');
   const amountMax = tokenAIsToken0 ? [amountA, amountB] : [amountB, amountA];
+
+  // Default caps follow the seed so a caller that omits them cannot ship token dust.
+  const derived = deriveFlowCaps({ seed0: amountA, seed1: amountB });
+  const resolvedTradeCap = tradeCap ?? derived.tradeCap;
+  const resolvedWindowCap = windowCap ?? derived.windowCap;
+  const resolvedClosureCap = closureCap ?? derived.closureCap;
 
   if (![0, 1].includes(poolClass)) throw new RangeError('poolClass must be 0 (PRICE_GUARDED) or 1 (SESSION_ONLY)');
 
@@ -118,9 +152,9 @@ export function resolvePoolConfig(input) {
     liquidityMode: 0, // PUBLIC
     referenceMode: 0,
     tickSpacing,
-    tradeCap,
-    windowCap,
-    closureCap,
+    tradeCap: resolvedTradeCap,
+    windowCap: resolvedWindowCap,
+    closureCap: resolvedClosureCap,
     policyId: policyIdHash,
     // Chainlink reference adapters per pool side (token0/token1 order). Zero means "no reference
     // on this side"; the factory rejects any non-zero adapter on SESSION_ONLY pools, and

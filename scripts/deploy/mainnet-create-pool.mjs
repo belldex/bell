@@ -19,7 +19,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, decodeEventLog 
 import { privateKeyToAccount } from 'viem/accounts';
 import FactoryArtifact from '../../contracts/out/BellPoolFactory.sol/BellPoolFactory.json' with { type: 'json' };
 import { mineHookSalt } from '../tooling/mine-hook-salt.mjs';
-import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, deriveSqrtPriceFromAmounts, deriveTickBounds, resolvePoolConfig } from './mainnet-pool-config.mjs';
+import { checkSeedFunding, deriveInitialSqrtPrice, deriveProfileHash, deriveSqrtPriceFromAmounts, deriveTickBounds, deriveFlowCaps, resolvePoolConfig } from './mainnet-pool-config.mjs';
 import { isPoolCreatePreflightReady } from './keeper-price-config.mjs';
 import { buildCreatePoolPreflight, validateCreatePoolBroadcastAuthorization } from './mainnet-create-pool-ops.mjs';
 
@@ -205,6 +205,7 @@ if ((poolClass === 0 || pairIsStock) && (!amount0Arg || !amount1Arg)) {
   throw new Error('PRICE_GUARDED and stock/stock pool setup require explicit --amount0 and --amount1 seed inventory');
 }
 
+const flowCaps = deriveFlowCaps({ seed0: amountAMax, seed1: amountBMax });
 const config = resolvePoolConfig({
   tokenA, assetA, tokenB, assetB,
   amountAMax, amountBMax,
@@ -217,6 +218,9 @@ const config = resolvePoolConfig({
   safetyController: manifest.safetyController,
   policyId: env.BELL_POLICY_ID || 'bell-mainnet-v1',
   poolClass,
+  tradeCap: flowCaps.tradeCap,
+  windowCap: flowCaps.windowCap,
+  closureCap: flowCaps.closureCap,
 });
 const factoryProfileHash = await publicClient.readContract({
   address: manifest.poolFactory,
