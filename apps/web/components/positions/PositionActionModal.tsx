@@ -125,137 +125,161 @@ export function PositionActionModal({
           </button>
         </div>
 
-        {/* State Banner */}
-        <div
-          className={`app-create-modal__banner app-create-modal__banner--${
-            isSuccess ? 'success' : isFailed ? 'error' : 'progress'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            {isSuccess ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
-                <Check size={20} strokeWidth={2.5} />
-              </div>
-            ) : isFailed ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
-                <AlertTriangle size={20} strokeWidth={2} />
-              </div>
-            ) : (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
-                <LoaderCircle size={22} className="animate-spin" />
-              </div>
-            )}
-
-            <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold text-ink">
-                {isSuccess
-                  ? `${title} Confirmed!`
-                  : isFailed
-                  ? 'Transaction Halted or Reverted'
-                  : busy
-                  ? 'Confirming Transaction…'
-                  : subtitle}
-              </h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                {isFailed
-                  ? error
-                  : status || 'Please review and confirm this transaction in your wallet.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Body Content */}
-        <div className="app-create-modal__body space-y-4">
-          {/* Progress Tracker */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-3">
+        {/* Modal Body with 2-Column Responsive Layout */}
+        <div className="app-create-modal__body">
+          <div className="app-create-modal__layout">
+            {/* Left Column: State Banner & Position Details */}
+            <div className="app-create-modal__left">
               <div
-                className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
-                  hash || isSuccess
-                    ? 'border-up bg-up/10 text-up'
-                    : isFailed
-                    ? 'border-down bg-down/10 text-down'
-                    : busy
-                    ? 'border-ion bg-ion/10 text-ion'
-                    : 'border-line text-dim'
+                className={`app-create-modal__banner app-create-modal__banner--${
+                  isSuccess ? 'success' : isFailed ? 'error' : 'progress'
                 }`}
               >
-                {hash || isSuccess ? (
-                  <Check size={12} strokeWidth={2.5} />
-                ) : isFailed ? (
-                  <X size={12} strokeWidth={2.5} />
-                ) : busy ? (
-                  <LoaderCircle size={13} className="animate-spin" />
-                ) : (
-                  '1'
-                )}
+                <div className="flex items-start gap-3">
+                  {isSuccess ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
+                      <Check size={20} strokeWidth={2.5} />
+                    </div>
+                  ) : isFailed ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
+                      <AlertTriangle size={20} strokeWidth={2} />
+                    </div>
+                  ) : (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
+                      <LoaderCircle size={22} className="animate-spin" />
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-semibold text-ink">
+                      {isSuccess
+                        ? `${title} Confirmed!`
+                        : isFailed
+                        ? 'Transaction Halted or Reverted'
+                        : busy
+                        ? 'Confirming Transaction…'
+                        : subtitle}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">
+                      {isFailed
+                        ? error
+                        : status || 'Please review and confirm this transaction in your wallet.'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-ink">PositionManager Transaction</p>
-                <p className="text-[11px] text-dim">
-                  {hash || isSuccess
-                    ? 'Transaction approved and broadcasted.'
-                    : busy
-                    ? 'Waiting for wallet approval…'
-                    : 'Ready to submit.'}
-                </p>
+
+              {/* Position summary card */}
+              <div className="border border-line bg-surface/60 p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                  <span>Position NFT</span>
+                  <span className="text-ink font-semibold">#{tokenId}</span>
+                </div>
+                <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                  <span>Pool Pair</span>
+                  <span className="text-ink">{symbols[0]} / {symbols[1]}</span>
+                </div>
+                <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                  <span>Operation</span>
+                  <span className="text-ink font-semibold">{title}</span>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div
-                className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
-                  isSuccess
-                    ? 'border-up bg-up/10 text-up'
-                    : hash && busy
-                    ? 'border-ion bg-ion/10 text-ion'
-                    : 'border-line text-dim'
-                }`}
-              >
-                {isSuccess ? (
-                  <Check size={12} strokeWidth={2.5} />
-                ) : hash && busy ? (
-                  <LoaderCircle size={13} className="animate-spin" />
-                ) : (
-                  '2'
-                )}
+            {/* Right Column: Execution Pipeline Steps & Explorer Hash */}
+            <div className="app-create-modal__right">
+              <p className="app-create-modal__section-title">TRANSACTION PIPELINE</p>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
+                      hash || isSuccess
+                        ? 'border-up bg-up/10 text-up'
+                        : isFailed
+                        ? 'border-down bg-down/10 text-down'
+                        : busy
+                        ? 'border-ion bg-ion/10 text-ion'
+                        : 'border-line text-dim'
+                    }`}
+                  >
+                    {hash || isSuccess ? (
+                      <Check size={12} strokeWidth={2.5} />
+                    ) : isFailed ? (
+                      <X size={12} strokeWidth={2.5} />
+                    ) : busy ? (
+                      <LoaderCircle size={13} className="animate-spin" />
+                    ) : (
+                      '1'
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-ink">PositionManager Transaction</p>
+                    <p className="text-[11px] text-dim">
+                      {hash || isSuccess
+                        ? 'Transaction approved and broadcasted.'
+                        : busy
+                        ? 'Waiting for wallet approval…'
+                        : 'Ready to submit.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
+                      isSuccess
+                        ? 'border-up bg-up/10 text-up'
+                        : hash && busy
+                        ? 'border-ion bg-ion/10 text-ion'
+                        : 'border-line text-dim'
+                    }`}
+                  >
+                    {isSuccess ? (
+                      <Check size={12} strokeWidth={2.5} />
+                    ) : hash && busy ? (
+                      <LoaderCircle size={13} className="animate-spin" />
+                    ) : (
+                      '2'
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-ink">Mainnet Block Receipt</p>
+                    <p className="text-[11px] text-dim">
+                      {isSuccess
+                        ? 'Confirmed on Robinhood Chain Mainnet.'
+                        : hash
+                        ? 'Waiting for block receipt…'
+                        : 'Awaiting submission.'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-ink">Mainnet Block Receipt</p>
-                <p className="text-[11px] text-dim">
-                  {isSuccess
-                    ? 'Confirmed on Robinhood Chain Mainnet.'
-                    : hash
-                    ? 'Waiting for block receipt…'
-                    : 'Awaiting submission.'}
-                </p>
-              </div>
+
+              {/* Blockscout Explorer Link */}
+              {hash && (
+                <div className="mt-3.5 border border-line bg-surface p-3">
+                  <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
+                    TRANSACTION HASH
+                  </span>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <code className="truncate font-mono text-xs text-muted" title={hash}>
+                      {hash}
+                    </code>
+                    <a
+                      href={`https://robinhoodchain.blockscout.com/tx/${hash}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex shrink-0 items-center gap-1.5 border border-line px-2.5 py-1 font-mono text-[10px] uppercase text-ion hover:border-ion"
+                    >
+                      <span>Explorer</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Blockscout Explorer Link */}
-          {hash && (
-            <div className="border border-line bg-surface p-3">
-              <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
-                TRANSACTION HASH
-              </span>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <code className="truncate font-mono text-xs text-muted" title={hash}>
-                  {hash}
-                </code>
-                <a
-                  href={`https://robinhoodchain.blockscout.com/tx/${hash}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex shrink-0 items-center gap-1.5 border border-line px-2.5 py-1 font-mono text-[10px] uppercase text-ion hover:border-ion"
-                >
-                  <span>Explorer</span>
-                  <ExternalLink size={11} />
-                </a>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

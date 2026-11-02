@@ -129,172 +129,180 @@ export function SwapProgressModal({
           </button>
         </div>
 
-        {/* State Banner */}
-        <div
-          className={`app-create-modal__banner app-create-modal__banner--${
-            isSuccess ? 'success' : isFailed ? 'error' : 'progress'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            {isSuccess ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
-                <Check size={20} strokeWidth={2.5} />
-              </div>
-            ) : isFailed ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
-                <AlertTriangle size={20} strokeWidth={2} />
-              </div>
-            ) : (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
-                <LoaderCircle size={22} className="animate-spin" />
-              </div>
-            )}
-
-            <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold text-ink">
-                {isSuccess
-                  ? actionType === 'approve'
-                    ? 'Allowance Approved!'
-                    : actionType === 'checkpoint'
-                    ? 'Checkpoint Committed!'
-                    : 'Swap Successfully Executed!'
-                  : isFailed
-                  ? 'Transaction Halted or Reverted'
-                  : busy
-                  ? 'Confirming Transaction…'
-                  : subtitle}
-              </h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                {isFailed
-                  ? error
-                  : message ||
-                    'Review and confirm the transaction in your connected Web3 wallet.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Body Content */}
-        <div className="app-create-modal__body space-y-4">
-          {/* Swap summary card */}
-          {actionType === 'swap' && inputAmount && outputAmount && (
-            <div className="border border-line bg-surface/60 p-4">
-              <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
-                TRANSACTION DETAILS
-              </span>
-              <div className="mt-3 flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] text-dim">YOU PAY</span>
-                  <p className="font-mono text-base font-semibold text-ink">
-                    {inputAmount} {inputSymbol}
-                  </p>
-                </div>
-                <ArrowRight size={18} className="text-ion shrink-0" />
-                <div className="text-right">
-                  <span className="text-[10px] text-dim">ESTIMATED OUTPUT</span>
-                  <p className="font-mono text-base font-semibold text-ink">
-                    {outputAmount} {outputSymbol}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Simple 2-Step Pipeline */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-3">
+        {/* Modal Body with 2-Column Responsive Layout */}
+        <div className="app-create-modal__body">
+          <div className="app-create-modal__layout">
+            {/* Left Column: State Banner & Trade Card */}
+            <div className="app-create-modal__left">
               <div
-                className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
-                  txHash || isSuccess
-                    ? 'border-up bg-up/10 text-up'
-                    : isFailed
-                    ? 'border-down bg-down/10 text-down'
-                    : busy
-                    ? 'border-ion bg-ion/10 text-ion'
-                    : 'border-line text-dim'
+                className={`app-create-modal__banner app-create-modal__banner--${
+                  isSuccess ? 'success' : isFailed ? 'error' : 'progress'
                 }`}
               >
-                {txHash || isSuccess ? (
-                  <Check size={12} strokeWidth={2.5} />
-                ) : isFailed ? (
-                  <X size={12} strokeWidth={2.5} />
-                ) : busy ? (
-                  <LoaderCircle size={13} className="animate-spin" />
-                ) : (
-                  '1'
-                )}
+                <div className="flex items-start gap-3">
+                  {isSuccess ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
+                      <Check size={20} strokeWidth={2.5} />
+                    </div>
+                  ) : isFailed ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
+                      <AlertTriangle size={20} strokeWidth={2} />
+                    </div>
+                  ) : (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
+                      <LoaderCircle size={22} className="animate-spin" />
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-semibold text-ink">
+                      {isSuccess
+                        ? actionType === 'approve'
+                          ? 'Allowance Approved!'
+                          : actionType === 'checkpoint'
+                          ? 'Checkpoint Committed!'
+                          : 'Swap Successfully Executed!'
+                        : isFailed
+                        ? 'Transaction Halted or Reverted'
+                        : busy
+                        ? 'Confirming Transaction…'
+                        : subtitle}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">
+                      {isFailed
+                        ? error
+                        : message ||
+                          'Review and confirm the transaction in your connected Web3 wallet.'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-ink">
-                  {actionType === 'approve'
-                    ? 'Token Approval Request'
-                    : actionType === 'checkpoint'
-                    ? 'Onchain State Checkpoint'
-                    : 'Router Swap Simulation & Signature'}
-                </p>
-                <p className="text-[11px] text-dim">
-                  {txHash || isSuccess
-                    ? 'Transaction signed and broadcasted to Mainnet.'
-                    : busy
-                    ? 'Awaiting confirmation in your wallet…'
-                    : 'Ready to submit.'}
-                </p>
-              </div>
+
+              {/* Swap summary card */}
+              {actionType === 'swap' && inputAmount && outputAmount && (
+                <div className="border border-line bg-surface/60 p-3.5">
+                  <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
+                    TRANSACTION DETAILS
+                  </span>
+                  <div className="mt-2.5 flex items-center justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] text-dim">YOU PAY</span>
+                      <p className="font-mono text-sm font-semibold text-ink">
+                        {inputAmount} {inputSymbol}
+                      </p>
+                    </div>
+                    <ArrowRight size={16} className="text-ion shrink-0" />
+                    <div className="text-right">
+                      <span className="text-[10px] text-dim">ESTIMATED OUTPUT</span>
+                      <p className="font-mono text-sm font-semibold text-ink">
+                        {outputAmount} {outputSymbol}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div
-                className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
-                  isSuccess
-                    ? 'border-up bg-up/10 text-up'
-                    : txHash && busy
-                    ? 'border-ion bg-ion/10 text-ion'
-                    : 'border-line text-dim'
-                }`}
-              >
-                {isSuccess ? (
-                  <Check size={12} strokeWidth={2.5} />
-                ) : txHash && busy ? (
-                  <LoaderCircle size={13} className="animate-spin" />
-                ) : (
-                  '2'
-                )}
+            {/* Right Column: Execution Pipeline Steps & Explorer Hash */}
+            <div className="app-create-modal__right">
+              <p className="app-create-modal__section-title">TRANSACTION PIPELINE</p>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
+                      txHash || isSuccess
+                        ? 'border-up bg-up/10 text-up'
+                        : isFailed
+                        ? 'border-down bg-down/10 text-down'
+                        : busy
+                        ? 'border-ion bg-ion/10 text-ion'
+                        : 'border-line text-dim'
+                    }`}
+                  >
+                    {txHash || isSuccess ? (
+                      <Check size={12} strokeWidth={2.5} />
+                    ) : isFailed ? (
+                      <X size={12} strokeWidth={2.5} />
+                    ) : busy ? (
+                      <LoaderCircle size={13} className="animate-spin" />
+                    ) : (
+                      '1'
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-ink">
+                      {actionType === 'approve'
+                        ? 'Token Approval Request'
+                        : actionType === 'checkpoint'
+                        ? 'Onchain State Checkpoint'
+                        : 'Router Swap Simulation & Signature'}
+                    </p>
+                    <p className="text-[11px] text-dim">
+                      {txHash || isSuccess
+                        ? 'Transaction signed and broadcasted to Mainnet.'
+                        : busy
+                        ? 'Awaiting confirmation in your wallet…'
+                        : 'Ready to submit.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`grid h-6 w-6 place-items-center rounded border font-mono text-xs ${
+                      isSuccess
+                        ? 'border-up bg-up/10 text-up'
+                        : txHash && busy
+                        ? 'border-ion bg-ion/10 text-ion'
+                        : 'border-line text-dim'
+                    }`}
+                  >
+                    {isSuccess ? (
+                      <Check size={12} strokeWidth={2.5} />
+                    ) : txHash && busy ? (
+                      <LoaderCircle size={13} className="animate-spin" />
+                    ) : (
+                      '2'
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-ink">Mainnet Block Confirmation</p>
+                    <p className="text-[11px] text-dim">
+                      {isSuccess
+                        ? 'Confirmed on Robinhood Chain Mainnet.'
+                        : txHash
+                        ? 'Mining transaction receipt…'
+                        : 'Pending transaction submission.'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-ink">Mainnet Block Confirmation</p>
-                <p className="text-[11px] text-dim">
-                  {isSuccess
-                    ? 'Confirmed on Robinhood Chain Mainnet.'
-                    : txHash
-                    ? 'Mining transaction receipt…'
-                    : 'Pending transaction submission.'}
-                </p>
-              </div>
+
+              {/* Blockscout Explorer Link */}
+              {txHash && (
+                <div className="mt-3.5 border border-line bg-surface p-3">
+                  <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
+                    TRANSACTION HASH
+                  </span>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <code className="truncate font-mono text-xs text-muted" title={txHash}>
+                      {txHash}
+                    </code>
+                    <a
+                      href={`https://robinhoodchain.blockscout.com/tx/${txHash}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex shrink-0 items-center gap-1.5 border border-line px-2.5 py-1 font-mono text-[10px] uppercase text-ion hover:border-ion"
+                    >
+                      <span>Explorer</span>
+                      <ExternalLink size={11} />
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Blockscout Explorer Link */}
-          {txHash && (
-            <div className="border border-line bg-surface p-3">
-              <span className="block font-mono text-[9px] uppercase tracking-wider text-dim">
-                TRANSACTION HASH
-              </span>
-              <div className="mt-1 flex items-center justify-between gap-2">
-                <code className="truncate font-mono text-xs text-muted" title={txHash}>
-                  {txHash}
-                </code>
-                <a
-                  href={`https://robinhoodchain.blockscout.com/tx/${txHash}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex shrink-0 items-center gap-1.5 border border-line px-2.5 py-1 font-mono text-[10px] uppercase text-ion hover:border-ion"
-                >
-                  <span>Explorer</span>
-                  <ExternalLink size={11} />
-                </a>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

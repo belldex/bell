@@ -246,219 +246,244 @@ export function CreateProgressModal({
           </button>
         </div>
 
-        {/* State Banner with Visual Animation */}
-        <div
-          className={`app-create-modal__banner app-create-modal__banner--${
-            result ? 'success' : error ? 'error' : 'progress'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            {result ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
-                <Check size={20} strokeWidth={2.5} />
-              </div>
-            ) : error ? (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
-                <AlertTriangle size={20} strokeWidth={2} />
-              </div>
-            ) : (
-              <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
-                <LoaderCircle size={22} className="animate-spin" />
-              </div>
-            )}
-
-            <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base font-semibold text-ink">
-                {result
-                  ? result.staged
-                    ? 'Pool Deployed & Seeded (Staged)'
-                    : 'Pool Successfully Created & Seeded!'
-                  : error
-                  ? 'Transaction Halted or Reverted'
-                  : 'Executing Deployment Pipeline…'}
-              </h3>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                {result
-                  ? result.staged
-                    ? 'Swaps are currently locked until healthy market prices or verified close anchor activate. Your position NFT is minted.'
-                    : 'Your Uniswap v4 hook instance is deployed on Mainnet. Position NFT has been transferred to your wallet.'
-                  : error
-                  ? error
-                  : stage?.message || 'Please review and confirm each prompt in your connected wallet.'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Pipeline Step-by-Step Tracker */}
+        {/* Modal Body with 2-Column Responsive Layout */}
         <div className="app-create-modal__body">
-          <p className="app-create-modal__section-title">TRANSACTION PIPELINE</p>
-
-          <ol className="app-create-pipeline">
-            {pipelineSteps.map((step, idx) => {
-              const isLast = idx === pipelineSteps.length - 1;
-              return (
-                <li
-                  key={step.id}
-                  className={`app-pipeline-step app-pipeline-step--${step.status}`}
-                  data-status={step.status}
-                >
-                  <div className="app-pipeline-step__col-left">
-                    <div className="app-pipeline-step__node">
-                      {step.status === 'completed' ? (
-                        <Check size={13} strokeWidth={2.5} />
-                      ) : step.status === 'active' ? (
-                        <LoaderCircle size={15} className="animate-spin text-ion" />
-                      ) : step.status === 'failed' ? (
-                        <X size={13} strokeWidth={2.5} />
-                      ) : (
-                        <span>{step.number}</span>
-                      )}
-                    </div>
-                    {!isLast && <div className="app-pipeline-step__line" />}
-                  </div>
-
-                  <div className="app-pipeline-step__content">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="text-xs font-semibold tracking-tight text-ink">
-                        {step.title}
-                      </strong>
-                      <span className={`app-pipeline-step__badge app-pipeline-step__badge--${step.status}`}>
-                        {step.status === 'completed'
-                          ? 'Completed'
-                          : step.status === 'active'
-                          ? 'In progress'
-                          : step.status === 'failed'
-                          ? 'Failed'
-                          : 'Pending'}
-                      </span>
-                    </div>
-
-                    <p className="mt-1 text-[11px] leading-relaxed text-dim">
-                      {step.activeMessage && step.status !== 'pending'
-                        ? step.activeMessage
-                        : step.description}
-                    </p>
-
-                    {step.txHash && (
-                      <a
-                        href={`https://robinhoodchain.blockscout.com/tx/${step.txHash}`}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="app-pipeline-step__tx-link"
-                      >
-                        <span>View on Blockscout Explorer</span>
-                        <ExternalLink size={11} aria-hidden="true" />
-                      </a>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-
-          {/* Success Card */}
-          {result && (
-            <div className="app-create-success-card">
-              <div className="app-create-success-card__grid">
-                <div>
-                  <span className="app-create-success-card__label">HOOK ADDRESS</span>
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="text-xs text-ink">{result.hook}</code>
-                    <button
-                      type="button"
-                      onClick={() => void copyToClipboard(result.hook, 'hook')}
-                      className="app-create-success-card__copy-btn"
-                    >
-                      {copiedText === 'hook' ? <Check size={12} /> : <Clipboard size={12} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="app-create-success-card__label">POOL ID</span>
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="text-xs text-dim truncate">{result.poolId}</code>
-                    <button
-                      type="button"
-                      onClick={() => void copyToClipboard(result.poolId, 'poolId')}
-                      className="app-create-success-card__copy-btn"
-                    >
-                      {copiedText === 'poolId' ? <Check size={12} /> : <Clipboard size={12} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="app-create-success-card__label">POSITION NFT</span>
-                  <strong className="text-sm font-mono text-ink">#{result.tokenId.toString()}</strong>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href={`/pool?hook=${result.hook}`}
-                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 border border-ion/40 bg-ion/10 px-4 font-mono text-xs uppercase text-ion hover:bg-ion/20"
-                >
-                  <span>Go to Pool Details</span>
-                  <ArrowRight size={14} />
-                </Link>
-
-                <a
-                  href={`https://robinhoodchain.blockscout.com/tx/${result.createHash}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex min-h-10 items-center justify-center gap-2 border border-line bg-surface px-4 font-mono text-xs uppercase text-muted hover:text-ink"
-                >
-                  <span>Receipt</span>
-                  <ExternalLink size={14} />
-                </a>
-              </div>
-            </div>
-          )}
-
-          {/* Collapsible Execution Log Console */}
-          {history.length > 0 && (
-            <div className="app-create-logs">
-              <button
-                type="button"
-                onClick={() => setShowRawLogs(!showRawLogs)}
-                className="app-create-logs__toggle"
-                aria-expanded={showRawLogs}
+          <div className="app-create-modal__layout">
+            {/* Left Column: State Banner & Outcome Cards */}
+            <div className="app-create-modal__left">
+              <div
+                className={`app-create-modal__banner app-create-modal__banner--${
+                  result ? 'success' : error ? 'error' : 'progress'
+                }`}
               >
-                <div className="flex items-center gap-2">
-                  <Terminal size={13} className="text-dim" />
-                  <span>Detailed Execution Log ({history.length} events)</span>
-                </div>
-                {showRawLogs ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
+                <div className="flex items-start gap-3">
+                  {result ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--success">
+                      <Check size={20} strokeWidth={2.5} />
+                    </div>
+                  ) : error ? (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--error">
+                      <AlertTriangle size={20} strokeWidth={2} />
+                    </div>
+                  ) : (
+                    <div className="app-create-modal__banner-icon app-create-modal__banner-icon--spin">
+                      <LoaderCircle size={22} className="animate-spin" />
+                    </div>
+                  )}
 
-              {showRawLogs && (
-                <div className="app-create-logs__terminal">
-                  <pre>
-                    {history.map((item, index) => (
-                      <div key={`${item.key}-${index}`} className="app-create-logs__entry">
-                        <span className="app-create-logs__timestamp">
-                          [{STAGE_TITLES[item.key] ?? item.key}]
-                        </span>
-                        <span>{item.message}</span>
-                        {item.hash && (
-                          <a
-                            href={`https://robinhoodchain.blockscout.com/tx/${item.hash}`}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="text-ion underline ml-1"
-                          >
-                            (tx: {item.hash.slice(0, 10)}…)
-                          </a>
-                        )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-base font-semibold text-ink">
+                      {result
+                        ? result.staged
+                          ? 'Pool Deployed & Seeded (Staged)'
+                          : 'Pool Created & Seeded!'
+                        : error
+                        ? 'Transaction Halted or Reverted'
+                        : 'Executing Deployment…'}
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-muted">
+                      {result
+                        ? result.staged
+                          ? 'Swaps are locked until healthy prices activate. Position NFT minted.'
+                          : 'Hook instance deployed on Mainnet. Position NFT transferred to your wallet.'
+                        : error
+                        ? error
+                        : stage?.message || 'Please review and confirm each prompt in your connected wallet.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Success Card */}
+              {result && (
+                <div className="app-create-success-card">
+                  <div className="app-create-success-card__grid">
+                    <div>
+                      <span className="app-create-success-card__label">HOOK ADDRESS</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <code className="text-xs text-ink">{result.hook}</code>
+                        <button
+                          type="button"
+                          onClick={() => void copyToClipboard(result.hook, 'hook')}
+                          className="app-create-success-card__copy-btn"
+                        >
+                          {copiedText === 'hook' ? <Check size={12} /> : <Clipboard size={12} />}
+                        </button>
                       </div>
-                    ))}
-                  </pre>
+                    </div>
+
+                    <div>
+                      <span className="app-create-success-card__label">POOL ID</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <code className="text-xs text-dim truncate">{result.poolId}</code>
+                        <button
+                          type="button"
+                          onClick={() => void copyToClipboard(result.poolId, 'poolId')}
+                          className="app-create-success-card__copy-btn"
+                        >
+                          {copiedText === 'poolId' ? <Check size={12} /> : <Clipboard size={12} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="app-create-success-card__label">POSITION NFT</span>
+                      <strong className="text-sm font-mono text-ink">#{result.tokenId.toString()}</strong>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/pool?hook=${result.hook}`}
+                      className="inline-flex min-h-9 flex-1 items-center justify-center gap-2 border border-ion/40 bg-ion/10 px-3 font-mono text-xs uppercase text-ion hover:bg-ion/20"
+                    >
+                      <span>Pool Details</span>
+                      <ArrowRight size={13} />
+                    </Link>
+
+                    <a
+                      href={`https://robinhoodchain.blockscout.com/tx/${result.createHash}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex min-h-9 items-center justify-center gap-2 border border-line bg-surface px-3 font-mono text-xs uppercase text-muted hover:text-ink"
+                    >
+                      <span>Receipt</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Informative Parameter Box when in-progress or error */}
+              {!result && (
+                <div className="border border-line bg-surface/50 p-3.5 space-y-2 text-xs">
+                  <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                    <span>Target Network</span>
+                    <span className="text-ink">Robinhood Chain · 4663</span>
+                  </div>
+                  <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                    <span>Pricing Engine</span>
+                    <span className="text-ink">{poolClassName}</span>
+                  </div>
+                  <div className="flex justify-between text-dim font-mono text-[9px] uppercase">
+                    <span>Security Model</span>
+                    <span className="text-ink">Uniswap v4 Hook (Immutable)</span>
+                  </div>
                 </div>
               )}
             </div>
-          )}
+
+            {/* Right Column: Pipeline Steps & Logs */}
+            <div className="app-create-modal__right">
+              <p className="app-create-modal__section-title">TRANSACTION PIPELINE</p>
+
+              <ol className="app-create-pipeline">
+                {pipelineSteps.map((step, idx) => {
+                  const isLast = idx === pipelineSteps.length - 1;
+                  return (
+                    <li
+                      key={step.id}
+                      className={`app-pipeline-step app-pipeline-step--${step.status}`}
+                      data-status={step.status}
+                    >
+                      <div className="app-pipeline-step__col-left">
+                        <div className="app-pipeline-step__node">
+                          {step.status === 'completed' ? (
+                            <Check size={12} strokeWidth={2.5} />
+                          ) : step.status === 'active' ? (
+                            <LoaderCircle size={13} className="animate-spin text-ion" />
+                          ) : step.status === 'failed' ? (
+                            <X size={12} strokeWidth={2.5} />
+                          ) : (
+                            <span>{step.number}</span>
+                          )}
+                        </div>
+                        {!isLast && <div className="app-pipeline-step__line" />}
+                      </div>
+
+                      <div className="app-pipeline-step__content">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <strong className="text-xs font-semibold tracking-tight text-ink">
+                            {step.title}
+                          </strong>
+                          <span className={`app-pipeline-step__badge app-pipeline-step__badge--${step.status}`}>
+                            {step.status === 'completed'
+                              ? 'Done'
+                              : step.status === 'active'
+                              ? 'Active'
+                              : step.status === 'failed'
+                              ? 'Failed'
+                              : 'Pending'}
+                          </span>
+                        </div>
+
+                        <p className="mt-0.5 text-[11px] leading-relaxed text-dim">
+                          {step.activeMessage && step.status !== 'pending'
+                            ? step.activeMessage
+                            : step.description}
+                        </p>
+
+                        {step.txHash && (
+                          <a
+                            href={`https://robinhoodchain.blockscout.com/tx/${step.txHash}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="app-pipeline-step__tx-link"
+                          >
+                            <span>Explorer receipt</span>
+                            <ExternalLink size={10} aria-hidden="true" />
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+
+              {/* Collapsible Execution Log Console */}
+              {history.length > 0 && (
+                <div className="app-create-logs">
+                  <button
+                    type="button"
+                    onClick={() => setShowRawLogs(!showRawLogs)}
+                    className="app-create-logs__toggle"
+                    aria-expanded={showRawLogs}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Terminal size={12} className="text-dim" />
+                      <span>Execution Logs ({history.length})</span>
+                    </div>
+                    {showRawLogs ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  </button>
+
+                  {showRawLogs && (
+                    <div className="app-create-logs__terminal">
+                      <pre>
+                        {history.map((item, index) => (
+                          <div key={`${item.key}-${index}`} className="app-create-logs__entry">
+                            <span className="app-create-logs__timestamp">
+                              [{STAGE_TITLES[item.key] ?? item.key}]
+                            </span>
+                            <span>{item.message}</span>
+                            {item.hash && (
+                              <a
+                                href={`https://robinhoodchain.blockscout.com/tx/${item.hash}`}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="text-ion underline ml-1"
+                              >
+                                (receipt)
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Modal Actions Footer */}
