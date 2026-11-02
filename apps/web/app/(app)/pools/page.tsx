@@ -13,6 +13,9 @@ const PHASE_LABEL = ['Unknown', 'Pre-market', 'Regular', 'Post-market', 'Overnig
 
 function statusFor(pool: LivePool) {
   if (pool.lifecycle === 3) return { label: 'Staged · swaps locked', tone: 'warn' as const };
+  // A drained pool still has a PoolCreated event and a clean policy, but nobody can swap against
+  // it. Say so instead of advertising it as tradable.
+  if (pool.funded === false) return { label: 'No liquidity', tone: 'warn' as const };
   if (pool.policy.canSwap) return { label: 'Tradable', tone: 'ion' as const };
   return { label: 'Blocked by policy', tone: 'warn' as const };
 }
@@ -56,12 +59,18 @@ function PoolCard({ pool }: { pool: LivePool }) {
           <dd className="mt-1 text-sm text-ink">{fee}</dd>
         </div>
         <div>
-          <dt className="font-mono text-[10px] uppercase text-dim">Per trade cap</dt>
-          <dd className="mt-1 truncate text-sm text-ink">{formatCap(pool.policy.effectiveTradeCap, pool)}</dd>
+          <dt className="font-mono text-[10px] uppercase text-dim">Liquidity</dt>
+          <dd className={`mt-1 truncate text-sm ${pool.funded === false ? 'text-warn' : 'text-ink'}`}>
+            {pool.funded === null || pool.funded === undefined
+              ? 'Not reported'
+              : pool.funded
+                ? `${Number(pool.poolLiquidity ?? 0n).toLocaleString('en-US')} units`
+                : 'Empty · add liquidity to trade'}
+          </dd>
         </div>
         <div>
-          <dt className="font-mono text-[10px] uppercase text-dim">Indexed through</dt>
-          <dd className="mt-1 text-sm text-ink">{pool.directoryBlockNumber?.toString() ?? 'wallet RPC'}</dd>
+          <dt className="font-mono text-[10px] uppercase text-dim">Per trade cap</dt>
+          <dd className="app-pool-card__cap mt-1 text-sm text-ink">{formatCap(pool.policy.effectiveTradeCap, pool)}</dd>
         </div>
       </dl>
 

@@ -49,6 +49,12 @@ export type LivePool = {
   tradeCap: readonly [bigint, bigint];
   windowCap: readonly [bigint, bigint];
   policy: Record<string, unknown> & { canSwap: boolean; mode: number; phase: number; flags: number; lpFeeUnits: number; reasonBits: bigint; effectiveTradeCap: readonly [bigint, bigint]; effectiveWindowCap: readonly [bigint, bigint]; rollingRemaining: readonly [bigint, bigint]; closureRemaining: readonly [bigint, bigint]; validUntil: bigint };
+  /** Real pool depth from PoolManager storage. null means the directory could not read it. */
+  poolLiquidity?: bigint | null;
+  poolSqrtPriceX96?: bigint | null;
+  poolTick?: number | null;
+  /** True when the pool holds liquidity. A PoolCreated event outlives the liquidity it announced. */
+  funded?: boolean | null;
   directoryBlockNumber?: bigint;
   createdAtBlock?: bigint;
   legs: readonly [{ address: Address; symbol: string; decimals: number }, { address: Address; symbol: string; decimals: number }];
@@ -67,6 +73,10 @@ export async function readLivePools(): Promise<LivePool[]> {
       directoryBlockNumber: body.blockNumber === undefined ? undefined : BigInt(body.blockNumber),
       createdAtBlock: pool.createdAtBlock === undefined ? undefined : BigInt(pool.createdAtBlock),
       tradeCap: pool.tradeCap.map(BigInt), windowCap: pool.windowCap.map(BigInt),
+      poolLiquidity: pool.poolLiquidity === null || pool.poolLiquidity === undefined ? null : BigInt(pool.poolLiquidity),
+      poolSqrtPriceX96: pool.poolSqrtPriceX96 === null || pool.poolSqrtPriceX96 === undefined ? null : BigInt(pool.poolSqrtPriceX96),
+      poolTick: pool.poolTick === null || pool.poolTick === undefined ? null : Number(pool.poolTick),
+      funded: typeof pool.funded === 'boolean' ? pool.funded : null,
       policy: {
         ...pool.policy,
         flags: Number(pool.policy.flags ?? 0),

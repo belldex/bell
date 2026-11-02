@@ -14,6 +14,7 @@ import {
   createPublicClient,
   createWalletClient,
   decodeEventLog,
+  encodeAbiParameters,
   http,
   keccak256,
   parseAbi,
@@ -312,12 +313,43 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
       chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
       chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'decimals' }),
     ]);
+    // A PoolCreated event is permanent, so an emptied pool keeps appearing here forever. Read the
+    // pool's real depth from PoolManager storage so the directory can tell a funded market from a
+    // drained one instead of advertising "Tradable" for a pool nobody can swap against.
+    // Layout: pool state base = keccak256(poolId, POOLS_SLOT=6); base+0 is slot0, base+3 is liquidity.
+    const poolId = log.args.poolId;
+    let poolLiquidity: bigint | null = null;
+    let poolSqrtPriceX96: bigint | null = null;
+    let poolTick: number | null = null;
+    try {
+      const poolStateBase = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'uint256' }], [poolId, 6n]));
+      const extsloadAbi = [{ type: 'function', name: 'extsload', stateMutability: 'view', inputs: [{ name: 'slot', type: 'bytes32' }], outputs: [{ name: 'value', type: 'bytes32' }] }] as const;
+      const [slot0, liquidityWord] = await Promise.all([
+        chain.readContract({ address: config.poolManager, abi: extsloadAbi, functionName: 'extsload', args: [poolStateBase] }),
+        chain.readContract({
+          address: config.poolManager, abi: extsloadAbi, functionName: 'extsload',
+          args: ['0x' + (BigInt(poolStateBase) + 3n).toString(16).padStart(64, '0') as `0x${string}`],
+        }),
+      ]);
+      if (slot0) {
+        const word = BigInt(slot0);
+        const sqrt = word & ((1n << 160n) - 1n);
+        poolSqrtPriceX96 = sqrt === 0n ? null : sqrt;
+        poolTick = Number(BigInt.asIntN(24, word >> 160n));
+      }
+      poolLiquidity = liquidityWord === undefined ? null : BigInt(liquidityWord) & ((1n << 128n) - 1n);
+    } catch { /* Depth stays unknown; the client treats null as "not reported". */ }
+    const funded = poolLiquidity === null ? null : poolLiquidity > 0n;
     const strings = (values) => Array.from(values, (value) => String(value));
     return {
-      hook, poolId: log.args.poolId, lifecycle: Number(state.lifecycle), token0: config.token0, token1: config.token1,
+      hook, poolId, lifecycle: Number(state.lifecycle), token0: config.token0, token1: config.token1,
       asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
       poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
       tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
+      poolLiquidity: poolLiquidity === null ? null : String(poolLiquidity),
+      poolSqrtPriceX96: poolSqrtPriceX96 === null ? null : String(poolSqrtPriceX96),
+      poolTick,
+      funded,
       policy: {
         canSwap: policy.canSwap, mode: Number(policy.mode), phase: Number(policy.phase), flags: Number(policy.flags),
         reasonBits: String(policy.reasonBits), lpFeeUnits: Number(policy.lpFeeUnits), bandBps: Number(policy.bandBps),
