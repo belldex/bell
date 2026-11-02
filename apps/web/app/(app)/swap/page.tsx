@@ -8,6 +8,7 @@ import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, R
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET, displayAmount, hookAbi, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
+import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { SwapProgressModal, type SwapActionType } from '@/components/swap/SwapProgressModal';
 // @ts-expect-error Shared decision helper is browser-safe and covered by node:test.
 import { phaseLabel, quoteSourceForPhase } from '@/lib/swap-calendar.mjs';
@@ -22,6 +23,7 @@ function SwapInner() {
   const { account, status, wrongChain, connect, switchChain, provider } = useWallet();
   const [pools, setPools] = useState<LivePool[]>([]);
   const [pool, setPool] = useState<LivePool | null>(null);
+  const [loading, setLoading] = useState(true);
   const [direction, setDirection] = useState(true);
   const [exactInput, setExactInput] = useState(true);
   const [amount, setAmount] = useState('');
@@ -39,12 +41,14 @@ function SwapInner() {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
     readLivePools().then((items) => {
       if (!active) return;
       setPools(items);
       const requested = params.get('hook')?.toLowerCase();
       setPool((current) => items.find((item) => item.hook.toLowerCase() === (requested ?? current?.hook.toLowerCase())) ?? items[0] ?? null);
-    }).catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not read Mainnet pool state'); });
+    }).catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Could not read Mainnet pool state'); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [params, refreshKey]);
 
@@ -190,9 +194,10 @@ function SwapInner() {
     finally { setBusy(false); }
   };
 
-  return <div className="app-swap-page mx-auto max-w-[1200px]">
-    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-[36px] font-bold leading-[1.06] tracking-[-0.04em] text-ink sm:text-[48px]">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against the deployed hook. A checked pool follows a live external price and steps aside to its own market price with a 1% fee and tight flow caps when that price is unavailable. A market-price pool always trades on its own liquidity. Fees, flow limits, pause state, and closure budgets are enforced onchain.</p></header>
-    {pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">Pick a pool to trade</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">This screen reads the live factory directory. Create a pool first and it appears here with its liquidity, fee and limits ready to trade.</p><Link href="/create" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Create a pool</Link></section>}
+  return <div className="app-swap-page app-content-frame">
+    <header className="mb-7 max-w-3xl border-b border-line pb-6"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Swap / Robinhood Chain Mainnet</p><h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink">Quote, approve, and swap through BellRouter.</h1><p className="mt-4 text-sm leading-relaxed text-muted">Every swap is simulated against the deployed hook. A checked pool follows a live external price and steps aside to its own market price with a 1% fee and tight flow caps when that price is unavailable. A market-price pool always trades on its own liquidity. Fees, flow limits, pause state, and closure budgets are enforced onchain.</p></header>
+    {loading && pools.length === 0 && !error && <AppLoadingState label="Reading the live pool directory" variant="cards" />}
+    {!loading && pools.length === 0 && !error && <section className="border border-line bg-surface/50 p-7"><h2 className="font-display text-2xl text-ink">Pick a pool to trade</h2><p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">This screen reads the live factory directory. Create a pool first and it appears here with its liquidity, fee and limits ready to trade.</p><Link href="/create" className="mt-5 inline-flex border border-ion/40 px-4 py-3 font-mono text-xs uppercase text-ion">Create a pool</Link></section>}
     {pools.length > 0 && pool && input && output && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
       <section className="border border-line bg-surface/60 p-5 sm:p-7">
         <label id="swap-live-pool-label" className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">Live pool</label>
@@ -274,5 +279,5 @@ function SwapInner() {
 }
 
 export default function SwapPage() {
-  return <Suspense fallback={<div className="h-96 animate-pulse border border-line bg-surface/50" aria-busy="true"/>}><SwapInner/></Suspense>;
+  return <Suspense fallback={<div className="app-content-frame"><AppLoadingState label="Preparing the swap desk" variant="cards" /></div>}><SwapInner/></Suspense>;
 }

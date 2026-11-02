@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, ExternalLink, RefreshCw } from 'lucide-react';
 import { displayAmount, readLivePools, type LivePool } from '@/lib/mainnet-live';
 import { TokenPair } from '@/components/ui/TokenLogo';
+import { AppLoadingState } from '@/components/app/AppLoadingState';
 
 function PoolDetails() {
   const params = useSearchParams();
@@ -35,7 +36,7 @@ function PoolDetails() {
   }, [hookParam, idParam, revision]);
   return <div className="app-content-frame space-y-7">
     <Link href="/pools" className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink"><ArrowLeft size={16}/> All live pools</Link>
-    {loading && <p className="mt-8 text-sm text-muted" role="status">Reading pool configuration and policy from Mainnet…</p>}
+    {loading && <AppLoadingState label="Reading pool configuration and policy" variant="detail" />}
     {error && <p role="alert" className="mt-8 border border-down/30 p-4 text-sm text-down">Could not read pool: {error}</p>}
     {!loading && !error && !pool && <section className="mt-8 border border-line p-7"><h1 className="font-display text-2xl text-ink">Pool not found on Mainnet</h1><p className="mt-2 text-sm text-muted">This address has no PoolCreated event in the BELL factory.</p><Link href="/pools" className="mt-5 inline-flex border border-line px-4 py-3 font-mono text-xs uppercase text-muted">Browse pool directory</Link></section>}
     {pool && <><header className="mt-6 flex flex-wrap items-end justify-between gap-5 border-b border-line pb-6"><div className="flex min-w-0 items-center gap-4"><TokenPair symbols={[pool.legs[0].symbol, pool.legs[1].symbol]} size={44}/><div className="min-w-0"><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">{pool.lifecycle === 3 ? 'Staged pool · Robinhood Chain' : 'Live pool · Robinhood Chain'}</p><h1 className="mt-3 font-display text-4xl text-ink">{pool.legs[0].symbol} / {pool.legs[1].symbol}</h1><p className="mt-2 break-all font-mono text-xs text-dim">Hook {pool.hook}</p></div></div><div className="flex gap-2"><button type="button" onClick={() => setRevision((v) => v + 1)} className="inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-xs uppercase text-muted"><RefreshCw size={14}/> Refresh</button>{pool.lifecycle !== 3 && <Link href={`/swap?hook=${pool.hook}`} className="inline-flex min-h-10 items-center border border-ion/40 px-4 font-mono text-xs uppercase text-ion">Open swap</Link>}</div></header>
@@ -54,4 +55,4 @@ function PoolDetails() {
   </div>;
 }
 
-export default function PoolPage() { return <Suspense fallback={<div className="h-64 animate-pulse border border-line bg-surface/50" aria-busy="true"/>}><PoolDetails/></Suspense>; }
+export default function PoolPage() { return <Suspense fallback={<div className="app-content-frame"><AppLoadingState label="Reading pool configuration and policy" variant="detail" /></div>}><PoolDetails/></Suspense>; }
