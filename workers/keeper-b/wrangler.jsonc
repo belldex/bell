@@ -7,9 +7,13 @@
     "nodejs_compat"
   ],
   "triggers": {
+    // US session boundaries in ET: 00:00 / 04:00 / 09:30 / 13:00 / 16:00 / 17:00 / 20:00.
+    // The 09:30 open lands at 14:20-14:39 UTC under EST but 13:20-13:39 UTC under EDT, so the
+    // :20-:39 window is covered in both hours. Everything else is inside :55-:59 / :00-:09.
+    // Two cron entries only: the account is on the Workers Free plan (5 cron triggers total).
     "crons": [
-      "0-4,55-59 0,1,4,5,8,9,17,18,20,21,22 * * SUN,MON,TUE,WED,THU,FRI",
-      "25-34 13,14 * * SUN,MON,TUE,WED,THU,FRI"
+      "55-59,0-9 * * * SUN,MON,TUE,WED,THU,FRI",
+      "20-39 13-14 * * SUN,MON,TUE,WED,THU,FRI"
     ]
   },
   "durable_objects": {

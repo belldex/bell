@@ -63,11 +63,12 @@ describe('planned close anchor window', () => {
 describe('UTC market maintenance schedule', () => {
   const stamp = (day: string, hour: number, minute: number) => Date.parse(`${day}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00Z`) / 1000;
 
-  it('covers both US daylight offsets and weekdays while ignoring cross-product cron minutes', () => {
+  it('covers both US daylight offsets and weekdays, with the widened +9 minute tail', () => {
     expect(isScheduledMaintenanceWindow(stamp('2026-10-30', 19, 55))).toBe(true); // 15:55 EDT
     expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 20, 55))).toBe(true); // 15:55 EST
     expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 30))).toBe(true); // 09:30 EST
-    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 35))).toBe(false);
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 39))).toBe(true); // +9 after the boundary
+    expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 14, 40))).toBe(false); // +10 is out
     expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 1, 0))).toBe(true); // 20:00 EST Sunday 24/5 open
     expect(isScheduledMaintenanceWindow(stamp('2026-11-02', 9, 0))).toBe(true); // 04:00 EST overnight to PRE
     expect(isScheduledMaintenanceWindow(stamp('2026-11-27', 18, 0))).toBe(true); // 13:00 EST early close

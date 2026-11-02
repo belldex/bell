@@ -13,7 +13,6 @@
 export const ZERO32 = `0x${'0'.repeat(64)}`;
 const MAX_AGE_SECONDS = 120;
 const CLOSE_CAPTURE_WINDOW_SECONDS = 300;
-
 /** Match SessionRegistry's exact eligibility window before a planned session boundary. */
 export function isCloseCaptureWindow(current, upcoming, nowSeconds) {
   if (!current || !upcoming) return false;
@@ -28,8 +27,11 @@ export function isCloseCaptureWindow(current, upcoming, nowSeconds) {
     && now < upcomingStart && upcomingStart - now <= BigInt(CLOSE_CAPTURE_WINDOW_SECONDS);
 }
 
-/** Match the pinned US Eastern session boundaries across both daylight offsets. */
-export function isScheduledMaintenanceWindow(nowSeconds) {
+/** Match the pinned US Eastern session boundaries across both daylight offsets.
+ *  The window is deliberately asymmetric — 5 minutes before a boundary through 9 minutes
+ *  after — because the crons fire at :55-:59 and :00-:09 of every hour. A guard narrower
+ *  than the schedule leaves boundaries uncovered; a guard wider than it just idles. */
+export function isScheduledMaintenanceWindow(nowSeconds, { beforeMinutes = 5, afterMinutes = 9 } = {}) {
   const date = new Date(Number(nowSeconds) * 1000);
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -42,7 +44,7 @@ export function isScheduledMaintenanceWindow(nowSeconds) {
   return boundaries.some((boundary) => {
     const before = (boundary - minuteOfDay + 1440) % 1440;
     const after = (minuteOfDay - boundary + 1440) % 1440;
-    return (before > 0 && before <= 5) || after <= 4;
+    return (before > 0 && before <= beforeMinutes) || after <= afterMinutes;
   });
 }
 
