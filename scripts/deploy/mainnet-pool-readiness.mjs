@@ -27,6 +27,8 @@ for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
 
 const stockSymbol = (arg('stock', 'AAPL') || 'AAPL').toUpperCase();
 const counterSymbol = (arg('counterasset', 'WETH') || 'WETH').toUpperCase();
+// 0 = checked price (needs health or a planned close), 1 = market price (always admissible).
+const poolClass = Number(arg('pool-class', '1'));
 
 const manifest = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8'));
 const queue = JSON.parse(readFileSync('evidence/deploy/mainnet-4663-asset-queue.json', 'utf8'));
@@ -96,10 +98,12 @@ for (const [label, address] of [[stockSymbol, stock.token], [counterSymbol, coun
 
 const nativeBalance = await client.getBalance({ address: account.address });
 
-// The factory gate: health OR a proven planned close. Nothing else opens pool creation.
+const stockIsChecked = poolClass === 0;
+// The factory gate: SESSION_ONLY is admitted without health. PRICE_GUARDED needs fresh health
+// or a proven planned close. Token funding is always required.
 const blockers = [];
-if (!healthOk && !plannedClosed) {
-  blockers.push(healthOk ? null : 'health is not ready and the calendar phase is not a proven planned close');
+if (!healthOk && !plannedClosed && stockIsChecked) {
+  blockers.push('checked-price pools need fresh health or a proven planned close');
 }
 if (!tokens[stockSymbol].funded) blockers.push(`deployer holds no ${stockSymbol}`);
 if (!tokens[counterSymbol].funded) blockers.push(`deployer holds no ${counterSymbol}`);
