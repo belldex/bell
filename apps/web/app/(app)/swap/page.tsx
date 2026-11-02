@@ -8,12 +8,14 @@ import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, R
 import { makeClients, useWallet } from '@/lib/wallet';
 import { MAINNET, displayAmount, hookAbi, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
+import { SwapProgressModal, type SwapActionType } from '@/components/swap/SwapProgressModal';
 // @ts-expect-error Shared decision helper is browser-safe and covered by node:test.
 import { phaseLabel, quoteSourceForPhase } from '@/lib/swap-calendar.mjs';
 // @ts-expect-error Shared math helper is browser-safe and covered by node:test.
 import { calculateSwapBounds } from '@/lib/swap-quote.mjs';
 
 const MAX_SQRT = 1461446703485210103287273052203988822378723970341n;
+const isSuccessMessage = (msg: string) => msg.includes('confirmed') || msg.includes('confirmed.');
 
 function SwapInner() {
   const params = useSearchParams();
@@ -32,6 +34,8 @@ function SwapInner() {
   const [error, setError] = useState('');
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [actionType, setActionType] = useState<SwapActionType>('swap');
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -119,6 +123,9 @@ function SwapInner() {
   const approve = async () => {
     if (!account || !input || approvalAmount <= 0n || !provider) return;
     if (balance !== null && balance < approvalAmount) { setError(`Insufficient ${input.symbol} balance for the quoted maximum input.`); return; }
+    setActionType('approve');
+    setShowModal(true);
+    setTxHash(null);
     setBusy(true); setError(''); setMessage('Confirm token approval in your wallet…');
     try {
       const { walletClient } = makeClients(provider);
@@ -137,6 +144,9 @@ function SwapInner() {
     if (Date.now() - quote.stamp > 25_000) { setError('Quote expired. Request a fresh quote before submitting.'); return; }
     const anchored = quoteSourceForPhase(pool.policy.phase) === 'anchor';
     const onchainFeed = quoteSourceForPhase(pool.policy.phase) === 'chainlink-feed';
+    setActionType('swap');
+    setShowModal(true);
+    setTxHash(null);
     setBusy(true); setError(''); setMessage(anchored ? 'Rechecking the weekend reference and simulating the exact transaction…' : onchainFeed ? 'Rechecking Chainlink feed freshness and simulating the exact transaction…' : 'Simulating the exact transaction…');
     try {
       const { publicClient: walletProvider, walletClient } = makeClients(provider);
@@ -163,6 +173,9 @@ function SwapInner() {
 
   const checkpointPolicy = async () => {
     if (!account || !provider || !pool) return;
+    setActionType('checkpoint');
+    setShowModal(true);
+    setTxHash(null);
     setBusy(true); setError(''); setMessage('Confirm the onchain policy checkpoint in your wallet…');
     try {
       const { publicClient: client, walletClient } = makeClients(provider);
@@ -197,10 +210,50 @@ function SwapInner() {
           {quote && account && allowance !== null && allowance < quote.maxIn && <button type="button" disabled={busy} onClick={() => void approve()} className="min-h-12 flex-1 border border-ion px-5 font-mono text-xs uppercase text-ion disabled:opacity-50">Approve up to {input.symbol}</button>}
         {quote && account && allowance !== null && allowance >= quote.maxIn && <button type="button" disabled={busy || (balance !== null && balance < quote.maxIn)} onClick={() => void swap()} className="min-h-12 flex-1 bg-ion px-5 font-mono text-xs uppercase text-bg-0 disabled:opacity-50">Swap on Mainnet</button>}
         </div>
+        {/* Reopen progress monitor if closed */}
+        {!showModal && (busy || message || error || txHash) && (
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="mt-4 flex w-full items-center justify-between border border-line bg-surface/60 p-3 font-mono text-xs text-muted hover:border-ion hover:text-ink transition-colors"
+          >
+            <span className="flex items-center gap-2 truncate">
+              {busy ? (
+                <LoaderCircle className="h-3.5 w-3.5 animate-spin text-ion" />
+              ) : isSuccessMessage(message) ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-up" />
+              ) : error ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-down" />
+              ) : (
+                <CheckCircle2 className="h-3.5 w-3.5 text-ion" />
+              )}
+              <span className="font-semibold text-ink">Transaction status:</span>
+              <span className="truncate">{error ? error : message}</span>
+            </span>
+            <span className="text-ion underline shrink-0 ml-2">Open monitor ↗</span>
+          </button>
+        )}
+
         {busy && <p className="mt-4 flex items-center gap-2 text-sm text-muted"><LoaderCircle className="animate-spin" size={16}/>{message}</p>}
         {!busy && message && <p className="mt-4 flex items-center gap-2 text-sm text-ion"><CheckCircle2 size={16}/>{message}</p>}
         {error && <p role="alert" className="mt-4 flex items-start gap-2 border border-down/30 bg-down/5 p-3 text-sm text-down"><AlertTriangle size={16} className="mt-0.5 shrink-0"/>{error}</p>}
         {txHash && <a className="mt-4 inline-flex items-center gap-2 text-sm text-ion underline" href={`https://robinhoodchain.blockscout.com/tx/${txHash}`} target="_blank" rel="noreferrer">View transaction <ExternalLink size={14}/></a>}
+
+        {/* Swap Action Progress Modal */}
+        <SwapProgressModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          actionType={actionType}
+          busy={busy}
+          message={message}
+          error={error}
+          txHash={txHash}
+          inputSymbol={input?.symbol ?? ''}
+          outputSymbol={output?.symbol ?? ''}
+          inputAmount={exactInput ? amount : quote ? displayAmount(quote.amountIn, input?.decimals ?? 18) : undefined}
+          outputAmount={!exactInput ? amount : quote ? displayAmount(quote.amountOut, output?.decimals ?? 18) : undefined}
+          onRetry={actionType === 'approve' ? () => void approve() : actionType === 'swap' ? () => void swap() : () => void checkpointPolicy()}
+        />
       </section>
       <aside className="space-y-4"><section className="border border-line bg-surface/50 p-5"><h2 className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">Onchain policy</h2><p className="mt-3 text-lg text-ink">{pool.lifecycle === 3 ? 'Staged · swaps unavailable' : pool.policy.canSwap ? 'Currently tradable' : 'Policy blocks this swap'}</p><p className="mt-2 text-xs leading-relaxed text-muted">The router simulates every swap. A checked pool follows a live external price and steps aside to its own market price with a 1% fee and strict flow caps when that price is unavailable. A market-price pool always trades on its own liquidity. Off-hours sessions use the configured closure policy and finite flow budget.</p><dl className="mt-4 space-y-2 text-sm">
         <div className="flex justify-between gap-3"><dt className="text-dim">Lifecycle</dt><dd className="text-ink">{pool.lifecycle === 3 ? 'Staged' : 'Live'}</dd></div>

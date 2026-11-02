@@ -7,6 +7,7 @@ import { Coins, Minus, Plus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/primitives';
 import { TokenPair } from '@/components/ui/TokenLogo';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
+import { PositionActionModal, type PositionOperation } from '@/components/positions/PositionActionModal';
 import { MAINNET, readLivePools, type LivePool, tokenAbi } from '@/lib/mainnet-live';
 import { makeClients, useWallet } from '@/lib/wallet';
 // @ts-expect-error Shared protocol codec is browser-safe and encodes the pinned public PositionManager path.
@@ -36,9 +37,15 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [hash, setHash] = useState('');
+  const [actionOp, setActionOp] = useState<PositionOperation>('increase');
+  const [showModal, setShowModal] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const submit = async (operation: 'increase' | 'remove' | 'collect') => {
     if (!wallet.provider || !wallet.account) throw new Error('Connect your wallet first.');
+    setActionOp(operation);
+    setShowModal(true);
+    setActionError(null);
     setBusy(true); setStatus('Preparing a direct PositionManager transaction…'); setHash('');
     try {
       const { publicClient, walletClient } = makeClients(wallet.provider);
@@ -87,7 +94,11 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
       await publicClient.waitForTransactionReceipt({ hash: sent });
       setStatus(`${operation === 'increase' ? 'Liquidity added' : operation === 'remove' ? 'Liquidity removed in-kind' : 'Fees collected'} successfully.`);
       refresh();
-    } catch (error) { setStatus(error instanceof Error ? error.message : String(error)); }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setStatus(msg);
+      setActionError(msg);
+    }
     finally { setBusy(false); }
   };
 
@@ -112,6 +123,20 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
     </div>}
     {mode === 'remove' && <div className="mt-4 space-y-3"><div className="flex flex-wrap items-center gap-3"><label className="text-sm text-muted">Remove <select value={percent} onChange={e => setPercent(Number(e.target.value))} className="mx-2 border border-line bg-bg-1 p-2 text-ink"><option value={25}>25%</option><option value={50}>50%</option><option value={100}>100%</option></select> of liquidity</label></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs text-dim">Minimum {pool.legs[0].symbol} received<input value={minimum0} onChange={e => setMinimum0(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label><label className="text-xs text-dim">Minimum {pool.legs[1].symbol} received<input value={minimum1} onChange={e => setMinimum1(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label></div><Button disabled={busy} onClick={() => void submit('remove')}>Remove in-kind</Button></div>}
     {status && <p className="mt-4 break-words text-sm text-muted" role="status">{status} {hash && <a className="text-ion underline" href={`${explorer}${hash}`} target="_blank" rel="noreferrer">View transaction</a>}</p>}
+
+    {/* Animated Position Action Modal */}
+    <PositionActionModal
+      isOpen={showModal}
+      onClose={() => setShowModal(false)}
+      operation={actionOp}
+      busy={busy}
+      status={status}
+      error={actionError}
+      hash={hash || null}
+      tokenId={position.id.toString()}
+      symbols={[pool.legs[0].symbol, pool.legs[1].symbol]}
+      onRetry={() => void submit(actionOp)}
+    />
   </article>;
 }
 
