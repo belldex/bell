@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   AlertTriangle,
@@ -69,8 +70,24 @@ export function CreateProgressModal({
   poolClassName,
   onRetry,
 }: CreateProgressModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [showRawLogs, setShowRawLogs] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll while modal is active so user stays focused
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [isOpen]);
 
   // Close on Escape when not in a critical busy state
   useEffect(() => {
@@ -192,9 +209,9 @@ export function CreateProgressModal({
     }
   }
 
-  if (!isOpen) return null;
+  if (!mounted || !isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="app-modal-backdrop" onClick={busy ? undefined : onClose} role="presentation">
       <div
         className="app-create-modal"
@@ -474,6 +491,7 @@ export function CreateProgressModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
