@@ -43,7 +43,7 @@ export default function ProtocolPage() {
 
       <div className="app-protocol-footer">
         <div className="flex flex-wrap gap-x-6 gap-y-3 font-mono text-xs">
-          <Link href="/pools">Pool preview <ArrowUpRight aria-hidden="true" /></Link>
+          <Link href="/pools">Pool directory <ArrowUpRight aria-hidden="true" /></Link>
           <Link href="/positions">Exit policy <ArrowUpRight aria-hidden="true" /></Link>
           <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer">Explorer <ArrowUpRight aria-hidden="true" /></a>
         </div>

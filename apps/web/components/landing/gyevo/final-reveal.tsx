@@ -133,34 +133,21 @@ export function FinalReveal({ appName }: { appName: string }) {
                 </span>
               </div>
             </div>
-            <nav aria-label="Protocol">
-              <h2>Protocol</h2>
+            <nav aria-label="App navigation">
+              <h2>App</h2>
               <ul>
                 <li><Link href="/pools">Pool directory</Link></li>
-                <li><Link href="/positions">Your positions</Link></li>
-                <li>
-                  <Link href="/protocol">Protocol</Link>
-                </li>
-                <li>
-                  <Link href="/protocol">Risk policy</Link>
-                </li>
-                <li>
-                  <Link href="/pools">Pools</Link>
-                </li>
+                <li><Link href="/swap">Swap router</Link></li>
+                <li><Link href="/create">Create pool</Link></li>
+                <li><Link href="/positions">Manage positions</Link></li>
               </ul>
             </nav>
-            <nav aria-label="Transparency">
-              <h2>Transparency</h2>
+            <nav aria-label="Protocol and verification">
+              <h2>Protocol</h2>
               <ul>
-                <li>
-                  <Link href="/protocol">Contracts</Link>
-                </li>
-                <li>
-                  <Link href="/protocol">Docs</Link>
-                </li>
-                <li>
-                  <Link href="/#facts">Mainnet snapshot</Link>
-                </li>
+                <li><Link href="/protocol">Policy rules</Link></li>
+                <li><Link href="/protocol#contracts">Deployed contracts</Link></li>
+                <li><Link href="/#facts">Mainnet snapshot</Link></li>
                 <li>
                   <a className="lp-footer-x" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer">
                     <FaXTwitter aria-hidden="true" /> BELL on X <span className="arr" aria-hidden="true">↗</span>
@@ -168,12 +155,13 @@ export function FinalReveal({ appName }: { appName: string }) {
                 </li>
               </ul>
             </nav>
-            <nav aria-label="BELL policy">
-              <h2>Market policy</h2>
+            <nav aria-label="Market policy and legal">
+              <h2>Policy & Legal</h2>
               <ul>
-                <li><Link href="/#market-rhythm">Market sessions</Link></li>
+                <li><Link href="/#sessions">Market sessions</Link></li>
                 <li><Link href="/#planned-close">Planned close</Link></li>
-                <li><Link href="/protocol">Risk controls</Link></li>
+                <li><Link href="/terms">Terms of use</Link></li>
+                <li><Link href="/privacy">Privacy policy</Link></li>
               </ul>
             </nav>
           </div>
