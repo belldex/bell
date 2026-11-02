@@ -16,8 +16,8 @@
   "expiry": 1794024342,
   "stage": "INTERVAL_ACTIVE",
   "assetLabel": "AAPL",
-  "updatedAt": "2026-10-31T04:10:49.071Z",
+  "updatedAt": "2026-11-02T09:29:21.127Z",
   "rootActivatedAt": 1793419544,
-  "intervalActivatedAt": 1793419847,
-  "activePhase": 5
+  "intervalActivatedAt": 1793611762,
+  "activePhase": 1
 }

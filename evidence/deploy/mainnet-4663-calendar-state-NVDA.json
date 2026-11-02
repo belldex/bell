@@ -16,8 +16,8 @@
   "expiry": 1794024347,
   "stage": "INTERVAL_ACTIVE",
   "assetLabel": "NVDA",
-  "updatedAt": "2026-10-31T04:10:54.658Z",
+  "updatedAt": "2026-11-02T09:29:25.635Z",
   "rootActivatedAt": 1793419550,
-  "intervalActivatedAt": 1793419854,
-  "activePhase": 5
+  "intervalActivatedAt": 1793611766,
+  "activePhase": 1
 }
