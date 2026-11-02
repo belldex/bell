@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
+import { DeployedContracts } from '@/components/protocol/DeployedContracts';
 
 const sections = [
+  { id: 'contracts', category: 'Deployment', title: 'Active Mainnet contracts', body: 'Authoritative smart contracts and token assets deployed on Robinhood Chain Mainnet (4663).', short: 'Active contracts' },
   { id: 'sessions', category: 'Fee engine', title: 'Session fee', body: 'The hook applies the session base fee and takes the maximum of bell, corporate-action, and repricing guards. Unknown calendar state fails closed. A checked pool steps aside when its external price is unavailable; a market-price pool is never affected.', short: 'Session fee' },
   { id: 'budgets', category: 'Flow control', title: 'Flow budgets', body: 'Per-trade T, rolling W, and closure-episode C are raw token units per currency. Adding liquidity never raises caps or refills spent budgets.', short: 'Flow budgets' },
   { id: 'checked-price', category: 'Pool type', code: 'Checked price', title: 'External price check', body: 'Both assets need an approved external price source. The pool keeps trading close to it while the source is available. When it is not, the pool steps aside to its own market price with a 1% fee and the tightest flow caps, bounded by the calendar interval and closure budget.', short: 'Checked price' },
@@ -25,7 +27,7 @@ export default function ProtocolPage() {
       </nav>
 
       <div className="app-protocol-grid">
-        {sections.map((section) => (
+        {sections.filter((s) => s.id !== 'contracts').map((section) => (
           <section key={section.id} id={section.id} className={`app-protocol-card${section.id === 'closure' ? ' app-protocol-card--wide' : ''}`}>
             <div className="app-protocol-card__eyebrow">
               <span>{section.category}</span>
@@ -37,12 +39,15 @@ export default function ProtocolPage() {
         ))}
       </div>
 
+      <DeployedContracts />
+
       <div className="app-protocol-footer">
         <div className="flex flex-wrap gap-x-6 gap-y-3 font-mono text-xs">
           <Link href="/pools">Pool preview <ArrowUpRight aria-hidden="true" /></Link>
           <Link href="/positions">Exit policy <ArrowUpRight aria-hidden="true" /></Link>
+          <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer">Explorer <ArrowUpRight aria-hidden="true" /></a>
         </div>
-        <span><ShieldCheck aria-hidden="true" /> No preview transaction claims</span>
+        <span><ShieldCheck aria-hidden="true" /> Verified Mainnet bytecode · chain 4663</span>
       </div>
     </div>
   );
