@@ -119,19 +119,30 @@ test('a planned-closed stock is admitted without fresh health, mirroring factory
     stockHealth: [closed],
   });
   assert.equal(sessionOnly.poolClass, 1);
-  assert.equal(sessionOnly.staged, true);
+  // SESSION_ONLY is always-on: the factory admits it regardless of feed freshness.
+  assert.equal(sessionOnly.staged, false);
 
   const guarded = buildCreatePoolPreflight({ ...base, poolClass: 0, stockHealth: [closed] });
   assert.equal(guarded.poolClass, 0);
   assert.equal(guarded.staged, true);
 });
 
-test('an open session still requires fresh health even for SESSION_ONLY', () => {
-  assert.throws(() => buildCreatePoolPreflight({
+test('SESSION_ONLY is admitted even when the session is open and health is stale', () => {
+  // The hook trades this class without a fresh feed, so admission must not demand one.
+  const result = buildCreatePoolPreflight({
     ...base,
     poolClass: 1,
     referenceAdapterA: ZERO,
     referenceAdapterB: ZERO,
+    stockHealth: [{ ready: false, reasonBits: 0n, validUntil: 0n, plannedClosed: false }],
+  });
+  assert.equal(result.poolClass, 1);
+});
+
+test('PRICE_GUARDED still requires fresh health outside a planned close', () => {
+  assert.throws(() => buildCreatePoolPreflight({
+    ...base,
+    poolClass: 0,
     stockHealth: [{ ready: false, reasonBits: 0n, validUntil: 0n, plannedClosed: false }],
   }), /health/);
 });

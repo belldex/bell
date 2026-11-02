@@ -285,11 +285,17 @@ const pairHealth = pairIsStock ? await publicClient.readContract({
 console.log(`Health: ready=${health.ready} reasons=${health.reasonBits} validUntil=${health.validUntil}`);
 const stockClosed = plannedClosed(stockInterval);
 const pairClosed = pairInterval ? plannedClosed(pairInterval) : false;
-if (!isPoolCreatePreflightReady(health, now) && !stockClosed) {
+// Mirrors BellPoolFactory._admitted: SESSION_ONLY is the always-on AMM class and is admitted
+// without a fresh feed, so the CLI must not demand what the contract no longer checks.
+const sessionOnly = poolClass === 1;
+if (!sessionOnly && !isPoolCreatePreflightReady(health, now) && !stockClosed) {
   throw new Error('stock health is not ready outside a proven planned close; the keeper must publish a fresh report first');
 }
-if (pairHealth && !isPoolCreatePreflightReady(pairHealth, now) && !pairClosed) {
+if (!sessionOnly && pairHealth && !isPoolCreatePreflightReady(pairHealth, now) && !pairClosed) {
   throw new Error(`${pairCounter} stock health is not ready outside a proven planned close; keeper must publish a fresh report first`);
+}
+if (sessionOnly) {
+  console.log('SESSION_ONLY: stock health is informational; the pool trades on its own AMM price.');
 }
 if (stockClosed || pairClosed) {
   console.log('Planned close proven: the factory will accept the request and park the seeded pool in STAGED until activation inputs return.');

@@ -61,8 +61,12 @@ export function buildCreatePoolPreflight(input) {
   // the hook parks the seeded pool in STAGED until activation inputs return, so demanding fresh health
   // here would block every pool that the deployed contracts already allow.
   let staged = false;
+  const sessionOnly = input.poolClass === 1;
   for (const [i, health] of input.stockHealth.entries()) {
     if (health.ready && BigInt(health.reasonBits) === 0n && BigInt(health.validUntil) > BigInt(input.now)) continue;
+    // SESSION_ONLY is the always-on AMM class: the factory admits it without a fresh feed, so
+    // health here is informational and must not block the request.
+    if (sessionOnly) continue;
     if (health.plannedClosed === true) {
       staged = true;
       continue;
