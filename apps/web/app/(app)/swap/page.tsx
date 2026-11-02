@@ -79,7 +79,7 @@ function SwapInner() {
     if (pool.poolClass === 1) return [];
     const source = quoteSourceForPhase(pool.policy.phase);
     if (source === 'anchor' || source === 'chainlink-feed') return [];
-    if (source === 'unavailable') throw new Error('No live price source is configured for this market phase. The router will only allow the swap if its onchain reference path is valid.');
+    if (source === 'unavailable') throw new Error('No price source is configured for this market phase. The router will only allow the swap if its onchain reference path is valid.');
     throw new Error('This market phase has no configured onchain stock price path.');
   };
 

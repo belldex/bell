@@ -199,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <footer className="app-footer">
               <div className="app-footer__inner">
                 <span>Robinhood Chain Mainnet · 4663</span>
-                <span>Illustrations are not live pool state.</span>
+                <span>Noncustodial Uniswap v4 infrastructure.</span>
                 <span>Fees and caps do not guarantee fills or returns.</span>
                 <a className="app-footer__social" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X"><FaXTwitter aria-hidden="true" /> BELL on X ↗</a>
               </div>

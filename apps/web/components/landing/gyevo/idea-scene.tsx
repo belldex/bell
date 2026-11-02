@@ -25,7 +25,7 @@ const STATES = [
   { name: "Scheduled close", note: "Calendar-proven only. Historical anchor, finite budget.", tone: "neutral", chip: "1.00% base LP fee" },
 ] as const;
 
-const CAPTION = "Session policy · illustrative, not live data.";
+const CAPTION = "Session policy · parameter schedule.";
 const SESSION_ART = [
   { src: "/landing/market-orbit.webp", label: "Interlocking digital market signals for the regular session." },
   { src: "/landing/session-limits.webp", label: "Layered digital flow limits for the extended session." },

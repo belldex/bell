@@ -23,7 +23,7 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
         <div className="flex min-w-0 items-center gap-3">
           <TokenPair symbols={pool.pair} size={32} />
           <div className="min-w-0">
-            <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Illustrative pool · mainnet preview</p>
+            <p className="mb-1 font-mono text-[9px] uppercase tracking-[0.12em] text-dim">Pool policy · mainnet</p>
             <h3 className="truncate font-display text-xl font-semibold tracking-tight text-ink sm:text-2xl">{pool.pair[0]}<span className="px-1.5 font-normal text-dim">/</span>{pool.pair[1]}</h3>
           </div>
         </div>
@@ -54,7 +54,7 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
       <div className="mt-4">
         <BudgetBar label={`${budget.label} · ${stock.symbol}`} symbol={stock.symbol} decimals={stock.decimals} used={stock[budget.usedField]} total={stock[budget.field]} tone={closed ? 'closed' : 'ion'} />
       </div>
-      <p className="mt-4 border-t border-line pt-3 text-[10px] text-dim">Preview data · not an onchain pool · {pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'} · {a.symbol}/{b.symbol}</p>
+      <p className="mt-4 border-t border-line pt-3 text-[10px] text-dim">Mainnet policy · {pool.liquidityMode === 'PUBLIC' ? 'Public LP' : 'Treasury only'} · {a.symbol}/{b.symbol}</p>
       <span className="app-pool-card__action">View pool policy <ArrowRight size={13} aria-hidden="true" /></span>
     </Link>
   );

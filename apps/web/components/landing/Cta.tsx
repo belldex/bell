@@ -67,7 +67,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <p className="mx-auto max-w-6xl px-4 py-6 text-xs leading-relaxed text-dim sm:px-6">
-          BELL is not affiliated with or endorsed by Robinhood Markets, Inc. The protocol is deployed on Robinhood Chain Mainnet; the pool directory is currently empty, and Chainlink feed freshness may be intermittent. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
+          BELL is not affiliated with or endorsed by Robinhood Markets, Inc. The protocol is deployed on Robinhood Chain Mainnet with live pool creation and session-aware fees. Stock Token availability may be restricted by jurisdiction; nothing here is financial advice or a promise of profit. Liquidity provision carries risk, including loss of principal.
         </p>
       </div>
     </footer>

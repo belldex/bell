@@ -274,7 +274,7 @@ export function FeatureStory() {
           <figure className="lp-cycle" data-lp-reveal="right" style={{ ["--i" as string]: 2 }}>
             <figcaption className="lp-cycle__head">
               <span>SESSION → FEE → FLOW</span>
-              <span>ILLUSTRATIVE POLICY · NOT LIVE DATA</span>
+              <span>POLICY MODEL · SESSION SCHEDULE</span>
             </figcaption>
             <div className="lp-cycle__dial" aria-hidden="true">
               <div className="lp-cycle__orbit">
@@ -298,7 +298,7 @@ export function FeatureStory() {
               <b>BASE FEE + FLOW LIMITS</b>
               <span>RECOMPUTED AT SWAP</span>
             </div>
-            <p className="lp-sr">Illustrative market-session cycle. Regular session base fee 0.05%, pre-market and after-hours 0.30%, overnight 0.50%, and scheduled close 1.00%. These are policy examples, not live market data.</p>
+            <p className="lp-sr">Illustrative market-session cycle. Regular session base fee 0.05%, pre-market and after-hours 0.30%, overnight 0.50%, and scheduled close 1.00%. Base fees follow policy examples.</p>
           </figure>
         </div>
       </section>

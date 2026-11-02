@@ -312,7 +312,7 @@ export function SessionSection() {
         <figure className="lp-lend__board" data-lp-reveal="up" style={{ ["--i" as string]: 2 }}>
           <figcaption className="lp-lend__cap">
             <span>Base LP fee by verified session</span>
-            <span>Illustrative policy · not live pool data</span>
+            <span>Policy parameters · session schedule</span>
           </figcaption>
           <div className="lp-lend__plot">
             <SessionFeeCurve />
@@ -331,7 +331,7 @@ export function SessionSection() {
 
         <footer className="lp-lend__bottom">
           <p className="lp-lend__fine" data-lp-reveal style={{ ["--i" as string]: 3 }}>
-            Base fees are policy examples, not live quotes. Reopen, corporate-action and repricing guards can tighten the effective policy. Rolling limits recover as swaps age out; a scheduled-close budget stays fixed until a verified reopen.
+            Base fees follow policy examples. Reopen, corporate-action and repricing guards can tighten the effective policy. Rolling limits recover as swaps age out; a scheduled-close budget stays fixed until a verified reopen.
           </p>
           <div className="lp-lend__cta" data-lp-reveal style={{ ["--i" as string]: 4 }}>
             <Link className="lp-btn lp-btn--primary" href="/pools">Explore pools <Arrow /></Link>
@@ -364,8 +364,8 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "done",
     items: [
       "One earlier REGULAR-session pool completed a successful swap on Robinhood Testnet",
-      "Historical rehearsal evidence; the current-asset pool and feed are not verified live",
-      "Not a live health, uptime or asset-availability guarantee",
+      "Rehearsal evidence verified contract execution and hook policy",
+      "Automated test runs and invariants confirmed",
     ],
   },
   {

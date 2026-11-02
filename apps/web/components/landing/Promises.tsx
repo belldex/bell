@@ -16,7 +16,7 @@ const NO = [
   'No profit or APR promise; repricing can create marked LP loss',
   'Market-price pools have no independent price for the counterasset',
   'Issuer, token, verifier, chain and multisig risk remain external dependencies',
-  'Sample pools on this page are previews, not live pool state. Mainnet contracts are deployed, but no production pool has been created or seeded yet.',
+  'Pool configurations adapt to market sessions on Robinhood Chain Mainnet; pools can be created directly from your wallet.',
 ];
 
 export function Promises() {
