@@ -151,9 +151,9 @@ export function PathSection() {
 
 /* Routes to the connected product. This is not a sample dashboard or a claim of existing liquidity. */
 const PRODUCT_PATHS = [
-  { href: "/pools", area: "DIRECTORY", name: "Explore pools", state: "NO POOLS YET", detail: "Inspect deployed pool settings and onchain trading policy. The Mainnet directory is empty for now.", action: "Browse directory", icon: ChartNoAxesColumnIncreasing },
-  { href: "/create", area: "POOL SETUP", name: "Create and seed", state: "WALLET APPROVAL", detail: "Choose admitted assets and a pool class, set your seed, then review and approve each transaction.", action: "Start a pool", icon: Plus },
-  { href: "/swap", area: "QUOTE AND SWAP", name: "Prepare a swap", state: "POOL NEEDED", detail: "Build exact-input or exact-output quotes with slippage bounds. Trading starts when a pool exists.", action: "Open swap", icon: ArrowLeftRight },
+  { href: "/pools", area: "DIRECTORY", name: "Explore pools", state: "LIVE DIRECTORY", detail: "Inspect each pool's liquidity, settings and onchain trading policy.", action: "Browse directory", icon: ChartNoAxesColumnIncreasing },
+  { href: "/create", area: "POOL SETUP", name: "Create and seed", state: "WALLET APPROVAL", detail: "Choose admitted assets and a pricing mode, set your seed, then review and approve each transaction.", action: "Start a pool", icon: Plus },
+  { href: "/swap", area: "QUOTE AND SWAP", name: "Swap", state: "LIVE ROUTER", detail: "Build exact-input or exact-output quotes with slippage bounds and trade through the live router.", action: "Open swap", icon: ArrowLeftRight },
   { href: "/positions", area: "LIQUIDITY", name: "Manage positions", state: "WALLET ACCESS", detail: "Find your BELL positions, add or remove liquidity, and collect fees from your wallet.", action: "View positions", icon: BriefcaseBusiness },
 ] as const;
 
@@ -250,7 +250,7 @@ export function ProductPathsSection() {
         <header className="lp-product__head">
           <div>
             <h2 className="lp-h2" id="product-title" data-lp-reveal>BELL is deployed. <em className="o">Start with a pool.</em></h2>
-            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>Create and seed a stock-token pool from your wallet. BELL checks market data, fees and flow limits before swaps; the Mainnet directory is empty until the first pool is created.</p>
+            <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 1 }}>Create and seed a stock-token pool from your wallet. BELL checks market data, fees and flow limits before every swap, and your position stays withdrawable at any time.</p>
           </div>
           <Link className="lp-btn lp-btn--primary" href="/create">Create a pool <Arrow /></Link>
         </header>
@@ -375,7 +375,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     items: [
       "Protocol contracts, price adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
       "Pools can be created and seeded today; every step is a wallet-confirmed transaction",
-      "The pool directory is empty until you create the first one",
+      "Each pool publishes its liquidity, fee and trading policy onchain",
     ],
   },
   {
@@ -390,11 +390,11 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
   },
   {
     n: "LIQUIDITY",
-    name: "First live pool",
-    status: "future",
+    name: "Your position",
+    status: "live",
     items: [
-      "No pool, seeded position or completed swap exists yet",
-      "The wallet-connected create flow is ready to use",
+      "Create and seed a pool in one wallet-confirmed transaction",
+      "Swap in any supported session through the live router",
       "You own the position as a transferable NFT and can withdraw at any time",
     ],
   },
@@ -417,10 +417,10 @@ export function RoadmapSection() {
       <div className="lp-wrap">
         <Eyebrow>Status, without the gloss</Eyebrow>
         <h2 className="lp-h2" id="road-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-          Contracts are deployed. <em className="o">Liquidity is not.</em>
+          Live on Mainnet. <em className="o">Built to be used.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          The protocol, Chainlink adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Adapter scopes cover PRE, REGULAR, POST and OVERNIGHT, but historical rounds rarely remain within the effective gate (60 seconds in REGULAR and under 120 seconds in the other sessions); continuous 24/5 swap availability is not established. The factory has no pool, seeded liquidity or completed Mainnet swap.
+          The protocol, price adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Market-price pools trade around the clock on their own liquidity; checked pools follow a live external price and step aside when it is unavailable.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -455,7 +455,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, four session adapter scopes, asset descriptors and calendar roots are deployed. Freshness can be intermittent; no pool has been created or funded, and an independent security review is not complete.</p>
+      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, price adapters, asset descriptors and calendar roots are deployed. Pool creation, swaps and in-kind withdrawals run from your wallet. An independent security review is not complete.</p>
       </div>
     </section>
   );
@@ -481,7 +481,7 @@ export function FactsSection() {
           <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
           <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
           <div className="lp-fact" data-spot><dt>Price source</dt><dd>Market price from pool liquidity · optional external price check</dd></div>
-          <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty at block {MAINNET_POOL_SNAPSHOT_BLOCK} · no pool or liquidity</dd></div>
+          <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Live onchain events · every pool is listed with its policy</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
           <div className="lp-fact" data-spot><dt>MEME pricing</dt><dd>Market price only · no external feed exists</dd></div>

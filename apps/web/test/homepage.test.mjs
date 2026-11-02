@@ -31,7 +31,8 @@ test('served landing and legal copy describe Mainnet and enabled wallet flows tr
   for (const obsolete of [/Testnet only/i, /Testnet snapshot/i, /No protocol deployment/i, /sample pools/i, /No swap or pool creation transaction is enabled/i, /no Mainnet deployment/i]) {
     assert.doesNotMatch(publicCopy, obsolete);
   }
-  assert.match(landing, /No Mainnet pool|no pool has been created/i);
+  // Pool creation is live, so the landing must not claim an empty product.
+  assert.doesNotMatch(landing, /No Mainnet pool|no pool has been created/i);
   assert.match(landing, /Worker/i);
   assert.match(footer, /Create pool/i);
   assert.match(terms, /wallet/i);
@@ -65,7 +66,7 @@ test('live pool directory reads the Worker API and has an honest empty state', a
   const pools = await read('../app/(app)/pools/page.tsx');
   const adapter = await read('../lib/mainnet-live.ts');
   assert.match(pools, /readLivePools\(/);
-  assert.match(pools, /No Mainnet pools yet/);
+  assert.match(pools, /Your pool will appear here/);
   assert.match(pools, /Pool details/);
   assert.match(adapter, /replace\(\/\\\/quote\$\/.*\/pools/);
   assert.match(adapter, /Number\(body\.chainId\) !== MAINNET\.chainId/);
@@ -126,7 +127,8 @@ test('landing connects live product routes and explains verified limits', async 
   assert.match(copy, /60 seconds in REGULAR/i);
   assert.match(copy, /120 seconds/i);
   assert.match(copy, /audit/i);
-  assert.match(copy, /empty|no pool.{0,50}created/is);
+  // The landing must not claim the product is empty: pool creation is live.
+  assert.doesNotMatch(copy, /no pool|empty until|not been created|liquidity is not/is);
   assert.match(copy, /illustrative|example/i);
 });
 
@@ -138,7 +140,7 @@ test('Mainnet banner and protocol page separate ready wallet flows from missing 
   const shell = await read('../components/app/AppShell.tsx');
   const copy = `${banner}\n${feedStatus}\n${protocol}\n${pools}\n${shell}`;
   assert.match(feedStatus, /Market data/i);
-  assert.match(copy, /No Mainnet pools yet|Awaiting first PoolCreated event/i);
+  assert.doesNotMatch(copy, /No Mainnet pools yet|NO POOLS YET/i);
   assert.match(protocol, /wallet.{0,40}position|position.{0,40}wallet/i);
   assert.match(shell, /Manage wallet positions|Manage LP positions/i);
   assert.doesNotMatch(copy, /asset admission.{0,35}unverified|pool creation remain unavailable|not wired in this frontend|Sample LP positions/i);

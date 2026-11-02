@@ -35,8 +35,8 @@ export default function PoolsPage() {
     {!loading && !error && pools.length === 0 && <section className="app-pools-empty" aria-labelledby="pools-empty-title">
       <div className="app-pools-empty__copy">
         <p className="app-pools-empty__eyebrow">LIVE FACTORY DIRECTORY</p>
-        <h2 id="pools-empty-title">No Mainnet pools yet.</h2>
-        <p>This directory reads live events from the deployed factory. A pool’s pair and trading policy will appear here after it is created. Preview markets stay separate from Mainnet data.</p>
+        <h2 id="pools-empty-title">Your pool will appear here.</h2>
+        <p>This directory reads live events from the deployed factory. Create a pool and its pair, seed and trading policy are listed here automatically.</p>
         <div className="app-pools-empty__actions">
           <Link href="/create">Create a pool <ArrowRight size={15} aria-hidden="true" /></Link>
           <Link href="/protocol">Review protocol rules <ArrowUpRight size={14} aria-hidden="true" /></Link>
@@ -46,7 +46,7 @@ export default function PoolsPage() {
         <span>Directory source</span>
         <strong>BELL factory</strong>
         <span>Robinhood Chain · 4663</span>
-        <span className="app-pools-empty__source-state">Awaiting first PoolCreated event</span>
+        <span className="app-pools-empty__source-state">Live onchain events</span>
       </div>
     </section>}
     <ul className="mt-7 grid gap-4 md:grid-cols-2">

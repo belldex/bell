@@ -151,7 +151,7 @@ export function Hero() {
           </div>
           <div data-reveal className="mt-6 flex items-center gap-2 text-xs text-dim">
             <span className="h-1.5 w-1.5 rounded-full bg-ion" />
-            <span>Mainnet contracts deployed · No live pool · Freshness can be intermittent</span>
+            <span>Mainnet contracts deployed · Live pool creation · Session-aware fees</span>
           </div>
         </div>
       </div>

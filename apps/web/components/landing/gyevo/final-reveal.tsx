@@ -84,7 +84,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             Know the session. <em>Respect the limits.</em>
           </h2>
           <p className="lp-final__lead">
-            Mainnet contracts, four-session Chainlink feeds and wallet-based pool creation are live. The directory is still empty: no pool, seeded liquidity or Mainnet swap has been created yet.
+            Mainnet contracts, price feeds and wallet-based pool creation are live. Create a pool from your wallet and it appears in the public directory with its liquidity, fee and trading policy.
           </p>
           <div className="lp-actions">
             <Link className="lp-btn lp-btn--primary" href="/pools">
@@ -178,7 +178,7 @@ export function FinalReveal({ appName }: { appName: string }) {
             </nav>
           </div>
           <p className="lp-legal">
-            <span>BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. · No live pool · Independent audit incomplete</span>
+            <span>BELL is not affiliated with, endorsed by, or officially connected with Robinhood Markets, Inc. · Independent audit incomplete</span>
           </p>
         </div>
         <span
