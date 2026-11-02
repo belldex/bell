@@ -357,12 +357,17 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
 
     function _profileHash(PoolConfig memory c) private pure returns (bytes32) {
         c.token0 = address(0); c.token1 = address(0); c.asset0 = bytes32(0); c.asset1 = bytes32(0);
-        // Pool class and reference adapters are per-pool choices. The factory's deployment
-        // profile must permit the complete product matrix; each hook's configHash and request hash
-        // still bind these values to its own pool instance.
+        // Pool class, reference adapters and flow caps are per-pool choices. Flow caps are raw
+        // token units that belong to the pool's own inventory: binding them here would let one
+        // deployment accept only a single cap set, so a differently-sized pool could be created
+        // but every swap reverted TradeCapExceeded. The hook's configHash still binds the caps to
+        // each pool instance.
         c.poolClass = 0;
         c.referenceAdapter0 = address(0);
         c.referenceAdapter1 = address(0);
+        c.tradeCap = [uint128(0), uint128(0)];
+        c.windowCap = [uint128(0), uint128(0)];
+        c.closureCap = [uint128(0), uint128(0)];
         return keccak256(abi.encode(c));
     }
 }

@@ -313,6 +313,38 @@ contract BellPoolFactoryTest {
         bytes4 sel = bytes4(_rollback(request));
         require(sel == BellPoolFactory.InvalidConfiguration.selector || sel == bytes4(keccak256("BadSeed()")), "pause bypassed");
     }
+
+    /// Flow caps are raw token units owned by the pool, not the deployment profile. Two requests
+    /// that differ only in caps must both be admissible against the same factory, and the profile
+    /// hash must not change when the caps do.
+    function testProfileHashIgnoresFlowCaps() external {
+        _useRealRegistries(true);
+        uint256 beforeNonce = factory.nonces(address(this));
+        // Resize the request's caps to seed-derived values without touching anything else.
+        request.config.tradeCap = [uint128(request.amountMax[0] / 10), uint128(request.amountMax[1] / 10)];
+        request.config.windowCap = [uint128(request.amountMax[0] * 2 / 5), uint128(request.amountMax[1] * 2 / 5)];
+        request.config.closureCap = [uint128(request.amountMax[0] / 20), uint128(request.amountMax[1] / 20)];
+        request.deadline = uint64(block.timestamp + 100);
+        request.salt = _mine(request);
+        CreateResult memory r = factory.createAndSeed(request);
+        require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "resized-cap pool did not activate");
+        require(factory.nonces(address(this)) == beforeNonce + 1, "nonce not consumed");
+    }
+
+    /// The hook must actually enforce the caps the request carried, proving they reached the pool
+    /// rather than being silently discarded by the profile check.
+    function testResizedCapsBindThePoolPolicy() external {
+        _useRealRegistries(true);
+        request.config.tradeCap = [uint128(request.amountMax[0] / 10), uint128(request.amountMax[1] / 10)];
+        request.config.windowCap = [uint128(request.amountMax[0] * 2 / 5), uint128(request.amountMax[1] * 2 / 5)];
+        request.config.closureCap = [uint128(request.amountMax[0] / 20), uint128(request.amountMax[1] / 20)];
+        request.deadline = uint64(block.timestamp + 100);
+        request.salt = _mine(request);
+        CreateResult memory r = factory.createAndSeed(request);
+        PolicyView memory policy = BellHook(r.hook).getPolicy();
+        require(policy.effectiveTradeCap[0] == request.config.tradeCap[0], "trade cap did not reach the hook");
+        require(policy.effectiveWindowCap[0] == request.config.windowCap[0], "window cap did not reach the hook");
+    }
     function testRealRegistriesOraclelessDoesNotBypassQuotePause() external {
         _useRealRegistries(true);
         realSafety.setPause(ModePolicy.targetId(2,address(token1)),true,1);
@@ -472,8 +504,12 @@ contract BellPoolFactoryTest {
     function testTreasuryAndChangedRiskDependencyRejected() external {
         request.config.liquidityMode = 1;
         require(bytes4(_mustFail(request)) == BellPoolFactory.UnsupportedLiquidityMode.selector,"treasury gate");
-        request.config.liquidityMode = 0; request.config.tradeCap[0] = 11;
-        require(bytes4(_mustFail(request)) == BellPoolFactory.InvalidConfiguration.selector,"risk profile gate");
+        // Flow caps are per-pool now: a changed cap must still create successfully.
+        request.config.liquidityMode = 0;
+        request.config.tradeCap[0] = 11;
+        request.salt = _mine(request);
+        CreateResult memory capped = factory.createAndSeed(request);
+        require(BellHook(capped.hook).state().lifecycle == uint8(Lifecycle.LIVE), "resized-cap pool rejected");
         request.config.tradeCap[0] = 10; request.config.positionManager = address(manager);
         require(bytes4(_mustFail(request)) == BellPoolFactory.InvalidConfiguration.selector,"dependency gate");
     }

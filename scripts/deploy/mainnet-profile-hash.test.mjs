@@ -24,8 +24,8 @@ function config(overrides = {}) {
     liquidityMode: 0,
     referenceMode: 0,
     tickSpacing: 60,
-    tradeCap: [10n, 10n],
-    windowCap: [100n, 100n],
+    tradeCap: [1n, 1n],
+    windowCap: [1n, 1n],
     closureCap: [1n, 1n],
     policyId: keccak256(stringToHex('bell-mainnet-v1')),
     referenceAdapter0: '0x0000000000000000000000000000000000000000',
@@ -51,12 +51,12 @@ test('the profile hash does include policyId, so a mismatched label is caught be
   assert.notEqual(mainnet, testnet);
 });
 
-test('the profile hash includes tickSpacing and the caps', () => {
+test('the profile hash includes tickSpacing but treats flow caps as per-pool', () => {
   const base = deriveProfileHash(config());
   assert.notEqual(base, deriveProfileHash(config({ tickSpacing: 10 })));
-  assert.notEqual(base, deriveProfileHash(config({ tradeCap: [11n, 10n] })));
-  assert.notEqual(base, deriveProfileHash(config({ windowCap: [101n, 100n] })));
-  assert.notEqual(base, deriveProfileHash(config({ closureCap: [2n, 1n] })));
+  assert.equal(base, deriveProfileHash(config({ tradeCap: [11n, 10n] })));
+  assert.equal(base, deriveProfileHash(config({ windowCap: [101n, 100n] })));
+  assert.equal(base, deriveProfileHash(config({ closureCap: [2n, 1n] })));
   assert.notEqual(base, deriveProfileHash(config({ liquidityMode: 1 })));
 });
 

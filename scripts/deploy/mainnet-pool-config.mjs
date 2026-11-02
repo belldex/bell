@@ -259,12 +259,15 @@ export function deriveProfileHash(config) {
     token1: ZERO_ADDRESS,
     asset0: `0x${'0'.repeat(64)}`,
     asset1: `0x${'0'.repeat(64)}`,
-    // Pool class and reference adapters are per-pool risk choices. A single immutable factory
-    // profile must be able to create both SESSION_ONLY and PRICE_GUARDED pools with pair-specific
-    // feed adapters; the hook config hash still pins them per created pool.
+    // Pool class, reference adapters and flow caps are per-pool choices. A single immutable
+    // factory profile must be able to create both pool classes with pair-specific adapters and
+    // seed-appropriate caps; the hook config hash still pins them per created pool.
     poolClass: 0,
     referenceAdapter0: ZERO_ADDRESS,
     referenceAdapter1: ZERO_ADDRESS,
+    tradeCap: [0n, 0n],
+    windowCap: [0n, 0n],
+    closureCap: [0n, 0n],
   };
   return keccak256(encodeAbiParameters(
     [{

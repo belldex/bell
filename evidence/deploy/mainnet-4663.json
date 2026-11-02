@@ -10,13 +10,13 @@
   "sessionRegistry": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
   "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
   "positionManager": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
-  "hookDeployer": "0xdCf4e76bc4d304cd1c6b321e5Ea14ED5F758D9C9",
-  "poolFactory": "0x675482e99a5f3c848C7d8E22c68c593BD70a6f02",
+  "hookDeployer": "0x3e5cEBb068ac71D742f700Db918908a15B8c45C5",
+  "poolFactory": "0xf677edc6346be53686E6DD42374A744cab9d0A5B",
   "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
   "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
-  "modeEvaluator": "0xab65bF63dfAF7c7F60A9F0d41228f657A15261b9",
-  "policyOracle": "0x24C0A78251AE9FD3a98f7b71C4ae0a78c1469F92",
+  "modeEvaluator": "0xEBDb2291f07F10490E7f34a5cD5C37dF95F877F4",
+  "policyOracle": "0x908bea5cd3C5297Ad69aCb19279c413d594cd335",
   "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "status": "PRODUCTION",
-  "note": "Factory and hook template upgraded 2026-11-02 so SESSION_ONLY admission no longer requires fresh stock health. Asset/session/calendar registries and liquidity infrastructure are reused."
+  "note": "Factory upgraded 2026-11-02 so SESSION_ONLY admission no longer requires fresh stock health and flow caps are per-pool. Registries and liquidity infrastructure are reused."
 }
