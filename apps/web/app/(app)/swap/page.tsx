@@ -59,7 +59,14 @@ function SwapInner() {
     const token = exactInput ? input : output;
     try { return token && amount ? parseUnits(amount, token.decimals) : 0n; } catch { return 0n; }
   }, [amount, exactInput, input, output]);
+  // The router pulls the input token with transferFrom, so a quote cannot even be simulated until
+  // the allowance exists. The old flow only revealed Approve after a successful quote, which made a
+  // fresh pool impossible to swap from the UI: simulate reverted on allowance, so Approve never
+  // appeared. Approve is now driven by the allowance itself, sized from the typed amount.
   const approvalAmount = quote?.maxIn ?? (exactInput ? rawSpecified : 0n);
+  const needsApproval = Boolean(
+    account && allowance !== null && approvalAmount > 0n && allowance < approvalAmount,
+  );
   const protectionFallback = Boolean(pool && pool.poolClass === 0 && (pool.policy.flags & 2) !== 0);
   const protectionLabel = !pool || pool.poolClass === 1 ? 'Not applicable' : protectionFallback ? 'AMM-only fallback' : 'Price protection active';
   const needsPolicyCheckpoint = Boolean(pool && !pool.policy.canSwap
@@ -138,7 +145,12 @@ function SwapInner() {
       const { publicClient: connectedClient } = makeClients(provider);
       const receipt = await connectedClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== 'success') throw new Error('Token approval reverted');
-      await loadWalletState(); setMessage('Approval confirmed. Your quote may expire; refresh it before swapping.');
+      await loadWalletState();
+      setMessage('Approval confirmed. Pricing the swap against the live pool…');
+      // Approval exists now, so the simulation that failed on allowance can succeed. Run it
+      // immediately instead of making the user hunt for a second button.
+      setShowModal(false);
+      await requestQuote();
     } catch (e) { const err = e as Error & { shortMessage?: string }; setError(err.shortMessage ?? err.message ?? 'Approval failed'); setMessage(''); }
     finally { setBusy(false); }
   };
@@ -216,10 +228,14 @@ function SwapInner() {
           <div className="border border-line bg-bg-1 p-4"><span className="font-mono text-[10px] uppercase text-dim">{exactInput ? 'Estimated output' : 'Estimated input'}</span><p className="num mt-3 truncate text-xl text-ink">{quote ? displayAmount(exactInput ? quote.amountOut : quote.amountIn, exactInput ? output.decimals : input.decimals) : '—'}</p><p className="mt-2 truncate text-xs text-dim">{exactInput ? output.symbol : input.symbol}</p></div>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><label className="font-mono text-[10px] uppercase text-dim">Max slippage</label><div className="flex gap-2">{[[10, '0.1%'], [50, '0.5%'], [100, '1%']].map(([bps, label]) => <button key={bps} type="button" aria-pressed={slippage === bps} onClick={() => { setSlippage(Number(bps)); setQuote(null); }} className={`border px-3 py-2 font-mono text-xs ${slippage === bps ? 'border-ion text-ion' : 'border-line text-muted'}`}>{label}</button>)}</div></div>
-        <div className="mt-5 space-y-2">{status !== 'connected' ? <button type="button" onClick={() => void connect()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90">Connect wallet</button> : wrongChain ? <button type="button" onClick={() => void switchChain(4663)} className="min-h-11 w-full border border-warn px-5 font-mono text-xs uppercase tracking-[0.08em] text-warn">Switch to Robinhood Chain</button> : <button type="button" disabled={busy || rawSpecified <= 0n || pool.lifecycle === 3} onClick={() => void requestQuote()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:border-line disabled:bg-transparent disabled:text-dim disabled:opacity-100">{pool.lifecycle === 3 ? 'Waiting for verified price' : busy ? 'Working…' : rawSpecified <= 0n ? 'Enter an amount' : 'Simulate swap'}</button>}
-          {quote && account && allowance !== null && allowance < quote.maxIn && <button type="button" disabled={busy} onClick={() => void approve()} className="min-h-11 w-full border border-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-ion disabled:opacity-50">Approve up to {input.symbol}</button>}
-        {quote && account && allowance !== null && allowance >= quote.maxIn && <button type="button" disabled={busy || (balance !== null && balance < quote.maxIn)} onClick={() => void swap()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90 disabled:opacity-50">Swap on Mainnet</button>}
+        <div className="mt-5 space-y-2">{status !== 'connected' ? <button type="button" onClick={() => void connect()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90">Connect wallet</button> : wrongChain ? <button type="button" onClick={() => void switchChain(4663)} className="min-h-11 w-full border border-warn px-5 font-mono text-xs uppercase tracking-[0.08em] text-warn">Switch to Robinhood Chain</button> : needsApproval ? <button type="button" disabled={busy} onClick={() => void approve()} className="min-h-11 w-full border border-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-ion transition-colors hover:bg-ion/10 disabled:opacity-50">{busy ? 'Approving…' : `Approve ${input.symbol}`}</button> : <button type="button" disabled={busy || rawSpecified <= 0n || pool.lifecycle === 3} onClick={() => void requestQuote()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:border-line disabled:bg-transparent disabled:text-dim disabled:opacity-100">{pool.lifecycle === 3 ? 'Waiting for verified price' : busy ? 'Working…' : rawSpecified <= 0n ? 'Enter an amount' : quote ? 'Refresh quote' : 'Simulate swap'}</button>}
+          {quote && !needsApproval && <button type="button" disabled={busy || (balance !== null && balance < quote.maxIn)} onClick={() => void swap()} className="min-h-11 w-full border border-ion bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 transition-opacity hover:opacity-90 disabled:opacity-50">Swap on Mainnet</button>}
         </div>
+        {needsApproval && (
+          <p className="mt-3 text-xs leading-relaxed text-dim">
+            The router needs an allowance before it can price the swap. Approve {input.symbol}, then simulate.
+          </p>
+        )}
         {/* Reopen progress monitor if closed */}
         {!showModal && (busy || message || error || txHash) && (
           <button
