@@ -116,7 +116,7 @@ export default function PoolsPage() {
     <header>
       <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Markets · BELL Mainnet</p>
       <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink">Live pool directory</h1>
-      <p className="mt-3 text-base text-muted">Markets listed here are read directly from the deployed BELL factory.</p>
+      <p className="mt-3 max-w-3xl text-base text-muted">Markets listed here are read directly from the deployed BELL factory.</p>
     </header>
 
     <div className="flex flex-wrap items-center justify-between gap-3 border border-line bg-surface p-4 text-sm text-muted" role="status" aria-live="polite">

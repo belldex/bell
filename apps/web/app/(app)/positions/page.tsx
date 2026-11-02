@@ -177,9 +177,11 @@ export default function PositionsPage() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   return <div className="app-content-frame space-y-7">
-    <header><p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · BELL Mainnet</p>
+    <header>
+      <p className="font-mono text-xs uppercase tracking-[0.14em] text-ion">Your liquidity · BELL Mainnet</p>
       <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink">Liquidity positions at a glance.</h1>
-      <p className="mt-3 text-base text-muted">Connect the wallet that owns your position NFT. BELL positions are user-owned PositionManager NFTs; add, in-kind remove and fee collection are sent directly from your wallet.</p></header>
+      <p className="mt-3 max-w-3xl text-base text-muted">Connect the wallet that owns your position NFT. BELL positions are user-owned PositionManager NFTs; add, in-kind remove and fee collection are sent directly from your wallet.</p>
+    </header>
     {!wallet.account ? <p className="border border-line bg-surface p-5 text-sm text-muted">Connect your wallet to read your positions.</p>
       : wallet.chainId !== MAINNET.chainId ? <p className="border border-warn/30 bg-warn/5 p-5 text-sm text-warn">Switch your wallet to BELL Mainnet (4663) to read positions.</p>
       : <div className="flex items-center justify-between border border-line bg-surface p-4 text-sm text-muted" role="status" aria-live="polite"><span>{loading ? 'Reading wallet positions from Mainnet' : `${positions.length} BELL position${positions.length === 1 ? '' : 's'} found`}</span><Button variant="outline" size="sm" disabled={loading} onClick={() => void refresh()}><RefreshCw className={`h-4 w-4${loading ? ' animate-spin' : ''}`}/> Refresh</Button></div>}
