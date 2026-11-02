@@ -19,7 +19,7 @@ export default function ProtocolPage() {
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ion">Protocol / Robinhood Chain mainnet</p>
           <h1 className="mt-3 max-w-[900px] font-display text-[36px] font-bold leading-[1.04] tracking-[-0.05em] text-ink sm:text-[48px]">Policy rules, made explicit.</h1>
         </div>
-          <p className="max-w-[560px] text-sm leading-relaxed text-muted">BELL contracts and AAPL, NVDA, TSLA, USDG, WETH, and MEME admissions are active on Robinhood Chain Mainnet. MEME is only available in market-price pools. Each pool exposes its current pricing mode, fee policy, and limits from the hook.</p>
+        <p className="max-w-[560px] text-sm leading-relaxed text-muted">Active on Robinhood Chain Mainnet for admitted stock tokens and counterassets. Pricing modes, session fees, and flow limits are enforced directly onchain by the hook.</p>
       </div>
 
       <nav className="app-protocol-index" aria-label="Protocol topics">
