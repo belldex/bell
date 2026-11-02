@@ -39,10 +39,10 @@ export function Classes() {
                 <img src="/assets/emblem-guarded.jpg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 w-80 opacity-75 mix-blend-screen" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full border border-ion/40 bg-ion/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-ion">
-                    <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Price guarded
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Checked price
                   </span>
                   <h3 className="mt-5 font-display text-2xl font-bold text-ink sm:text-3xl">USDG/AAPL · WETH/TSLA · NVDA/AMZN</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">Both assets have an independent, approved price reference. The pool trades only inside a reference band.</p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">Both assets have an independent, approved price source. The pool trades only while the market stays near it.</p>
                   <ul className="mt-6 space-y-3">
                     {GUARDED.map((t) => (
                       <li key={t} className="flex items-start gap-3 text-sm text-ink/90">
@@ -61,10 +61,10 @@ export function Classes() {
                 <img src="/assets/emblem-session.jpg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 w-80 opacity-75 mix-blend-screen" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-white/[0.04] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-                    <Timer className="h-4 w-4" aria-hidden="true" /> Session only
+                    <Timer className="h-4 w-4" aria-hidden="true" /> Market price
                   </span>
                   <h3 className="mt-5 font-display text-2xl font-bold text-ink sm:text-3xl">MEME/NVDA · any ERC-20 / stock</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted">At least one verified Stock Token. The counterasset is an ordinary token with no independent price.</p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">At least one verified Stock Token. The pool prices from its own liquidity; no external price is claimed.</p>
                   <ul className="mt-6 space-y-3">
                     {SESSION.map((t) => (
                       <li key={t} className="flex items-start gap-3 text-sm text-ink/90">

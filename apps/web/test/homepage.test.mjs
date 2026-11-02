@@ -14,8 +14,8 @@ test('landing route composes the current BELL landing page without redirecting',
 test('page metadata no longer reports outdated asset admission status', async () => {
   const layout = await read('../app/layout.tsx');
   assert.match(layout, /Session-aware Robinhood Stock Token liquidity/);
-  assert.match(layout, /1% AMM fallback when unavailable/);
-  assert.match(layout, /SESSION_ONLY always uses the AMM price/);
+  assert.match(layout, /live external price check/);
+  assert.match(layout, /trade on their own market price/);
   assert.doesNotMatch(layout, /signed quotes/i);
   assert.doesNotMatch(layout, /Asset admission and active pools are pending verification/i);
 });
@@ -114,7 +114,7 @@ test('asset and pool pickers expose real token logos and pair identities', async
   assert.match(create, /useState\(''\)/);
   assert.match(swap, /<LogoSelect/);
   assert.match(swap, /symbols: \[item\.legs\[0\]\.symbol, item\.legs\[1\]\.symbol\]/);
-  assert.match(swap, /PRICE_GUARDED|SESSION_ONLY/);
+  assert.match(swap, /Checked price|Market price/);
 });
 
 test('landing connects live product routes and explains verified limits', async () => {
@@ -137,7 +137,7 @@ test('Mainnet banner and protocol page separate ready wallet flows from missing 
   const pools = await read('../app/(app)/pools/page.tsx');
   const shell = await read('../components/app/AppShell.tsx');
   const copy = `${banner}\n${feedStatus}\n${protocol}\n${pools}\n${shell}`;
-  assert.match(feedStatus, /Chainlink/i);
+  assert.match(feedStatus, /Market data/i);
   assert.match(copy, /No Mainnet pools yet|Awaiting first PoolCreated event/i);
   assert.match(protocol, /wallet.{0,40}position|position.{0,40}wallet/i);
   assert.match(shell, /Manage wallet positions|Manage LP positions/i);
@@ -155,7 +155,7 @@ test('Mainnet banner reads live per-asset Chainlink freshness from the Worker', 
   assert.match(status, /feed updates/);
   assert.match(status, /Off-hours/);
   assert.doesNotMatch(status, /close anchor missing|>CLOSED</i);
-  assert.match(status, /stale ·/);
+  assert.match(status, /lagging ·/);
   assert.match(status, /aria-live/);
 });
 
@@ -183,9 +183,9 @@ test('pool creation is wired to the wallet, live Registry, approvals, factory si
   assert.match(flow, /functionName: 'createAndSeed'/);
   assert.match(flow, /createPricePathForPhases/);
   assert.match(flow, /functionName: 'anchorStatus'/);
-  assert.match(flow, /factory will activate the pool under fallback policy/i);
+  assert.match(flow, /pool will start on its own market price/i);
   assert.match(flow, /Object\.entries\(queue\.counterassets/);
-  assert.match(flow, /SESSION_ONLY/);
+  assert.match(flow, /Market price/);
   assert.match(flow, /simulateContract/);
   assert.match(flow, /waitForTransactionReceipt/);
   assert.match(flow, /PoolCreated/);

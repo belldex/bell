@@ -18,7 +18,7 @@ const STAGE_LABELS: Record<string, string> = {
   health: 'Fresh market health', create: 'Create and seed', complete: 'Complete',
 };
 const inputCls = 'num h-12 w-full border border-line bg-bg-1 px-4 text-ink outline-none focus:border-ion/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion';
-const classes = { 0: 'PRICE_GUARDED', 1: 'SESSION_ONLY' } as const;
+const classes = { 0: 'Checked price', 1: 'Market price' } as const;
 
 function decimalsFor(symbol: string) { return symbol === 'USDG' ? 6 : 18; }
 function amountRaw(value: string, symbol: string) {
@@ -162,15 +162,15 @@ export default function CreatePage() {
       </div>}
 
       {step === 1 && <div className="space-y-5">
-        <h2 className="font-display text-3xl text-ink">Choose the permanent pool class.</h2>
-        <p className="text-sm leading-relaxed text-muted">Pool class cannot be changed after creation. PRICE_GUARDED requires references for protection; SESSION_ONLY always uses the AMM price.</p>
+        <h2 className="font-display text-3xl text-ink">Choose how this pool prices.</h2>
+        <p className="text-sm leading-relaxed text-muted">This cannot be changed after creation. A checked pool follows a live external price. A market-price pool trades on its own liquidity and never waits for a feed.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {([0, 1] as const).filter((value) => allowedClasses.includes(value)).map((value) => <button key={value} type="button" aria-pressed={poolClass === value} onClick={() => setPoolClass(value)} className={cn('border p-5 text-left', poolClass === value ? 'border-ion/60 bg-ion/[0.06]' : 'border-line')}>
-            <span className="font-mono text-[10px] uppercase text-ion">{classes[value]}</span>
-            <span className="mt-2 block text-sm text-ink">{value === 0 ? 'Protected when references are healthy' : 'AMM-only, around the clock'}</span>
+            <span className="font-mono text-[10px] uppercase text-ion">{value === 0 ? 'Checked price' : 'Market price'}</span>
+            <span className="mt-2 block text-sm text-ink">{value === 0 ? 'Follows a live external price' : 'Trades on its own liquidity, around the clock'}</span>
             <span className="mt-2 block text-xs leading-relaxed text-muted">{value === 0
-              ? 'Checks external stock-price references and constrains price movement while those references are valid. If they are stale or unavailable, swaps use the AMM price with a 1% fee and the strictest flow caps.'
-              : 'Uses the AMM price and never depends on stock-feed freshness. Session-based fees and bounded flow limits still apply; there is no independent stock-price protection.'}</span>
+              ? 'Compares the pool against an approved external stock price and keeps trading close to it. If that price is unavailable, the pool steps aside to its own market price with a 1% fee and the tightest limits.'
+              : 'Prices come from the pool itself and never depend on an external feed. Session fees and bounded flow limits still apply, but no outside price is claimed.'}</span>
           </button>)}
           {allowedClasses.length === 0 && <p role="alert" className="border border-down/30 p-4 text-sm text-down">No pool class is supported for this pair on the deployed Mainnet factory.</p>}
         </div>
@@ -184,7 +184,7 @@ export default function CreatePage() {
           <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{stockSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedStock} onChange={(event) => setSeedStock(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedStock, stockSymbol).toString()} base units</span></label>
           <label className="text-[10px] uppercase tracking-[0.14em] text-dim">{counterSymbol} maximum seed<input inputMode="decimal" className={`${inputCls} mt-2`} value={seedCounter} onChange={(event) => setSeedCounter(event.target.value.replace(/[^0-9.]/g, ''))}/><span className="mt-1 block text-xs text-dim">{amountRaw(seedCounter, counterSymbol).toString()} base units</span></label>
         </div>
-        <div className="grid gap-4 border border-line bg-bg-1 p-4 sm:grid-cols-3"><Metric label="Seed ratio" value={`${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} / ${stockSymbol}`} note={poolClass === 0 ? 'Guarded opening price is derived from live references' : 'Used as the SESSION_ONLY opening price'}/><Metric label="Factory service fee" value={feeLabel} note="Live factory getter; seed is charged separately" loading={feeLoading}/><Metric label="Current gas quote" value={gasPrice || 'Read from wallet RPC during preflight'} note="Final create gas is estimated after simulation" loading={feeLoading}/></div>
+        <div className="grid gap-4 border border-line bg-bg-1 p-4 sm:grid-cols-3"><Metric label="Seed ratio" value={`${price > 0 ? price.toLocaleString('en-US', { maximumFractionDigits: 8 }) : '—'} ${counterSymbol} / ${stockSymbol}`} note={poolClass === 0 ? 'Opening price follows the live external price' : 'Used as the pool opening price'}/><Metric label="Factory service fee" value={feeLabel} note="Live factory getter; seed is charged separately" loading={feeLoading}/><Metric label="Current gas quote" value={gasPrice || 'Read from wallet RPC during preflight'} note="Final create gas is estimated after simulation" loading={feeLoading}/></div>
         {counterSymbol === 'WETH' && <label className="flex items-start gap-3 border border-line p-4 text-sm text-muted"><input type="checkbox" checked={wrapWeth} onChange={(event) => setWrapWeth(event.target.checked)} className="mt-1 accent-ion"/>If my WETH balance is short, allow the app to ask my wallet to wrap only the exact ETH shortfall into WETH. Gas is additional.</label>}
         <p className="border border-line p-4 text-xs leading-relaxed text-dim">The deployed factory profile fixes pool flow caps. They are checked live and cannot be customized in this creation request. Fee and seed approvals are limited to the exact required amounts.</p>
       </div>}

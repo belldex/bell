@@ -49,18 +49,18 @@ export function MainnetSessionFeedStatus() {
 
   return (
     <details className="app-session-feeds" aria-live="polite">
-      <summary data-state={state}><span>Chainlink feeds</span><strong>{summary}</strong></summary>
+      <summary data-state={state}><span>Market data</span><strong>{summary}</strong></summary>
       <div className="app-session-feeds__panel">
-        {unavailable && <p>Live feed status is temporarily unavailable. Each pool still enforces its own onchain policy.</p>}
-        {!feedStatus && !unavailable && <p>Reading the current session and feed freshness…</p>}
+        {unavailable && <p>Live data status is temporarily unavailable. Each pool still enforces its own onchain policy.</p>}
+        {!feedStatus && !unavailable && <p>Reading the current session and market data…</p>}
         {assets.length > 0 && <ul>
           {assets.map(([symbol, item]) => {
             const age = item.feedAgeSeconds === null ? '' : `${item.feedAgeSeconds}s / ${item.freshnessLimitSeconds ?? 120}s`;
             const outsideFeedWindow = item.session === 'CLOSED';
             const displaySession = outsideFeedWindow ? 'Off-hours' : item.session;
             const detail = outsideFeedWindow
-              ? item.anchorValid ? 'reference available' : 'AMM fallback · SESSION_ONLY is independent of feed'
-              : item.sessionFeedFresh ? `fresh · ${age}` : `stale · ${age || 'no recent round'} · PRICE_GUARDED may use AMM fallback; SESSION_ONLY ignores feed age`;
+              ? item.anchorValid ? 'external price available' : 'market price · no feed needed'
+              : item.sessionFeedFresh ? `up to date · ${age}` : `lagging · ${age || 'no recent round'} · checked pools step aside, market-price pools keep trading`;
             const feedUnavailable = outsideFeedWindow ? item.anchorValid !== true : item.sessionFeedFresh !== true;
             return <li key={symbol} data-state={feedUnavailable ? 'attention' : 'ready'}><span>{symbol}</span><span>{displaySession}</span><strong>{detail}</strong></li>;
           })}

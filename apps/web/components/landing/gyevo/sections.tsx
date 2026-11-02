@@ -37,7 +37,7 @@ const STEPS = [
     where: "A verified session selects the base fee",
     text: "The pool starts from a session-specific LP fee. Less-supported hours carry a higher base fee and tighter gross-flow limits.",
     reads: ["Base LP fee", "Per-trade cap", "Rolling-flow cap"],
-    stops: "PRICE_GUARDED switches to AMM-only fallback at 1% with strict caps; SESSION_ONLY always uses the AMM price.",
+    stops: "A pool can trade on its own market price, or use an external price check when one is configured.",
   },
   {
     name: "Bound the flow",
@@ -276,8 +276,8 @@ export function ProductPathsSection() {
 
         <div className="lp-product__assets" data-lp-reveal>
           <div><span className="lp-product__asset-label">Admitted stock assets</span><div className="lp-product__tokens">{["AAPL", "NVDA", "TSLA"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}</span>)}</div></div>
-          <div><span className="lp-product__asset-label">Counterassets</span><div className="lp-product__tokens">{["USDG", "WETH", "MEME"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}{symbol === "MEME" && <small>SESSION_ONLY</small>}</span>)}</div></div>
-          <p>MEME has no independent price reference or PRICE_GUARDED option. Pool eligibility is checked against the deployed AssetRegistry.</p>
+          <div><span className="lp-product__asset-label">Counterassets</span><div className="lp-product__tokens">{["USDG", "WETH", "MEME"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}{symbol === "MEME" && <small>Market price</small>}</span>)}</div></div>
+          <p>MEME has no external price feed, so pools holding it price purely from their own market. Eligibility is checked onchain before you can seed.</p>
         </div>
       </div>
     </section>
@@ -305,7 +305,7 @@ export function SessionSection() {
           </h2>
           </div>
           <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-            The exchange session sets the base LP fee and flow limits. PRICE_GUARDED uses independent references while valid, then switches to a clearly flagged AMM-only fallback if they fail; SESSION_ONLY always uses the AMM price.
+            The exchange session sets the base LP fee and flow limits. A pool can price from its own market, or from an external price check when one is configured.
           </p>
         </header>
 
@@ -373,19 +373,19 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     name: "Mainnet contracts",
     status: "live",
     items: [
-      "Protocol contracts, Chainlink adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
-      "PRICE_GUARDED uses price bands while references are valid, then an explicit AMM fallback at the maximum fee and strictest caps",
-      "The new factory has no pool yet; create and seed are wallet-confirmed transactions",
+      "Protocol contracts, price adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
+      "Pools can be created and seeded today; every step is a wallet-confirmed transaction",
+      "The pool directory is empty until you create the first one",
     ],
   },
   {
-    n: "ONCHAIN FEEDS",
-    name: "Four-session Chainlink adapter scopes",
+    n: "PRICING",
+    name: "Two ways to price a pool",
     status: "live",
     items: [
-      "Session adapter scopes use onchain Chainlink AggregatorV3 stock feeds for PRE, REGULAR, POST and OVERNIGHT",
-      "SESSION_ONLY does not require feed freshness; PRICE_GUARDED exposes whether protection is active or in AMM fallback",
-      "Feeds may pause or go stale off-hours; an independent security audit is not complete",
+      "Market-price pools trade on their own liquidity and need no external feed",
+      "Checked pools compare against a live external price and step aside when it is unavailable",
+      "Off-hours data can pause a checked pool; market-price pools keep trading",
     ],
   },
   {
@@ -393,9 +393,9 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     name: "First live pool",
     status: "future",
     items: [
-      "No Mainnet pool, seeded position, or completed Mainnet swap exists yet",
-      "The wallet-connected create flow is ready; it has not been used to seed a pool yet",
-      "SESSION_ONLY pools have no independent price protection; PRICE_GUARDED pools disclose their active fallback state",
+      "No pool, seeded position or completed swap exists yet",
+      "The wallet-connected create flow is ready to use",
+      "You own the position as a transferable NFT and can withdraw at any time",
     ],
   },
 ];
@@ -480,16 +480,16 @@ export function FactsSection() {
         <dl className="lp-facts__grid" data-lp-reveal>
           <div className="lp-fact" data-spot><dt>Network</dt><dd>Robinhood Chain Mainnet · {ROBINHOOD_MAINNET_CHAIN_ID}</dd></div>
           <div className="lp-fact" data-spot><dt>Contracts</dt><dd>Deployed · Mainnet verification evidence published</dd></div>
-          <div className="lp-fact" data-spot><dt>Price source</dt><dd>Robinhood Chainlink AggregatorV3 · read onchain during swaps</dd></div>
+          <div className="lp-fact" data-spot><dt>Price source</dt><dd>Market price from pool liquidity · optional external price check</dd></div>
           <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Empty at block {MAINNET_POOL_SNAPSHOT_BLOCK} · no pool or liquidity</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
-          <div className="lp-fact" data-spot><dt>MEME policy</dt><dd>SESSION_ONLY · no independent price protection</dd></div>
-          <div className="lp-fact" data-spot><dt>Stale feed policy</dt><dd>SESSION_ONLY swaps stay open · higher fees and bounded flow limits</dd></div>
-          <div className="lp-fact" data-spot><dt>Session readiness</dt><dd>PRE · REGULAR · POST · OVERNIGHT configured · fresh rounds can be intermittent</dd></div>
-          <div className="lp-fact" data-spot><dt>Closed-session anchor</dt><dd>Not captured · PRICE_GUARDED uses its AMM fallback</dd></div>
+          <div className="lp-fact" data-spot><dt>MEME pricing</dt><dd>Market price only · no external feed exists</dd></div>
+          <div className="lp-fact" data-spot><dt>Off-hours</dt><dd>Market-price pools keep trading · checked pools step aside</dd></div>
+          <div className="lp-fact" data-spot><dt>Trading hours</dt><dd>Pre-market · Regular · After-hours · Overnight</dd></div>
+          <div className="lp-fact" data-spot><dt>Your position</dt><dd>Transferable NFT · withdraw in kind at any time</dd></div>
           <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
-          <div className="lp-fact" data-spot><dt>Pool classes</dt><dd>PRICE_GUARDED where both live references pass · SESSION_ONLY for one-stock pairs</dd></div>
+          <div className="lp-fact" data-spot><dt>Pool types</dt><dd>Market price · or checked against a live external price</dd></div>
         </dl>
       </div>
     </section>

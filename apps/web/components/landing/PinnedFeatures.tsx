@@ -19,7 +19,7 @@ const FEATURES = [
     name: 'Risk policy',
     label: 'Rules before swaps',
     title: 'Every swap meets its limits first.',
-    description: 'A pool checks session state, reference freshness and rolling flow budgets before execution. PRICE_GUARDED adds reviewed independent references; SESSION_ONLY keeps session controls and raw-unit bounds.',
+    description: 'A pool checks session state and rolling flow budgets before execution. Checked pools add a reviewed external price; market-price pools keep session controls and raw-unit bounds.',
     action: 'Read the policy',
     href: '/protocol',
     Visual: RiskVisual,
@@ -90,7 +90,7 @@ function RiskVisual() {
       <div className="bell-visual-caption"><span>Before a swap</span><b>POLICY CHECK</b></div>
       <div className="bell-risk-flow"><div><span>Market state</span><b>Verified</b></div><i /><div><span>Pool policy</span><b>In bounds</b></div><i /><div className="bell-risk-allow"><ShieldCheck size={18} /><b>Allow swap</b></div></div>
       <div className="bell-risk-meters"><div><span>Per-trade cap</span><i><b style={{ width: '58%' }} /></i><strong>58%</strong></div><div><span>Rolling budget</span><i><b style={{ width: '34%' }} /></i><strong>34%</strong></div></div>
-      <div className="bell-visual-foot"><span><Gauge size={14} /> Stale → AMM fallback</span><span>Illustrative policy view</span></div>
+      <div className="bell-visual-foot"><span><Gauge size={14} /> Off-hours → market price</span><span>Illustrative policy view</span></div>
     </div>
   );
 }

@@ -43,7 +43,7 @@ const SCENES: Scene[] = [
     sub: "Session-aware fees",
     kicker: "Uniswap v4 hook · verified market state",
     headline: "Fees and limits follow the exchange session.",
-    text: "BELL verifies the exchange calendar and safety state before each swap. The session sets fees and flow limits. PRICE_GUARDED switches to a flagged AMM fallback if price inputs fail; SESSION_ONLY always uses the AMM price.",
+    text: "BELL verifies the exchange calendar and safety state before each swap. The session sets fees and flow limits. A pool prices from its own liquidity, or from a live external check when one is configured.",
     use: "Regular: 0.05%; pre-market and after-hours: 0.30%; overnight: 0.50% with a healthy, supported feed.",
     chips: ["Regular · 0.05%", "Extended · 0.30%", "Overnight · 0.50%"],
     href: "/pools",
@@ -57,8 +57,8 @@ const SCENES: Scene[] = [
     kicker: "Per-trade · rolling limits",
     headline: "Every swap faces two independent limits.",
     text: "The hook checks trade size and cumulative gross flow together. Less liquid sessions tighten both; reopening, corporate-action and repricing guards can tighten them further.",
-    use: "Capacity returns only as older swaps leave the rolling window. Deposits and midnight do not reset it. SESSION_ONLY does not independently protect the counterasset price.",
-    chips: ["SESSION_ONLY · AMM-only", "PRICE_GUARDED · protected or fallback"],
+    use: "Capacity returns only as older swaps leave the rolling window. Deposits and midnight do not reset it. A market-price pool does not independently protect the counterasset price.",
+    chips: ["Market price", "Checked price"],
     href: "/protocol",
     cta: "Read risk policy",
   },
@@ -267,7 +267,7 @@ export function FeatureStory() {
               A market clock. <em className="o">A different rule at every hour.</em>
             </h2>
             <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-              The exchange session sets the base fee and flow limits. PRICE_GUARDED switches to an explicit AMM fallback when references fail; SESSION_ONLY always uses the AMM price.
+              The exchange session sets the base fee and flow limits. A pool prices from its own liquidity, or from a live external check when one is configured.
             </p>
           </div>
 

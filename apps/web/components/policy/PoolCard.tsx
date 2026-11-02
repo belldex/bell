@@ -17,7 +17,7 @@ export function PoolCard({ pool }: { pool: PoolPolicy }) {
     <Link
       href={`/pool/?id=${pool.id}`}
       className="app-pool-card group flex flex-col border border-line bg-surface p-5 sm:p-6 transition-colors hover:border-line-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-ion"
-      aria-label={`${pool.pair.join(' / ')} pool, ${pool.poolClass === 'PRICE_GUARDED' ? 'price guarded' : 'session only'}`}
+      aria-label={`${pool.pair.join(' / ')} pool, ${pool.poolClass === 'PRICE_GUARDED' ? 'checked price' : 'market price'}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">

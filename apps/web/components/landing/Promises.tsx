@@ -14,7 +14,7 @@ const NO = [
   '“24/7” does not mean unlimited liquidity, a live stock oracle, or no reverts',
   'Caps are rate limits, not insurance for stock value or a USD loss guarantee',
   'No profit or APR promise; repricing can create marked LP loss',
-  'SESSION_ONLY pools have no independent price for the counterasset',
+  'Market-price pools have no independent price for the counterasset',
   'Issuer, token, verifier, chain and multisig risk remain external dependencies',
   'Sample pools on this page are previews, not live pool state. Mainnet contracts are deployed, but no production pool has been created or seeded yet.',
 ];

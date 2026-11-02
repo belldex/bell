@@ -108,8 +108,8 @@ export async function createMainnetPool({ provider, account, selection, onStage 
     const descriptor: any = await client.readContract({ address: (deployment as any).assetRegistry, abi: registryAbi, functionName: 'descriptor', args: [leg.assetId] });
     if (descriptor.token.toLowerCase() !== leg.token.toLowerCase() || descriptor.isStock !== leg.isStock) throw new Error(`${leg.symbol} live admission does not match its pool metadata`);
   }
-  if (selection.poolClass === 0 && pair.legs.some((leg: any) => !refsBySymbol[leg.symbol])) throw new Error('PRICE_GUARDED requires an admitted live reference adapter for both assets');
-  if (selection.poolClass === 1 && stockLegs.length !== 1) throw new Error('SESSION_ONLY requires exactly one stock leg');
+  if (selection.poolClass === 0 && pair.legs.some((leg: any) => !refsBySymbol[leg.symbol])) throw new Error('A checked-price pool needs an approved live price source for both assets');
+  if (selection.poolClass === 1 && stockLegs.length !== 1) throw new Error('A market-price pool needs exactly one stock leg');
   const referencesForPair = selection.poolClass === 0 ? pair.legs.map((leg: any) => refsBySymbol[leg.symbol]) : [undefined, undefined];
   const tokenA = pair.legs.find((leg: any) => leg.symbol === selection.stockSymbol) as any;
   const tokenB = pair.legs.find((leg: any) => leg.symbol === selection.counterSymbol) as any;
@@ -258,10 +258,10 @@ export async function createMainnetPool({ provider, account, selection, onStage 
 
   const healthHash: `0x${string}` | null = null;
   emit('health', selection.poolClass === 1
-    ? 'SESSION_ONLY uses the AMM price and does not require a stock-feed update.'
+    ? 'Market price: the pool trades on its own liquidity and needs no external update.'
     : missingCloseAnchor
-      ? 'No external reference is available. The factory will activate the pool under fallback policy if its safety checks pass.'
-      : 'The factory will verify its configured price-protection inputs during pool creation.');
+      ? 'No external price is available right now. The pool will start on its own market price and switch back once the price source returns.'
+      : 'The factory will verify the configured external price during pool creation.');
 
   if (await client.getChainId() !== MAINNET.chainId) throw new Error('Wallet changed away from Robinhood Chain Mainnet; restart pool creation');
   const currentAccounts = await walletClient.getAddresses();

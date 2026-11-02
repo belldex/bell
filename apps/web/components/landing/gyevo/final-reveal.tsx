@@ -111,7 +111,7 @@ export function FinalReveal({ appName }: { appName: string }) {
                 <BellWordmark>{appName}</BellWordmark>
               </Link>
               <p>
-                Mainnet PRICE_GUARDED and SESSION_ONLY pools for AAPL, NVDA, and TSLA with USDG, WETH, and MEME counterassets. PRICE_GUARDED discloses when it falls back to the AMM price; SESSION_ONLY always uses that price. Fees and flow limits apply in every supported session.
+                Mainnet pools for AAPL, NVDA, and TSLA with USDG, WETH, and MEME counterassets. Every pool can price from its own market, or from a live external check when one is configured. Fees and flow limits apply in every supported session.
               </p>
               <div className="lp-ecosystem" aria-label="Built on Robinhood Chain and Uniswap v4">
                 <span className="lp-ecosystem__item">

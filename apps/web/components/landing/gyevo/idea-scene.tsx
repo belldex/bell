@@ -154,7 +154,7 @@ export function IdeaScene() {
               BELL provides liquidity pools that can include Robinhood Stock Tokens. Regular, extended and overnight sessions carry different data and liquidity conditions.
             </p>
             <p className="lp-body lp-ie">
-              BELL applies session fees and bounded flow limits around the clock. PRICE_GUARDED pools use independent references while valid and switch to an explicit AMM-only fallback if they fail; SESSION_ONLY always uses the AMM price.
+              BELL applies session fees and bounded flow limits around the clock. Pools price from their own liquidity, or from a live external check when one is configured.
             </p>
 
             {/* sticky mode only: where you are in the scene */}

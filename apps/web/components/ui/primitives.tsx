@@ -62,9 +62,9 @@ export function ClassBadge({ poolClass, className }: { poolClass: PoolClass; cla
         className,
       )}
       data-guarded={guarded}
-      title={guarded ? 'Independent price reference with band protection' : 'Session controls only; no independent price protection for the counterasset.'}
+      title={guarded ? 'Follows a live external price while it is available' : 'Prices come from the pool itself; no outside price is claimed.'}
     >
-      {guarded ? 'Price guarded' : 'Session only'}
+      {guarded ? 'Checked price' : 'Market price'}
     </span>
   );
 }
