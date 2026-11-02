@@ -140,7 +140,12 @@ function SwapInner() {
     setBusy(true); setError(''); setMessage('Confirm token approval in your wallet…');
     try {
       const { walletClient } = makeClients(provider);
-      const hash = await walletClient.writeContract({ address: input.address, abi: tokenAbi, functionName: 'approve', args: [approvalAmount], account } as any);
+      // ERC-20 approve takes (spender, amount). Passing only the amount made viem throw
+      // "ABI encoding params/values length mismatch" before the wallet ever saw the transaction.
+      const hash = await walletClient.writeContract({
+        address: input.address, abi: tokenAbi, functionName: 'approve',
+        args: [MAINNET.router, approvalAmount], account,
+      } as any);
       setMessage('Waiting for approval confirmation…');
       const { publicClient: connectedClient } = makeClients(provider);
       const receipt = await connectedClient.waitForTransactionReceipt({ hash });

@@ -104,6 +104,9 @@ test('swap approval and BellRouter transaction wait for confirmed receipts', asy
   assert.match(swap, /limitAmount: exactInput \? quote\.minOut : quote\.maxIn/);
   assert.match(swap, /Exact output/);
   assert.match(swap, /Maximum paid/);
+  // ERC-20 approve needs (spender, amount). Shipping only the amount made viem throw
+  // "ABI encoding params/values length mismatch" before the wallet could sign anything.
+  assert.match(swap, /functionName: 'approve'[\s\S]{0,220}?args: \[MAINNET\.router, approvalAmount\]/);
 });
 
 test('asset and pool pickers expose real token logos and pair identities', async () => {
