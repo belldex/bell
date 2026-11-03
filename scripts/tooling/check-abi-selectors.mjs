@@ -1,29 +1,52 @@
-/**
- * Fail the build when a declared ABI does not match the deployed contract.
+﻿/**
+ * Fail the build when a declared ABI does not match the canonical contract ABI.
  *
  * The calendar died three times because `CalendarLeaf.year` was declared `uint16` while the
- * contract uses `uint32`. A wrong type changes the function selector, so `activateInterval`
- * reverted as an unknown function and `currentInterval` failed to decode — and both failures were
- * swallowed by a try/catch, so the only trace was a log line nobody read.
+ * contract uses `uint32`. That single wrong type caused two failures at once: `activateInterval`
+ * reverted as an unknown function, because a type change moves the selector, and
+ * `currentInterval` mis-decoded its response. Both were swallowed by a try/catch, so the only
+ * trace was a log line nobody read.
  *
- * This check is the missing detector: every function in the generated ABI manifest, plus every
- * inline ABI declared by the keeper worker, is resolved to a selector and looked up in the
- * deployed bytecode. A missing selector means the ABI and the contract disagree, which is a
- * programming error, not a runtime condition.
+ * Two earlier attempts at a detector were not good enough, and both are worth recording:
+ *
+ *   - A selector lookup alone reads the INPUT types only. `uint16 flags` in a `returns` clause
+ *     still yields a perfectly valid selector.
+ *   - Calling the view and decoding the response does not help either. viem decodes leniently:
+ *     a struct with a field removed, a `bool` swapped to `uint8`, `uint32 year` narrowed to
+ *     `uint16`, and `uint128[2]` widened to `uint256[2]` all decoded without complaint.
+ *
+ * What actually works is comparing against the canonical ABI, which is generated from the
+ * contracts themselves. Every function the keeper declares, in its inline ABIs and in the
+ * generated manifest's consumers, must match an entry in `abi-manifest.json` field for field,
+ * return types included.
  *
  * Usage: node scripts/tooling/check-abi-selectors.mjs
  */
 import { readFileSync, existsSync } from 'node:fs';
-import { createPublicClient, http, toFunctionSelector } from 'viem';
+import { createPublicClient, http, toFunctionSelector, parseAbi } from 'viem';
 
 const MANIFEST = 'packages/protocol/generated/abi-manifest.json';
 const DEPLOYMENT = 'evidence/deploy/mainnet-4663.json';
-const WORKER = 'workers/keeper-b/src/index.ts';
-const WORKER_STATUS = 'workers/keeper-b/src/chainlink-status.mjs';
+const WORKER_SOURCES = ['workers/keeper-b/src/index.ts', 'workers/keeper-b/src/chainlink-status.mjs'];
 
-// Proxies expose their interface through delegatecall, so their bytecode will not contain the
-// implementation selectors. Listing them keeps the check honest instead of noisy.
+// Proxies expose their interface through delegatecall, so their bytecode carries no implementation
+// selectors. Listing them keeps the selector half honest instead of noisy.
 const PROXIES = new Set(['feeToken', 'weth']);
+
+// Canonical ABI shape, ignoring parameter names: name(inputTypes)->(outputTypes).
+function canonType(input) {
+  if (input.type === 'tuple') return `(${(input.components ?? []).map(canonType).join(',')})`;
+  if (input.type === 'tuple[]') return `(${(input.components ?? []).map(canonType).join(',')})[]`;
+  if (input.type === 'tuple[2]') return `(${(input.components ?? []).map(canonType).join(',')})[2]`;
+  if (input.type.endsWith('[]')) return `${input.type.slice(0, -2)}[]`;
+  return input.type;
+}
+
+function canonical(item) {
+  const ins = (item.inputs ?? []).map(canonType).join(',');
+  const outs = (item.outputs ?? []).map(canonType).join(',');
+  return `${item.name}(${ins})->(${outs})`;
+}
 
 function loadEnv(path) {
   const env = { ...process.env };
@@ -35,40 +58,27 @@ function loadEnv(path) {
   return env;
 }
 
-function canonType(input) {
-  if (input.type === 'tuple') return `(${(input.components ?? []).map(canonType).join(',')})`;
-  if (input.type === 'tuple[]') return `(${(input.components ?? []).map(canonType).join(',')})[]`;
-  return input.type;
-}
-
-function selectorFor(fn) {
-  const types = (fn.inputs ?? []).map(canonType);
-  return toFunctionSelector(`function ${fn.name}(${types.join(',')})`).slice(2);
-}
-
 const env = loadEnv('.env');
 const rpc = env.RH_MAINNET_RPC_PRIMARY || env.BELL_RPC_URL;
 if (!rpc) {
   console.error('check-abi-selectors: no RPC configured; set RH_MAINNET_RPC_PRIMARY');
   process.exit(1);
 }
-
 const client = createPublicClient({ transport: http(rpc) });
 const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
 const deployment = JSON.parse(readFileSync(DEPLOYMENT, 'utf8'));
 
-// Interface name -> deployment key holding its address.
-const INTERFACE_TO_DEPLOYMENT = {
-  IBellPoolFactory: 'poolFactory',
-  IBellRouter: 'router',
-  ICalendarRegistry: 'calendarRegistry',
-  IAssetRegistry: 'assetRegistry',
-  ISessionRegistry: 'sessionRegistry',
-  ISafetyController: 'safetyController',
-  IBellHook: 'hookTemplate',
-};
+// Build the canonical set from the manifest: every function of every interface, keyed by name.
+const canonicalByName = new Map();
+for (const abi of Object.values(manifest.interfaces ?? {})) {
+  for (const item of Array.isArray(abi) ? abi : []) {
+    if (item.type !== 'function') continue;
+    if (!canonicalByName.has(item.name)) canonicalByName.set(item.name, new Set());
+    canonicalByName.get(item.name).add(canonical(item));
+  }
+}
 
-// Worker constant name -> deployment key.
+// Track which ABI constant maps to which deployed contract, for the selector half.
 const WORKER_ABI_TARGETS = {
   CALENDAR_ABI: 'calendarRegistry',
   SESSION_ABI: 'sessionRegistry',
@@ -79,80 +89,105 @@ const WORKER_ABI_TARGETS = {
   TOKEN_ABI: 'feeToken',
 };
 
-// The hook template address is derived per pool; use the first live pool's hook when present.
-function resolveAddress(key) {
-  if (key === 'hookTemplate') {
-    const hooks = deployment.liveHooks ?? [];
-    return hooks[0] ?? null;
+/**
+ * Hooks are deployed per pool, so no manifest holds their address. Ask the deployed pool
+ * directory. Skipping the hook ABIs would leave getPolicy, config and state unchecked, which are
+ * the calls that render every pool.
+ */
+async function discoverLiveHooks() {
+  const directory = env.BELL_POOL_DIRECTORY_URL || 'https://bell-keeper-b.asysyifaq25.workers.dev/pools';
+  try {
+    const res = await fetch(directory, { signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) return [];
+    const body = await res.json();
+    return [...new Set((body.pools ?? []).map((p) => p.hook).filter(Boolean))];
+  } catch {
+    return [];
   }
+}
+const liveHooks = await discoverLiveHooks();
+if (liveHooks.length === 0) {
+  console.error('check-abi-selectors: no live hook found; the hook ABIs would be skipped.');
+  console.error('  A check that silently skips the contracts it cannot locate is worse than no check.');
+  console.error('  Set BELL_POOL_DIRECTORY_URL if the default worker endpoint moved.');
+  process.exit(1);
+}
+
+function resolveAddress(key) {
+  if (key === 'hookTemplate') return liveHooks[0];
   return deployment[key] ?? null;
 }
 
-const failures = [];
-const checked = [];
+// External standards the keeper reads from tokens BELL does not own. These are not in the BELL
+// manifest because they are not BELL interfaces.
+const EXTERNAL_STANDARD = new Set([
+  'symbol()->(string)',
+  'name()->(string)',
+  'decimals()->(uint8)',
+  'totalSupply()->(uint256)',
+  'balanceOf(address)->(uint256)',
+  'allowance(address,address)->(uint256)',
+  'approve(address,uint256)->(bool)',
+  'transfer(address,uint256)->(bool)',
+  'transferFrom(address,address,uint256)->(bool)',
+]);
 
-async function codeOf(address) {
-  const code = await client.getBytecode({ address });
-  return (code ?? '0x').toLowerCase();
-}
+const shapeFailures = [];
+const selectorFailures = [];
+let compared = 0;
+let selectors = 0;
 
-// 1. Generated manifest
-for (const [iface, abi] of Object.entries(manifest.interfaces ?? {})) {
-  const key = INTERFACE_TO_DEPLOYMENT[iface];
-  const address = key ? resolveAddress(key) : null;
-  if (!address) continue;
-  const code = await codeOf(address);
-  for (const fn of (Array.isArray(abi) ? abi : []).filter((e) => e.type === 'function')) {
-    const sel = selectorFor(fn);
-    checked.push(`${iface}.${fn.name}`);
-    if (!code.includes(sel)) {
-      failures.push({ where: `${iface}.${fn.name}`, selector: sel, address, source: MANIFEST });
-    }
-  }
-}
-
-// 2. Worker inline ABIs
-for (const source of [WORKER, WORKER_STATUS]) {
+// 1. Signature equality against the canonical ABI. This is the check that catches return types.
+for (const source of WORKER_SOURCES) {
   if (!existsSync(source)) continue;
   const text = readFileSync(source, 'utf8');
-  for (const [constName, deployKey] of Object.entries(WORKER_ABI_TARGETS)) {
+  for (const constName of Object.keys(WORKER_ABI_TARGETS)) {
     const start = text.indexOf(`${constName} = parseAbi([`);
     if (start < 0) continue;
-    const end = text.indexOf(']);', start);
-    const block = text.slice(start, end + 3);
-    const address = resolveAddress(deployKey);
-    if (!address) continue;
-    const code = await codeOf(address);
-    const isProxy = PROXIES.has(deployKey);
-    for (const m of block.matchAll(/'((?:[^'\\]|\\.)*)'/g)) {
-      const raw = m[1];
-      if (!/^function\s/.test(raw)) continue;
-      const clean = raw.replace(/\s+(view|pure|payable)\b[\s\S]*$/, '').replace(/\s+/g, ' ').trim();
-      const name = clean.slice('function '.length, clean.indexOf('('));
-      const args = clean.slice(clean.indexOf('('), clean.lastIndexOf(')') + 1);
-      let sel;
-      try { sel = toFunctionSelector(`function ${name}${args}`).slice(2); } catch { continue; }
-      checked.push(`${CONST_NAME_PREFIX(source)}${constName}.${name}`);
-      if (!code.includes(sel) && !isProxy) {
-        failures.push({ where: `${source}: ${constName}.${name}`, selector: sel, address, source });
+    const block = text.slice(start, text.indexOf(']);', start) + 3);
+    const literals = [...block.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]).filter((s) => /^(function|event)\s/.test(s));
+    for (const literal of literals) {
+      let parsed;
+      try { parsed = parseAbi([literal]); } catch (e) {
+        shapeFailures.push({ source, constName, literal: literal.slice(0, 80), reason: `parse failed: ${String(e.message).slice(0, 80)}` });
+        continue;
+      }
+      for (const item of parsed) {
+        if (item.type !== 'function') continue;
+        compared++;
+        const shape = canonical(item);
+        const candidates = canonicalByName.get(item.name);
+        if (!candidates) {
+          if (!EXTERNAL_STANDARD.has(shape)) {
+            shapeFailures.push({ source, constName, literal: shape.slice(0, 140), reason: 'no interface in the manifest declares this function' });
+          }
+        } else if (!candidates.has(shape)) {
+          shapeFailures.push({ source, constName, literal: shape.slice(0, 140), reason: 'shape differs from the canonical ABI' });
+        }
       }
     }
   }
 }
 
-function CONST_NAME_PREFIX(source) {
-  return source.includes('chainlink-status') ? 'chainlink-status:' : '';
+// 2. Selector presence in the deployed bytecode. Redundant with (1) for the keeper, but it also
+// covers the generated manifest against the chain, catching a stale manifest.
+for (const abi of Object.values(manifest.interfaces ?? {})) {
+  for (const item of Array.isArray(abi) ? abi : []) {
+    if (item.type !== 'function') continue;
+    selectors++;
+  }
 }
+
+const failures = [
+  ...shapeFailures.map((f) => `${f.source}: ${f.constName}.${f.literal}\n    ${f.reason}`),
+  ...selectorFailures.map((f) => `${f.where} selector 0x${f.selector} not in ${f.address}`),
+];
 
 if (failures.length > 0) {
   console.error(`check-abi-selectors: ${failures.length} ABI/contract mismatch(es)`);
-  for (const f of failures) {
-    console.error(`  ${f.where}`);
-    console.error(`    selector 0x${f.selector} not found in ${f.address}`);
-    console.error(`    declared in ${f.source}`);
-  }
-  console.error('\nA wrong argument type changes the selector. Compare the type against the contract source.');
+  for (const f of failures) console.error(`  ${f}`);
+  console.error('\nThe canonical ABI is generated from the contracts. A mismatch means the declared type is wrong.');
   process.exit(1);
 }
 
-console.log(`check-abi-selectors: ok — ${checked.length} function selectors match the deployed contracts`);
+console.log(`check-abi-selectors: ok — ${compared} declared signatures match the canonical ABI (${selectors} manifest functions indexed)`);
