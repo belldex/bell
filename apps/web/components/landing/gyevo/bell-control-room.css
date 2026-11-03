@@ -641,9 +641,20 @@
   .lp--bell .lp-menu-btn { display:grid; }
 }
 @media (max-width:860px) {
-  .lp--bell .lp-p1 { grid-template-columns:minmax(0,1fr) minmax(8rem,.55fr); grid-template-rows:1fr auto; gap:.8rem; }
-  .lp--bell .lp-words { font-size:clamp(2.65rem,9vw,5.8rem); }
-  .lp--bell .lp-sub { max-width:50ch; }
+  .lp--bell .lp-p1 {
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start;
+    gap:1rem; padding:calc(var(--lp-nav-h) + 1.25rem) var(--lp-gutter) 5.5rem; text-align:left;
+  }
+  .lp--bell .lp-words {
+    display:flex; flex-direction:column; align-items:flex-start;
+    width:100%; max-width:100%; font-size:clamp(2.3rem,7.5vw,3.6rem);
+    line-height:1.06; letter-spacing:-.03em; white-space:normal;
+  }
+  .lp--bell .lp-word { display:inline-block; margin:0; }
+  .lp--bell .lp-word--a { display:inline-block; }
+  .lp--bell .lp-slot { position:absolute; opacity:0; pointer-events:none; }
+  .lp--bell .lp-word--b { display:inline-block; margin-top:.15em; }
+  .lp--bell .lp-sub { max-width:38ch; margin-top:.6rem; font-size:clamp(.92rem,3.2vw,1.1rem); line-height:1.55; color:#55524B; }
   .lp--bell .lp-field canvas.lp-form { left:76%; top:51%; width:min(66vw,66svh); height:min(66vw,66svh); }
   .lp--bell .lp-hero__col { max-width:67%; }
   .lp--bell .lp-h { font-size:clamp(2rem,5.6cqw,3.5rem); }
@@ -667,15 +678,34 @@
   .lp--bell .lp-facts__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (max-width:640px) {
+  .lp--bell { --lp-nav-h:68px; --lp-gutter:1.15rem; }
+  .lp--bell .lp-nav { height:var(--lp-nav-h); }
+  .lp--bell .lp-brand { gap:.55rem; }
+  .lp--bell .lp-brand img { width:34px; height:34px; }
+  .lp--bell .lp-brand .bell-wordmark { font-size:1.02rem; }
+  .lp--bell .lp-nav__right { gap:.38rem; }
+  .lp--bell .lp-pill { min-height:2.35rem; padding-inline:.75rem; font-size:.7rem; }
+  .lp--bell .lp-menu-btn { width:2.35rem; height:2.35rem; }
+  .lp .lp-social-link { width:2.35rem; height:2.35rem; }
   .lp--bell .lp-word-out { font-size:clamp(3rem,10vw,4.5rem); transform:translate(-50%,.1em) scaleX(.45); }
   .lp--bell .lp-road__map { height:2.8rem; margin-top:1.3rem; }
   .lp--bell .lp-road__node { width:1.25rem; height:1.25rem; margin:-.625rem 0 0 -.625rem; box-shadow:0 0 0 .25rem var(--lp-bg); }
-  .lp--bell .lp-p1 { display:flex; align-items:flex-start; justify-content:center; gap:1.1rem; padding-top:calc(var(--lp-nav-h) + 6svh); }
-  .lp--bell .lp-words { display:grid; align-self:center; width:100%; font-size:clamp(1.55rem,7.8vw,2.2rem); }
-  .lp--bell .lp-word--a { grid-column:1; }
-  .lp--bell .lp-word--b { grid-column:1/-1; }
-  .lp--bell .lp-sub { align-self:auto; margin-top:.2rem; max-width:34ch; }
-  .lp--bell .lp-hint { bottom:5.5rem; }
+  .lp--bell .lp-p1 {
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start;
+    gap:.65rem; padding:calc(var(--lp-nav-h) + 1.25rem) var(--lp-gutter) 4.5rem; text-align:left;
+  }
+  .lp--bell .lp-words {
+    display:flex; flex-direction:column; align-items:flex-start;
+    width:100%; max-width:100%; font-size:clamp(1.85rem,8vw,2.5rem);
+    line-height:1.08; letter-spacing:-.025em; white-space:normal;
+  }
+  .lp--bell .lp-word { display:inline-block; margin:0; }
+  .lp--bell .lp-word--a { display:inline-block; }
+  .lp--bell .lp-slot { position:absolute; opacity:0; pointer-events:none; }
+  .lp--bell .lp-word--b { display:inline-block; margin-top:.15em; }
+  .lp--bell .lp-sub { max-width:32ch; margin-top:.45rem; font-size:clamp(.85rem,3.6vw,.95rem); line-height:1.5; color:#55524B; }
+  .lp--bell .lp-hint { bottom:1.8rem; font-size:.58rem; gap:.6rem; }
+  .lp--bell .lp-hint i { width:3rem; }
   .lp--bell .lp-drag-hint { display:flex; bottom:4.9rem; gap:.55rem; font-size:.54rem; }
   .lp--bell .lp-drag-hint span:last-child,.lp--bell .lp-drag-hint__divider { display:none; }
   .lp--bell .lp-field canvas.lp-form { left:79%; top:52%; width:min(72vw,42svh); height:min(72vw,42svh); opacity:.58; }
@@ -742,7 +772,7 @@
   .lp--bell .lp-facts__stamp time { flex-wrap:wrap; gap:.45rem; }
 }
 @media (max-width:380px) {
-  .lp--bell .lp-words { font-size:clamp(1.45rem,7.8vw,1.8rem); }
+  .lp--bell .lp-words { font-size:clamp(1.5rem,7.8vw,1.85rem); line-height:1.08; letter-spacing:-.025em; }
   .lp--bell .lp-h2,.lp--bell .lp-final__title { font-size:clamp(1.45rem,7vw,1.8rem); }
   .lp--bell .lp-h { font-size:1.65rem; }
   .lp--bell .lp-fx__rail li { min-width:7rem; }

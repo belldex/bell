@@ -1021,13 +1021,14 @@ export function createGlobeSculpture(canvas: HTMLCanvasElement): GlobeSculpture 
     canvas.width = Math.max(1, Math.round(W * dpr));
     canvas.height = Math.max(1, Math.round(H * dpr));
     const narrow = W <= 860;
-    /* Keep the session instrument in its own right-hand field; the opening copy
-       no longer sits over its center as it did in the reference composition. */
-    cx = narrow ? W * 0.74 : W * 0.75;
-    cy = H * (narrow ? 0.52 : 0.5);
+    const phone = W <= 640;
+    /* Keep the session instrument in its own right-hand field on desktop,
+       but centered in the lower area on mobile phones so it never collides with opening text. */
+    cx = phone ? W * 0.5 : narrow ? W * 0.74 : W * 0.75;
+    cy = phone ? H * 0.68 : H * (narrow ? 0.52 : 0.5);
     openingX = cx;
     openingY = cy;
-    R = narrow ? Math.min(W * 0.34, H * 0.34) : Math.min(W * 0.29, H * 0.42);
+    R = phone ? Math.min(W * 0.36, H * 0.22) : narrow ? Math.min(W * 0.34, H * 0.34) : Math.min(W * 0.29, H * 0.42);
     focal = R * Math.sqrt(CZ0 * CZ0 - 1);
     fadeTop = ctx.createLinearGradient(0, 0, 0, NAV_FADE);
     fadeTop.addColorStop(0, "rgba(0,0,0,1)");
