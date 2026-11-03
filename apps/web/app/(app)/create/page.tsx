@@ -142,13 +142,17 @@ export default function CreatePage() {
       <p className="mt-3 text-sm leading-relaxed text-muted">Choose whether the pool uses external price protection when references are healthy or runs as an AMM at all times. Both classes are fixed at creation and use onchain flow limits.</p>
     </header>
 
-    <ol className="app-create-steps mt-8 flex gap-2 overflow-x-auto" aria-label="Pool creation steps">
-      {STEPS.map((label, index) => <li key={label} className="flex items-center gap-2" data-state={index < step ? "done" : index === step ? "current" : "todo"}>
-        <button type="button" disabled={index > step || busy} onClick={() => goStep(index)} aria-current={index === step ? 'step' : undefined} className={cn('min-h-10 whitespace-nowrap border px-3 font-mono text-[10px] uppercase tracking-[0.08em]', index === step ? 'border-ion/60 bg-ion/10 text-ion' : index < step ? 'border-line text-ink' : 'border-line text-dim opacity-60')}>
-          {index < step ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true"/> : null}{label}
-        </button>{index < STEPS.length - 1 && <span className="app-create-steps__link" aria-hidden="true"/>}
-      </li>)}
-    </ol>
+    {/* The scroller must be its own element: overflow-x on the flex row lets the last
+        item bleed past the viewport because the row itself grows with its content. */}
+    <div className="app-create-steps__scroll mt-8">
+      <ol className="app-create-steps flex gap-2" aria-label="Pool creation steps">
+        {STEPS.map((label, index) => <li key={label} className="flex items-center gap-2" data-state={index < step ? "done" : index === step ? "current" : "todo"}>
+          <button type="button" disabled={index > step || busy} onClick={() => goStep(index)} aria-current={index === step ? 'step' : undefined} className={cn('min-h-10 whitespace-nowrap border px-3 font-mono text-[10px] uppercase tracking-[0.08em]', index === step ? 'border-ion/60 bg-ion/10 text-ion' : index < step ? 'border-line text-ink' : 'border-line text-dim opacity-60')}>
+            {index < step ? <Check className="mr-1 inline h-3 w-3" aria-hidden="true"/> : null}{label}
+          </button>{index < STEPS.length - 1 && <span className="app-create-steps__link" aria-hidden="true"/>}
+        </li>)}
+      </ol>
+    </div>
 
     <div className="app-create-progress" aria-hidden="true"><span style={{ transform: `scaleX(${(step + 1) / STEPS.length})` }} /></div>
 

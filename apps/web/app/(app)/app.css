@@ -456,6 +456,9 @@
 .app-create-progress { position: relative; height: 2px; margin-top: 18px; overflow: hidden; background: var(--color-line); }
 .app-create-progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--color-ion), var(--color-ion-text)); transform-origin: left center; transition: transform 420ms cubic-bezier(.22,.8,.28,1); }
 .app-create-steps { scroll-behavior: smooth; }
+/* The scroll container, not the flex row, owns the overflow so the last step cannot
+   push past the viewport on narrow screens. */
+.app-create-steps__scroll { max-width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 .app-create-steps > li { position: relative; }
 .app-create-steps > li > button { transition: border-color 200ms ease, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, opacity 200ms ease; }
 .app-create-steps__link { position: relative; width: 20px; height: 1px; overflow: hidden; background: var(--color-line); }
@@ -553,7 +556,8 @@
   .app-page .app-pool-card dl > div + div { padding-left: 9px; }
   .app-live-pool { padding: 17px !important; }
   .app-live-pool > div:first-child { align-items: flex-start; }
-  .app-create-steps { margin-right: -16px; padding: 0 16px 6px 0; scroll-padding-inline: 16px; }
+  .app-create-steps__scroll { margin-right: -16px; }
+  .app-create-steps { padding: 0 16px 6px 0; scroll-padding-inline: 16px; }
   .app-create-steps > li { gap: 6px; }
   .app-create-steps > li > span[aria-hidden="true"] { width: 10px; }
   .app-page :is(.p-6,.p-7,.p-8) { padding: 16px; }
