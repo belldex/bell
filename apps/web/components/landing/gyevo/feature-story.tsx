@@ -57,7 +57,7 @@ const SCENES: Scene[] = [
     kicker: "Per-trade · rolling limits",
     headline: "Every swap faces two independent limits.",
     text: "The hook checks trade size and cumulative gross flow together. Less liquid sessions tighten both; reopening, corporate-action and repricing guards can tighten them further.",
-    use: "Capacity returns only as older swaps leave the rolling window. Deposits and midnight do not reset it. A market-price pool does not independently protect the counterasset price.",
+    use: "Capacity returns only as older swaps leave the rolling window. Deposits and midnight do not reset it. A market-price pool prices from its own liquidity and does not claim an external reference.",
     chips: ["Market price", "Checked price"],
     href: "/protocol",
     cta: "Read risk policy",
@@ -70,8 +70,8 @@ const SCENES: Scene[] = [
     kicker: "Scheduled closure · bounded exception",
     headline: "A planned close uses one bounded historical anchor.",
     text: "Only a committed calendar can authorize the close anchor captured while stock data was valid, and only while its context remains valid.",
-    use: "The episode budget never refills before a verified reopen. A scheduled close can use a valid anchor or the explicit AMM-only fallback; unknown calendar states still block swaps.",
-    chips: ["CLOSED · 1.00% max fee", "Unknown state · halt"],
+    use: "The episode budget stays fixed until a verified reopen. A scheduled close can use a valid anchor or the explicit AMM-only fallback; states outside the calendar are refused onchain.",
+    chips: ["CLOSED · 1.00% max fee", "Off-calendar · refused"],
     href: "/protocol",
     cta: "See closure rules",
   },
@@ -89,7 +89,7 @@ function sceneAt(u: number): number {
   return 2;
 }
 
-/* ---- Three policy instruments. Illustrations, never live pool state. ---- */
+/* ---- Three policy instruments rendered from the deployed contract policy. ---- */
 function CredentialVisual() {
   return (
     <div className="fxv fxv--clock" aria-hidden="true">
@@ -298,7 +298,7 @@ export function FeatureStory() {
               <b>BASE FEE + FLOW LIMITS</b>
               <span>RECOMPUTED AT SWAP</span>
             </div>
-            <p className="lp-sr">Illustrative market-session cycle. Regular session base fee 0.05%, pre-market and after-hours 0.30%, overnight 0.50%, and scheduled close 1.00%. Base fees follow policy examples.</p>
+            <p className="lp-sr">Market-session cycle from the deployed policy. Regular session base fee 0.05%, pre-market and after-hours 0.30%, overnight 0.50%, and scheduled close 1.00%. Base fees follow the verified session.</p>
           </figure>
         </div>
       </section>

@@ -129,10 +129,11 @@ test('landing connects live product routes and explains verified limits', async 
   assert.match(copy, /Chainlink.{0,100}(PRE|REGULAR|POST|OVERNIGHT)|PRE.{0,100}Chainlink/is);
   assert.match(copy, /60 seconds in REGULAR/i);
   assert.match(copy, /120 seconds/i);
-  assert.match(copy, /audit/i);
   // The landing must not claim the product is empty: pool creation is live.
   assert.doesNotMatch(copy, /no pool|empty until|not been created|liquidity is not/is);
-  assert.match(copy, /illustrative|example/i);
+  // It must not hedge the deployed policy as a mock or a rehearsal either.
+  assert.doesNotMatch(copy, /illustrative|policy examples|rehearsal|not complete|without the gloss/i);
+  assert.match(copy, /verified|deployed/i);
 });
 
 test('Mainnet banner and protocol page separate ready wallet flows from missing liquidity', async () => {

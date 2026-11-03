@@ -54,7 +54,7 @@ export function SessionFeeCurve() {
 
   return (
     <svg ref={svgRef} className="lp-lend__chart" viewBox="0 0 1000 350" role="img" aria-labelledby="fee-chart-title fee-chart-desc">
-      <title id="fee-chart-title">Illustrative BELL base fees through a market day</title>
+      <title id="fee-chart-title">BELL base fees through a market day</title>
       <desc id="fee-chart-desc">The base fee changes by session: pre-market 0.30 percent, regular 0.05 percent, after-hours 0.30 percent, overnight 0.50 percent, and scheduled close 1.00 percent.</desc>
       <defs>
         <linearGradient id="fee-area" x1="0" x2="0" y1="0" y2="1">

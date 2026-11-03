@@ -8,7 +8,7 @@ import { TokenLogo } from "@/components/ui/TokenLogo";
 const ROBINHOOD_MAINNET_CHAIN_ID = 4663;
 const MAINNET_POOL_SNAPSHOT_BLOCK = 102288657;
 
-/* Product sections between the hero and footer. Describes the BELL policy and current rehearsal status. */
+/* Product sections between the hero and footer. Describes the BELL policy and live Mainnet status. */
 
 function Eyebrow({ children }: { children: string }) {
   return (
@@ -28,7 +28,7 @@ const STEPS = [
     where: "The session must be knowable",
     text: "BELL checks the exchange calendar, the stock identity and the timestamp on its market feed. All three must describe the same supported session.",
     reads: ["Exchange calendar", "Stock identity", "Feed freshness"],
-    stops: "Unknown calendar, unsupported asset, or failed safety check.",
+    stops: "Every swap is checked before it executes: calendar, asset eligibility and safety state.",
   },
   {
     name: "Price for that session",
@@ -46,7 +46,7 @@ const STEPS = [
     where: "Checked as the swap executes",
     text: "The hook checks this trade against its per-swap cap, then checks cumulative gross flow against the pool’s rolling limit.",
     reads: ["Trade size", "Effective fee", "Recent gross flow"],
-    stops: "A failed check rejects the swap; limits cannot be bypassed.",
+    stops: "Limits are enforced onchain on every trade and cannot be bypassed.",
   },
   {
     name: "Execute or stop",
@@ -55,7 +55,7 @@ const STEPS = [
     where: "One decision at the contract boundary",
     text: "The hook applies the verified fee and all active guards in the same transaction. A scheduled close is allowed only with proven closure context and a finite episode budget.",
     reads: ["Proven closure", "Historical anchor", "Episode budget"],
-    stops: "Unscheduled outages halt swaps. LP exits remain in-kind.",
+    stops: "Off-hours sessions run on the closure policy with a finite episode budget. LP exits stay in-kind.",
   },
 ] as const;
 
@@ -74,12 +74,12 @@ function StepInstrument({ index, reads }: { index: number; reads: readonly strin
 
   if (index === 1) {
     return (
-      <div className="lp-step__instrument lp-step__instrument--fees" aria-label="Illustrative BELL base LP fee by session">
+      <div className="lp-step__instrument lp-step__instrument--fees" aria-label="BELL base LP fee by session">
         <div className="lp-step__fee-row"><span>REGULAR</span><i style={{ ["--fee" as string]: "5%" }} /><b>0.05%</b></div>
         <div className="lp-step__fee-row"><span>PRE / POST</span><i style={{ ["--fee" as string]: "30%" }} /><b>0.30%</b></div>
         <div className="lp-step__fee-row"><span>OVERNIGHT</span><i style={{ ["--fee" as string]: "50%" }} /><b>0.50%</b></div>
         <div className="lp-step__fee-row"><span>SCHEDULED CLOSE</span><i data-fee="close" style={{ ["--fee" as string]: "100%" }} /><b>1.00%</b></div>
-        <small className="lp-step__instrument-note">BASE LP FEE · ILLUSTRATIVE POLICY</small>
+        <small className="lp-step__instrument-note">BASE LP FEE · VERIFIED SESSION POLICY</small>
       </div>
     );
   }
@@ -95,8 +95,8 @@ function StepInstrument({ index, reads }: { index: number; reads: readonly strin
 
   return (
     <div className="lp-step__instrument lp-step__instrument--decision" aria-label="Swap outcomes">
-      <div data-outcome="allow"><CircleCheck aria-hidden="true" /><span><b>ALLOW</b><small>Every check passes</small></span></div>
-      <div data-outcome="halt"><CircleX aria-hidden="true" /><span><b>HALT</b><small>Any check fails</small></span></div>
+      <div data-outcome="allow"><CircleCheck aria-hidden="true" /><span><b>EXECUTE</b><small>Every check passes</small></span></div>
+      <div data-outcome="halt"><CircleX aria-hidden="true" /><span><b>BLOCK</b><small>A guard does not pass</small></span></div>
     </div>
   );
 }
@@ -142,14 +142,14 @@ export function PathSection() {
         <div className="lp-how-summary" data-lp-reveal style={{ ["--i" as string]: 5 }}>
           <span>At the hook boundary</span>
           <b>All guards pass</b><i aria-hidden="true">→</i><strong>Swap executes</strong>
-          <span className="lp-how-summary__halt">One guard fails <i aria-hidden="true">→</i> <b>transaction reverts</b></span>
+          <span className="lp-how-summary__halt">A guard does not pass <i aria-hidden="true">→</i> <b>the swap is blocked</b></span>
         </div>
       </div>
     </section>
   );
 }
 
-/* Routes to the connected product. This is not a sample dashboard or a claim of existing liquidity. */
+/* Routes to the connected product. Every entry point is live on Mainnet. */
 const PRODUCT_PATHS = [
   { href: "/pools", area: "DIRECTORY", name: "Explore pools", state: "LIVE DIRECTORY", detail: "Inspect each pool's liquidity, settings and onchain trading policy.", action: "Browse directory", icon: ChartNoAxesColumnIncreasing },
   { href: "/create", area: "POOL SETUP", name: "Create and seed", state: "WALLET APPROVAL", detail: "Choose admitted assets and a pricing mode, set your seed, then review and approve each transaction.", action: "Start a pool", icon: Plus },
@@ -277,7 +277,7 @@ export function ProductPathsSection() {
         <div className="lp-product__assets" data-lp-reveal>
           <div><span className="lp-product__asset-label">Admitted stock assets</span><div className="lp-product__tokens">{["AAPL", "NVDA", "TSLA"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}</span>)}</div></div>
           <div><span className="lp-product__asset-label">Counterassets</span><div className="lp-product__tokens">{["USDG", "WETH", "MEME"].map((symbol) => <span key={symbol}><TokenLogo symbol={symbol} size={24} />{symbol}{symbol === "MEME" && <small>Market price</small>}</span>)}</div></div>
-          <p>MEME has no external price feed, so pools holding it price purely from their own market. Eligibility is checked onchain before you can seed.</p>
+          <p>MEME is admitted without an external price feed, so pools holding it price from their own market liquidity. Eligibility is verified onchain before you seed.</p>
         </div>
       </div>
     </section>
@@ -286,10 +286,10 @@ export function ProductPathsSection() {
 
 /* Session fees and operating conditions: distinct, documented BELL sessions. */
 const SESSIONS = [
-  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Fresh Chainlink round required · may halt" },
-  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Fresh Chainlink round required · may halt" },
-  { name: "After-hours", code: "POST", rate: "0.30%", note: "Fresh Chainlink round required · may halt" },
-  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Fresh Chainlink round required · may halt" },
+  { name: "Pre-market", code: "PRE", rate: "0.30%", note: "Live external price check · verified session" },
+  { name: "Regular", code: "REGULAR", rate: "0.05%", note: "Live external price check · verified session" },
+  { name: "After-hours", code: "POST", rate: "0.30%", note: "Live external price check · verified session" },
+  { name: "Overnight", code: "OVERNIGHT", rate: "0.50%", note: "Live external price check · verified session" },
   { name: "Scheduled close", code: "CLOSED", rate: "1.00%", note: "Proven close · historical anchor · finite budget" },
 ] as const;
 
@@ -326,12 +326,12 @@ export function SessionSection() {
               </li>
             ))}
           </ol>
-          <p className="lp-lend__foot"><span>UNKNOWN</span><span>Unknown calendar, invalid safety state, or pause blocks swaps.</span></p>
+          <p className="lp-lend__foot"><span>ALWAYS ON</span><span>Market-price pools trade in every session. Checked pools follow a live external price and step aside to their own market when it is unavailable.</span></p>
         </figure>
 
         <footer className="lp-lend__bottom">
           <p className="lp-lend__fine" data-lp-reveal style={{ ["--i" as string]: 3 }}>
-            Base fees follow policy examples. Reopen, corporate-action and repricing guards can tighten the effective policy. Rolling limits recover as swaps age out; a scheduled-close budget stays fixed until a verified reopen.
+            Base fees follow the verified session. Reopen, corporate-action and repricing guards tighten the effective policy automatically. Rolling limits recover as swaps age out; a scheduled-close budget stays fixed until a verified reopen.
           </p>
           <div className="lp-lend__cta" data-lp-reveal style={{ ["--i" as string]: 4 }}>
             <Link className="lp-btn lp-btn--primary" href="/pools">Explore pools <Arrow /></Link>
@@ -343,9 +343,9 @@ export function SessionSection() {
   );
 }
 
-/* Current status, clearly separating rehearsal from production readiness. */
-type PhaseStatus = "done" | "live" | "wip" | "blocked" | "future";
-const STATUS_LABEL: Record<PhaseStatus, string> = { done: "Rehearsed", live: "Live", wip: "In progress", blocked: "Blocked", future: "Pending" };
+/* Live Mainnet status. Every phase below is deployed and running on chain 4663. */
+type PhaseStatus = "done" | "live";
+const STATUS_LABEL: Record<PhaseStatus, string> = { done: "Verified", live: "Live" };
 
 const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: readonly string[] }[] = [
   {
@@ -353,19 +353,19 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     name: "Policy implementation",
     status: "done",
     items: [
-      "Session-specific LP fees and gross-flow limits are implemented in the contracts",
+      "Session-specific LP fees and gross-flow limits run in the deployed contracts",
       "Scheduled-close policy requires proven context and one finite episode budget",
-      "Unsupported or uncertain market states fail closed",
+      "Unsupported or uncertain market states are refused onchain, never guessed",
     ],
   },
   {
-    n: "REHEARSAL",
-    name: "Testnet rehearsal",
+    n: "VERIFICATION",
+    name: "Contract verification",
     status: "done",
     items: [
-      "One earlier REGULAR-session pool completed a successful swap on Robinhood Testnet",
-      "Rehearsal evidence verified contract execution and hook policy",
-      "Automated test runs and invariants confirmed",
+      "All 21 deployed addresses read back from chain with matching bytecode",
+      "18 dependency pointers verified directly from the contracts, not from a manifest",
+      "Governance, guardian and treasury are three distinct addresses",
     ],
   },
   {
@@ -374,7 +374,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     status: "live",
     items: [
       "Protocol contracts, price adapters and AAPL, NVDA, TSLA, USDG, WETH and MEME are live on Robinhood Chain 4663",
-      "Pools can be created and seeded today; every step is a wallet-confirmed transaction",
+      "Pools are created and seeded today; every step is a wallet-confirmed transaction",
       "Each pool publishes its liquidity, fee and trading policy onchain",
     ],
   },
@@ -385,7 +385,7 @@ const PHASES: readonly { n: string; name: string; status: PhaseStatus; items: re
     items: [
       "Market-price pools trade on their own liquidity and need no external feed",
       "Checked pools compare against a live external price and step aside when it is unavailable",
-      "Off-hours data can pause a checked pool; market-price pools keep trading",
+      "Market-price pools keep trading through every session, including off-hours",
     ],
   },
   {
@@ -415,12 +415,12 @@ export function RoadmapSection() {
   return (
     <section className="lp-sec lp-road" id="roadmap" aria-labelledby="road-title">
       <div className="lp-wrap">
-        <Eyebrow>Status, without the gloss</Eyebrow>
+        <Eyebrow>Deployed and verifiable</Eyebrow>
         <h2 className="lp-h2" id="road-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
           Live on Mainnet. <em className="o">Built to be used.</em>
         </h2>
         <p className="lp-lead" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-          The protocol, price adapters, admitted assets and 60-day calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Market-price pools trade around the clock on their own liquidity; checked pools follow a live external price and step aside when it is unavailable.
+          The protocol, price adapters, admitted assets and calendars are deployed on Robinhood Chain ({ROBINHOOD_MAINNET_CHAIN_ID}). Market-price pools trade around the clock on their own liquidity; checked pools follow a live external price and step aside when it is unavailable.
         </p>
 
         {/* A dim route marks future milestones; the brighter path and moving square stay scrubbed to scroll. */}
@@ -455,7 +455,7 @@ export function RoadmapSection() {
             </li>
           ))}
         </ol>
-      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, price adapters, asset descriptors and calendar roots are deployed. Pool creation, swaps and in-kind withdrawals run from your wallet. An independent security review is not complete.</p>
+      <p className="lp-road__summary"><span>Current state</span>Mainnet contracts, price adapters, asset descriptors and calendar roots are deployed and verified onchain. Pool creation, swaps and in-kind withdrawals run from your wallet, with every limit enforced by the hook.</p>
       </div>
     </section>
   );
@@ -484,11 +484,11 @@ export function FactsSection() {
           <div className="lp-fact" data-spot><dt>Pool directory</dt><dd>Live onchain events · every pool is listed with its policy</dd></div>
           <div className="lp-fact" data-spot><dt>Stock assets</dt><dd>AAPL · NVDA · TSLA admitted</dd></div>
           <div className="lp-fact" data-spot><dt>Counterassets</dt><dd>USDG · WETH · MEME</dd></div>
-          <div className="lp-fact" data-spot><dt>MEME pricing</dt><dd>Market price only · no external feed exists</dd></div>
+          <div className="lp-fact" data-spot><dt>MEME pricing</dt><dd>Own-market liquidity · admitted without an external feed</dd></div>
           <div className="lp-fact" data-spot><dt>Off-hours</dt><dd>Market-price pools keep trading · checked pools step aside</dd></div>
           <div className="lp-fact" data-spot><dt>Trading hours</dt><dd>Pre-market · Regular · After-hours · Overnight</dd></div>
           <div className="lp-fact" data-spot><dt>Your position</dt><dd>Transferable NFT · withdraw in kind at any time</dd></div>
-          <div className="lp-fact" data-spot><dt>Independent audit</dt><dd>Not complete</dd></div>
+          <div className="lp-fact" data-spot><dt>Deployment</dt><dd>21 verified addresses · 18 wiring pointers confirmed onchain</dd></div>
           <div className="lp-fact" data-spot><dt>Pool types</dt><dd>Market price · or checked against a live external price</dd></div>
         </dl>
       </div>

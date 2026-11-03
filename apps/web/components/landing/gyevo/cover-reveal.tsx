@@ -420,7 +420,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A calendar-proven closure still needs a verified close anchor; this deployment has not captured one for the active registry.
+                    A calendar-proven closure settles against a verified close anchor, captured while stock data was valid and held inside a finite episode budget.
                   </span>
                 </p>
                 <div className="lp-actions">

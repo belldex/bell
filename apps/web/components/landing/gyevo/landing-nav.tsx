@@ -16,7 +16,7 @@ const SECTIONS = [
   { id: "policy-overview", label: "Market hours", desc: "Why each verified session changes the rules." },
   { id: "operating-policy", label: "Operating policy", desc: "Session fees, swap limits and planned closes." },
   { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
-  { id: "roadmap", label: "Readiness", desc: "What has been rehearsed and what remains." },
+  { id: "roadmap", label: "Deployment", desc: "Every contract, verified onchain." },
   { id: "facts", label: "Mainnet status", desc: "Mainnet deployment and pool directory." },
 ] as const;
 
