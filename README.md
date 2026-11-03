@@ -328,7 +328,7 @@ Governance, guardian and treasury are three distinct addresses.
 
 | Role | Address |
 |---|---|
-| Governance | `0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8D399` |
+| Governance | `0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399` |
 | Guardian | `0x072f9d4165DccBD9172023601d07bCE2FCF37072` |
 | Treasury | `0xF6e272FBF862AE055949C61BC41E6395dfE20841` |
 | Service recipient | `0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC` |
