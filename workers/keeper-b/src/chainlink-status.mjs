@@ -4,7 +4,9 @@ import { hashCalendarLeaf } from '@bell/protocol/calendar';
 const MAX_SESSION_ADAPTER_AGE_SECONDS = 120;
 const MAX_POLICY_INPUT_AGE_SECONDS = Object.freeze({ 1: 120, 2: 60, 3: 120, 4: 300 });
 const CALENDAR_ABI = parseAbi([
-  'function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
+  // CalendarLeaf.year is uint32 onchain. uint16 here made currentInterval fail to decode, which
+  // reported every asset as "calendar-uninitialized" even when the registry held a live leaf.
+  'function currentInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
 ]);
 const ASSET_ABI = parseAbi([
   'function descriptor(bytes32) view returns ((bytes32 id,address token,bool isStock,uint8 decimals,uint8 capabilityMask,address tokenPriceAdapter,address regularAdapter,address extendedAdapter,address overnightAdapter,address secondaryAdapter,bytes32 expectedCodeHash,bytes32 implementationFingerprint,bytes32 evidenceHash))',

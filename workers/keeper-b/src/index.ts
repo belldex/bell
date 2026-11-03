@@ -36,9 +36,12 @@ import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 export { KeeperState };
 
 const CALENDAR_ABI = parseAbi([
-  'function currentInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
-  'function nextInterval(bytes32) view returns ((bytes32 assetId,uint16 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
-  'function activateInterval(bytes32,(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32),bytes32[][])',
+  // CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92). Declaring it uint16 produced a
+  // different selector, so activateInterval reverted as an unknown function and currentInterval
+  // failed to decode, which is what surfaced as "Cannot read properties of undefined".
+  'function currentInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
+  'function nextInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
+  'function activateInterval(bytes32,(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),bytes32[][])',
 ]);
 const SESSION_ABI = parseAbi([
   'function latestSample(bytes32,uint8) view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
@@ -154,9 +157,17 @@ export async function runQuote(env, symbol, { nowSeconds = Math.floor(Date.now()
  * Low-frequency, session-bound Mainnet maintenance. Calendar intervals are advanced only when
  * their previous interval expires; in Chainlink mode the Worker asks SessionRegistry to capture
  * a close directly from the onchain feed during the five-minute boundary window.
+ *
+ * Calendar repair is deliberately NOT gated on a boundary window. The registry only exposes one
+ * `currentInterval`, and it goes empty the moment the committed leaf expires. If a boundary tick
+ * is missed — Cloudflare can delay or drop a cron, and a deploy can land mid-window — the calendar
+ * stays empty until the NEXT boundary, which is four to eight hours later. That is exactly the
+ * failure this run loop used to produce. So whenever `currentInterval` reads empty and the root
+ * still covers now, the worker activates the leaf that is live right now, no matter the clock.
  */
-export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Date.now() / 1000) } = {}) {
-  if (!isScheduledMaintenanceWindow(nowSeconds)) return { status: 'skipped', reason: 'outside a US market session boundary window' };
+export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Date.now() / 1000), force = false } = {}) {
+  const inWindow = isScheduledMaintenanceWindow(nowSeconds);
+  if (!inWindow && !force) return { status: 'skipped', reason: 'outside a US market session boundary window' };
   const txKey = env.BELL_TRANSACTION_PRIVATE_KEY;
   const calendarRegistry = env.BELL_CALENDAR_REGISTRY;
   const sessionRegistry = env.BELL_SESSION_REGISTRY;
@@ -579,7 +590,9 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 const worker = {
   async scheduled(controller, env, ctx) {
     const nowSeconds = Math.floor(controller.scheduledTime / 1000);
-    ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds }).then((result) => {
+    // force=true: every cron tick repairs an empty calendar regardless of the boundary guard.
+    // Boundary-only work (close capture) still self-gates inside the run.
+    ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds, force: true }).then((result) => {
       console.log('scheduled market maintenance', JSON.stringify(result));
     }).catch((error) => {
       const detail = String(error?.shortMessage ?? error?.message ?? error)
