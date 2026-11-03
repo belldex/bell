@@ -25,6 +25,8 @@
   --color-warn: #E27478;
   display: flex;
   min-height: 100dvh;
+  width: 100%;
+  overflow-x: clip;
   background: var(--color-bg-0);
   color: var(--color-ink);
   color-scheme: dark;
@@ -524,6 +526,20 @@
   .app-contracts-section__stats { width: 100%; justify-content: space-between; }
   .app-contracts-search { width: 100%; }
 }
+@media (max-width: 768px) {
+  .app-modal-backdrop { padding: 10px; }
+  .app-create-modal { width: 100%; max-height: calc(100dvh - 20px); }
+  .app-create-modal__layout { grid-template-columns: 1fr; gap: 16px; }
+  .app-create-modal__header { padding: 13px 16px; }
+  .app-create-modal__title { font-size: 18px; }
+  .app-create-modal__body { padding: 14px 16px; }
+  .app-create-modal__footer { padding: 12px 16px; }
+  .app-contracts-section { padding: 18px 16px; }
+  .app-contracts-tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .app-contracts-tabs::-webkit-scrollbar { display: none; }
+  .app-contracts-tab { flex: none; white-space: nowrap; }
+  .app-contracts-search { width: 100%; min-width: 0; }
+}
 @media (max-width: 540px) {
   .app-market-time > span:first-child { display: none; }
   .app-market-time > span:last-child { padding: 4px 6px; }
@@ -571,6 +587,13 @@
   .app-mainnet-status__contracts dl { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .app-mainnet-status__details-panel { padding: 13px; }
   .app-session-feeds__panel li { grid-template-columns: 38px 56px minmax(0,1fr); gap: 6px; font-size: 8px; }
+  .app-contract-card { padding: 14px; }
+  .app-contract-card__address-bar { padding: 6px 8px; gap: 6px; }
+  .app-contract-card__address-bar code { font-size: 10px; min-width: 0; }
+  .app-create-modal__header { padding: 12px 14px; }
+  .app-create-modal__title { font-size: 16px; }
+  .app-create-modal__body { padding: 12px 14px; }
+  .app-create-modal__footer { padding: 10px 14px; }
 }
 @media (max-width: 380px) {
   .app-terminal-bar { padding-inline: 11px; }

@@ -214,11 +214,11 @@ export default function CreatePage() {
       </div>}
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
-        <Button variant="ghost" onClick={() => goStep(Math.max(0, step - 1))} disabled={step === 0 || busy}><ArrowLeft className="h-4 w-4"/> Back</Button>
-        <div className="flex flex-wrap gap-2">
-          {step < STEPS.length - 1 && <Button onClick={() => goStep(Math.min(STEPS.length - 1, step + 1))} disabled={!stepOk[step] || busy}>Continue <ArrowRight className="h-4 w-4"/></Button>}
-          {step === STEPS.length - 1 && <button type="button" onClick={() => void startCreate()} disabled={busy || !stepOk[3]} className="inline-flex min-h-11 items-center gap-2 bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 disabled:opacity-50">{busy ? <><LoaderCircle className="h-4 w-4 animate-spin"/>{stage?.message ?? 'Working…'}</> : wallet.status !== 'connected' ? <><Wallet className="h-4 w-4"/>Connect wallet</> : wallet.wrongChain ? 'Switch to Mainnet' : 'Create and seed pool'}</button>}
+      <div className="mt-8 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-line pt-6">
+        <Button variant="ghost" className="w-full sm:w-auto justify-center" onClick={() => goStep(Math.max(0, step - 1))} disabled={step === 0 || busy}><ArrowLeft className="h-4 w-4"/> Back</Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {step < STEPS.length - 1 && <Button className="w-full sm:w-auto justify-center" onClick={() => goStep(Math.min(STEPS.length - 1, step + 1))} disabled={!stepOk[step] || busy}>Continue <ArrowRight className="h-4 w-4"/></Button>}
+          {step === STEPS.length - 1 && <button type="button" onClick={() => void startCreate()} disabled={busy || !stepOk[3]} className="inline-flex min-h-11 w-full sm:w-auto justify-center items-center gap-2 bg-ion px-5 font-mono text-xs uppercase tracking-[0.08em] text-bg-0 disabled:opacity-50">{busy ? <><LoaderCircle className="h-4 w-4 animate-spin"/>{stage?.message ?? 'Working…'}</> : wallet.status !== 'connected' ? <><Wallet className="h-4 w-4"/>Connect wallet</> : wallet.wrongChain ? 'Switch to Mainnet' : 'Create and seed pool'}</button>}
         </div>
       </div>
     </section>
@@ -273,5 +273,5 @@ function Metric({ label, value, note, loading = false }: { label: string; value:
   return <div className="min-w-0"><p className="font-mono text-[10px] uppercase text-dim">{label}</p><p className="mt-2 break-words text-sm text-ink">{loading ? <span className="app-inline-skeleton" role="status">Reading live value</span> : value}</p><p className="mt-1 text-xs text-dim">{note}</p></div>;
 }
 function ReviewRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex flex-wrap justify-between gap-3 py-3"><dt className="font-mono text-[10px] uppercase text-dim">{label}</dt><dd className="break-all text-right text-sm text-ink">{value}</dd></div>;
+  return <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 py-3"><dt className="font-mono text-[10px] uppercase text-dim">{label}</dt><dd className="break-all text-left sm:text-right text-sm text-ink">{value}</dd></div>;
 }

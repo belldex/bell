@@ -104,24 +104,24 @@ function PositionCard({ position, refresh }: { position: Position; refresh: () =
 
   const { pool } = position;
   return <article className="glass border border-line bg-surface/75 p-6">
-    <div className="flex flex-wrap justify-between gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
       <div><p className="font-mono text-xs text-dim">Position NFT #{position.id.toString()}</p>
         <Link href={`/pool/?hook=${pool.hook}`} className="mt-2 inline-flex items-center gap-3 font-display text-2xl text-ink"><TokenPair symbols={[pool.legs[0].symbol, pool.legs[1].symbol]} size={32}/>{pool.legs[0].symbol} / {pool.legs[1].symbol}</Link>
         <p className="mt-2 text-sm text-muted">BELL pool · hook {pool.hook.slice(0, 8)}…{pool.hook.slice(-6)}</p></div>
-      <dl className="text-right text-sm"><dt className="text-xs uppercase text-dim">Position range</dt><dd className="mt-1 text-ink">{position.lower} to {position.upper} ticks</dd><dt className="mt-3 text-xs uppercase text-dim">Liquidity units</dt><dd className="mt-1 font-mono text-ink">{position.liquidity.toString()}</dd></dl>
+      <dl className="text-left sm:text-right text-sm"><dt className="text-xs uppercase text-dim">Position range</dt><dd className="mt-1 text-ink">{position.lower} to {position.upper} ticks</dd><dt className="mt-3 text-xs uppercase text-dim">Liquidity units</dt><dd className="mt-1 font-mono text-ink">{position.liquidity.toString()}</dd></dl>
     </div>
     <p className="mt-5 text-sm text-muted">Current NFT ownership and liquidity units are read from Mainnet. Add uses your entered maximum amounts. A removal requires a nonzero minimum for both tokens — that minimum is the only price floor the PositionManager enforces, and it reverts if either received amount falls short. Collect sends accrued fees directly to your wallet; amounts are calculated on-chain when collected.</p>
     <div className="mt-5 flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={() => setMode(mode === 'add' ? 'none' : 'add')}><Plus className="h-4 w-4"/> Add liquidity</Button>
-      <Button variant="outline" size="sm" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')}><Minus className="h-4 w-4"/> Remove liquidity</Button>
-      <Button size="sm" disabled={busy} onClick={() => void submit('collect')}><Coins className="h-4 w-4"/> Collect fees</Button>
+      <Button variant="outline" size="sm" className="flex-1 sm:flex-none justify-center" onClick={() => setMode(mode === 'add' ? 'none' : 'add')}><Plus className="h-4 w-4"/> Add liquidity</Button>
+      <Button variant="outline" size="sm" className="flex-1 sm:flex-none justify-center" onClick={() => setMode(mode === 'remove' ? 'none' : 'remove')}><Minus className="h-4 w-4"/> Remove liquidity</Button>
+      <Button size="sm" className="w-full sm:w-auto justify-center" disabled={busy} onClick={() => void submit('collect')}><Coins className="h-4 w-4"/> Collect fees</Button>
     </div>
     {mode === 'add' && <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
       <label className="text-xs text-dim">Max {pool.legs[0].symbol}<input value={amount0} onChange={e => setAmount0(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label>
       <label className="text-xs text-dim">Max {pool.legs[1].symbol}<input value={amount1} onChange={e => setAmount1(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label>
-      <Button className="self-end" disabled={busy} onClick={() => void submit('increase')}>Add</Button>
+      <Button className="w-full sm:w-auto sm:self-end min-h-11 sm:min-h-0 justify-center" disabled={busy} onClick={() => void submit('increase')}>Add</Button>
     </div>}
-    {mode === 'remove' && <div className="mt-4 space-y-3"><div className="flex flex-wrap items-center gap-3"><label className="text-sm text-muted">Remove <select value={percent} onChange={e => setPercent(Number(e.target.value))} className="mx-2 border border-line bg-bg-1 p-2 text-ink"><option value={25}>25%</option><option value={50}>50%</option><option value={100}>100%</option></select> of liquidity</label></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs text-dim">Minimum {pool.legs[0].symbol} received<input value={minimum0} onChange={e => setMinimum0(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label><label className="text-xs text-dim">Minimum {pool.legs[1].symbol} received<input value={minimum1} onChange={e => setMinimum1(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label></div><Button disabled={busy} onClick={() => void submit('remove')}>Remove in-kind</Button></div>}
+    {mode === 'remove' && <div className="mt-4 space-y-3"><div className="flex flex-wrap items-center gap-3"><label className="text-sm text-muted">Remove <select value={percent} onChange={e => setPercent(Number(e.target.value))} className="mx-2 border border-line bg-bg-1 p-2 text-ink"><option value={25}>25%</option><option value={50}>50%</option><option value={100}>100%</option></select> of liquidity</label></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs text-dim">Minimum {pool.legs[0].symbol} received<input value={minimum0} onChange={e => setMinimum0(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label><label className="text-xs text-dim">Minimum {pool.legs[1].symbol} received<input value={minimum1} onChange={e => setMinimum1(e.target.value)} inputMode="decimal" className="mt-1 block w-full border border-line bg-bg-1 p-3 text-sm text-ink"/></label></div><Button className="w-full sm:w-auto min-h-11 sm:min-h-0 justify-center" disabled={busy} onClick={() => void submit('remove')}>Remove in-kind</Button></div>}
     {status && <p className="mt-4 break-words text-sm text-muted" role="status">{status} {hash && <a className="text-ion underline" href={`${explorer}${hash}`} target="_blank" rel="noreferrer">View transaction</a>}</p>}
 
     {/* Animated Position Action Modal */}

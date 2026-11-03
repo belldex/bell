@@ -77,14 +77,14 @@ function PoolCard({ pool }: { pool: LivePool }) {
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Link
           href={`/pool/?hook=${pool.hook}`}
-          className="inline-flex min-h-10 items-center gap-2 border border-line px-3 font-mono text-[11px] uppercase text-muted transition-colors hover:border-line-strong hover:text-ink"
+          className="inline-flex min-h-10 flex-1 sm:flex-none justify-center items-center gap-2 border border-line px-3 font-mono text-[11px] uppercase text-muted transition-colors hover:border-line-strong hover:text-ink"
         >
           Pool details
         </Link>
         {pool.lifecycle !== 3 && (
           <Link
             href={`/swap?hook=${pool.hook}`}
-            className="inline-flex min-h-10 items-center gap-2 border border-ion/40 px-3 font-mono text-[11px] uppercase text-ion transition-colors hover:bg-ion/10"
+            className="inline-flex min-h-10 flex-1 sm:flex-none justify-center items-center gap-2 border border-ion/40 px-3 font-mono text-[11px] uppercase text-ion transition-colors hover:bg-ion/10"
           >
             Open swap <ArrowUpRight size={14} aria-hidden="true" />
           </Link>
