@@ -12,7 +12,7 @@
     // :20-:39 window is covered in both hours. Everything else is inside :55-:59 / :00-:09.
     // Two cron entries only: the account is on the Workers Free plan (5 cron triggers total).
     "crons": [
-      "*/5 * * * *"
+      "* * * * *"
     ]
   },
   "durable_objects": {

@@ -35,10 +35,11 @@ import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 
 export { KeeperState };
 
-const CALENDAR_ABI = parseAbi([
-  // CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92). Declaring it uint16 produced a
-  // different selector, so activateInterval reverted as an unknown function and currentInterval
-  // failed to decode, which is what surfaced as "Cannot read properties of undefined".
+// CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92). Declaring it uint16 produced a
+// different selector, so activateInterval reverted as an unknown function and currentInterval
+// failed to decode, which is what surfaced as "Cannot read properties of undefined".
+// Exported so a test can pin the selector against the deployed registry.
+export const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
   'function nextInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
   'function activateInterval(bytes32,(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),bytes32[][])',

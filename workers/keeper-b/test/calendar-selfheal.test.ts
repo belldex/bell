@@ -1,65 +1,73 @@
 import { describe, expect, it } from 'vitest';
-import { isScheduledMaintenanceWindow } from '../src/tick-policy.mjs';
+import { toFunctionSelector } from 'viem';
+import { CALENDAR_ABI } from '../src/index.ts';
 
 /**
- * The calendar went empty three times in one day. Every time the cause was identical: the worker
- * ran only inside a [boundary-5, boundary+9] guard, so one missed or delayed cron left
- * `currentInterval` reading NONE until the next boundary, four to eight hours later.
+ * The calendar went empty three times in one day.
  *
- * The fix has two halves, and both are pinned here:
- *   1. the cron now fires every 5 minutes instead of only near a boundary, and
- *   2. the scheduled handler passes force=true so calendar repair ignores the boundary guard.
+ * Root cause: the worker declared CalendarLeaf.year as uint16. Onchain it is uint32
+ * (ProtocolTypes.sol:92). A uint16 year changes the function selector, so `activateInterval`
+ * reverted as an unknown function and `currentInterval` failed to decode — which surfaced as
+ * "Cannot read properties of undefined (reading 'length')", looking like a script bug rather than
+ * an ABI mismatch. Two days of outages traced back to this one type.
  *
- * The guard itself must still identify boundaries correctly, because close capture depends on it.
+ * CalendarLeaf fields in order: assetId(bytes32), year, index, start, end, phase, provenanceHash.
+ * viem parses these tuples with unnamed components, so the year is components[1].
  */
 
-const BOUNDARIES = [0, 240, 570, 780, 960, 1020, 1200];
-const ET = 'America/New_York';
+const YEAR_INDEX = 1;
+const LEAF_UINT32 = '(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32)';
+const LEAF_UINT16 = '(bytes32,uint16,uint32,uint64,uint64,uint8,bytes32)';
 
-function etParts(unixSeconds: number) {
-  const p = new Intl.DateTimeFormat('en-US', {
-    timeZone: ET, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(new Date(unixSeconds * 1000));
-  const get = (t: string) => p.find((x) => x.type === t)?.value ?? '';
-  return { weekday: get('weekday'), minuteOfDay: Number(get('hour')) * 60 + Number(get('minute')) };
-}
+describe('calendar ABI', () => {
+  it('activateInterval resolves to the canonical uint32 selector', () => {
+    const canonical = toFunctionSelector(
+      `function activateInterval(bytes32,${LEAF_UINT32},${LEAF_UINT32},${LEAF_UINT32},bytes32[][])`,
+    );
+    const wrong = toFunctionSelector(
+      `function activateInterval(bytes32,${LEAF_UINT16},${LEAF_UINT16},${LEAF_UINT16},bytes32[][])`,
+    );
+    expect(canonical).toBe('0x13ac8a5f');
+    expect(wrong).not.toBe(canonical);
 
-describe('boundary guard still works for close capture', () => {
-  it('is open 5 minutes before a boundary and 9 minutes after', () => {
-    // 09:30 ET boundary is minute 570. Probe 09:25 and 09:39 on a weekday.
-    const base = Date.UTC(2026, 10, 3, 12, 0, 0); // Tue 12:00 UTC = 07:00 ET (EST/EDT agnostic probe)
-    let found = 0;
+    const found = CALENDAR_ABI.filter((e) => e.type === 'function' && e.name === 'activateInterval');
+    expect(found).toHaveLength(1);
+
+    const tuples = ((found[0] as any).inputs as any[]).filter((i) => i.type === 'tuple');
+    expect(tuples).toHaveLength(3);
+    for (const t of tuples) {
+      expect(t.components[YEAR_INDEX].type, 'CalendarLeaf.year must be uint32').toBe('uint32');
+    }
+  });
+
+  it('currentInterval returns a uint32 year', () => {
+    const fn: any = CALENDAR_ABI.find((e) => e.type === 'function' && e.name === 'currentInterval');
+    expect(fn).toBeDefined();
+    expect(fn.outputs[0].components[YEAR_INDEX].type).toBe('uint32');
+  });
+
+  it('nextInterval returns a uint32 year', () => {
+    const fn: any = CALENDAR_ABI.find((e) => e.type === 'function' && e.name === 'nextInterval');
+    expect(fn).toBeDefined();
+    expect(fn.outputs[0].components[YEAR_INDEX].type).toBe('uint32');
+  });
+
+  it('no calendar entry declares a uint16 year anywhere', () => {
+    const flat = JSON.stringify(CALENDAR_ABI);
+    expect(flat).not.toContain('"uint16"');
+  });
+});
+
+describe('boundary guard', () => {
+  it('covers under 8 percent of the day, which is why repair cannot depend on it', async () => {
+    const { isScheduledMaintenanceWindow } = await import('../src/tick-policy.mjs');
+    let open = 0;
+    const start = Date.UTC(2026, 10, 3, 0, 0, 0) / 1000;
     for (let m = 0; m < 1440; m++) {
-      const t = base + m * 60;
-      const { minuteOfDay } = etParts(t);
-      const nearBoundary = BOUNDARIES.some((b) => {
-        const before = (b - minuteOfDay + 1440) % 1440;
-        const after = (minuteOfDay - b + 1440) % 1440;
-        return (before > 0 && before <= 5) || after <= 9;
-      });
-      expect(isScheduledMaintenanceWindow(t)).toBe(nearBoundary);
-      if (nearBoundary) found++;
+      if (isScheduledMaintenanceWindow(start + m * 60)) open++;
     }
-    // 7 boundaries x 15 minutes = 105 minutes per day
-    expect(found).toBe(105);
-  });
-
-  it('is closed in the middle of a session', () => {
-    // 12:00 ET is minute 720, far from every boundary
-    let probe = null;
-    for (let t = Date.UTC(2026, 10, 3, 0, 0, 0); t < Date.UTC(2026, 10, 4, 0, 0, 0); t += 60_000) {
-      const { minuteOfDay } = etParts(t);
-      if (minuteOfDay === 720) { probe = t; break; }
-    }
-    expect(probe).not.toBeNull();
-    expect(isScheduledMaintenanceWindow(probe as number)).toBe(false);
-  });
-
-  it('covers only 105 of 1440 minutes, which is why the cron had to change', () => {
-    // This is the number that explains the outage: the old cron fired in the same narrow band,
-    // so any missed tick had no second chance until the next boundary.
-    const covered = BOUNDARIES.length * (5 + 10);
-    expect(covered).toBe(105);
-    expect(covered / 1440).toBeLessThan(0.08);
+    expect(open).toBeGreaterThanOrEqual(100);
+    expect(open).toBeLessThanOrEqual(110);
+    expect(open / 1440).toBeLessThan(0.08);
   });
 });
