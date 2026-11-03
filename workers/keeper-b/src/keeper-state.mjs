@@ -42,6 +42,18 @@ export class KeeperState {
       return Response.json({ ok: true, at });
     }
 
+    // Known pool hooks, cached so the scheduled handler can refresh recovering pools without
+    // repeating the factory log scan on every tick.
+    if (url.pathname === '/hooks') {
+      if (request.method === 'POST') {
+        let hooks = [];
+        try { hooks = await request.json(); } catch { hooks = []; }
+        if (Array.isArray(hooks)) await this.ctx.storage.put('knownHooks', hooks);
+        return Response.json({ ok: true, count: Array.isArray(hooks) ? hooks.length : 0 });
+      }
+      return Response.json({ hooks: (await this.ctx.storage.get('knownHooks')) ?? [] });
+    }
+
     if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 
     if (url.pathname === '/quote') {

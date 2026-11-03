@@ -256,6 +256,54 @@ export async function runScheduledMaintenance(env, { nowSeconds = Math.floor(Dat
   return { status: values.some((result: any) => result.status === 'failed') ? 'partial' : 'ok', assets: results };
 }
 
+/**
+ * Bring every recovering pool back to tradable.
+ *
+ * A pool that misses a session boundary lands in RECOVERING with RECOVERY_PENDING. It comes back
+ * with two permissionless `refreshState` calls about sixty seconds apart: the first starts the
+ * candidate, the second confirms an advanced observation. Until then `canSwap` is false, so a
+ * visitor would find a pool they cannot trade against and no indication why.
+ *
+ * The keeper already signs maintenance transactions and runs every minute, so it performs both
+ * checkpoints itself. Only pools that actually report RECOVERY_PENDING are touched.
+ */
+export async function refreshRecoveringPools(env, { nowSeconds = Math.floor(Date.now() / 1000), hooks = [] } = {}) {
+  const reasons = [];
+  if (!hooks.length) return { status: 'skipped', reason: 'no known pools' };
+  const txKey = env.BELL_TRANSACTION_PRIVATE_KEY;
+  const rpcUrl = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY || env.RH_TESTNET_RPC_PRIMARY;
+  if (!txKey || !rpcUrl) return { status: 'skipped', reason: 'keeper signing key or RPC is not configured' };
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
+  const account = privateKeyToAccount(txKey);
+  const publicClient = createPublicClient({ transport: http(rpcUrl) });
+  const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
+  if (await publicClient.getChainId() !== expectedChainId) return { status: 'failed', reason: 'wrong chain' };
+
+  const RECOVERY_PENDING = 1n << 12n;
+  const HOOK_ABI = parseAbi([
+    'function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] a,uint128[2] b,uint128[2] c,uint128[2] d,uint128[2] e,uint64 f,uint64 g,bytes32 h,bytes32 i))',
+    'function refreshState() returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] a,uint128[2] b,uint128[2] c,uint128[2] d,uint128[2] e,uint64 f,uint64 g,bytes32 h,bytes32 i))',
+  ]);
+
+  const out = {};
+  for (const hook of hooks) {
+    try {
+      const policy = await publicClient.readContract({ address: hook, abi: HOOK_ABI, functionName: 'getPolicy' });
+      if (policy.canSwap) { out[hook] = 'tradable'; continue; }
+      if ((BigInt(policy.reasonBits) & RECOVERY_PENDING) === 0n) { out[hook] = 'not-recovering'; continue; }
+      const { request } = await publicClient.simulateContract({ address: hook, abi: HOOK_ABI, functionName: 'refreshState', account });
+      const hash = await walletClient.writeContract(request);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') throw new Error(`refreshState reverted (${hash})`);
+      out[hook] = { status: 'checkpointed', txHash: hash };
+      reasons.push(hook);
+    } catch (error) {
+      out[hook] = { status: 'failed', reason: String(error?.shortMessage ?? error?.message ?? error).slice(0, 160) };
+    }
+  }
+  return { status: 'ok', pools: out };
+}
+
 /** Public read-only directory for pools emitted by the deployed Mainnet factory. */
 export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   const factory = env.BELL_POOL_FACTORY;
@@ -602,6 +650,20 @@ const worker = {
     // Boundary-only work (close capture) still self-gates inside the run.
     ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds, force: true }).then(async (result) => {
       console.log('scheduled market maintenance', JSON.stringify(result));
+      // Bring any recovering pool back to tradable. Without this a missed boundary leaves a pool
+      // the visitor cannot trade against until someone finds the checkpoint button.
+      let poolRecovery = null;
+      try {
+        const id = env.KEEPER_DO.idFromName('bell-keeper');
+        const hooksRes = await env.KEEPER_DO.get(id).fetch(new Request('https://do/hooks'));
+        const { hooks } = await hooksRes.json();
+        if (Array.isArray(hooks) && hooks.length > 0) {
+          poolRecovery = await refreshRecoveringPools(env, { nowSeconds, hooks });
+          console.log('scheduled pool recovery', JSON.stringify(poolRecovery));
+        }
+      } catch (error) {
+        console.error('pool recovery failed', String(error?.message ?? error).slice(0, 160));
+      }
       // Persist the outcome where /status can read it. A repair that only exists in the log is a
       // repair nobody notices failing, which is how the calendar stayed empty for two days.
       try {
@@ -609,7 +671,7 @@ const worker = {
         await env.KEEPER_DO.get(id).fetch(new Request('https://do/maintenance', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(result),
+          body: JSON.stringify({ ...result, poolRecovery }),
         }));
       } catch (error) {
         const detail = String(error?.message ?? error).slice(0, 140);
@@ -642,7 +704,19 @@ const worker = {
     if (isPublicRead && request.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
     if (url.pathname === '/pools') {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
-      try { return cors(json(await runPools(env))); }
+      try {
+        const pools = await runPools(env);
+        // Cache the hook list so scheduled maintenance can refresh recovering pools cheaply.
+        try {
+          const id = env.KEEPER_DO.idFromName('bell-keeper');
+          await env.KEEPER_DO.get(id).fetch(new Request('https://do/hooks', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(pools.pools.map((p) => p.hook)),
+          }));
+        } catch { /* the directory response is what matters */ }
+        return cors(json(pools));
+      }
       catch (error) {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);
         console.error('pool directory failed', error?.name ?? 'Error', detail);
