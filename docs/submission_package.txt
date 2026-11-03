@@ -1,0 +1,164 @@
+================================================================================
+PROJECT SUBMISSION & HANDOVER REPORT — BELL
+Target Chain: Robinhood Chain (EVM) Mainnet 4663
+Generated: November 2026
+================================================================================
+
+--------------------------------------------------------------------------------
+SECTION 1: BRIEF
+--------------------------------------------------------------------------------
+Status: Completed & Live on Production Mainnet
+- Repository: https://github.com/belldex/bell
+- Branch: main (production)
+- Protocol: BELL (Bourse-Event Liquidity Layer) — Session-Aware AMM for Robinhood Chain Stock Tokens
+
+
+--------------------------------------------------------------------------------
+SECTION 2: DEV KERJA
+--------------------------------------------------------------------------------
+1. Live Production Web URL:
+   https://bell-black.vercel.app
+
+2. Platform Routes:
+   - Live Pool Directory: https://bell-black.vercel.app/pools
+   - Single Pool Policy Details: https://bell-black.vercel.app/pool
+   - Create & Seed Pool Wizard: https://bell-black.vercel.app/create
+   - Swap Execution Terminal: https://bell-black.vercel.app/swap
+   - Manage NFT Liquidity Positions: https://bell-black.vercel.app/positions
+   - Protocol & Verified Contracts Registry: https://bell-black.vercel.app/protocol#contracts
+   - Terms of Service: https://bell-black.vercel.app/terms
+   - Privacy Policy: https://bell-black.vercel.app/privacy
+   - Cookies Policy: https://bell-black.vercel.app/cookies
+
+3. GitHub Repository:
+   https://github.com/belldex/bell
+   Branch: main
+
+4. Tech Stack & Architecture:
+   - Frontend: Next.js 16.4.3 (App Router) + React 19.3.1 + TypeScript 7.0.2 (Strict)
+   - Styling: Tailwind CSS v4 + Institutional Control Room custom CSS tokens
+   - Smart Contracts: Solidity 0.8.26 (Cancun EVM, viaIR, native solc pipeline)
+   - AMM Framework: Uniswap v4 Core + Uniswap v4 Periphery
+   - Hook Engine: BellHook (CREATE2 salt mined, flags 0x2CC0: beforeInitialize, beforeSwap, afterSwap, beforeAddLiquidity)
+   - Policy Engine: BellPolicyOracle (staticcall aggregator) + BellModeEvaluator (session fees & budgets) + BellPolicyDependencyReader (bounded staticcalls)
+   - Calendar Architecture: CalendarRegistry (Merkle-committed NYSE session intervals)
+   - Asset & Session State: AssetRegistry (token admission + fingerprints) + SessionRegistry (Chainlink session feeds + close anchors)
+   - Emergency Circuit Breaker: SafetyController (role-separated governance, guardian, and treasury)
+   - Web3 Client: viem 2.57.11 + wagmi 2.19.5 + @rainbow-me/rainbowkit 2.2.11 (strictly pinned to chain 4663)
+   - Middleware & Keeper: Cloudflare Worker (bell-keeper-b.asysyifaq25.workers.dev) for CORS pool directory indexing and session status reporting
+   - Testing: 993 total tests passing (Foundry forge, node:test, Vitest) + strict tsc zero errors
+
+5. Documentation Index:
+   - Project Report (report.md): https://github.com/belldex/bell/blob/main/docs/report.md
+   - Developer Brief Final: https://github.com/belldex/bell/blob/main/docs/BELL-Developer-Brief-Final.md
+   - Implementation Plan Final: https://github.com/belldex/bell/blob/main/docs/BELL-Implementation-Plan-Final.md
+   - Mainnet Current State Snapshot: https://github.com/belldex/bell/blob/main/docs/CURRENT-STATE.md
+   - Mainnet Deployment Runbook: https://github.com/belldex/bell/blob/main/docs/MAINNET-DEPLOY.md
+   - Main Repository README: https://github.com/belldex/bell/blob/main/README.md
+
+
+--------------------------------------------------------------------------------
+SECTION 3: QUALITY ASSURANCE (QA) REPORT
+--------------------------------------------------------------------------------
+[PASS] 1. Code Quality & Compilation:
+   - Strict TypeScript compilation: Zero errors (`pnpm --filter @bell/web typecheck` exit code 0).
+   - Full automated test suite: 993 tests passing (Foundry: 429, node:test: 484, Vitest: 80).
+   - Zero obsolete placeholders or sample mocks: all queries wired to live onchain events, viem clients, or the deployed Cloudflare Worker API.
+   - Formal safety invariant checks: LossOfFundsIndex.t.sol indexes 27 loss-of-funds vectors with 100% test pass.
+
+[PASS] 2. Responsive UI & Terminal Polish:
+   - Desktop: Full institutional market terminal layout with interactive 3D Three.js glyph-field, session plots, and contracts directory.
+   - Mobile / Tablet: 1-column vertical stacking, thumb-friendly touch targets (min 44px), swipeable contract category tabs, and zero horizontal overflow.
+   - Transaction Experience: 2-column animated transaction execution modal rendering real-time step pipelines with Blockscout explorer links, fitting completely in one screen.
+
+[PASS] 3. End-to-End Application Flow (proven on Robinhood Chain Mainnet 4663):
+   - Pool Creation: Factory mines hook address salt, checks session intervals, verifies token approvals, executes atomic createAndSeed, and mints position NFT.
+   - Swap Execution: Exact-input and exact-output simulation through BellRouter, verifying dynamic fee schedule (0.05% - 1.00%) and enforcing flow caps.
+   - Liquidity Management: PositionManager integration discovering wallet-owned NFTs, enabling add liquidity, in-kind removal, and fee collection.
+   - Transparency: Complete deployed contract registry with 1-click address copy and direct Blockscout explorer links on /protocol.
+
+[PASS] 4. GitHub Repository Cleanliness:
+   - Working tree clean, branch main synced with origin/main.
+   - Sensitive Data: Private keys strictly excluded from source code; noncustodial architecture ensures private keys never leave user wallets.
+
+
+--------------------------------------------------------------------------------
+SECTION 4: ON-CHAIN MAINNET CONTRACT ADDRESSES (ROBINHOOD CHAIN 4663)
+--------------------------------------------------------------------------------
+
+Network: Robinhood Chain Mainnet (EVM)
+Chain ID: 4663
+Native Currency: ETH
+Block Explorer: https://robinhoodchain.blockscout.com
+
+1. BellPoolFactory (Upgraded Factory & Pool Initializer):
+   Address: 0xf677edc6346be53686E6DD42374A744cab9d0A5B
+   Tx Hash: 0x5d0a42cd499c2a08da3a04f1173432c8f698a300118a4030b282c0e871fbb99f
+   Block:   103948148
+
+2. BellRouter (Exact-Input / Exact-Output Swap Execution):
+   Address: 0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5
+   Role:    Front-facing swap router with onchain slippage and deadline enforcement
+
+3. Uniswap v4 PoolManager (Canonical AMM Core Singleton):
+   Address: 0x8b26fefa276860592d45114cb30b335dddd87b56
+   Role:    Canonical pool state manager
+
+4. Uniswap v4 PositionManager (Noncustodial ERC-721 NFT Manager):
+   Address: 0x84da249aafa359886c6a2ae1ebdc78a6059b662d
+   Role:    Positions manager for adding, in-kind burning, and fee collections
+
+5. BellHookDeployer (Deterministic CREATE2 Deployer):
+   Address: 0x3e5cEBb068ac71D742f700Db918908a15B8c45C5
+   Tx Hash: 0xeb656b64ee49cb4664bbdd45386f3aece09d2b5b83b1180b2918282bf531beb7
+   Block:   103948141
+
+6. BellPolicyOracle (Aggregated Staticcall Oracle):
+   Address: 0x908bea5cd3C5297Ad69aCb19279c413d594cd335
+   Tx Hash: 0xcb958a22707a7492c374a2f41f6e481c821836466e471cf73baa21601657ec6a
+   Block:   103948123
+
+7. BellModeEvaluator (Session Fee & Closure Budget Engine):
+   Address: 0xEBDb2291f07F10490E7f34a5cD5C37dF95F877F4
+   Tx Hash: 0x4c6a3a0e3ea4d67b34ea37b4a9333ee6aab07c5df402b48b0f864ba9dbbfd1b4
+   Block:   103948132
+
+8. BellPolicyDependencyReader (Bounded Staticcall Reader):
+   Address: 0xe5D8c6Ba18589a71a89D11c54B9E03806A260CE3
+   Role:    Low-level bounded dependency caller preventing silent defaults
+
+9. AssetRegistry (Canonical Asset Directory):
+   Address: 0x0d9c0c8b2065b08a8ad4abc861eb128385ef18c6
+   Role:    Directory of admitted stock tokens and counterassets
+
+10. CalendarRegistry (Merkle-Committed Exchange Schedules):
+    Address: 0x394983bff2715d57197389f323d807b0d61c05a3
+    Role:    Committed NYSE session calendar roots and holiday schedules
+
+11. SessionRegistry (Price Health & Close Anchors):
+    Address: 0x5f1b0212dc6167cbc1883f910640a685b1243795
+    Role:    Tracks onchain Chainlink session feeds and verified close anchors
+
+12. SafetyController (Emergency Circuit Breaker):
+    Address: 0x7243cf13f0308edd4a0397551042fea3cf9da179
+    Role:    Role-separated emergency pause and delayed resumption
+
+13. Canonical Permit2:
+    Address: 0x000000000022d473030f116ddee9f6b43ac78ba3
+    Role:    Canonical signature approval contract
+
+14. Admitted Stock Tokens & Counterassets:
+    - AAPL (Apple Inc.):               0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9 (18 decimals)
+    - NVDA (NVIDIA Corporation):      0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC (18 decimals)
+    - TSLA (Tesla, Inc.):              0x322F0929c4625eD5bAd873c95208D54E1c003b2d (18 decimals)
+    - USDG (Global Dollar):            0x5fc5360d0400a0fd4f2af552add042d716f1d168 (6 decimals)
+    - WETH (Wrapped Ether):            0x0bd7d308f8e1639fab988df18a8011f41eacad73 (18 decimals)
+    - MEME (Community Token):          0x385F4f8ae47651ce5F58F5265395a669f8281e18 (18 decimals)
+
+15. Protocol Roles & Accounts:
+    - Governance Deployer: 0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399
+    - Protocol Treasury:   0xf6e272fbf862ae055949c61bc41e6395dfe20841
+    - Service Recipient:   0x58cd82a008cb9a6c0c605991b40a09bd6aa1a6fc (49 USDG fee)
+
+Verification: Onchain verified bytecode and wiring confirmed on Robinhood Chain Mainnet (4663) at block 103948602.
+================================================================================
