@@ -748,17 +748,22 @@ const worker = {
           cache = await cached.json();
         } catch { cache = null; }
         const pools = await runPools(env, { cache });
-        // Persist the cache and the hook list for scheduled maintenance.
+        // Persist the cache and the hook list for scheduled maintenance. The cached config holds
+        // BigInt cap values, and JSON.stringify refuses them outright — a plain stringify threw and
+        // the cache was never written, so every request repeated the whole factory log scan.
+        const jsonSafe = (value) => JSON.stringify(value, (_key, v) => (typeof v === 'bigint' ? v.toString() : v));
         if (doStub) {
           try {
             await doStub.fetch(new Request('https://do/poolcache', {
-              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pools.cache),
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: jsonSafe(pools.cache),
             }));
             await doStub.fetch(new Request('https://do/hooks', {
               method: 'POST', headers: { 'content-type': 'application/json' },
               body: JSON.stringify(pools.pools.map((p) => p.hook)),
             }));
-          } catch { /* the directory response is what matters */ }
+          } catch (error) {
+            console.error('pool cache write failed', String(error?.message ?? error).slice(0, 160));
+          }
         }
         const { cache: _omit, ...response } = pools;
         return cors(json(response));
