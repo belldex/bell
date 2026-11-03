@@ -70,8 +70,10 @@ const HOOK_ABI = parseAbi([
 ]);
 const POOL_CREATED_EVENT = parseAbiItem('event PoolCreated(address indexed hook,bytes32 indexed poolId,bytes32 configHash,address indexed creator,address recipient)');
 // Cloudflare Workers abort an invocation that exceeds 50 subrequests. Reserve headroom for the
-// chain-id, block-number and per-pool reads that follow the log scan.
-const POOL_SCAN_MAX_PAGES = 24;
+// chain-id, block-number and per-pool reads that follow the log scan. The configured Mainnet
+// secondary endpoint accepts multi-hundred-thousand block ranges, so a handful of pages covers the
+// whole deployment history; the incremental cache then keeps later scans to one page.
+const POOL_SCAN_MAX_PAGES = 4;
 const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
 const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
 const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
@@ -305,7 +307,7 @@ export async function refreshRecoveringPools(env, { nowSeconds = Math.floor(Date
 }
 
 /** Public read-only directory for pools emitted by the deployed Mainnet factory. */
-export async function runPools(env, { client, fetchImpl = fetch } = {}) {
+export async function runPools(env, { client, fetchImpl = fetch, cache = null } = {}) {
   const factory = env.BELL_POOL_FACTORY;
   // Some endpoints serve eth_call but reject eth_getLogs. Prefer the Mainnet secondary/archive
   // endpoint for event discovery, then use the configured primary as a fallback.
@@ -316,107 +318,138 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
   const chainId = await chain.getChainId();
   const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 46630);
   if (chainId !== expectedChainId) throw quoteError(`wrong chain ${chainId}, expected ${expectedChainId}`, 503);
-  const fromBlock = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
+  const genesisBlock = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
   const blockNumber = await chain.getBlockNumber();
-  let logs;
-  try {
-    // Raw eth_getLogs avoids provider-specific event-filter encoding quirks while still asking
-    // the configured chain RPC for canonical event data. Cloudflare caps a single invocation at 50
-    // subrequests, so the scan must fit its whole page count inside that budget: widen the page
-    // size instead of firing one request per fixed window, and issue them sequentially.
-    const span = blockNumber >= fromBlock ? blockNumber - fromBlock + 1n : 0n;
-    const ranges: Array<[bigint, bigint]> = [];
-    if (span > 0n) {
+
+  // Cloudflare caps one invocation at 50 subrequests. With five live pools the per-pool reads alone
+  // consumed forty-five, and the log scan pushed the total past the cap, so the whole directory
+  // answered 503. The scan is now incremental (resume from the last seen block) and immutable pool
+  // metadata is cached, leaving only the three reads that actually change per request.
+  const cachedStatic: Record<string, any> = cache?.static ?? {};
+  const scanFrom = cache?.cursor && BigInt(cache.cursor) + 1n > genesisBlock
+    ? BigInt(cache.cursor) + 1n
+    : genesisBlock;
+
+  let logs: any[] = [];
+  if (blockNumber >= scanFrom) {
+    try {
+      const span = blockNumber - scanFrom + 1n;
       const pages = BigInt(Math.min(POOL_SCAN_MAX_PAGES, Number(span)));
       const pageSize = (span + pages - 1n) / pages;
-      for (let start = fromBlock; start <= blockNumber; start += pageSize) {
+      const ranges: Array<[bigint, bigint]> = [];
+      for (let start = scanFrom; start <= blockNumber; start += pageSize) {
         const end = start + pageSize - 1n < blockNumber ? start + pageSize - 1n : blockNumber;
         ranges.push([start, end]);
       }
+      const chunks: unknown[] = [];
+      for (const [start, end] of ranges) {
+        chunks.push(await chain.request({ method: 'eth_getLogs', params: [{
+          address: factory, fromBlock: toHex(start), toBlock: toHex(end), topics: [toEventSelector(POOL_CREATED_EVENT)],
+        }] } as any));
+      }
+      logs = chunks.flatMap((chunk) => {
+        if (!Array.isArray(chunk)) throw new Error('eth_getLogs returned a malformed result');
+        return chunk;
+      });
+    } catch (rpcError) {
+      const rpcDetail = String(rpcError?.shortMessage ?? rpcError?.message ?? rpcError)
+        .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180);
+      console.error('factory eth_getLogs failed', rpcError?.name ?? 'Error', rpcDetail);
+      // Explorer fallback is read-only and still verifies every discovered hook against the RPC.
+      const legacy = new URL('https://robinhoodchain.blockscout.com/api');
+      legacy.search = new URLSearchParams({ module: 'logs', action: 'getLogs', fromBlock: String(scanFrom), toBlock: 'latest', address: factory }).toString();
+      // Blockscout rejects custom User-Agent strings on this public compatibility API.
+      const response = await fetchImpl(legacy, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw quoteError(`pool index unavailable after RPC log read (${rpcDetail}): ${response.status}`, 503);
+      const page = await response.json();
+      if (!Array.isArray(page?.result)) throw quoteError(`pool logs unavailable (${String(rpcError?.shortMessage ?? rpcError?.message ?? 'RPC error').slice(0, 120)})`, 503);
+      logs = page.result;
     }
-    const chunks: unknown[] = [];
-    for (const [start, end] of ranges) {
-      chunks.push(await chain.request({ method: 'eth_getLogs', params: [{
-        address: factory, fromBlock: toHex(start), toBlock: toHex(end), topics: [toEventSelector(POOL_CREATED_EVENT)],
-      }] } as any));
-    }
-    logs = chunks.flatMap((chunk) => {
-      if (!Array.isArray(chunk)) throw new Error('eth_getLogs returned a malformed result');
-      return chunk;
-    });
-  } catch (rpcError) {
-    const rpcDetail = String(rpcError?.shortMessage ?? rpcError?.message ?? rpcError)
-      .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180);
-    console.error('factory eth_getLogs failed', rpcError?.name ?? 'Error', rpcDetail);
-    // Explorer fallback is read-only and still verifies every discovered hook against the RPC.
-    const legacy = new URL('https://robinhoodchain.blockscout.com/api');
-    legacy.search = new URLSearchParams({ module: 'logs', action: 'getLogs', fromBlock: String(fromBlock), toBlock: 'latest', address: factory }).toString();
-    // Blockscout rejects custom User-Agent strings on this public compatibility API.
-    const response = await fetchImpl(legacy, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(10_000) });
-    if (!response.ok) throw quoteError(`pool index unavailable after RPC log read (${rpcDetail}): ${response.status}`, 503);
-    const page = await response.json();
-    if (!Array.isArray(page?.result)) throw quoteError(`pool logs unavailable (${String(rpcError?.shortMessage ?? rpcError?.message ?? 'RPC error').slice(0, 120)})`, 503);
-    logs = page.result;
   }
   if (!Array.isArray(logs)) throw quoteError('chain RPC returned malformed factory logs', 503);
+
   const found = new Map<string, any>();
   for (const log of logs) {
-    if (BigInt(log.blockNumber) < fromBlock) continue;
     try {
       const decoded = decodeEventLog({ abi: [POOL_CREATED_EVENT], data: log.data, topics: log.topics });
       const hook = decoded.args.hook;
       if (hook) found.set(String(hook).toLowerCase(), { args: decoded.args, blockNumber: BigInt(log.blockNumber) });
     } catch { /* Ignore unrelated factory events; only PoolCreated rows are surfaced. */ }
   }
-  const unique = [...found.values()];
-  const pools = await Promise.all(unique.map(async (log) => {
-    const hook = log.args.hook;
-    const config = await chain.readContract({ address: hook, abi: POOL_CONFIG_ABI, functionName: 'config' });
-    const [policy, state, symbol0, symbol1, decimals0, decimals1] = await Promise.all([
-      chain.readContract({ address: hook, abi: POOL_POLICY_ABI, functionName: 'getPolicy' }),
-      chain.readContract({ address: hook, abi: POOL_STATE_ABI, functionName: 'state' }),
-      chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'symbol' }),
-      chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'symbol' }),
-      chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
-      chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'decimals' }),
-    ]);
-    // A PoolCreated event is permanent, so an emptied pool keeps appearing here forever. Read the
-    // pool's real depth from PoolManager storage so the directory can tell a funded market from a
-    // drained one instead of advertising "Tradable" for a pool nobody can swap against.
-    // Layout: pool state base = keccak256(poolId, POOLS_SLOT=6); base+0 is slot0, base+3 is liquidity.
-    const poolId = log.args.poolId;
-    let poolLiquidity: bigint | null = null;
-    let poolSqrtPriceX96: bigint | null = null;
-    let poolTick: number | null = null;
-    try {
-      const poolStateBase = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'uint256' }], [poolId, 6n]));
-      const extsloadAbi = [{ type: 'function', name: 'extsload', stateMutability: 'view', inputs: [{ name: 'slot', type: 'bytes32' }], outputs: [{ name: 'value', type: 'bytes32' }] }] as const;
-      const [slot0, liquidityWord] = await Promise.all([
-        chain.readContract({ address: config.poolManager, abi: extsloadAbi, functionName: 'extsload', args: [poolStateBase] }),
-        chain.readContract({
-          address: config.poolManager, abi: extsloadAbi, functionName: 'extsload',
-          args: ['0x' + (BigInt(poolStateBase) + 3n).toString(16).padStart(64, '0') as `0x${string}`],
-        }),
+
+  // Merge newly discovered hooks with the cached ones, preserving first-seen metadata.
+  const staticCache: Record<string, any> = { ...cachedStatic };
+  for (const [key, log] of found) {
+    if (staticCache[key]) continue;
+    staticCache[key] = { poolId: log.args.poolId, createdAtBlock: String(log.blockNumber), config: null, legs: null };
+  }
+
+  const EXTSLOAD_MANY_ABI = parseAbi(['function extsload(bytes32[]) view returns (bytes32[])']);
+  const strings = (values) => Array.from(values, (value) => String(value));
+
+  // Pools are processed one at a time. Twenty concurrent reads tripped the free-tier RPC's rate
+  // limit, and the swallowed failures surfaced as a funded pool reporting no liquidity at random.
+  const pools = [];
+  for (const [key, entry] of Object.entries(staticCache)) {
+    pools.push(await readPool(key, entry));
+  }
+
+  async function readPool(key: string, entry: any) {
+    const hook = entry.hook ?? key;
+    const poolId = entry.poolId;
+
+    // Immutable metadata is read once per pool and then cached.
+    let config = entry.config;
+    let legs = entry.legs;
+    if (!config || !legs) {
+      config = await chain.readContract({ address: hook, abi: POOL_CONFIG_ABI, functionName: 'config' });
+      const [symbol0, symbol1, decimals0, decimals1] = await Promise.all([
+        chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'symbol' }),
+        chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'symbol' }),
+        chain.readContract({ address: config.token0, abi: TOKEN_ABI, functionName: 'decimals' }),
+        chain.readContract({ address: config.token1, abi: TOKEN_ABI, functionName: 'decimals' }),
       ]);
-      if (slot0) {
-        const word = BigInt(slot0);
-        const sqrt = word & ((1n << 160n) - 1n);
-        poolSqrtPriceX96 = sqrt === 0n ? null : sqrt;
-        poolTick = Number(BigInt.asIntN(24, word >> 160n));
-      }
-      poolLiquidity = liquidityWord === undefined ? null : BigInt(liquidityWord) & ((1n << 128n) - 1n);
-    } catch { /* Depth stays unknown; the client treats null as "not reported". */ }
-    const funded = poolLiquidity === null ? null : poolLiquidity > 0n;
-    const strings = (values) => Array.from(values, (value) => String(value));
+      legs = [
+        { address: config.token0, symbol: symbol0, decimals: Number(decimals0) },
+        { address: config.token1, symbol: symbol1, decimals: Number(decimals1) },
+      ];
+      entry.config = config;
+      entry.legs = legs;
+      entry.hook = hook;
+    }
+
+    // Only these three reads change between requests. Both pool-manager slots come from one
+    // batched extsload: twenty concurrent single-slot calls tripped the free-tier rate limit, and
+    // the last pool in the list reported no liquidity on every request.
+    const base = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'uint256' }], [poolId, 6n]));
+    const liquiditySlot = '0x' + (BigInt(base) + 3n).toString(16).padStart(64, '0') as `0x${string}`;
+    const [policy, lifecycle, poolStorage] = await Promise.all([
+      chain.readContract({ address: hook, abi: POOL_POLICY_ABI, functionName: 'getPolicy' }),
+      chain.readContract({ address: hook, abi: POOL_STATE_ABI, functionName: 'state' }).catch(() => null),
+      chain.readContract({ address: config.poolManager, abi: EXTSLOAD_MANY_ABI, functionName: 'extsload', args: [[base, liquiditySlot]] }).catch(() => null),
+    ]);
+    const slot0 = poolStorage?.[0] ?? null;
+    const liquidityWord = poolStorage?.[1] ?? null;
+
+    let poolSqrtPriceX96 = null;
+    let poolTick = null;
+    if (slot0) {
+      const word = BigInt(slot0);
+      const sqrt = word & ((1n << 160n) - 1n);
+      poolSqrtPriceX96 = sqrt === 0n ? null : sqrt;
+      poolTick = Number(BigInt.asIntN(24, word >> 160n));
+    }
+    const poolLiquidity = liquidityWord === undefined || liquidityWord === null ? null : BigInt(liquidityWord) & ((1n << 128n) - 1n);
+
     return {
-      hook, poolId, lifecycle: Number(state.lifecycle), token0: config.token0, token1: config.token1,
+      hook, poolId, lifecycle: lifecycle ? Number(lifecycle.lifecycle) : 0, token0: config.token0, token1: config.token1,
       asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
       poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
       tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
       poolLiquidity: poolLiquidity === null ? null : String(poolLiquidity),
       poolSqrtPriceX96: poolSqrtPriceX96 === null ? null : String(poolSqrtPriceX96),
       poolTick,
-      funded,
+      funded: poolLiquidity === null ? null : poolLiquidity > 0n,
       policy: {
         canSwap: policy.canSwap, mode: Number(policy.mode), phase: Number(policy.phase), flags: Number(policy.flags),
         reasonBits: String(policy.reasonBits), lpFeeUnits: Number(policy.lpFeeUnits), bandBps: Number(policy.bandBps),
@@ -424,11 +457,12 @@ export async function runPools(env, { client, fetchImpl = fetch } = {}) {
         rollingRemaining: strings(policy.rollingRemaining), closureRemaining: strings(policy.closureRemaining),
         referencePrice18: strings(policy.referencePrice18), validUntil: String(policy.validUntil), closureNonce: String(policy.closureNonce),
       },
-      legs: [{ address: config.token0, symbol: symbol0, decimals: Number(decimals0) }, { address: config.token1, symbol: symbol1, decimals: Number(decimals1) }],
-      createdAtBlock: String(log.blockNumber),
+      legs,
+      createdAtBlock: entry.createdAtBlock,
     };
-  }));
-  return { chainId, blockNumber: String(blockNumber), pools };
+  }
+
+  return { chainId, blockNumber: String(blockNumber), pools, cache: { cursor: String(blockNumber), static: staticCache } };
 }
 
 /** Candidate PositionManager NFTs transferred to an owner since the deployment block. */
@@ -705,17 +739,29 @@ const worker = {
     if (url.pathname === '/pools') {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
       try {
-        const pools = await runPools(env);
-        // Cache the hook list so scheduled maintenance can refresh recovering pools cheaply.
+        // Reuse the incremental scan cache so the request stays inside the 50-subrequest budget.
+        let cache = null;
+        let doStub = null;
         try {
-          const id = env.KEEPER_DO.idFromName('bell-keeper');
-          await env.KEEPER_DO.get(id).fetch(new Request('https://do/hooks', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(pools.pools.map((p) => p.hook)),
-          }));
-        } catch { /* the directory response is what matters */ }
-        return cors(json(pools));
+          doStub = env.KEEPER_DO.get(env.KEEPER_DO.idFromName('bell-keeper'));
+          const cached = await doStub.fetch(new Request('https://do/poolcache'));
+          cache = await cached.json();
+        } catch { cache = null; }
+        const pools = await runPools(env, { cache });
+        // Persist the cache and the hook list for scheduled maintenance.
+        if (doStub) {
+          try {
+            await doStub.fetch(new Request('https://do/poolcache', {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pools.cache),
+            }));
+            await doStub.fetch(new Request('https://do/hooks', {
+              method: 'POST', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(pools.pools.map((p) => p.hook)),
+            }));
+          } catch { /* the directory response is what matters */ }
+        }
+        const { cache: _omit, ...response } = pools;
+        return cors(json(response));
       }
       catch (error) {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);

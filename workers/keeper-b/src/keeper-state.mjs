@@ -42,6 +42,18 @@ export class KeeperState {
       return Response.json({ ok: true, at });
     }
 
+    // Incremental pool directory cache: the scan cursor and immutable per-pool metadata, so a
+    // request does not re-read config/symbol/decimals for every pool on every call.
+    if (url.pathname === '/poolcache') {
+      if (request.method === 'POST') {
+        let cache = null;
+        try { cache = await request.json(); } catch { cache = null; }
+        if (cache && typeof cache === 'object') await this.ctx.storage.put('poolCache', cache);
+        return Response.json({ ok: true });
+      }
+      return Response.json((await this.ctx.storage.get('poolCache')) ?? null);
+    }
+
     // Known pool hooks, cached so the scheduled handler can refresh recovering pools without
     // repeating the factory log scan on every tick.
     if (url.pathname === '/hooks') {

@@ -283,11 +283,11 @@
   /* a two-line wordmark leaves room for the wallet button */
   .lp-brand { font-size: .66rem; line-height: 1.1; gap: .55rem; letter-spacing: .04em; }
   .lp-brand span { white-space: normal; max-width: 8.2em; overflow: visible; }
-  .lp .lp-pill { height: 2.6rem; padding: 0 1.05rem; }
-  .lp .lp-social-link { width: 2.6rem; height: 2.6rem; }
+  .lp .lp-pill { height: 2.4rem; padding: 0 .85rem; }
+  .lp .lp-social-link { width: 2.4rem; height: 2.4rem; }
   .lp-pill__long { display: none; }
   .lp-pill__short { display: inline; }
-  .lp .lp-menu-btn { width: 2.6rem; height: 2.6rem; }
+  .lp .lp-menu-btn { width: 2.4rem; height: 2.4rem; }
 }
 
 /* ============================ CURTAIN =================================== */
