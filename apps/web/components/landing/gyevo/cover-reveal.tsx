@@ -312,7 +312,7 @@ export function CoverReveal({ tagline }: Props) {
             {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
           </h1>
           <p className="lp-sub">
-            BELL adapts pool fees and swap limits to market sessions, and pauses trading when Chainlink stock-price data goes stale.
+            A market for stock tokens on Robinhood Chain. Create a pool, trade it around the clock, and keep your liquidity as a transferable NFT.
           </p>
           <p className="lp-hint" aria-hidden="true">
             <span>Scroll to open</span>
@@ -330,8 +330,8 @@ export function CoverReveal({ tagline }: Props) {
             <div className="lp-hero__col">
               <p className="lp-badge">
                 <CalendarClock aria-hidden="true" />
-                <span>Session-aware liquidity</span>
-                <span className="lp-badge__detail">for Robinhood Stock Tokens</span>
+                <span>Liquidity for stock tokens</span>
+                <span className="lp-badge__detail">on Robinhood Chain</span>
               </p>
               <h2 className="lp-h">
                 {/* Each scroll chapter keeps its headline to two deliberate lines. */}
@@ -340,8 +340,8 @@ export function CoverReveal({ tagline }: Props) {
                   data-story-i={0}
                   data-story-kind="head"
                 >
-                  <span className="lp-h__line lp-h__l1"><span className="lp-h__in">Session fees.</span></span>
-                  <span className="lp-h__line lp-h__l2"><span className="lp-h__in">Bounded swaps.</span></span>
+                  <span className="lp-h__line lp-h__l1"><span className="lp-h__in">Trade stock</span></span>
+                  <span className="lp-h__line lp-h__l2"><span className="lp-h__in">tokens onchain.</span></span>
                 </span>
                 <span
                   className="lp-story__t lp-story__t--over"
@@ -396,7 +396,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-i={0}
                     data-story-kind="lede"
                   >
-                    A Robinhood Stock Token pool can face different liquidity and data conditions before, during and after an exchange session.
+                    A pool for stock tokens, open to anyone. Seed it with your own tokens, earn the fees traders pay, and withdraw your share whenever you want.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -404,7 +404,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A verified calendar phase selects the base LP fee and flow limits; the Chainlink round must also pass its session freshness gate: 60 seconds in REGULAR and under 120 seconds in PRE, POST and OVERNIGHT.
+                    Fees and limits follow the exchange session. Regular hours trade cheapest; quieter sessions pay more to compensate for thinner liquidity.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -412,7 +412,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    Each swap is checked against per-trade and rolling gross-flow caps before it executes.
+                    Every trade is capped per swap and across a rolling window, so one order cannot drain a pool.
                   </span>
                   <span
                     className="lp-story__t lp-story__t--over"
@@ -420,7 +420,7 @@ export function CoverReveal({ tagline }: Props) {
                     data-story-kind="lede"
                     aria-hidden="true"
                   >
-                    A calendar-proven closure settles against a verified close anchor, captured while stock data was valid and held inside a finite episode budget.
+                    When the market closes, trading settles against a verified closing price and a fixed budget, so nothing runs unbounded overnight.
                   </span>
                 </p>
                 <div className="lp-actions">
