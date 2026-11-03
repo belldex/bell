@@ -155,6 +155,13 @@ for (const source of WORKER_SOURCES) {
       for (const item of parsed) {
         if (item.type !== 'function') continue;
         compared++;
+        // Tuple components must be named. viem reads an anonymous tuple as a positional array and
+        // a named tuple as an object, so an unnamed component silently changes what the caller
+        // must pass and fails at encode time rather than at check time.
+        const unnamed = (item.inputs ?? []).filter((i) => i.type === 'tuple' && (i.components ?? []).some((c) => !c.name));
+        if (unnamed.length > 0) {
+          shapeFailures.push({ source, constName, literal: `${item.name}: tuple with unnamed components`, reason: 'viem treats an anonymous tuple as an array, not an object' });
+        }
         const shape = canonical(item);
         const candidates = canonicalByName.get(item.name);
         if (!candidates) {

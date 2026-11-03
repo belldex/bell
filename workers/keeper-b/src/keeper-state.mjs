@@ -26,6 +26,22 @@ export class KeeperState {
 
   async fetch(request) {
     const url = new URL(request.url);
+
+    // Scheduled maintenance runs in the worker, not in this object, so its outcome would otherwise
+    // exist only as a console line. The calendar went empty for two days behind exactly that gap.
+    // Recording it here makes the last repair attempt readable from /status.
+    if (url.pathname === '/maintenance') {
+      if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+      let payload = null;
+      try { payload = await request.json(); } catch { payload = { status: 'unreadable' }; }
+      const at = new Date().toISOString();
+      await this.ctx.storage.put('lastMaintenance', { at, ...payload });
+      const log = (await this.ctx.storage.get('maintenanceLog')) ?? [];
+      log.push({ at, status: payload?.status ?? null, assets: payload?.assets ?? null });
+      await this.ctx.storage.put('maintenanceLog', log.slice(-HISTORY_LIMIT));
+      return Response.json({ ok: true, at });
+    }
+
     if (request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
 
     if (url.pathname === '/quote') {
@@ -72,6 +88,8 @@ export class KeeperState {
         lastResult: (await this.ctx.storage.get('lastResult')) ?? null,
         lastTickAt: (await this.ctx.storage.get('lastTickAt')) ?? null,
         history: (await this.ctx.storage.get('history')) ?? [],
+        lastMaintenance: (await this.ctx.storage.get('lastMaintenance')) ?? null,
+        maintenanceLog: (await this.ctx.storage.get('maintenanceLog')) ?? [],
       });
     }
     if (url.pathname === '/tick') {

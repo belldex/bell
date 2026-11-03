@@ -35,14 +35,21 @@ import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 
 export { KeeperState };
 
-// CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92). Declaring it uint16 produced a
-// different selector, so activateInterval reverted as an unknown function and currentInterval
-// failed to decode, which is what surfaced as "Cannot read properties of undefined".
-// Exported so a test can pin the selector against the deployed registry.
+// CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92), and every tuple component must be
+// NAMED. Two separate defects lived in this one constant:
+//
+//   1. year was uint16, which moves the activateInterval selector so the call hit an unknown
+//      function.
+//   2. the tuple components were anonymous. viem then expects a positional array, while the
+//      activation builder returns an object, so encoding threw
+//      "Cannot read properties of undefined (reading 'length')" before any RPC call.
+//
+// Both were swallowed by a try/catch, so the calendar only advanced when a human ran the script.
+// Exported so a test can pin the shape against the deployed registry.
 export const CALENDAR_ABI = parseAbi([
   'function currentInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
   'function nextInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))',
-  'function activateInterval(bytes32,(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),(bytes32,uint32,uint32,uint64,uint64,uint8,bytes32),bytes32[][])',
+  'function activateInterval(bytes32 assetId,(bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash) current,(bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash) previous,(bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash) next,bytes32[][] proofs)',
 ]);
 const SESSION_ABI = parseAbi([
   'function latestSample(bytes32,uint8) view returns ((bytes32 descriptorId,bytes32 feedId,uint8 phase,uint128 price18,uint64 observedAt,uint64 inputAt,uint64 validFrom,uint64 expiresAt,uint64 validUntil,bytes32 reportHash))',
@@ -593,12 +600,33 @@ const worker = {
     const nowSeconds = Math.floor(controller.scheduledTime / 1000);
     // force=true: every cron tick repairs an empty calendar regardless of the boundary guard.
     // Boundary-only work (close capture) still self-gates inside the run.
-    ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds, force: true }).then((result) => {
+    ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds, force: true }).then(async (result) => {
       console.log('scheduled market maintenance', JSON.stringify(result));
-    }).catch((error) => {
+      // Persist the outcome where /status can read it. A repair that only exists in the log is a
+      // repair nobody notices failing, which is how the calendar stayed empty for two days.
+      try {
+        const id = env.KEEPER_DO.idFromName('bell-keeper');
+        await env.KEEPER_DO.get(id).fetch(new Request('https://do/maintenance', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(result),
+        }));
+      } catch (error) {
+        const detail = String(error?.message ?? error).slice(0, 140);
+        console.error('could not record maintenance result', detail);
+      }
+    }).catch(async (error) => {
       const detail = String(error?.shortMessage ?? error?.message ?? error)
         .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220);
       console.error('scheduled market maintenance failed', detail);
+      try {
+        const id = env.KEEPER_DO.idFromName('bell-keeper');
+        await env.KEEPER_DO.get(id).fetch(new Request('https://do/maintenance', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status: 'threw', reason: detail }),
+        }));
+      } catch { /* nothing further to do if the recorder itself is unreachable */ }
     }));
   },
   async fetch(request, env) {
@@ -669,8 +697,22 @@ const worker = {
     }
     if (url.pathname === '/status') {
       if (env.BELL_ORACLE_MODE === 'chainlink') {
-        try { return cors(json(await runChainlinkStatus(env))); }
-        catch (error) {
+        try {
+          const live = await runChainlinkStatus(env);
+          // Attach the last scheduled maintenance outcome. It runs in the worker rather than this
+          // object, so without this the only record of a failed calendar repair is a log line.
+          let maintenance = null;
+          try {
+            const id = env.KEEPER_DO.idFromName('bell-keeper');
+            const res = await env.KEEPER_DO.get(id).fetch(new Request('https://do/status'));
+            const doStatus = await res.json();
+            maintenance = {
+              lastMaintenance: doStatus.lastMaintenance ?? null,
+              maintenanceLog: doStatus.maintenanceLog ?? [],
+            };
+          } catch { /* maintenance history is best-effort; live status still returns */ }
+          return cors(json({ ...live, ...maintenance }));
+        } catch (error) {
           const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 220);
           console.error('Chainlink status read failed', error?.name ?? 'Error', detail);
           return cors(json({ error: 'Live Chainlink status is temporarily unavailable' }, 503));

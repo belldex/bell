@@ -56,6 +56,37 @@ describe('calendar ABI', () => {
     const flat = JSON.stringify(CALENDAR_ABI);
     expect(flat).not.toContain('"uint16"');
   });
+
+  /**
+   * Tuple components must be named. viem reads an anonymous tuple as a positional array and a
+   * named tuple as an object. The activation builder returns objects, so an anonymous tuple threw
+   * "Cannot read properties of undefined (reading 'length')" during ABI encoding, before any RPC
+   * call — which is why the calendar only ever advanced when a human ran the script.
+   */
+  it('names every component of the activateInterval tuples', () => {
+    const fn: any = CALENDAR_ABI.find((e) => e.type === 'function' && e.name === 'activateInterval');
+    expect(fn).toBeDefined();
+    const tuples = (fn.inputs as any[]).filter((i) => i.type === 'tuple');
+    expect(tuples).toHaveLength(3);
+    for (const t of tuples) {
+      for (const component of t.components) {
+        expect(component.name, `unnamed component of type ${component.type}`).toBeTruthy();
+      }
+    }
+  });
+
+  it('accepts the object shape the activation builder returns', async () => {
+    const { encodeFunctionData } = await import('viem');
+    const leaf = {
+      assetId: `0x${'ab'.repeat(32)}`, year: 2026, index: 6,
+      start: 1793638800n, end: 1793658600n, phase: 1, provenanceHash: `0x${'cd'.repeat(32)}`,
+    };
+    expect(() => encodeFunctionData({
+      abi: CALENDAR_ABI,
+      functionName: 'activateInterval',
+      args: [leaf.assetId, leaf, leaf, leaf, [[`0x${'ef'.repeat(32)}`], [], []]],
+    })).not.toThrow();
+  });
 });
 
 describe('boundary guard', () => {
