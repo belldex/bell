@@ -60,6 +60,25 @@ export type LivePool = {
   legs: readonly [{ address: Address; symbol: string; decimals: number }, { address: Address; symbol: string; decimals: number }];
 };
 
+/**
+ * Funded markets first, deepest first.
+ *
+ * A `PoolCreated` event is permanent, so a factory that has been used for a few attempts lists
+ * every pool ever made — including ones later drained or never funded. The first entry used to be
+ * whichever pool was created first, which meant the swap page opened on a market with nothing to
+ * trade against. Ordering by depth puts a usable market at the top and keeps every page consistent.
+ */
+function orderPools(pools: LivePool[]): LivePool[] {
+  const fundedRank = (pool: LivePool) => (pool.funded === true ? 1 : 0);
+  return [...pools].sort((a, b) => {
+    if (fundedRank(a) !== fundedRank(b)) return fundedRank(b) - fundedRank(a);
+    const left = a.poolLiquidity ?? 0n;
+    const right = b.poolLiquidity ?? 0n;
+    if (left === right) return 0;
+    return left > right ? -1 : 1;
+  });
+}
+
 export async function readLivePools(): Promise<LivePool[]> {
   const url = MAINNET.quoteUrl.replace(/\/quote$/, '/pools');
   try {
@@ -67,7 +86,7 @@ export async function readLivePools(): Promise<LivePool[]> {
     const body = await response.json();
     if (!response.ok) throw new Error(body?.error ?? `Pool directory returned HTTP ${response.status}`);
     if (Number(body.chainId) !== MAINNET.chainId || !Array.isArray(body.pools)) throw new Error('Pool directory returned an invalid Mainnet response');
-    return body.pools.map((pool: any) => ({
+    return orderPools(body.pools.map((pool: any) => ({
       ...pool,
       lifecycle: Number(pool.lifecycle ?? 2),
       directoryBlockNumber: body.blockNumber === undefined ? undefined : BigInt(body.blockNumber),
@@ -86,7 +105,7 @@ export async function readLivePools(): Promise<LivePool[]> {
         rollingRemaining: pool.policy.rollingRemaining.map(BigInt),
         closureRemaining: pool.policy.closureRemaining.map(BigInt),
       },
-    })) as LivePool[];
+    })) as LivePool[]);
   } catch (directoryError) {
     // A connected wallet may provide a working chain RPC even when the public directory index
     // cannot serve historical event logs. Keep the fallback read-only and verify each hook live.
@@ -97,7 +116,7 @@ export async function readLivePools(): Promise<LivePool[]> {
     const logs = await client.getLogs({ address: MAINNET.factory, event: poolCreated, fromBlock: MAINNET.deploymentBlock, toBlock: 'latest' });
     const unique = [...new Map(logs.map((log) => [String(log.args.hook).toLowerCase(), log])).values()];
     const directoryBlockNumber = await client.getBlockNumber();
-    return Promise.all(unique.map(async (log) => {
+    return orderPools(await Promise.all(unique.map(async (log) => {
       const hook = log.args.hook as Address;
       const [config, policy, state] = await Promise.all([
         client.readContract({ address: hook, abi: hookAbi, functionName: 'config' }) as Promise<any>,
@@ -118,7 +137,7 @@ export async function readLivePools(): Promise<LivePool[]> {
         policy: { ...policy, canSwap: Boolean(policy.canSwap), mode: Number(policy.mode), phase: Number(policy.phase), lpFeeUnits: Number(policy.lpFeeUnits), reasonBits: BigInt(policy.reasonBits), validUntil: BigInt(policy.validUntil) },
         legs: [{ address: config.token0 as Address, symbol: String(symbol0), decimals: Number(decimals0) }, { address: config.token1 as Address, symbol: String(symbol1), decimals: Number(decimals1) }],
       } as LivePool;
-    }));
+    })));
   }
 }
 
