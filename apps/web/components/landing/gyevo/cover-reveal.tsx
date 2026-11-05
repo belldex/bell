@@ -298,19 +298,32 @@ export function CoverReveal({ tagline }: Props) {
         {/* ---- Phase 1: the claim ---- */}
         <div className="lp-p1">
           <canvas className="lp-globe" ref={globeRef} aria-hidden="true" />
-          <h1 className="lp-words" id="lp-title" aria-label={tagline}>
-            <span className="lp-word lp-word--a">
-              {stockWordMatch ? (
-                <>
-                  {stockWordMatch[1]}
-                  <span className="lp-stock-word">{stockWordMatch[2]}</span>
-                </>
-              ) : wordA}
-              <span className="lp-sr">.</span>
-            </span>
-            <span className="lp-slot" ref={slotRef} aria-hidden="true" />
-            {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
-          </h1>
+          <div className="lp-cover-heading">
+            <a
+              className="lp-cover-contract"
+              href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="BELL contract address on Robinhood Chain: 0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+            >
+              <span>BELL CONTRACT · ROBINHOOD CHAIN 4663</span>
+              <code>0xc5d6c1d90c8a87a07e2670b99b1556e818803228</code>
+              <span aria-hidden="true">↗</span>
+            </a>
+            <h1 className="lp-words" id="lp-title" aria-label={tagline}>
+              <span className="lp-word lp-word--a">
+                {stockWordMatch ? (
+                  <>
+                    {stockWordMatch[1]}
+                    <span className="lp-stock-word">{stockWordMatch[2]}</span>
+                  </>
+                ) : wordA}
+                <span className="lp-sr">.</span>
+              </span>
+              <span className="lp-slot" ref={slotRef} aria-hidden="true" />
+              {wordB ? <span className="lp-word lp-word--b">{wordB.replace(/[.!?]$/, "")}<span className="lp-period" aria-hidden="true" /></span> : null}
+            </h1>
+          </div>
           <p className="lp-sub">
             A market for stock tokens on Robinhood Chain. Create a pool, trade it around the clock, and keep your liquidity as a transferable NFT.
           </p>
@@ -437,18 +450,6 @@ export function CoverReveal({ tagline }: Props) {
                     }}
                   >
                     Trace a swap
-                  </a>
-                  <a
-                    className="lp-ca"
-                    href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
-                    aria-label="BELL contract on Robinhood Chain, 0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
-                  >
-                    <span className="lp-ca__label">BELL</span>
-                    <span className="lp-ca__address">0xc5d6…03228</span>
-                    <span className="lp-ca__chain" aria-hidden="true">↗</span>
                   </a>
                 </div>
               </div>
