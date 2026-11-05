@@ -529,36 +529,40 @@ contract AuctionClearingTest is Test {
 
     function setUp() public { h = new AuctionClearingHarness(); }
 
-    /// @dev sqrtPrice 2^96 means a raw 1:1 pool.
+    /// @dev sqrtPrice 2^96 is a raw 1:1 pool.
     function test_quoteForBase_unitPrice_isIdentity() public view {
         assertEq(h.quoteForBase(1_000, 1 << 96, true), 1_000);
+        assertEq(h.baseForQuote(1_000, 1 << 96, true), 1_000);
     }
 
-    /// @dev price 4 (raw) => sqrtPrice 2*2^96 => 1 base buys 4 quote.
-    function test_quoteForBase_doublePrice() public view {
-        assertEq(h.quoteForBase(1_000, 2 * (1 << 96), true), 4_000);
+    /// @dev sqrtPrice 2*2^96 is a raw 4:1 pool: one token0 buys four token1.
+    function test_quoteForBase_whenBaseIsToken1() public view {
+        // Base is token1, quote is token0: 1000 token1 is worth 250 token0.
+        assertEq(h.quoteForBase(1_000, 2 * (1 << 96), true), 250);
     }
 
-    function test_baseForQuote_invertsQuoteForBase() public view {
-        uint256 q = h.quoteForBase(1_000, 2 * (1 << 96), true);
-        assertApproxEqAbs(h.baseForQuote(q, 2 * (1 << 96), true), 1_000, 1);
+    function test_quoteForBase_whenBaseIsToken0() public view {
+        // Base is token0, quote is token1: 1000 token0 is worth 4000 token1.
+        assertEq(h.quoteForBase(1_000, 2 * (1 << 96), false), 4_000);
     }
 
-    /// @dev When quote is token0 the ratio inverts.
-    function test_quoteForBase_invertedWhenQuoteIsToken0() public view {
-        assertEq(h.quoteForBase(4_000, 2 * (1 << 96), false), 1_000);
+    function test_roundTrip_isExactWithinOneUnit() public view {
+        uint256 q = h.quoteForBase(1_000, 2 * (1 << 96), false);
+        assertApproxEqAbs(h.baseForQuote(q, 2 * (1 << 96), false), 1_000, 1);
     }
 
-    function test_sellLimit_sellerNeedsPriceAtOrAboveLimit() public view {
-        assertTrue(h.sellLimitOk(true, 1 << 96, (1 << 96) + 1));
-        assertFalse(h.sellLimitOk(true, 1 << 96, (1 << 96) - 1));
-        assertTrue(h.sellLimitOk(true, 0, 1));         // zero limit means no bound
+    function test_sellLimit_sellerNeedsPriceAtOrAboveFloor() public view {
+        // zeroForOne == false sells base, so it needs the clearing price at or above its floor.
+        assertTrue(h.sellLimitOk(false, 1 << 96, (1 << 96) + 1));
+        assertFalse(h.sellLimitOk(false, 1 << 96, (1 << 96) - 1));
+        assertTrue(h.sellLimitOk(false, 0, 1)); // zero limit means no bound
     }
 
-    function test_sellLimit_buyerNeedsPriceAtOrBelowLimit() public view {
-        assertTrue(h.sellLimitOk(false, 1 << 96, (1 << 96) - 1));
-        assertFalse(h.sellLimitOk(false, 1 << 96, (1 << 96) + 1));
-        assertTrue(h.sellLimitOk(false, 0, type(uint160).max));
+    function test_sellLimit_buyerNeedsPriceAtOrBelowCap() public view {
+        // zeroForOne == true buys base, so it needs the clearing price at or below its cap.
+        assertTrue(h.sellLimitOk(true, 1 << 96, (1 << 96) - 1));
+        assertFalse(h.sellLimitOk(true, 1 << 96, (1 << 96) + 1));
+        assertTrue(h.sellLimitOk(true, 0, type(uint160).max));
     }
 }
 ```
@@ -577,16 +581,16 @@ pragma solidity 0.8.26;
 import {AuctionClearing} from "../../src/libraries/AuctionClearing.sol";
 
 contract AuctionClearingHarness {
-    function quoteForBase(uint256 baseAmount, uint160 sqrtPriceX96, bool quoteIsToken1)
+    function quoteForBase(uint256 baseAmount, uint160 sqrtPriceX96, bool baseIsToken1)
         external pure returns (uint256)
     {
-        return AuctionClearing.quoteForBase(baseAmount, sqrtPriceX96, quoteIsToken1);
+        return AuctionClearing.quoteForBase(baseAmount, sqrtPriceX96, baseIsToken1);
     }
 
-    function baseForQuote(uint256 quoteAmount, uint160 sqrtPriceX96, bool quoteIsToken1)
+    function baseForQuote(uint256 quoteAmount, uint160 sqrtPriceX96, bool baseIsToken1)
         external pure returns (uint256)
     {
-        return AuctionClearing.baseForQuote(quoteAmount, sqrtPriceX96, quoteIsToken1);
+        return AuctionClearing.baseForQuote(quoteAmount, sqrtPriceX96, baseIsToken1);
     }
 
     function sellLimitOk(bool zeroForOne, uint160 limitSqrtPriceX96, uint160 clearingSqrtPriceX96)
@@ -610,45 +614,56 @@ import {FullMath} from "v4-core/libraries/FullMath.sol";
 library AuctionClearing {
     uint256 internal constant Q96 = 1 << 96;
 
-    /// @notice Quote value of a base amount at a given pool price.
-    /// @param baseAmount Amount of the base (stock) token, in that token's raw units.
-    /// @param sqrtPriceX96 Resolving pool price.
-    /// @param quoteIsToken1 True when the quote token is the pool's token1.
-    function quoteForBase(uint256 baseAmount, uint160 sqrtPriceX96, bool quoteIsToken1)
-        internal
-        pure
-        returns (uint256)
-    {
-        // token1Raw per token0Raw = (sqrtPriceX96 / 2^96)^2
-        uint256 sq = uint256(sqrtPriceX96);
-        uint256 numerator = baseAmount * sq;      // <= 2^128 * 2^160, fits in 2^288 -> use mulDiv
-        uint256 ratio = FullMath.mulDiv(numerator, sq, Q96 * Q96);
-        return quoteIsToken1 ? ratio : (ratio == 0 ? 0 : FullMath.mulDiv(baseAmount, Q96 * Q96, numerator));
+    /// @notice token1 raw units per token0 raw unit, scaled by Q96.
+    /// @dev Doing it in two `mulDiv` steps avoids `sqrtPriceX96 * sqrtPriceX96` overflowing uint256
+    ///      for large prices.
+    function priceQ96(uint160 sqrtPriceX96) internal pure returns (uint256) {
+        return FullMath.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), Q96);
     }
 
-    /// @notice Base amount obtained for a quote amount at a given pool price.
-    function baseForQuote(uint256 quoteAmount, uint160 sqrtPriceX96, bool quoteIsToken1)
+    /// @notice Quote value of a base amount, in the quote token's raw units.
+    /// @param baseAmount Amount of the base token.
+    /// @param sqrtPriceX96 Resolving pool price.
+    /// @param baseIsToken1 True when the base token is the pool's token1.
+    function quoteForBase(uint256 baseAmount, uint160 sqrtPriceX96, bool baseIsToken1)
         internal
         pure
         returns (uint256)
     {
-        uint256 sq = uint256(sqrtPriceX96);
-        uint256 denominator = quoteAmount * sq;
-        if (denominator == 0) return 0;
-        uint256 ratio = FullMath.mulDiv(denominator, sq, Q96 * Q96);
-        return quoteIsToken1 ? (ratio == 0 ? 0 : FullMath.mulDiv(quoteAmount, Q96 * Q96, denominator)) : ratio;
+        uint256 p = priceQ96(sqrtPriceX96);
+        if (p == 0) return 0;
+        // base is token1 -> quote is token0: divide by the price.
+        // base is token0 -> quote is token1: multiply by the price.
+        return baseIsToken1 ? FullMath.mulDiv(baseAmount, Q96, p) : FullMath.mulDiv(baseAmount, p, Q96);
+    }
+
+    /// @notice Base amount obtained for a quote amount, in the base token's raw units.
+    /// @param quoteAmount Amount of the quote token.
+    /// @param sqrtPriceX96 Resolving pool price.
+    /// @param baseIsToken1 True when the base token is the pool's token1.
+    function baseForQuote(uint256 quoteAmount, uint160 sqrtPriceX96, bool baseIsToken1)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 p = priceQ96(sqrtPriceX96);
+        if (p == 0) return 0;
+        // quote is token0 -> base is token1: multiply by the price.
+        // quote is token1 -> base is token0: divide by the price.
+        return baseIsToken1 ? FullMath.mulDiv(quoteAmount, p, Q96) : FullMath.mulDiv(quoteAmount, Q96, p);
     }
 
     /// @notice Whether an order still accepts the clearing price.
-    /// @dev Sellers (`zeroForOne`) need price at or above their limit; buyers need at or below.
-    ///      A zero limit means the owner set no bound.
+    /// @dev `zeroForOne == true` spends token0 (quote) to buy base, so it needs the price at or
+    ///      below its cap. `zeroForOne == false` sells base, so it needs the price at or above its
+    ///      floor. A zero limit means the owner set no bound.
     function sellLimitOk(bool zeroForOne, uint160 limitSqrtPriceX96, uint160 clearingSqrtPriceX96)
         internal
         pure
         returns (bool)
     {
         if (limitSqrtPriceX96 == 0) return true;
-        return zeroForOne ? clearingSqrtPriceX96 >= limitSqrtPriceX96 : clearingSqrtPriceX96 <= limitSqrtPriceX96;
+        return zeroForOne ? clearingSqrtPriceX96 <= limitSqrtPriceX96 : clearingSqrtPriceX96 >= limitSqrtPriceX96;
     }
 }
 ```
@@ -708,8 +723,9 @@ git commit -m "feat(auction): pure clearing math with the netting identity pinne
         assertEq(adapter.lastAmountIn(), 0);
     }
 
-    function test_settle_revertsBeforeLock() public {
-        vm.warp(OPEN_TIME);
+    function test_settle_revertsBeforeOpenTime() public {
+        _seedTwoSidedBook();
+        vm.warp(OPEN_TIME - 1);
         vm.expectRevert(BellOpeningAuction.NotLocked.selector);
         auction.settle(1 << 96);
     }
@@ -758,6 +774,7 @@ Add to `BellOpeningAuction`:
     error ResidualTooLarge();
     error ClearingPriceMismatch();
     error AlreadySettled();
+    error AlreadyRefunded();
 
     /// @dev Per-order outcome written by settle(); claimed later and then zeroed.
     struct Payout {
@@ -781,11 +798,12 @@ Add to `BellOpeningAuction`:
     }
 
     /// @notice Clear the batch at one uniform price and route only the residual to the pool.
-    /// @dev Permissionless: the caller only proposes a price and every constraint is re-checked here,
-    ///      so a bad proposal reverts instead of moving funds. Token0 is the quote, token1 is the base.
+    /// @dev Permissionless: the caller proposes one price and every constraint is re-checked here, so
+    ///      a bad proposal reverts instead of moving funds. Token0 is the quote, token1 is the base.
     function settle(uint160 clearingSqrtPriceX96_) external {
-        if (!_locked) revert NotLocked();
+        if (block.timestamp < openTime) revert NotLocked();
         if (_settled) revert AlreadySettled();
+        if (_refunded) revert AlreadyRefunded();
         if (_orders.length == 0) revert NothingToSettle();
 
         uint256 supplyBase; // base offered by sellers (zeroForOne == false)
@@ -798,36 +816,37 @@ Add to `BellOpeningAuction`:
                 revert LimitViolated();
             }
             if (o.zeroForOne) {
-                demandBase += AuctionClearing.baseForQuote(o.amountIn, clearingSqrtPriceX96_, false);
+                demandBase += AuctionClearing.baseForQuote(o.amountIn, clearingSqrtPriceX96_, true);
             } else {
                 supplyBase += o.amountIn;
             }
         }
 
-        uint256 residual;
-        if (demandBase >= supplyBase) {
-            residual = demandBase - supplyBase; // the pool must supply this much base
-        } else {
-            residual = supplyBase - demandBase; // the pool must absorb this much base
-        }
+        uint256 residual = demandBase >= supplyBase ? demandBase - supplyBase : supplyBase - demandBase;
         if (residual > residualCap) revert ResidualTooLarge();
 
         if (residual > 0) {
-            uint256 deadline = block.timestamp + 300;
             if (demandBase >= supplyBase) {
                 // Pay quote (token0) to receive base (token1): token0 in, token1 out.
-                uint128 quoteIn = uint128(AuctionClearing.quoteForBase(residual, clearingSqrtPriceX96_, false));
-                IAuctionResidualAdapter(adapter).swapExactInput(true, quoteIn, uint128(residual), deadline);
+                uint128 quoteIn = uint128(AuctionClearing.quoteForBase(residual, clearingSqrtPriceX96_, true));
+                IERC20(token0).forceApprove(adapter, quoteIn);
+                IAuctionResidualAdapter(adapter).swapExactInput(true, quoteIn, uint128(residual), block.timestamp + 300);
             } else {
                 // Give base (token1) to receive quote (token0): token1 in, token0 out.
-                IAuctionResidualAdapter(adapter).swapExactInput(false, uint128(residual), 0, deadline);
+                IERC20(token1).forceApprove(adapter, residual);
+                IAuctionResidualAdapter(adapter).swapExactInput(false, uint128(residual), 0, block.timestamp + 300);
             }
-            _requirePriceOk(clearingSqrtPriceX96_, IAuctionResidualAdapter(adapter).poolSqrtPriceX96());
         }
+
+        // Unconditional: the clearing price must be the pool's own price whether or not a residual
+        // traded. A residual-sized check alone would let the solver pick any price on a book that
+        // happens to net exactly.
+        _requirePriceOk(clearingSqrtPriceX96_, IAuctionResidualAdapter(adapter).poolSqrtPriceX96());
+
         _clearingSqrtPriceX96 = clearingSqrtPriceX96_;
 
-        // The netting identity: buyers receive exactly the base they asked for, and sellers receive
-        // exactly base_in * P*. The pool leg cancels the difference, so neither side takes a haircut.
+        // The netting identity: buyers receive exactly baseForQuote(their quote, P*) and sellers
+        // receive exactly quoteForBase(their base, P*). The pool leg cancels the difference.
         for (uint256 i; i < _orders.length; ++i) {
             Order memory o = _orders[i];
             if (o.gone) {
@@ -835,10 +854,10 @@ Add to `BellOpeningAuction`:
                 continue;
             }
             if (o.zeroForOne) {
-                uint128 baseOut = uint128(AuctionClearing.baseForQuote(o.amountIn, clearingSqrtPriceX96_, false));
+                uint128 baseOut = uint128(AuctionClearing.baseForQuote(o.amountIn, clearingSqrtPriceX96_, true));
                 _payouts.push(Payout(baseOut, 0, true));
             } else {
-                uint128 quoteOut = uint128(AuctionClearing.quoteForBase(o.amountIn, clearingSqrtPriceX96_, false));
+                uint128 quoteOut = uint128(AuctionClearing.quoteForBase(o.amountIn, clearingSqrtPriceX96_, true));
                 _payouts.push(Payout(0, quoteOut, true));
             }
         }
@@ -854,7 +873,7 @@ Add to `BellOpeningAuction`:
     /// @dev The joint-solve condition, verified instead of searched: after the residual the pool's
     ///      own price must be the clearing price, within tolerance. Without this the batch could
     ///      leave free arbitrage behind.
-    function _requirePriceOk(uint160 clearing, uint160 after) private view {
+    function _requirePriceOk(uint160 clearing, uint160 after) private pure {
         uint256 lo = (uint256(clearing) * (10_000 - PRICE_TOLERANCE_BPS)) / 10_000;
         uint256 hi = (uint256(clearing) * (10_000 + PRICE_TOLERANCE_BPS)) / 10_000;
         if (uint256(after) < lo || uint256(after) > hi) revert ClearingPriceMismatch();

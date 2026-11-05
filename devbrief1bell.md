@@ -79,7 +79,9 @@ Hook v2 memblokir `_beforeSwap` untuk semua sender kecuali kontrak auction **sel
 
 **Kontrak baru:**
 
-- **`BellHookV2`** (template CREATE2 baru, flags tetap `0x2CC0`). Sama dengan `BellHook`, ditambah **dua hal saja**: `address public immutable auction`, dan guard di `_beforeSwap` (`if (auction != address(0) && sender != auction && auction.blocksSwaps()) revert`). `beforeAddLiquidity` menolak add selama `OPEN`/`LOCKED` untuk mencegah JIT liquidity menyerap residual. Permission tetap **tanpa** `beforeRemoveLiquidity` / `afterRemoveLiquidity` — exit LP tidak bisa diblokir di state mana pun.
+- **`BellHookV2`** (template CREATE2 baru, flags tetap `0x2CC0`). Sama dengan `BellHook`, ditambah **dua hal saja**: `address public immutable auction` dan `address public immutable router`, plus guard di `_beforeSwap`.
+  **Kenapa router ikut diperlukan:** pada `beforeSwap` v4, `sender` adalah pemanggil `PoolManager.swap`, yaitu **router** — bukan kontrak auction. Jadi `sender == auction` tidak pernah benar untuk swap residual. Guardnya harus membaca `payer` dari `hookData` router (`abi.encode(payer, requestHash, oracleUpdates)`) dan mensyaratkan **keduanya**: `sender == router && payer == auction`. `hookData` tidak bisa dipalsukan karena hanya router yang menyusunnya dari `msg.sender`-nya sendiri.
+  `beforeAddLiquidity` menolak add selama `OPEN`/`LOCKED` untuk mencegah JIT liquidity menyerap residual. Permission tetap **tanpa** `beforeRemoveLiquidity` / `afterRemoveLiquidity` — exit LP tidak bisa diblokir di state mana pun.
 - **`BellOpeningAuction`** — **satu kontrak per pool**. Menyimpan order di escrow (`{owner, side, amountIn, limitPrice}`), memverifikasi hasil clearing, mengeksekusi residual ke pool, dan mengelola refund.
 - **`BellPoolFactoryV2`** — `createAndSeed` untuk hook v2, dan mendeploy satu `BellOpeningAuction` per pool.
 
@@ -97,19 +99,20 @@ Hook v2 memblokir `_beforeSwap` untuk semua sender kecuali kontrak auction **sel
 
 **Order:** `{owner, side, amountIn, limitPrice}`. Dana ditarik ke escrow lewat Permit2 saat submit.
 
+**Konvensi token.** Di kontrak auction, **`token0` = quote (USDG)** dan **`token1` = base (saham)**. Ini konvensi milik auction, **tidak harus sama** dengan urutan `token0`/`token1` pool v4 (pool TSLA/USDG punya `token0 = TSLA`). Adapter yang menerjemahkan arahnya.
+
 **Algoritma (solver offchain, verifikasi onchain):**
 
-1. Solver menghitung `P*` dari order book + kurva pool.
-2. Solver mengirim `settle(P*, fills[], residualAmount)`.
+1. Solver menghitung satu angka: **`P*`** (`clearingSqrtPriceX96`).
+2. Solver mengirim `settle(P*)`. **Tidak ada `fills[]` dan tidak ada `residualAmount`** — kontrak menghitung keduanya sendiri, jadi solver tidak punya ruang untuk memilih siapa dibayar berapa.
 3. Kontrak memverifikasi, semuanya O(n):
-   - setiap fill tidak lebih buruk dari `limitPrice` order itu relatif ke `P*`;
-   - **konservasi**: total buy yang cocok − total sell yang cocok == `residualAmount`;
-   - `residualAmount <= auctionResidualCap`;
-   - tidak ada order yang ter-fill melebihi `amountIn`-nya;
-   - akuntansi escrow balans.
-4. Kontrak mengeksekusi **residual sebagai satu swap** ke pool.
-5. **Joint solve diverifikasi, bukan dicari:** setelah residual dieksekusi, harga marginal pool **wajib ≈ `P*`** (dalam toleransi). Ini yang memastikan fill seragam dan tidak meninggalkan arbitrase gratis.
-6. Order yang tidak ter-fill (mis. kena cap) di-refund pro-rata.
+   - setiap order masih menerima `P*` sesuai limitnya: **buyer** (`zeroForOne = true`, membayar quote) butuh `P* ≤ limit`; **seller** butuh `P* ≥ limit`;
+   - menghitung `demandBase` (dari order beli) dan `supplyBase` (dari order jual) memakai `AuctionClearing`;
+   - residual = selisihnya; tolak kalau `> auctionResidualCap` (dalam satuan **base**).
+4. Kontrak mengeksekusi residual sebagai **satu swap** ke pool. Kalau residual nol, tidak ada swap.
+5. **Joint solve diverifikasi, bukan dicari:** harga marginal pool **wajib ≈ `P*`** dalam toleransi — **selalu**, termasuk saat residual nol. Tanpa cek tanpa syarat ini, solver bisa memilih `P*` sembarang di kasus buku yang saling menutup.
+6. Payout dihitung dari identitas netting: **buyer menerima `baseForQuote(quote_i, P*)` base**, **seller menerima `quoteForBase(base_j, P*)` quote**. Escrow terbukti balans di kedua arah residual.
+7. Order yang tidak ter-fill (mis. kena cap) di-refund.
 
 **`auctionResidualCap`** adalah batas tersendiri, terpisah dari `tradeCap`/`windowCap` biasa, dan tetap masuk perhitungan flow budget pool. Nilainya diturunkan dari depth pool nyata (lihat §10) supaya cap tidak menutup residual yang justru dibutuhkan.
 
