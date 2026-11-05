@@ -27,9 +27,19 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BellOpeningAuction} from "./auction/BellOpeningAuction.sol";
+import {BellAuctionRegistry} from "./auction/BellAuctionRegistry.sol";
+import {BellRouterResidualAdapter} from "./auction/BellRouterResidualAdapter.sol";
 
 interface IPositionManagerPermit2 {
     function permit2() external view returns (IAllowanceTransfer);
+}
+
+/// @dev The optional getters only the v2 deployer implements. Probed with a staticcall so a v1
+///      deployer keeps creating pools with no auction at all.
+interface IAuctionWiringDeployer {
+    function auctionRegistry() external view returns (address);
+    function router() external view returns (address);
 }
 
 /// @notice Atomic PUBLIC setup for an explicitly bound immutable dependency/risk profile.
@@ -48,6 +58,17 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     error ReentrantRequest();
     error PriceGuardUnavailable();
     error InitialPriceOutOfBand();
+    error AuctionWiringUnavailable();
+    error AuctionAlreadyEstablished();
+
+    /// @dev Opening Bell Auction window, from devbrief1bell.md section 9.
+    uint32 internal constant AUCTION_LEAD_SECONDS = 600;
+    uint32 internal constant AUCTION_SETTLE_TIMEOUT_SECONDS = 900;
+    uint8 internal constant AUCTION_MAX_ORDERS = 25;
+    /// @dev Order floor and residual cap are scaled off the principal actually seeded, so a thin pool
+    ///      cannot be handed limits sized for a deep one. Both round down; a zero result is floored to 1.
+    uint128 internal constant AUCTION_MIN_ORDER_DIVISOR = 100;
+    uint128 internal constant AUCTION_RESIDUAL_DIVISOR = 4;
 
     IBellHookDeployer public immutable hookDeployer;
     IPositionManager public immutable positionManager;
@@ -186,6 +207,67 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             result = CreateResult(hook, id, 0, positionKey, request.liquidity, principal);
         }
         _entered = false;
+    }
+
+    /// @dev Optional Opening Bell Auction wiring. A deployer without the v2 getters answers the probe
+    ///      with nothing and the pool is created exactly as before, which is what keeps the v1 path
+    ///      untouched while both templates share one factory.
+    /// @notice Wire the Opening Bell Auction for a pool that already exists.
+    /// @dev Kept out of `createAndSeed` for two reasons. The order floor and residual cap scale off the
+    ///      principal actually seeded, which is only final once that transaction has completed; and a
+    ///      separate function keeps `createAndSeed` inside the stack limit. Permissionless and
+    ///      idempotent — the registry refuses a second binding, so a late caller cannot displace one.
+    function establishAuction(address hook) external returns (address auction) {
+        (address registry, address router) = _auctionWiring();
+        if (registry == address(0)) revert AuctionWiringUnavailable();
+        bytes32 poolId = BellHook(hook).poolId();
+        if (BellAuctionRegistry(registry).auctionFor(poolId) != address(0)) revert AuctionAlreadyEstablished();
+
+        PoolConfig memory c = BellHook(hook).config();
+        // Auction orientation: token0 is the quote (the fee token), token1 is the stock base. The pool
+        // orders its own currencies by address, so this is a remap rather than an assumption.
+        bool quoteIsToken0 = c.token0 == serviceToken;
+        // The auction opens before the next session start. With no upcoming leaf there is nothing to
+        // anchor to, so we refuse rather than fabricate a window.
+        uint64 openTime = ICalendarRegistry(c.calendarRegistry).nextInterval(quoteIsToken0 ? c.asset1 : c.asset0).start;
+        if (openTime <= block.timestamp + AUCTION_LEAD_SECONDS) revert AuctionWiringUnavailable();
+
+        uint128[2] memory principal = BellHook(hook).seedPrincipal();
+        address adapter = address(new BellRouterResidualAdapter(router, hook, c.poolManager));
+        auction = address(
+            new BellOpeningAuction(
+                hook,
+                adapter,
+                quoteIsToken0 ? c.token0 : c.token1,
+                quoteIsToken0 ? c.token1 : c.token0,
+                openTime,
+                AUCTION_LEAD_SECONDS,
+                AUCTION_SETTLE_TIMEOUT_SECONDS,
+                [
+                    _atLeastOne((quoteIsToken0 ? principal[0] : principal[1]) / AUCTION_MIN_ORDER_DIVISOR),
+                    _atLeastOne((quoteIsToken0 ? principal[1] : principal[0]) / AUCTION_MIN_ORDER_DIVISOR)
+                ],
+                _atLeastOne((quoteIsToken0 ? principal[1] : principal[0]) / AUCTION_RESIDUAL_DIVISOR),
+                AUCTION_MAX_ORDERS
+            )
+        );
+        BellAuctionRegistry(registry).setAuction(poolId, auction);
+    }
+
+    function _auctionWiring() private view returns (address registry, address router) {
+        registry = _probeAddress(IAuctionWiringDeployer.auctionRegistry.selector);
+        if (registry == address(0)) return (address(0), address(0));
+        router = _probeAddress(IAuctionWiringDeployer.router.selector);
+    }
+
+    function _atLeastOne(uint128 value) private pure returns (uint128) {
+        return value == 0 ? 1 : value;
+    }
+
+    function _probeAddress(bytes4 selector) private view returns (address value) {
+        (bool ok, bytes memory ret) = address(hookDeployer).staticcall(abi.encodeWithSelector(selector));
+        if (!ok || ret.length < 32) return address(0);
+        value = abi.decode(ret, (address));
     }
 
     function _validate(CreateRequest calldata r) private view {
