@@ -132,6 +132,16 @@ export function FinalReveal({ appName }: { appName: string }) {
                   <span className="lp-ecosystem__suffix">v4</span>
                 </span>
               </div>
+              <a
+                className="lp-footer-contract"
+                href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>BELL contract · Robinhood Chain 4663</span>
+                <code>0xc5d6c1d90c8a87a07e2670b99b1556e818803228</code>
+                <span aria-hidden="true">↗</span>
+              </a>
             </div>
             <nav aria-label="App navigation">
               <h2>App</h2>

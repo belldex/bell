@@ -438,7 +438,18 @@ export function CoverReveal({ tagline }: Props) {
                   >
                     Trace a swap
                   </a>
-                  <span className="lp-ca"><span className="lp-ca__label">BELL</span><span className="lp-ca__address">Robinhood Chain · 4663</span></span>
+                  <a
+                    className="lp-ca"
+                    href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+                    aria-label="BELL contract on Robinhood Chain, 0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+                  >
+                    <span className="lp-ca__label">BELL</span>
+                    <span className="lp-ca__address">0xc5d6…03228</span>
+                    <span className="lp-ca__chain" aria-hidden="true">↗</span>
+                  </a>
                 </div>
               </div>
             </div>
