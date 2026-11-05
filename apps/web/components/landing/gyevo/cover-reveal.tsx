@@ -304,11 +304,9 @@ export function CoverReveal({ tagline }: Props) {
               href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="BELL contract address on Robinhood Chain: 0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
+              aria-label="0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
             >
-              <span>BELL CONTRACT · ROBINHOOD CHAIN 4663</span>
               <code>0xc5d6c1d90c8a87a07e2670b99b1556e818803228</code>
-              <span aria-hidden="true">↗</span>
             </a>
             <h1 className="lp-words" id="lp-title" aria-label={tagline}>
               <span className="lp-word lp-word--a">

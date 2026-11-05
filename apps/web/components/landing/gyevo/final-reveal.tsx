@@ -137,10 +137,9 @@ export function FinalReveal({ appName }: { appName: string }) {
                 href="https://robinhoodchain.blockscout.com/address/0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="0xc5d6c1d90c8a87a07e2670b99b1556e818803228"
               >
-                <span>BELL contract · Robinhood Chain 4663</span>
                 <code>0xc5d6c1d90c8a87a07e2670b99b1556e818803228</code>
-                <span aria-hidden="true">↗</span>
               </a>
             </div>
             <nav aria-label="App navigation">
