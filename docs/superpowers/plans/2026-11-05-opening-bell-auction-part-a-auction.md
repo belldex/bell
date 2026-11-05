@@ -610,7 +610,7 @@ import {FullMath} from "v4-core/libraries/FullMath.sol";
 /// @title AuctionClearing
 /// @notice Pure clearing math for the opening-bell batch.
 /// @dev Prices are v4 `sqrtPriceX96` values, so no decimal scaling is needed: the pool's own
-///      units already encode the token decimals. `quoteIsToken1` selects the orientation.
+///      units already encode the token decimals. `baseIsToken1` selects the orientation.
 library AuctionClearing {
     uint256 internal constant Q96 = 1 << 96;
 
@@ -906,7 +906,7 @@ git commit -m "feat(auction): settle at one uniform price and verify the residua
 
 **Interfaces:**
 - Consumes: Task 4's `_payouts`, `_settled`, `_refunded`.
-- Produces: `claimBase(uint32)`, `claimQuote(uint32)`, `claimRefund(uint32)`, `claimRefundAll(uint32[])`, `refund()`, errors `NotSettled()`, `RefundNotOpen()`, `AlreadyClaimed()`.
+- Produces: `claimBase(uint32)`, `claimQuote(uint32)`, `claimRefund(uint32)`, `claimRefundAll(uint32[])`, `refund()`, errors `NotSettled()`, `RefundNotOpen()`, `NotClaimable()`.
 
 - [ ] **Step 1: Write the failing claim tests**
 
@@ -983,7 +983,7 @@ git commit -m "feat(auction): settle at one uniform price and verify the residua
 - [ ] **Step 2: Run and confirm they fail**
 
 Run: `forge test --root contracts --match-contract BellOpeningAuctionEscrowTest -vv`
-Expected: FAIL — `claimBase`, `refund`, `NotSettled`, `RefundNotOpen`, `AlreadyClaimed` not found.
+Expected: FAIL — `claimBase`, `refund`, `NotSettled`, `RefundNotOpen`, `NotClaimable` not found.
 
 - [ ] **Step 3: Implement claims and refunds**
 
