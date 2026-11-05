@@ -7,12 +7,13 @@ import {PoolKey} from "@uniswap/v4-core/src/types/PoolKey.sol";
 import {IHooks} from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 import {Hooks} from "@uniswap/v4-core/src/libraries/Hooks.sol";
 import {CreationCodeChunk} from "./libraries/CreationCodeChunk.sol";
+import {IBellHookDeployer} from "./interfaces/IBellHookDeployer.sol";
 
 /// @notice Narrow CREATE2 deployer for the immutable BellHookV2 template.
 /// @dev Mirrors BellHookDeployer. Same permission mask, same pinned evaluator; the only difference is
 ///      that the hook initcode carries the auction registry and the router as extra constructor args.
 ///      Only the bound factory may deploy.
-contract BellHookDeployerV2 {
+contract BellHookDeployerV2 is IBellHookDeployer {
     error Unauthorized();
     error InvalidHookAddress(address predicted);
     error DeploymentFailed();

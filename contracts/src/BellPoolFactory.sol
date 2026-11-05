@@ -6,6 +6,7 @@ import {BellHookDeployer} from "./BellHookDeployer.sol";
 import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Anchor, LiquidityMode, PoolClass, Lifecycle} from "./types/ProtocolTypes.sol";
 import {TreasuryAdapter} from "./TreasuryAdapter.sol";
 import {IBellPoolFactory, IAssetRegistry, ISessionRegistry, ICalendarRegistry} from "./interfaces/IBellProtocol.sol";
+import {IBellHookDeployer} from "./interfaces/IBellHookDeployer.sol";
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
 import {PositionReceipt, IPositionReceiptManager} from "./libraries/PositionReceipt.sol";
 import {AssetPolicy} from "./libraries/AssetPolicy.sol";
@@ -48,7 +49,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     error PriceGuardUnavailable();
     error InitialPriceOutOfBand();
 
-    BellHookDeployer public immutable hookDeployer;
+    IBellHookDeployer public immutable hookDeployer;
     IPositionManager public immutable positionManager;
     IAllowanceTransfer public immutable permit2;
     address public immutable serviceToken;
@@ -59,7 +60,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     mapping(address => uint64) public override nonces;
     bool private _entered;
 
-    constructor(PoolConfig memory profile, BellHookDeployer deployer, address usdg, address recipient) {
+    constructor(PoolConfig memory profile, IBellHookDeployer deployer, address usdg, address recipient) {
         if (profile.factory != address(this) || address(deployer).code.length == 0
             || deployer.factory() != address(this) || profile.poolManager.code.length == 0
             || profile.assetRegistry.code.length == 0
