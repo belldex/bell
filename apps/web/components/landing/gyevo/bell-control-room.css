@@ -116,13 +116,12 @@
   flex-direction:column; align-items:flex-start; gap:clamp(.55rem,1.2svh,1rem);
 }
 .lp--bell .lp-cover-contract {
-  display:flex; width:fit-content; max-width:100%; flex-wrap:wrap; align-items:center; gap:.35rem .65rem;
-  padding:.4rem .55rem; border:1px solid var(--lp-line-2); background:rgba(238,236,229,.82);
-  color:#55524B; font:500 clamp(.53rem,.5rem + .1vw,.66rem)/1.35 var(--font-geist-mono,monospace);
-  text-decoration:none; overflow-wrap:anywhere; transition:border-color .2s ease,color .2s ease;
+  display:block; width:fit-content; max-width:100%;
+  color:#55524B; font:500 clamp(.76rem,.68rem + .22vw,.9rem)/1.35 var(--font-geist-mono,monospace);
+  text-decoration:none; overflow-wrap:anywhere; transition:color .2s ease;
 }
 .lp--bell .lp-cover-contract code { color:#181818; font:inherit; overflow-wrap:anywhere; }
-.lp--bell .lp-cover-contract:hover { border-color:var(--lp-public); color:#181818; }
+.lp--bell .lp-cover-contract:hover { color:var(--lp-public); }
 .lp--bell .lp-words {
   align-self:end; display:grid; grid-template-columns:max-content auto;
   justify-content:start; justify-items:start; max-width:100%; white-space:normal;
@@ -203,11 +202,10 @@
 .lp--bell .lp-cta { align-items:flex-start; flex-direction:column; gap:1.4rem; }
 .lp--bell .lp-actions { align-items:center; }
 .lp-footer-contract {
-  display:flex; width:fit-content; max-width:100%; flex-wrap:wrap; align-items:center; gap:.45rem .75rem;
-  margin-top:1rem; padding:.65rem .75rem; border:1px solid var(--lp-line-2); color:var(--lp-muted);
-  font:500 .62rem/1.35 var(--lp-font-mono); text-decoration:none; transition:border-color .2s ease,color .2s ease;
+  display:block; width:fit-content; max-width:100%; margin-top:1rem; color:var(--lp-muted);
+  font:500 .78rem/1.4 var(--lp-font-mono); text-decoration:none; transition:color .2s ease;
 }
-.lp-footer-contract:hover { border-color:var(--lp-public); color:#EEECE5; }
+.lp-footer-contract:hover { color:#EEECE5; }
 .lp-footer-contract code { color:#EEECE5; font:inherit; overflow-wrap:anywhere; }
 .lp--bell .lp-btn,.lp--bell .lp-fx__link { border-radius:3px; letter-spacing:.045em; }
 .lp--bell .lp-btn--primary { background:#C7444F; color:#EEECE5!important; box-shadow:none; }
@@ -748,6 +746,7 @@
   .lp--bell .lp-slot { position:absolute; opacity:0; pointer-events:none; }
   .lp--bell .lp-word--b { display:inline-block; margin-top:.15em; }
   .lp--bell .lp-sub { max-width:32ch; margin-top:.45rem; font-size:clamp(.85rem,3.6vw,.95rem); line-height:1.5; color:#55524B; }
+  .lp--bell .lp-cover-contract { font-size:clamp(.62rem,2.7vw,.72rem); }
   .lp--bell .lp-hint { bottom:1.8rem; font-size:.58rem; gap:.6rem; }
   .lp--bell .lp-hint i { width:3rem; }
   .lp--bell .lp-drag-hint { display:flex; bottom:4.9rem; gap:.55rem; font-size:.54rem; }
