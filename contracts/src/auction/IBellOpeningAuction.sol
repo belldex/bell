@@ -7,4 +7,7 @@ pragma solidity 0.8.26;
 interface IBellOpeningAuction {
     /// @notice True while the hook must reject ordinary swaps so the batch can clear first.
     function blocksSwaps() external view returns (bool);
+
+    /// @notice Residual adapter authorised to call BellRouter on behalf of this auction.
+    function adapter() external view returns (address);
 }

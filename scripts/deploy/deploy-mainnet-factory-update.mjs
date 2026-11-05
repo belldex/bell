@@ -59,6 +59,7 @@ function runForge(send) {
   const args = [
     'script', 'script/UpgradeMainnetFactory.s.sol', '--rpc-url', rpc,
     '--out', join(isolatedDir, 'out'), '--cache-path', join(isolatedDir, 'cache'),
+    '--via-ir', '--optimizer-runs', '1', '--evm-version', 'cancun',
   ];
   if (send) args.push('--broadcast');
   return new Promise((resolve, reject) => {
@@ -120,10 +121,12 @@ try {
   const updated = {
     ...manifest,
     hookDeployer: result.hookDeployer,
+    auctionRegistry: result.auctionRegistry,
+    auctionFactoryModule: result.auctionFactoryModule,
     modeEvaluator: result.modeEvaluator,
     policyOracle: result.policyOracle,
     poolFactory: result.poolFactory,
-    note: 'Factory and hook template upgraded; verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused.',
+    note: 'Factory and BellHookV2 template upgraded; auctionRegistry is write-once and per-pool auctions are P2P-only. Verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused.',
   };
   const formatted = formatDeployManifest(updated);
   await writeFile(manifestPath, `${JSON.stringify(formatted.manifest, null, 2)}\n`, 'utf8');

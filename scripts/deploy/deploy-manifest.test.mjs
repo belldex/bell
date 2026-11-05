@@ -77,3 +77,23 @@ test('preserves optional policy oracle and rejects a zero oracle address', () =>
     /policyOracle cannot be zero address/,
   );
 });
+
+test('preserves optional Opening Bell auction registry and rejects a zero address', () => {
+  const auctionRegistry = '0xABabABabABabABabABabABabABabABabABabABab';
+  const mainnet = validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, auctionRegistry });
+  assert.equal(mainnet.auctionRegistry, auctionRegistry.toLowerCase());
+  assert.throws(
+    () => validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, auctionRegistry: '0x0000000000000000000000000000000000000000' }),
+    /auctionRegistry cannot be zero address/,
+  );
+});
+
+test('preserves optional Opening Bell factory module and rejects a zero address', () => {
+  const auctionFactoryModule = '0xABabABabABabABabABabABabABabABabABabABab';
+  const mainnet = validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, auctionFactoryModule });
+  assert.equal(mainnet.auctionFactoryModule, auctionFactoryModule.toLowerCase());
+  assert.throws(
+    () => validateDeployManifest({ ...VALID_MANIFEST, chainId: 4663, auctionFactoryModule: '0x0000000000000000000000000000000000000000' }),
+    /auctionFactoryModule cannot be zero address/,
+  );
+});

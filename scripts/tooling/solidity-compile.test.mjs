@@ -77,7 +77,8 @@ test('standard-json compiler profile is fixed to the current candidate config', 
   assert.equal(output.profile.optimizerRuns, 200);
   assert.equal(output.profile.bytecodeHash, 'none');
   assert.match(foundry, /^solc_version\s*=\s*"0\.8\.26"$/m);
-  assert.match(foundry, /^optimizer_runs\s*=\s*200$/m);
+  assert.match(foundry, /^optimizer_runs\s*=\s*1$/m);
+  assert.match(foundry, /^via_ir\s*=\s*true$/m);
   assert.match(foundry, /^evm_version\s*=\s*"cancun"$/m);
   assert.match(foundry, /^bytecode_hash\s*=\s*"none"$/m);
 });

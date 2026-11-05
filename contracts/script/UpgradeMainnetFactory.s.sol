@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {BellHook} from "../src/BellHook.sol";
+import {BellHookV2} from "../src/BellHookV2.sol";
 import {BellPolicyOracle} from "../src/BellPolicyOracle.sol";
 import {BellModeEvaluator} from "../src/BellModeEvaluator.sol";
-import {BellHookDeployer} from "../src/BellHookDeployer.sol";
+import {BellHookDeployerV2} from "../src/BellHookDeployerV2.sol";
+import {BellAuctionRegistry} from "../src/auction/BellAuctionRegistry.sol";
+import {BellAuctionFactoryModule} from "../src/auction/BellAuctionFactoryModule.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
+import {IBellHookDeployer} from "../src/interfaces/IBellHookDeployer.sol";
 import {PoolConfig} from "../src/types/ProtocolTypes.sol";
 
 interface VmFactoryUpgrade {
@@ -30,6 +33,8 @@ contract UpgradeMainnetFactory {
         address policyOracle;
         address modeEvaluator;
         address hookDeployer;
+        address auctionRegistry;
+        address auctionFactoryModule;
         address poolFactory;
         bytes32 profileHash;
     }
@@ -55,14 +60,21 @@ contract UpgradeMainnetFactory {
         vm.startBroadcast(pk);
         result.policyOracle = address(new BellPolicyOracle());
         result.modeEvaluator = address(new BellModeEvaluator());
-        uint64 factoryNonce = vm.getNonce(config.deployer) + 1;
+        // Registry is deployed before the hook deployer and factory; precompute the later factory
+        // CREATE address so the registry's writer is fixed from construction.
+        uint64 factoryNonce = vm.getNonce(config.deployer) + 3;
         address futureFactory = vm.computeCreateAddress(config.deployer, factoryNonce);
-        result.hookDeployer = address(new BellHookDeployer(
-            futureFactory, config.sessionRegistry, keccak256(type(BellHook).creationCode), result.policyOracle, result.modeEvaluator
+        result.auctionRegistry = address(new BellAuctionRegistry(futureFactory));
+        result.auctionFactoryModule = address(new BellAuctionFactoryModule(
+            futureFactory, result.auctionRegistry, config.feeToken, 600, 900, 512, 25, 100
+        ));
+        result.hookDeployer = address(new BellHookDeployerV2(
+            futureFactory, config.sessionRegistry, keccak256(type(BellHookV2).creationCode), result.policyOracle,
+            result.modeEvaluator, result.auctionRegistry, result.auctionFactoryModule
         ));
         profile.factory = futureFactory;
         BellPoolFactory deployedFactory = new BellPoolFactory(
-            profile, BellHookDeployer(result.hookDeployer), config.feeToken, config.serviceRecipient
+            profile, IBellHookDeployer(result.hookDeployer), config.feeToken, config.serviceRecipient
         );
         result.poolFactory = address(deployedFactory);
         result.profileHash = deployedFactory.profileHash();
@@ -73,6 +85,8 @@ contract UpgradeMainnetFactory {
             '{"policyOracle":"', vm.toString(result.policyOracle),
             '","modeEvaluator":"', vm.toString(result.modeEvaluator),
             '","hookDeployer":"', vm.toString(result.hookDeployer),
+            '","auctionRegistry":"', vm.toString(result.auctionRegistry),
+            '","auctionFactoryModule":"', vm.toString(result.auctionFactoryModule),
             '","poolFactory":"', vm.toString(result.poolFactory),
             '","profileHash":"', _hex(result.profileHash), '"}'
         );

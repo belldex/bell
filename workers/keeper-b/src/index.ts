@@ -32,6 +32,7 @@ import { evaluateQuote, isCloseCaptureWindow, isScheduledMaintenanceWindow, phas
 import { runChainlinkStatus } from './chainlink-status.mjs';
 import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
+import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.mjs';
 
 export { KeeperState };
 
@@ -78,6 +79,236 @@ const POOL_CONFIG_ABI = parseAbi(['function config() view returns ((address toke
 const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canSwap,uint8 mode,uint8 phase,uint16 flags,uint256 reasonBits,uint24 lpFeeUnits,uint16 bandBps,uint128[2] effectiveTradeCap,uint128[2] effectiveWindowCap,uint128[2] rollingRemaining,uint128[2] closureRemaining,uint128[2] referencePrice18,uint64 validUntil,uint64 closureNonce,bytes32 configHash,bytes32 stateHash))']);
 const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
 const TOKEN_ABI = parseAbi(['function symbol() view returns (string)', 'function decimals() view returns (uint8)']);
+const AUCTION_REGISTRY_ABI = parseAbi(['function auctionFor(bytes32 poolId) view returns (address)']);
+const AUCTION_ABI = parseAbi([
+  'function currentStage() view returns (uint8)',
+  'function blocksSwaps() view returns (bool)',
+  'function openTime() view returns (uint64)',
+  'function cycleDeadline() view returns (uint64)',
+  'function cycleId() view returns (uint64)',
+  'function minOrderSizeQuote() view returns (uint128)',
+  'function minOrderSizeBase() view returns (uint128)',
+  'function openTime() view returns (uint64)',
+  'function auctionLead() view returns (uint32)',
+  'function settleTimeout() view returns (uint32)',
+  'function indicativeClearing() view returns (uint160,uint128)',
+  'function orderCount() view returns (uint32)',
+  'function totalOrderCount() view returns (uint32)',
+  'function order(uint32) view returns ((address owner,uint128 amountIn,uint160 limitPriceX96,uint64 cycleId,bool isBuyer,bool cancelled,bool claimed))',
+  'function allocation(uint64,uint32) view returns (uint128 baseFill,uint128 quotePayout,uint128 quoteRefund)',
+  'function claimUnfilled(uint64,uint32)',
+  'function armNext() returns (bool)',
+  'function refund()',
+  'function settle()',
+]);
+
+/**
+ * Permissionless scheduled settlement for Opening Bell Auctions.
+ *
+ * The auction is P2P-only and computes its own maximum-volume price from limit orders. The keeper
+ * arms a CLOSED -> PRE/OVERNIGHT cycle proven by CalendarRegistry, then submits settle() without a
+ * price argument once the cycle is LOCKED. There is no oracle read, offchain price proposal, or AMM
+ * residual in the settlement path.
+ */
+export async function settleBellAuctions(env, {
+  nowSeconds = Math.floor(Date.now() / 1000),
+  publicClient: injectedPublicClient,
+  walletClient: injectedWalletClient,
+  fetchPools = runPools,
+} = {}) {
+  const registry = env.BELL_AUCTION_REGISTRY;
+  const txKey = env.BELL_TRANSACTION_PRIVATE_KEY;
+  const rpcUrl = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY || env.RH_TESTNET_RPC_PRIMARY;
+  if (!registry) return { status: 'skipped', reason: 'auction registry is not configured', results: [] };
+  if (!rpcUrl || !txKey) return { status: 'skipped', reason: 'keeper signing key or RPC is not configured', results: [] };
+
+  const account = privateKeyToAccount(txKey);
+  const publicClient = injectedPublicClient ?? createPublicClient({ transport: http(rpcUrl) });
+  const walletClient = injectedWalletClient ?? createWalletClient({ account, transport: http(rpcUrl) });
+  const chainId = await publicClient.getChainId();
+  const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
+  if (chainId !== expectedChainId) {
+    return { status: 'failed', reason: `wrong chain ${chainId}, expected ${expectedChainId}`, results: [] };
+  }
+
+  let pools;
+  let directoryResult;
+  let doStub = null;
+  let poolCache = null;
+  try {
+    if (env.KEEPER_DO) {
+      try {
+        const id = env.KEEPER_DO.idFromName('bell-keeper');
+        doStub = env.KEEPER_DO.get(id);
+        const cached = await doStub.fetch(new Request('https://do/poolcache'));
+        poolCache = await cached.json();
+      } catch { poolCache = null; }
+    }
+    directoryResult = await fetchPools(env, { client: publicClient, cache: poolCache });
+    ({ pools } = directoryResult);
+    // `/pools` uses this Durable Object cache too. Reusing and updating it here prevents the cron
+    // from repeating the full factory scan and static metadata reads every minute.
+    if (doStub && directoryResult?.cache) {
+      const jsonSafe = JSON.stringify(directoryResult.cache, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value);
+      await doStub.fetch(new Request('https://do/poolcache', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: jsonSafe,
+      }));
+      await doStub.fetch(new Request('https://do/hooks', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(pools.map((pool) => pool.hook)),
+      }));
+    }
+  } catch (error) {
+    const detail = String(error?.shortMessage ?? error?.message ?? error).slice(0, 180);
+    return { status: 'failed', reason: `pool directory unavailable: ${detail}`, results: [] };
+  }
+
+  const registryAddress = registry as `0x${string}`;
+  const bound = await Promise.all(pools.map(async (pool) => {
+    try {
+      const auction = await publicClient.readContract({
+        address: registryAddress,
+        abi: AUCTION_REGISTRY_ABI,
+        functionName: 'auctionFor',
+        args: [pool.poolId],
+      });
+      if (auction === '0x0000000000000000000000000000000000000000') return null;
+      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = await Promise.all([
+        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'currentStage' }),
+        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'blocksSwaps' }),
+        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'openTime' }),
+        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'cycleDeadline' }),
+        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'cycleId' }),
+      ]);
+      return { pool, auction, stage: Number(stage), blocksSwaps, openTime: Number(openTime), cycleDeadline: Number(cycleDeadline), cycleId: Number(cycleId) };
+    } catch (error) {
+      return { pool, error: String(error?.shortMessage ?? error?.message ?? error).slice(0, 160) };
+    }
+  }));
+
+  const byPoolId = Object.fromEntries(bound.filter(Boolean).filter((x) => !x.error).map((x) => [
+    x.pool.poolId.toLowerCase(),
+    { address: x.auction, stage: x.stage, blocksSwaps: x.blocksSwaps, openTime: x.openTime, cycleDeadline: x.cycleDeadline },
+  ]));
+
+  // Each per-pool auction is reusable. Let it validate the CLOSED -> PRE/OVERNIGHT proof itself;
+  // `armNext()` returns false when the current/next leaves are not the required adjacent phases.
+  for (const item of bound) {
+    if (!item || item.error) continue;
+    if (item.stage === 5 && nowSeconds >= item.cycleDeadline) {
+      try {
+        const refundSimulation = await publicClient.simulateContract({
+          address: item.auction,
+          abi: AUCTION_ABI,
+          functionName: 'refund',
+          args: [],
+          account,
+        });
+        const refundHash = await walletClient.writeContract(refundSimulation.request);
+        const refundReceipt = await publicClient.waitForTransactionReceipt({ hash: refundHash });
+        if (refundReceipt.status !== 'success') throw new Error(`auction refund finalization reverted (${refundHash})`);
+        item.refundTx = refundHash;
+      } catch (error) {
+        // The refund may already have been finalized by a user's permissionless claim. That must
+        // not prevent the next cycle from being armed after the calendar's next CLOSED transition.
+        item.refundError = String(error?.shortMessage ?? error?.message ?? error).slice(0, 140);
+      }
+    }
+    try {
+      const sim = await publicClient.simulateContract({
+        address: item.auction,
+        abi: AUCTION_ABI,
+        functionName: 'armNext',
+        args: [],
+        account,
+      });
+      if (sim.result === true) {
+        const hash = await walletClient.writeContract(sim.request);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status !== 'success') throw new Error(`armNext reverted (${hash})`);
+        item.armedTx = hash;
+      }
+    } catch (error) {
+      item.armError = String(error?.shortMessage ?? error?.message ?? error).slice(0, 160);
+    }
+  }
+
+  // Re-read after arming so a newly created cycle is not mistaken for the previous terminal cycle.
+  for (const item of bound) {
+    if (!item || item.error) continue;
+    try {
+      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = await Promise.all([
+        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'currentStage' }),
+        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'blocksSwaps' }),
+        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'openTime' }),
+        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'cycleDeadline' }),
+        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'cycleId' }),
+      ]);
+      item.stage = Number(stage);
+      item.blocksSwaps = blocksSwaps;
+      item.openTime = Number(openTime);
+      item.cycleDeadline = Number(cycleDeadline);
+      item.cycleId = Number(cycleId);
+    } catch (error) {
+      item.error = String(error?.shortMessage ?? error?.message ?? error).slice(0, 160);
+    }
+  }
+
+  for (const item of bound) {
+    if (!item || item.error) continue;
+    byPoolId[item.pool.poolId.toLowerCase()] = {
+      address: item.auction,
+      stage: item.stage,
+      blocksSwaps: item.blocksSwaps,
+      openTime: item.openTime,
+      cycleDeadline: item.cycleDeadline,
+    };
+  }
+  const eligible = eligibleAuctions(pools, byPoolId, nowSeconds);
+  const eligibleByPool = new Map(eligible.map((x) => [x.pool.poolId.toLowerCase(), x.auction]));
+  const results = [];
+
+  // Keep per-pool failures isolated: a single malformed hook must not stop other auctions settling.
+  for (const item of bound) {
+    if (!item) continue;
+    if (item.error) {
+      results.push(auctionSettlementResult('unknown', 'failed', { hook: item.pool.hook, reason: item.error }));
+      continue;
+    }
+    const auction = eligibleByPool.get(item.pool.poolId.toLowerCase());
+    if (!auction) continue;
+
+    try {
+      const request = await publicClient.simulateContract({
+        address: auction,
+        abi: AUCTION_ABI,
+        functionName: 'settle',
+        args: [],
+        account,
+      });
+      const hash = await walletClient.writeContract(request.request);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== 'success') throw new Error(`settlement reverted (${hash})`);
+      results.push(auctionSettlementResult(auction, 'settled', {
+        hook: item.pool.hook, poolId: item.pool.poolId, cycleId: item.cycleId, txHash: hash,
+      }));
+    } catch (error) {
+      results.push(auctionSettlementResult(auction, 'not-settled', {
+        hook: item.pool.hook,
+        poolId: item.pool.poolId,
+        reason: String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 200),
+      }));
+    }
+  }
+
+  return {
+    status: results.some((r) => r.status === 'settled') ? 'settled' : results.some((r) => r.status === 'failed') ? 'failed' : 'idle',
+    checkedAt: nowSeconds,
+    eligibleCount: eligible.length,
+    results,
+  };
+}
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -442,7 +673,8 @@ export async function runPools(env, { client, fetchImpl = fetch, cache = null } 
     const poolLiquidity = liquidityWord === undefined || liquidityWord === null ? null : BigInt(liquidityWord) & ((1n << 128n) - 1n);
 
     return {
-      hook, poolId, lifecycle: lifecycle ? Number(lifecycle.lifecycle) : 0, token0: config.token0, token1: config.token1,
+      hook, poolId, lifecycle: lifecycle ? Number(lifecycle.lifecycle) : 0,
+      poolManager: config.poolManager, token0: config.token0, token1: config.token1,
       asset0: config.asset0, asset1: config.asset1, configHash: policy.configHash,
       poolClass: Number(config.poolClass), liquidityMode: Number(config.liquidityMode), tickSpacing: Number(config.tickSpacing),
       tradeCap: strings(config.tradeCap), windowCap: strings(config.windowCap),
@@ -698,6 +930,19 @@ const worker = {
       } catch (error) {
         console.error('pool recovery failed', String(error?.message ?? error).slice(0, 160));
       }
+      // Opening Bell settlement is independent of feed freshness. The on-chain auction rechecks
+      // every order and residual; if the pool-price proposal does not clear, simulation fails and
+      // the permissionless refund path remains available at timeout.
+      let auctionSettlement = null;
+      try {
+        auctionSettlement = await settleBellAuctions(env, { nowSeconds });
+        console.log('scheduled auction settlement', JSON.stringify(auctionSettlement));
+      } catch (error) {
+        const reason = String(error?.shortMessage ?? error?.message ?? error)
+          .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180);
+        auctionSettlement = { status: 'threw', reason, results: [] };
+        console.error('scheduled auction settlement failed', reason);
+      }
       // Persist the outcome where /status can read it. A repair that only exists in the log is a
       // repair nobody notices failing, which is how the calendar stayed empty for two days.
       try {
@@ -705,11 +950,21 @@ const worker = {
         await env.KEEPER_DO.get(id).fetch(new Request('https://do/maintenance', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...result, poolRecovery }),
+          body: JSON.stringify({ ...result, poolRecovery, auctionSettlement }),
         }));
       } catch (error) {
         const detail = String(error?.message ?? error).slice(0, 140);
         console.error('could not record maintenance result', detail);
+      }
+      try {
+        const id = env.KEEPER_DO.idFromName('bell-keeper');
+        await env.KEEPER_DO.get(id).fetch(new Request('https://do/auction-settlement', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(auctionSettlement ?? { status: 'skipped', reason: 'no result' }),
+        }));
+      } catch (error) {
+        console.error('could not record auction settlement result', String(error?.message ?? error).slice(0, 140));
       }
     }).catch(async (error) => {
       const detail = String(error?.shortMessage ?? error?.message ?? error)
@@ -834,6 +1089,8 @@ const worker = {
             maintenance = {
               lastMaintenance: doStatus.lastMaintenance ?? null,
               maintenanceLog: doStatus.maintenanceLog ?? [],
+              lastAuctionSettlement: doStatus.lastAuctionSettlement ?? null,
+              auctionSettlementLog: doStatus.auctionSettlementLog ?? [],
             };
           } catch { /* maintenance history is best-effort; live status still returns */ }
           return cors(json({ ...live, ...maintenance }));

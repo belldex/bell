@@ -44,6 +44,9 @@ const ABI = [
   { type: 'function', name: 'assetRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'calendarRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'sessionRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'auctionRegistry', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'auctionFactoryModule', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { type: 'function', name: 'auctionFor', stateMutability: 'view', inputs: [{ type: 'bytes32' }], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'modeEvaluator', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'policyOracle', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { type: 'function', name: 'dependencyReader', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
@@ -104,7 +107,7 @@ export async function buildVerification({
 
   const block = await client.getBlock();
   const contracts = {};
-  const optionalContracts = ['modeEvaluator', 'policyOracle'].filter((key) => manifest[key]);
+  const optionalContracts = ['modeEvaluator', 'policyOracle', 'auctionRegistry', 'auctionFactoryModule'].filter((key) => manifest[key]);
   for (const key of [...CONTRACT_KEYS, ...optionalContracts]) {
     const address = manifest[key];
     const code = await client.getBytecode({ address, blockNumber: block.number });
@@ -145,6 +148,21 @@ export async function buildVerification({
     if (!readerCode || readerCode === '0x') throw new Error(`policyOracle dependencyReader has no code at ${reader}`);
     contracts.policyDependencyReader = { address: reader, codeBytes: (readerCode.length - 2) / 2, codeHash: keccak256(readerCode) };
     wiringChecks['policyOracle.dependencyReader'] = reader;
+  }
+  if (manifest.auctionRegistry && manifest.auctionFactoryModule) {
+    const deployerRegistry = await client.readContract({ address: manifest.hookDeployer, abi: ABI, functionName: 'auctionRegistry' });
+    const deployerModule = await client.readContract({ address: manifest.hookDeployer, abi: ABI, functionName: 'auctionFactoryModule' });
+    const registryFactory = await client.readContract({ address: manifest.auctionRegistry, abi: ABI, functionName: 'factory' });
+    const registryModule = await client.readContract({ address: manifest.auctionRegistry, abi: ABI, functionName: 'auctionFactoryModule' });
+    const moduleFactory = await client.readContract({ address: manifest.auctionFactoryModule, abi: ABI, functionName: 'factory' });
+    const moduleRegistry = await client.readContract({ address: manifest.auctionFactoryModule, abi: ABI, functionName: 'auctionRegistry' });
+    wiringChecks['auction.factoryWiring'] = { deployerRegistry, deployerModule, registryFactory, registryModule, moduleFactory, moduleRegistry };
+    if (!same(deployerRegistry, manifest.auctionRegistry)) mismatches.push('hookDeployer.auctionRegistry differs from manifest');
+    if (!same(deployerModule, manifest.auctionFactoryModule)) mismatches.push('hookDeployer.auctionFactoryModule differs from manifest');
+    if (!same(registryFactory, manifest.poolFactory)) mismatches.push('auctionRegistry.factory differs from poolFactory');
+    if (!same(registryModule, manifest.auctionFactoryModule)) mismatches.push('auctionRegistry.auctionFactoryModule differs from manifest');
+    if (!same(moduleFactory, manifest.poolFactory)) mismatches.push('auctionFactoryModule.factory differs from poolFactory');
+    if (!same(moduleRegistry, manifest.auctionRegistry)) mismatches.push('auctionFactoryModule.auctionRegistry differs from manifest');
   }
   const roles = {};
   for (const role of ['governance', 'guardian', 'treasury']) {

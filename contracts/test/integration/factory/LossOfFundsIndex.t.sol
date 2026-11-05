@@ -39,19 +39,19 @@ pragma solidity 0.8.26;
 /// 27. Zero-fill steals gas                        -> testCoreZeroOutputFeeOnlyFailsClosedAndRollsBack
 ///
 /// OPENING BELL AUCTION (contracts/test/BellOpeningAuction.t.sol):
-/// 28. Escrow drained by a third party            -> testClaimsPayOutOnce (double claim rejected)
-/// 29. Settlement run twice                       -> testSettleTwiceIsRejected
-/// 30. Settlement run after refunds opened        -> testSettleAfterRefundIsRejected
-/// 31. Residual larger than the configured cap    -> testSettleRejectsResidualOverTheCap
-/// 32. Clearing price unverified on a netting book -> testSettleUpdatesThePriceGuardFromThePool
-/// 33. Residual output below the seller floor     -> testSettleRejectsClearingPriceFarFromThePool
-/// 34. Order cancelled or acted on after cutoff   -> testCancelOrderRejectsAfterCutoff
-/// 35. Refund claimed before the window opens     -> testRefundRejectsBeforeTheTimeout
-/// 36. Escrow left stranded after every claim     -> testClaimRefundAllReturnsEveryOrder
-/// 37. Claims taken before settlement             -> testClaimsRejectBeforeSettlement
-/// 38. Someone else's order cancelled             -> testCancelOrderReturnsEscrowAndRejectsNonOwner
-/// 39. An order filled past its limit             -> testSettleRejectsPriceOutsideTheOrderLimit
-/// 40. A failed settle bricking the pool          -> testBlocksSwapsOnlyInsideTheWindow (swaps reopen on timeout)
+/// 28. Escrow drained by a third party            -> testP2PSettlementBalancesQuoteAndBaseEscrow
+/// 29. Settlement run twice                       -> _finalized[cycle] guard in settle()
+/// 30. Settlement run after timeout               -> testTimeoutRefundWorksEvenWhenKeeperNeverSettles
+/// 31. One-sided book forced into AMM              -> testOneSidedBookSettlesAtZeroVolumeAndRefundsAll
+/// 32. Clearing price not volume-maximizing        -> testSettleSelectsMaximumVolumePriceWithoutKeeperPriceInput
+/// 33. Rounding leaves escrow dust                 -> testMultiOrderFractionalPriceLeavesNoEscrowDust
+/// 34. Order cancelled/filled after cutoff         -> testCancelOnlyOwnerBeforeCutoff
+/// 35. Wrong phase used to arm a cycle             -> testArmRejectsWrongCalendarPhase
+/// 36. A later cycle overwrites prior order ids    -> testArmsOnlyCalendarProvenClosedToOpenAndRepeatsPerCycle
+/// 37. Claims inaccessible after cycle rollover    -> testArmsOnlyCalendarProvenClosedToOpenAndRepeatsPerCycle
+/// 38. Failed settle prevents pool reopening       -> testBlocksSwapsDuringOpenAndLockedButReopensAfterTimeout
+/// 39. Settlement while hook policy is halted      -> BellOpeningAuction.settle checks hook.getPolicy().canSwap
+/// 40. Escrow manipulated across users/cycles      -> cycle-scoped quote/base escrow mappings
 ///
 /// AUCTION BINDING (contracts/test/BellAuctionRegistry.t.sol):
 /// 41. A pool rebound to an attacker's auction    -> testRebindIsRejected

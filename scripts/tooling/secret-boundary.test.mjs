@@ -13,3 +13,15 @@ test('rejects a private key in NEXT_PUBLIC and a secret-bearing pull request wor
   assert.throws(() => validateSecretBoundary({ envExample: 'NEXT_PUBLIC_KEEPER_PRIVATE_KEY=abc', workflow: 'on: pull_request' }), /NEXT_PUBLIC/i);
   assert.throws(() => validateSecretBoundary({ envExample: 'KEEPER_PRIVATE_KEY=', workflow: 'on: pull_request\n${{ secrets.PROD_KEY }}' }), /secret|credential/i);
 });
+
+test('allows the public auction contract address but rejects a credential-bearing browser RPC URL', () => {
+  const workflow = 'on: pull_request\npermissions:\n  contents: read\njobs:\n  test:\n    steps:\n      - uses: actions/checkout@0000000000000000000000000000000000000000';
+  assert.equal(validateSecretBoundary({
+    envExample: 'NEXT_PUBLIC_BELL_AUCTION_REGISTRY=0x0000000000000000000000000000000000000001',
+    workflow,
+  }), true);
+  assert.throws(() => validateSecretBoundary({
+    envExample: 'NEXT_PUBLIC_BELL_RPC_URL=https://rpc.example/?key=secret',
+    workflow,
+  }), /NEXT_PUBLIC/i);
+});

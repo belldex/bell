@@ -12,7 +12,7 @@ Last verified: 2026-10-29 03:40 UTC (chain 46630, block ~144.5M)
 | Cloudflare keeper | **running** | 139+ ticks, 30s alarm, cron `*/1 * * * *` |
 | GitHub Actions keeper backstop | **running** | run 40809595921 success |
 | CI `check` workflow | **green** | run 40808666109 success |
-| Production site | **live** | https://bell-black.vercel.app — 9 routes verified 200 |
+| Production site | **live** | https://www.bellstocks.tech — 9 routes verified 200 |
 
 ## What is NOT proven yet
 

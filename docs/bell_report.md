@@ -2,13 +2,14 @@
 
 **Session-Aware Automated Market Maker for Robinhood Chain Stock Tokens (EVM Mainnet 4663)**
 
-- **Web Application:** https://bell-black.vercel.app
-- **Pool Directory:** https://bell-black.vercel.app/pools
-- **Create & Seed Terminal:** https://bell-black.vercel.app/create
-- **Swap Terminal:** https://bell-black.vercel.app/swap
-- **Position Manager:** https://bell-black.vercel.app/positions
-- **Protocol & Verified Contracts Registry:** https://bell-black.vercel.app/protocol#contracts
-- **Terms & Legal Disclosures:** https://bell-black.vercel.app/terms · https://bell-black.vercel.app/privacy
+- **Web Application:** https://www.bellstocks.tech (apex `bellstocks.tech` → 308 redirect)
+- **Pool Directory (Real Onchain Depth):** https://www.bellstocks.tech/pools/
+- **Single Pool Details:** https://www.bellstocks.tech/pool/
+- **Create & Seed Terminal:** https://www.bellstocks.tech/create/
+- **Swap Terminal (Exact-In / Exact-Out):** https://www.bellstocks.tech/swap/
+- **Position Manager (NFT Liquidity Management):** https://www.bellstocks.tech/positions/
+- **Protocol Rules & Active Contracts Registry:** https://www.bellstocks.tech/protocol/#contracts
+- **Terms & Legal Disclosures:** https://www.bellstocks.tech/terms/ · https://www.bellstocks.tech/privacy/ · https://www.bellstocks.tech/cookies/
 - **GitHub Repository:** https://github.com/belldex/bell (branch `main`)
 - **Official X:** https://x.com/BELLdexFi
 
@@ -57,8 +58,8 @@ All smart contracts are deployed live on Robinhood Chain Mainnet (4663) with zer
 [Trader / Liquidity Provider Wallet]
         │
         ▼
-1. Web Application Terminal (https://bell-black.vercel.app)
-    ├── Pools      → Inspect live onchain factory directory & real depth
+1. Web Application Terminal (https://www.bellstocks.tech)
+    ├── Pools      → Inspect live onchain factory directory & real depth from PoolManager
     ├── Create     → 4-step wizard: select pair, pool class, seed ratio, & deploy
     ├── Swap       → Simulate exact-in / exact-out quotes & execute via BellRouter
     ├── Positions  → Discover wallet PositionManager NFTs: add, remove in-kind, collect fees
@@ -131,6 +132,7 @@ All smart contracts are deployed live on Robinhood Chain Mainnet (4663) with zer
 - Next.js 16 App Router interface styled in an institutional market-terminal aesthetic.
 - Fully responsive across desktop, tablet, and mobile viewports with zero horizontal overflow.
 - 2-column animated transaction execution modal rendering real-time step pipelines for create, swap, and LP flows.
+- Real onchain pool depth inspection in swap and directory (verifies slot0 and liquidity from PoolManager).
 - Cloudflare Worker (`bell-keeper-b.asysyifaq25.workers.dev`) providing public CORS-enabled `/pools` indexing and `/status` reporting.
 
 ---
@@ -138,14 +140,14 @@ All smart contracts are deployed live on Robinhood Chain Mainnet (4663) with zer
 ## 5. Technology Stack
 
 - **Smart Contract Language:** Solidity `0.8.26` (Cancun EVM, viaIR)
-- **AMM Infrastructure:** Uniswap v4 Core + Periphery
+- **AMM Infrastructure:** Uniswap v4 Core + Periphery (pinned submodules)
 - **Target Network:** Robinhood Chain Mainnet (`Chain ID: 4663`)
 - **Development Tooling:** Foundry (`forge 1.5.1`) + Native `solc`
 - **Web Frontend:** Next.js `16.4.3` (App Router), React `19.3.1`, TypeScript `7.0.2`
 - **Styling:** Tailwind CSS v4, Lucide Icons, GSAP `3.15`, Lenis `1.3`, Three.js `0.186`
 - **Web3 Engine:** `viem 2.57.11`, `wagmi 2.19.5`, `@rainbow-me/rainbowkit 2.2.11`
-- **Testing:** 993 total tests across Foundry (429 tests), `node:test` (484 tests), and Vitest (80 tests)
-- **Deployment Platform:** Vercel Production (`https://bell-black.vercel.app`)
+- **Testing & Verification:** 993 automated tests across Foundry (429 tests), `node:test` (484 tests), and Vitest (80 tests) + 85 reference specification tests
+- **Hosting:** Vercel production (`https://www.bellstocks.tech`, apex `bellstocks.tech` → 308 redirect)
 
 ---
 
@@ -180,8 +182,8 @@ All smart contracts are deployed live on Robinhood Chain Mainnet (4663) with zer
 
 ## 7. Security, Trust & Risk Controls
 
-1. **Noncustodial Vault Architecture:**
-   BELL smart contracts never hold custodial control over user funds. Liquidity positions are represented by transferable Uniswap v4 PositionManager ERC-721 NFTs owned directly in user wallets.
+1. **User keys and LP positions:**
+   The app and Worker never receive user private keys. LP positions are transferable Uniswap v4 PositionManager ERC-721 NFTs owned by user wallets and removable in-kind. Opening Bell orders are different: while a cycle is active, the per-pool auction contract holds their escrowed input until settlement or refund is claimed. That temporary escrow is code-controlled, permissionless to refund after timeout, and is disclosed on `/protocol`; BELL does not describe the order escrow as noncustodial.
 2. **Unblockable In-Kind Exits:**
    The `BellHook` architecture intentionally omits `beforeRemoveLiquidity` and `afterRemoveLiquidity` hook permissions. Liquidity providers can remove their liquidity in-kind at any time, even during market closures, feed outages, or emergency safety pauses.
 3. **Fail-Closed by Design:**

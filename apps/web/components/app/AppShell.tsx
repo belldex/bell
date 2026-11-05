@@ -6,7 +6,7 @@ import { FaXTwitter } from 'react-icons/fa6';
 import { BellWordmark } from '@/components/ui/Logo';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X } from 'lucide-react';
+import { ArrowLeftRight, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Plus, Menu, ShieldCheck, X, BellRing } from 'lucide-react';
 import { WalletButton } from '@/components/wallet/WalletButton';
 import { PhaseBadge } from '@/components/ui/primitives';
 import { MainnetStatusBanner } from '@/components/app/MainnetStatusBanner';
@@ -18,6 +18,7 @@ import { nowWeekMinuteET, phaseAtWeekMinute, formatWeekMinute } from '@/lib/poli
 const NAV_GROUPS = [
   { label: 'Markets', items: [
     { href: '/pools', label: 'Pools', detail: 'Browse pool policies', icon: ChartNoAxesColumnIncreasing },
+    { href: '/auction', label: 'Auction', detail: 'Opening Bell batch', icon: BellRing },
     { href: '/swap', label: 'Swap', detail: 'Quote through BellRouter', icon: ArrowLeftRight },
   ] },
   { label: 'Liquidity', items: [
@@ -31,6 +32,7 @@ const NAV_GROUPS = [
 
 const PAGE_NAMES: Record<string, string> = {
   '/pools': 'Pools',
+  '/auction': 'Auction',
   '/pool': 'Pool',
   '/swap': 'Swap',
   '/create': 'Create',
@@ -41,7 +43,7 @@ const PAGE_NAMES: Record<string, string> = {
   '/cookies': 'Cookies',
 };
 
-const ROUTE_ORDER = ['/pools', '/pool', '/swap', '/create', '/positions', '/protocol', '/privacy', '/terms', '/cookies'];
+const ROUTE_ORDER = ['/pools', '/auction', '/pool', '/swap', '/create', '/positions', '/protocol', '/privacy', '/terms', '/cookies'];
 const routeRank = (value: string) => {
   const normalized = value.length > 1 && value.endsWith('/') ? value.slice(0, -1) : value;
   const index = ROUTE_ORDER.indexOf(normalized);

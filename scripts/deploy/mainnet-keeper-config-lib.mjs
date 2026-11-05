@@ -80,6 +80,9 @@ export function buildMainnetKeeperVars({ manifest, broadcast, adapters, assets, 
   }
 
   const verifier = requireAddress(adapters.verifier, 'Yahoo source verifier');
+  const auctionRegistry = manifest.auctionRegistry
+    ? requireAddress(manifest.auctionRegistry, 'BellAuctionRegistry')
+    : null;
   return {
     BELL_ORACLE_MODE: 'pull',
     BELL_EXPECTED_CHAIN_ID: String(CHAIN_ID),
@@ -140,6 +143,9 @@ export function buildMainnetChainlinkKeeperVars({ manifest, verification, adapte
     roots[symbol] = { root, year, coverageStart, coverageEnd, capabilityMask: Number(asset.capabilityMask ?? 0b11110) };
   }
   const counterassetId = requireBytes32(assets.weth?.descriptorId, 'WETH descriptorId');
+  const auctionRegistry = manifest.auctionRegistry
+    ? requireAddress(manifest.auctionRegistry, 'BellAuctionRegistry')
+    : null;
   return {
     BELL_ORACLE_MODE: 'chainlink',
     BELL_EXPECTED_CHAIN_ID: String(CHAIN_ID),
@@ -153,6 +159,7 @@ export function buildMainnetChainlinkKeeperVars({ manifest, verification, adapte
     BELL_SESSION_REGISTRY: requireAddress(manifest.sessionRegistry, 'SessionRegistry'),
     BELL_CALENDAR_COUNTER_ASSET_ID: counterassetId,
     BELL_CALENDAR_ROOTS: JSON.stringify(roots),
+    ...(auctionRegistry ? { BELL_AUCTION_REGISTRY: auctionRegistry } : {}),
   };
 }
 

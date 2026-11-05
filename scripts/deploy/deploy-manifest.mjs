@@ -58,6 +58,20 @@ export function validateDeployManifest(raw) {
     validated[field] = raw[field].toLowerCase();
   }
 
+  if (raw.auctionRegistry !== undefined && raw.auctionRegistry !== null) {
+    if (typeof raw.auctionRegistry !== 'string' || !ADDRESS_RE.test(raw.auctionRegistry)) {
+      throw new TypeError('auctionRegistry must be a valid 40-hex address');
+    }
+    if (raw.auctionRegistry.toLowerCase() === ZERO_ADDRESS) throw new RangeError('auctionRegistry cannot be zero address');
+    validated.auctionRegistry = raw.auctionRegistry.toLowerCase();
+  }
+  if (raw.auctionFactoryModule !== undefined && raw.auctionFactoryModule !== null) {
+    if (typeof raw.auctionFactoryModule !== 'string' || !ADDRESS_RE.test(raw.auctionFactoryModule)) {
+      throw new TypeError('auctionFactoryModule must be a valid 40-hex address');
+    }
+    if (raw.auctionFactoryModule.toLowerCase() === ZERO_ADDRESS) throw new RangeError('auctionFactoryModule cannot be zero address');
+    validated.auctionFactoryModule = raw.auctionFactoryModule.toLowerCase();
+  }
   // Optional fee token
   if (raw.feeToken !== undefined && raw.feeToken !== null) {
     if (typeof raw.feeToken !== 'string' || !ADDRESS_RE.test(raw.feeToken)) {

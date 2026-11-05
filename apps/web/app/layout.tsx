@@ -19,7 +19,7 @@ const pixel = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bell-black.vercel.app'),
+  metadataBase: new URL('https://www.bellstocks.tech'),
   title: { default: 'BELL: Session-aware Robinhood Stock Token liquidity', template: '%s · BELL' },
   description:
     'BELL is an independent Uniswap v4 liquidity protocol for Robinhood Stock Tokens on Robinhood Chain Mainnet. Pools can follow a live external price check or trade on their own market price.',

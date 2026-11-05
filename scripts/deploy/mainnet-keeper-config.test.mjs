@@ -130,7 +130,40 @@ test('builds the production keeper vars from active Chainlink assets and publish
   assert.equal(vars.BELL_POSITION_MANAGER, manifest.positionManager);
   assert.equal(vars.BELL_CALENDAR_COUNTER_ASSET_ID, assets.weth.descriptorId);
   assert.equal(vars.BELL_MAINNET_ASSETS, '{}');
+  assert.equal('BELL_AUCTION_REGISTRY' in vars, false);
   assert.equal('YAHOO_SOURCE_VERIFIER_ADDRESS' in vars, false);
+});
+
+test('publishes the auction registry only when the verified mainnet manifest contains it', () => {
+  const build = configModule.buildMainnetChainlinkKeeperVars;
+  const b32 = (byte) => '0x' + byte.repeat(32);
+  const manifest = {
+    chainId: 4663,
+    assetRegistry: '0x0000000000000000000000000000000000000010',
+    calendarRegistry: '0x0000000000000000000000000000000000000011',
+    sessionRegistry: '0x0000000000000000000000000000000000000012',
+    poolFactory: '0x0000000000000000000000000000000000000013',
+    positionManager: '0x0000000000000000000000000000000000000014',
+    auctionRegistry: '0x0000000000000000000000000000000000000015',
+  };
+  const assets = {
+    chainId: 4663, activationPending: false, weth: { descriptorId: b32('70') },
+    stocks: { AAPL: { symbol: 'AAPL', descriptorId: b32('61') } },
+  };
+  const assetState = { chainId: 4663, stage: 'ACTIVE', stocks: { AAPL: { alreadyActive: true, descriptorId: b32('61') } } };
+  const adapters = { chainId: 4663, assets: { AAPL: {
+    directAdapter: '0x0000000000000000000000000000000000000021',
+    regularAdapter: '0x0000000000000000000000000000000000000022',
+    extendedAdapter: '0x0000000000000000000000000000000000000023',
+    overnightAdapter: '0x0000000000000000000000000000000000000024',
+  } } };
+  const verification = { chainId: 4663, blocks: { verifiedAtBlock: 102269681 } };
+  const calendarStates = { AAPL: {
+    chainId: 4663, assetLabel: 'AAPL', stage: 'INTERVAL_ACTIVE', root: b32('81'),
+    year: 2026, coverageStart: 1793419842, coverageEnd: 1798603842,
+  } };
+  const vars = build({ manifest, verification, adapters, assets, assetState, calendarStates });
+  assert.equal(vars.BELL_AUCTION_REGISTRY, manifest.auctionRegistry);
 });
 
 test('replaces only the Wrangler vars object when values contain nested JSON', () => {

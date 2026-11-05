@@ -9,11 +9,10 @@ import {BellHook} from "./BellHook.sol";
 import {BellPolicyOracle} from "./BellPolicyOracle.sol";
 import {BellModeEvaluator} from "./BellModeEvaluator.sol";
 import {PoolConfig} from "./types/ProtocolTypes.sol";
-import {IBellOpeningAuction} from "./auction/IBellOpeningAuction.sol";
 
-/// @dev The two reads the hook needs from the deployed auction registry.
+/// @dev One read from the deployment-wide auction registry.
 interface IBellAuctionRegistry {
-    function auctionFor(bytes32 poolId) external view returns (address);
+    function blocksSwaps(bytes32 poolId) external view returns (bool);
 }
 
 /// @title BellHookV2
@@ -22,11 +21,6 @@ interface IBellAuctionRegistry {
 ///      session fees, flow budgets, closure budgets, recovery, the unblockable LP exit — is inherited
 ///      unchanged, so the two templates cannot drift apart.
 ///
-///      The guard cannot key on `sender` alone: in v4 the `sender` of `beforeSwap` is whoever called
-///      `PoolManager.swap`, which for a residual is the router, not the auction. It therefore requires
-///      both `sender == router` and the `payer` carried in the router's own `hookData`. `hookData` is
-///      not attacker-controlled because BellRouter builds it from its own `msg.sender`.
-///
 ///      The auction is resolved through a write-once registry rather than an immutable address,
 ///      because the hook and the auction each need the other's address and cannot both be first.
 contract BellHookV2 is BellHook {
@@ -34,8 +28,6 @@ contract BellHookV2 is BellHook {
 
     /// @notice Write-once pool-to-auction registry. Zero disables the guard entirely.
     address public immutable auctionRegistry;
-    /// @notice The canonical router allowed to carry an auction residual.
-    address public immutable router;
 
     constructor(
         PoolConfig memory config_,
@@ -44,22 +36,15 @@ contract BellHookV2 is BellHook {
         address sessionRegistry_,
         BellPolicyOracle policyOracle_,
         BellModeEvaluator modeEvaluator_,
-        address auctionRegistry_,
-        address router_
+        address auctionRegistry_
     ) BellHook(config_, key_, templateCodeHash_, sessionRegistry_, policyOracle_, modeEvaluator_) {
         auctionRegistry = auctionRegistry_;
-        router = router_;
     }
 
-    /// @dev The auction bound to this pool, or zero when none is bound.
-    function _auction() private view returns (address) {
-        if (auctionRegistry == address(0)) return address(0);
-        return IBellAuctionRegistry(auctionRegistry).auctionFor(poolId);
-    }
-
-    /// @notice True when the caller is the auction arriving through the canonical router.
-    function _isAuctionResidual(address auction, address sender, bytes calldata hookData) private view returns (bool) {
-        return sender == router && _payer(hookData) == auction;
+    /// @dev The registry returns false for a pool that has no auction binding.
+    function _auctionBlocks() private view returns (bool) {
+        if (auctionRegistry == address(0)) return false;
+        return IBellAuctionRegistry(auctionRegistry).blocksSwaps(poolId);
     }
 
     function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
@@ -67,10 +52,7 @@ contract BellHookV2 is BellHook {
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        address auction = _auction();
-        if (auction != address(0) && IBellOpeningAuction(auction).blocksSwaps()) {
-            if (!_isAuctionResidual(auction, sender, hookData)) revert AuctionActive();
-        }
+        if (_auctionBlocks()) revert AuctionActive();
         return super._beforeSwap(sender, key, params, hookData);
     }
 
@@ -83,16 +65,8 @@ contract BellHookV2 is BellHook {
         ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) internal override returns (bytes4) {
-        address auction = _auction();
-        if (auction != address(0) && IBellOpeningAuction(auction).blocksSwaps()) revert AuctionActive();
+        if (_auctionBlocks()) revert AuctionActive();
         return super._beforeAddLiquidity(sender, key, params, hookData);
     }
 
-    /// @dev First word of the router's `hookData` is `abi.encode(payer, requestHash, updates)`.
-    function _payer(bytes calldata hookData) private pure returns (address payer) {
-        if (hookData.length < 32) return address(0);
-        assembly ("memory-safe") {
-            payer := shr(96, calldataload(hookData.offset))
-        }
-    }
 }

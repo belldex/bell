@@ -18,6 +18,10 @@ export const MAINNET = {
   sessionRegistry: deployment.sessionRegistry as Address,
   positionManager: deployment.positionManager as Address,
   quoteUrl: 'https://bell-keeper-b.asysyifaq25.workers.dev/quote',
+  auctionRegistry: typeof (deployment as typeof deployment & { auctionRegistry?: string }).auctionRegistry === 'string'
+    ? (deployment as typeof deployment & { auctionRegistry?: string }).auctionRegistry as Address
+    : null,
+  publicRpc: 'https://rpc.mainnet.chain.robinhood.com',
   deploymentBlock: BigInt(verification.blocks.verifiedAtBlock),
 } as const;
 

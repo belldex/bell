@@ -5,7 +5,7 @@ import {BellHook} from "./BellHook.sol";
 import {BellHookDeployer} from "./BellHookDeployer.sol";
 import {CreateRequest, CreateResult, PoolConfig, AssetDescriptor, HealthView, CalendarLeaf, Anchor, LiquidityMode, PoolClass, Lifecycle} from "./types/ProtocolTypes.sol";
 import {TreasuryAdapter} from "./TreasuryAdapter.sol";
-import {IBellPoolFactory, IAssetRegistry, ISessionRegistry, ICalendarRegistry} from "./interfaces/IBellProtocol.sol";
+import {IBellPoolFactory, IAssetRegistry, ISessionRegistry, ICalendarRegistry, ISafetyController} from "./interfaces/IBellProtocol.sol";
 import {IBellHookDeployer} from "./interfaces/IBellHookDeployer.sol";
 import {IBellEvents} from "./interfaces/ProtocolEvents.sol";
 import {PositionReceipt, IPositionReceiptManager} from "./libraries/PositionReceipt.sol";
@@ -27,19 +27,15 @@ import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol"
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BellOpeningAuction} from "./auction/BellOpeningAuction.sol";
-import {BellAuctionRegistry} from "./auction/BellAuctionRegistry.sol";
-import {BellRouterResidualAdapter} from "./auction/BellRouterResidualAdapter.sol";
+import {BellAuctionFactoryModule} from "./auction/BellAuctionFactoryModule.sol";
+import {IBellAuctionWiringDeployer} from "./interfaces/IBellAuctionWiringDeployer.sol";
 
 interface IPositionManagerPermit2 {
     function permit2() external view returns (IAllowanceTransfer);
 }
 
-/// @dev The optional getters only the v2 deployer implements. Probed with a staticcall so a v1
-///      deployer keeps creating pools with no auction at all.
-interface IAuctionWiringDeployer {
-    function auctionRegistry() external view returns (address);
-    function router() external view returns (address);
+interface IFactoryAuctionRegistryBinding {
+    function setAuctionFactoryModule(address module) external;
 }
 
 /// @notice Atomic PUBLIC setup for an explicitly bound immutable dependency/risk profile.
@@ -58,17 +54,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     error ReentrantRequest();
     error PriceGuardUnavailable();
     error InitialPriceOutOfBand();
-    error AuctionWiringUnavailable();
-    error AuctionAlreadyEstablished();
-
-    /// @dev Opening Bell Auction window, from devbrief1bell.md section 9.
-    uint32 internal constant AUCTION_LEAD_SECONDS = 600;
-    uint32 internal constant AUCTION_SETTLE_TIMEOUT_SECONDS = 900;
-    uint8 internal constant AUCTION_MAX_ORDERS = 25;
-    /// @dev Order floor and residual cap are scaled off the principal actually seeded, so a thin pool
-    ///      cannot be handed limits sized for a deep one. Both round down; a zero result is floored to 1.
-    uint128 internal constant AUCTION_MIN_ORDER_DIVISOR = 100;
-    uint128 internal constant AUCTION_RESIDUAL_DIVISOR = 4;
+    error UnauthorizedAuctionSetup();
 
     IBellHookDeployer public immutable hookDeployer;
     IPositionManager public immutable positionManager;
@@ -124,6 +110,10 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         serviceFee = uint128(fee); // decimals <= 18 proves the bound
         liquidityMode = profile.liquidityMode;
         profileHash = _profileHash(profile);
+        (address registry, address auctionModule) = _auctionWiring();
+        if (registry != address(0) && auctionModule != address(0)) {
+            IFactoryAuctionRegistryBinding(registry).setAuctionFactoryModule(auctionModule);
+        }
     }
 
     function predict(CreateRequest calldata request) public view override
@@ -179,6 +169,9 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
                     BellHook(hook).refreshState();
                 }
             }
+            // Establish the auction in the same transaction as pool creation. This avoids a window
+            // where an already-live v2 pool has no auction binding and ordinary swaps are ungated.
+            this.establishAuction(hook);
             _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
             emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
             _refund(request.config.token0, starting[0], request.amountMax[0] - principal[0]);
@@ -202,6 +195,7 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
                     BellHook(hook).refreshState();
                 }
             }
+            this.establishAuction(hook);
             _transferExact(serviceToken, msg.sender, serviceRecipient, serviceFee);
             emit ServiceFeePaid(msg.sender, serviceToken, serviceFee, serviceRecipient);
             result = CreateResult(hook, id, 0, positionKey, request.liquidity, principal);
@@ -212,56 +206,21 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
     /// @dev Optional Opening Bell Auction wiring. A deployer without the v2 getters answers the probe
     ///      with nothing and the pool is created exactly as before, which is what keeps the v1 path
     ///      untouched while both templates share one factory.
-    /// @notice Wire the Opening Bell Auction for a pool that already exists.
-    /// @dev Kept out of `createAndSeed` for two reasons. The order floor and residual cap scale off the
-    ///      principal actually seeded, which is only final once that transaction has completed; and a
-    ///      separate function keeps `createAndSeed` inside the stack limit. Permissionless and
-    ///      idempotent — the registry refuses a second binding, so a late caller cannot displace one.
+    /// @notice Wire the reusable Opening Bell Auction after the pool seed has produced final principal.
+    /// @dev Called by this factory from inside `createAndSeed`, keeping pool creation and auction
+    ///      binding atomic. It is not permissionless: otherwise a caller could race pool creation and
+    ///      make the factory's own binding fail. A v1 deployer exposes no auction registry getter, so
+    ///      this is a no-op on the v1 path.
     function establishAuction(address hook) external returns (address auction) {
-        (address registry, address router) = _auctionWiring();
-        if (registry == address(0)) revert AuctionWiringUnavailable();
-        bytes32 poolId = BellHook(hook).poolId();
-        if (BellAuctionRegistry(registry).auctionFor(poolId) != address(0)) revert AuctionAlreadyEstablished();
-
-        PoolConfig memory c = BellHook(hook).config();
-        // Auction orientation: token0 is the quote (the fee token), token1 is the stock base. The pool
-        // orders its own currencies by address, so this is a remap rather than an assumption.
-        bool quoteIsToken0 = c.token0 == serviceToken;
-        // The auction opens before the next session start. With no upcoming leaf there is nothing to
-        // anchor to, so we refuse rather than fabricate a window.
-        uint64 openTime = ICalendarRegistry(c.calendarRegistry).nextInterval(quoteIsToken0 ? c.asset1 : c.asset0).start;
-        if (openTime <= block.timestamp + AUCTION_LEAD_SECONDS) revert AuctionWiringUnavailable();
-
-        uint128[2] memory principal = BellHook(hook).seedPrincipal();
-        address adapter = address(new BellRouterResidualAdapter(router, hook, c.poolManager));
-        auction = address(
-            new BellOpeningAuction(
-                hook,
-                adapter,
-                quoteIsToken0 ? c.token0 : c.token1,
-                quoteIsToken0 ? c.token1 : c.token0,
-                openTime,
-                AUCTION_LEAD_SECONDS,
-                AUCTION_SETTLE_TIMEOUT_SECONDS,
-                [
-                    _atLeastOne((quoteIsToken0 ? principal[0] : principal[1]) / AUCTION_MIN_ORDER_DIVISOR),
-                    _atLeastOne((quoteIsToken0 ? principal[1] : principal[0]) / AUCTION_MIN_ORDER_DIVISOR)
-                ],
-                _atLeastOne((quoteIsToken0 ? principal[1] : principal[0]) / AUCTION_RESIDUAL_DIVISOR),
-                AUCTION_MAX_ORDERS
-            )
-        );
-        BellAuctionRegistry(registry).setAuction(poolId, auction);
+        if (msg.sender != address(this)) revert UnauthorizedAuctionSetup();
+        (address registry, address module) = _auctionWiring();
+        if (registry == address(0) || module == address(0)) return address(0);
+        auction = BellAuctionFactoryModule(module).createAuction(hook, BellHook(hook).poolId());
     }
 
-    function _auctionWiring() private view returns (address registry, address router) {
-        registry = _probeAddress(IAuctionWiringDeployer.auctionRegistry.selector);
-        if (registry == address(0)) return (address(0), address(0));
-        router = _probeAddress(IAuctionWiringDeployer.router.selector);
-    }
-
-    function _atLeastOne(uint128 value) private pure returns (uint128) {
-        return value == 0 ? 1 : value;
+    function _auctionWiring() private view returns (address registry, address module) {
+        registry = _probeAddress(IBellAuctionWiringDeployer.auctionRegistry.selector);
+        module = _probeAddress(IBellAuctionWiringDeployer.auctionFactoryModule.selector);
     }
 
     function _probeAddress(bytes4 selector) private view returns (address value) {
@@ -291,6 +250,9 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
             || r.sqrtPriceX96 >= TickMath.getSqrtPriceAtTick(r.tickUpper)) revert InvalidRequest();
         bool stock0 = _admitted(r.config.assetRegistry, r.config.calendarRegistry, r.config.asset0, r.config.token0, r.config.poolClass);
         bool stock1 = _admitted(r.config.assetRegistry, r.config.calendarRegistry, r.config.asset1, r.config.token1, r.config.poolClass);
+        if (_assetPaused(r.config.safetyController, r.config.token0) || _assetPaused(r.config.safetyController, r.config.token1)) {
+            revert InvalidConfiguration();
+        }
         if (!stock0 && !stock1) revert InvalidConfiguration();
         // SESSION_ONLY requires exactly one verified stock. PRICE_GUARDED can guard a stock/non-stock pair
         // or two stocks, but a pool without any stock is not a BELL product pool.
@@ -389,6 +351,11 @@ contract BellPoolFactory is IBellPoolFactory, IBellEvents {
         } catch {
             return false;
         }
+    }
+
+    function _assetPaused(address controller, address token) private view returns (bool paused) {
+        bytes32 target = keccak256(abi.encode(uint8(2), token));
+        (paused,) = ISafetyController(controller).pauseState(target);
     }
 
     function _mint(CreateRequest calldata r, PoolKey memory key) private {

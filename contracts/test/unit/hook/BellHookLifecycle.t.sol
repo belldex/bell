@@ -458,9 +458,11 @@ contract BellHookLifecycleTest {
         _preparePull(_pullUpdates(asset0));
         uint64 originalDeadline = hook.state().oldValidUntil;
         uint64 initialHealthDeadline = uint64(block.timestamp + 500);
+        uint64 nextTimestamp = uint64(block.timestamp);
         PoolKey memory key = hook.poolKey();
         for (uint256 i; i < 10; ++i) {
-            vm.warp(block.timestamp + 60);
+            nextTimestamp += 60;
+            vm.warp(nextTimestamp);
             bytes memory data = abi.encode(address(this), bytes32(i), _pullUpdates(asset0));
             vm.prank(address(manager));
             hook.beforeSwap(factory, key, _swapParams(), data);

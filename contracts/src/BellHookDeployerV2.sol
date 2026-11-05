@@ -22,7 +22,7 @@ contract BellHookDeployerV2 is IBellHookDeployer {
     ///         skips the swap and add-liquidity callbacks.
     uint160 internal constant EXPECTED_HOOK_MASK = 0x2cc0;
     /// @dev Unchanged from v1: the evaluator is not modified by the auction feature.
-    bytes32 public constant MODE_EVALUATOR_CODE_HASH = 0x92eea1dad5569d6564affd33158c41b668fcecd6d0574da8c618d9093fcc432c;
+    bytes32 public constant MODE_EVALUATOR_CODE_HASH = 0x743105f46008f9ab255cba5b578b94473e16849d0a113c623b0eeb4e1c793b69;
 
     address public immutable factory;
     address public immutable sessionRegistry;
@@ -32,7 +32,7 @@ contract BellHookDeployerV2 is IBellHookDeployer {
     address public immutable policyOracle;
     address public immutable modeEvaluator;
     address public immutable auctionRegistry;
-    address public immutable router;
+    address public immutable auctionFactoryModule;
 
     constructor(
         address factory_,
@@ -41,7 +41,7 @@ contract BellHookDeployerV2 is IBellHookDeployer {
         address policyOracle_,
         address modeEvaluator_,
         address auctionRegistry_,
-        address router_
+        address auctionFactoryModule_
     ) {
         if (
             factory_ == address(0) || sessionRegistry_ == address(0) || sessionRegistry_.code.length == 0
@@ -50,14 +50,14 @@ contract BellHookDeployerV2 is IBellHookDeployer {
         if (policyOracle_ == address(0) || policyOracle_.code.length == 0) revert Unauthorized();
         if (modeEvaluator_ == address(0) || modeEvaluator_.codehash != MODE_EVALUATOR_CODE_HASH) revert Unauthorized();
         if (auctionRegistry_ == address(0) || auctionRegistry_.code.length == 0) revert Unauthorized();
-        if (router_ == address(0) || router_.code.length == 0) revert Unauthorized();
+        if (auctionFactoryModule_ == address(0) || auctionFactoryModule_.code.length == 0) revert Unauthorized();
         factory = factory_;
         sessionRegistry = sessionRegistry_;
         templateCodeHash = templateCodeHash_;
         policyOracle = policyOracle_;
         modeEvaluator = modeEvaluator_;
         auctionRegistry = auctionRegistry_;
-        router = router_;
+        auctionFactoryModule = auctionFactoryModule_;
         bytes memory code = type(BellHookV2).creationCode;
         if (keccak256(code) != templateCodeHash_) revert Unauthorized();
         uint256 split = code.length / 2;
@@ -102,7 +102,7 @@ contract BellHookDeployerV2 is IBellHookDeployer {
             extcodecopy(second, add(add(code, 32), length0), 1, length1)
         }
         return abi.encodePacked(
-            code, abi.encode(config, key, templateCodeHash, sessionRegistry, policyOracle, modeEvaluator, auctionRegistry, router)
+            code, abi.encode(config, key, templateCodeHash, sessionRegistry, policyOracle, modeEvaluator, auctionRegistry)
         );
     }
 }

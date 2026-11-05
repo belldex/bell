@@ -16,7 +16,7 @@ Alamat wallet: `0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399` (Robinhood Chain 466
 
 - [ ] 160 USDG sudah masuk wallet
 - [ ] Wallet terhubung di Robinhood Chain (4663)
-- [ ] Buka https://bell-black.vercel.app/create/
+- [ ] Buka https://www.bellstocks.tech/create/
 
 ## Pool 1 — AAPL / USDG
 
@@ -27,7 +27,7 @@ Alamat wallet: `0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399` (Robinhood Chain 466
 5. Approve AAPL → Approve USDG → **Create**
 6. Tunggu receipt — catat tx hash
 
-Cek: https://bell-black.vercel.app/pools/ harus menampilkan pool.
+Cek: https://www.bellstocks.tech/pools/ harus menampilkan pool.
 
 ## Pool 2 — NVDA / USDG
 
@@ -39,7 +39,7 @@ Sama, seed **0.0025 TSLA** + **1 USDG**.
 
 ## Setelah 3 pool jadi — Swap demo
 
-1. Buka https://bell-black.vercel.app/swap/
+1. Buka https://www.bellstocks.tech/swap/
 2. Pilih pool AAPL/USDG
 3. Swap kecil: **0.0002 AAPL** (~$0.07, di bawah cap 0.00025)
 4. Quote → Approve → Submit
@@ -47,7 +47,7 @@ Sama, seed **0.0025 TSLA** + **1 USDG**.
 
 ## Tarik (withdraw) demo
 
-1. Buka https://bell-black.vercel.app/positions/
+1. Buka https://www.bellstocks.tech/positions/
 2. NFT posisi terdeteksi otomatis
 3. **Remove liquidity** → pilih 50%
 4. **Isi minimum output untuk kedua token** (wajib, tidak boleh 0)

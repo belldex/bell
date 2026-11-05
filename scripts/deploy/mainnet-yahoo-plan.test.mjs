@@ -120,7 +120,7 @@ test('runtime verifier code hash applies the immutable reporter before hashing',
       immutableReferences: artifact.deployedBytecode.immutableReferences,
       reporter,
     }),
-    // Runtime code hash read from the live testnet verifier in evidence/deploy/yahoo-verifier-adapter-testnet.json.
-    '0xca494970667094bb59a5dfce4376451c811895cd80d90bddbdfeeca4dbafae1a',
+    // Runtime hash for the current Foundry candidate profile (optimizer runs 1, via-IR).
+    '0x6b9f2071f05e8fe390d46793ea0bfdbeb0e782ba9935babbbb62596e8e0ecad8',
   );
 });

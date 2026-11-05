@@ -2,6 +2,24 @@
 
 Single source of truth. Mainnet claims below are checked against deployment evidence and live chain reads.
 
+## Opening Bell Auction rollout — checked 2026-11-05
+
+The auction implementation and `/auction` page exist in the `feat/opening-bell-auction` branch, but they are
+not live yet. The current Mainnet factory listed below is still the deployed version; no auction registry or
+per-pool auction is bound on Mainnet. Both `bellstocks.tech/auction/` and `www.bellstocks.tech/auction/` returned
+404, and the deployed keeper `/status` response had no auction settlement fields.
+
+A read-only factory-upgrade simulation completed on Robinhood Chain 4663. It predicted factory
+`0xDC830f83D4F7cd13E24A8f512C0Fbf92ea5228a8`, auction registry
+`0x933EC47875A5b5e0d18D7c40543F93d0ea98Ac75`, and an estimated deployment cost of
+`0.001327943957394948 ETH`. These are simulation outputs, not deployed addresses. The configured deployer held
+`0.00000070476285 ETH` at preflight, so the live upgrade was not sent. Re-run the simulation and preflight before
+any later broadcast because both gas estimates and balances can change.
+
+The auction is P2P-only: matched orders can clear at one uniform price, but unmatched orders are refunded and
+the AMM price itself does not move. The feature does not promise to close the market-price gap or fill a one-sided
+book.
+
 ## Current Mainnet — Robinhood Chain 4663
 
 The always-available policy implementation was deployed on 2026-10-31. Four CREATE transactions confirmed
@@ -31,7 +49,7 @@ Mainnet data. `/quote` returns 410 by design: swap estimates are simulated throu
 pool policy is read from the hook; the Worker does not sign quotes. The latest `/pools` read returned no
 pools, so no Mainnet liquidity position or swap exists yet. The app supports pool creation, seeding, and
 swaps; the first live pool still needs its creator to choose seed amounts and submit the wallet transactions.
-Vercel production alias `https://bell-black.vercel.app` is READY on deployment
+Vercel production alias `https://www.bellstocks.tech` is READY on deployment
 `dpl_HrMBfAzxS7981jTxRfKt7ys29iFs`; `/`, `/pools`, `/create`, `/swap`, and `/protocol` returned HTTP 200
 after deployment.
 

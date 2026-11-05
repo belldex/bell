@@ -42,6 +42,18 @@ export class KeeperState {
       return Response.json({ ok: true, at });
     }
 
+    if (url.pathname === '/auction-settlement') {
+      if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+      let payload = null;
+      try { payload = await request.json(); } catch { payload = { status: 'unreadable' }; }
+      const at = new Date().toISOString();
+      await this.ctx.storage.put('lastAuctionSettlement', { at, ...payload });
+      const log = (await this.ctx.storage.get('auctionSettlementLog')) ?? [];
+      log.push({ at, status: payload?.status ?? null, eligibleCount: payload?.eligibleCount ?? null });
+      await this.ctx.storage.put('auctionSettlementLog', log.slice(-HISTORY_LIMIT));
+      return Response.json({ ok: true, at });
+    }
+
     // Incremental pool directory cache: the scan cursor and immutable per-pool metadata, so a
     // request does not re-read config/symbol/decimals for every pool on every call.
     if (url.pathname === '/poolcache') {
@@ -114,6 +126,8 @@ export class KeeperState {
         history: (await this.ctx.storage.get('history')) ?? [],
         lastMaintenance: (await this.ctx.storage.get('lastMaintenance')) ?? null,
         maintenanceLog: (await this.ctx.storage.get('maintenanceLog')) ?? [],
+        lastAuctionSettlement: (await this.ctx.storage.get('lastAuctionSettlement')) ?? null,
+        auctionSettlementLog: (await this.ctx.storage.get('auctionSettlementLog')) ?? [],
       });
     }
     if (url.pathname === '/tick') {

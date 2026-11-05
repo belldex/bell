@@ -17,18 +17,18 @@ Status: Completed & Live on Production Mainnet
 SECTION 2: DEV KERJA
 --------------------------------------------------------------------------------
 1. Live Production Web URL:
-   https://bell-black.vercel.app
+   https://www.bellstocks.tech  (apex bellstocks.tech → 308 redirect)
 
 2. Platform Routes:
-   - Live Pool Directory: https://bell-black.vercel.app/pools
-   - Single Pool Policy Details: https://bell-black.vercel.app/pool
-   - Create & Seed Pool Wizard: https://bell-black.vercel.app/create
-   - Swap Execution Terminal: https://bell-black.vercel.app/swap
-   - Manage NFT Liquidity Positions: https://bell-black.vercel.app/positions
-   - Protocol & Verified Contracts Registry: https://bell-black.vercel.app/protocol#contracts
-   - Terms of Service: https://bell-black.vercel.app/terms
-   - Privacy Policy: https://bell-black.vercel.app/privacy
-   - Cookies Policy: https://bell-black.vercel.app/cookies
+   - Live Pool Directory: https://www.bellstocks.tech/pools/
+   - Single Pool Policy Details: https://www.bellstocks.tech/pool/
+   - Create & Seed Pool Wizard: https://www.bellstocks.tech/create/
+   - Swap Execution Terminal: https://www.bellstocks.tech/swap/
+   - Manage NFT Liquidity Positions: https://www.bellstocks.tech/positions/
+   - Protocol & Verified Contracts Registry: https://www.bellstocks.tech/protocol/#contracts
+   - Terms of Service: https://www.bellstocks.tech/terms/
+   - Privacy Policy: https://www.bellstocks.tech/privacy/
+   - Cookies Policy: https://www.bellstocks.tech/cookies/
 
 3. GitHub Repository:
    https://github.com/belldex/bell
@@ -79,7 +79,7 @@ SECTION 3: QUALITY ASSURANCE (QA) REPORT
 
 [PASS] 4. GitHub Repository Cleanliness:
    - Working tree clean, branch main synced with origin/main.
-   - Sensitive Data: Private keys strictly excluded from source code; noncustodial architecture ensures private keys never leave user wallets.
+   - Sensitive Data: Private keys are not received by the app or Worker. LP NFTs stay user-owned and removable in-kind. Opening Bell order inputs are temporarily escrowed in a per-pool contract until settlement or permissionless refund; this is disclosed as contract escrow, not described as noncustodial.
 
 
 --------------------------------------------------------------------------------

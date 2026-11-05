@@ -4,6 +4,11 @@ pragma solidity 0.8.26;
 import {BellPoolFactory} from "../../../src/BellPoolFactory.sol";
 import {TreasuryAdapter} from "../../../src/TreasuryAdapter.sol";
 import {BellHookDeployer} from "../../../src/BellHookDeployer.sol";
+import {BellHookDeployerV2} from "../../../src/BellHookDeployerV2.sol";
+import {BellHookV2} from "../../../src/BellHookV2.sol";
+import {BellAuctionRegistry} from "../../../src/auction/BellAuctionRegistry.sol";
+import {BellAuctionFactoryModule} from "../../../src/auction/BellAuctionFactoryModule.sol";
+import {IBellHookDeployer} from "../../../src/interfaces/IBellHookDeployer.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellPolicyOracle} from "../../../src/BellPolicyOracle.sol";
 import {BellModeEvaluator} from "../../../src/BellModeEvaluator.sol";
@@ -103,7 +108,9 @@ contract FactoryPermit2 {
 contract BellPoolFactoryTest {
     VmFactory private constant vm = VmFactory(address(uint160(uint256(keccak256("hevm cheat code")))));
     BellPoolFactory internal factory;
-    BellHookDeployer private deployer;
+    IBellHookDeployer private deployer;
+    BellAuctionRegistry private auctionRegistry;
+    BellAuctionFactoryModule private auctionFactoryModule;
     PoolManager internal manager;
     PositionManager internal positions;
     FactoryPermit2 internal permit2;
@@ -120,6 +127,7 @@ contract BellPoolFactoryTest {
     FactoryToken private stockToken;
     bytes32 private stockId;
     bytes32 private quoteId;
+    uint64 private nextRealSampleAt;
     address internal constant RECIPIENT = address(0xBEEF);
     address internal constant SERVICE = address(0xFEE);
 
@@ -140,8 +148,12 @@ contract BellPoolFactoryTest {
         MockSafetyController safety = new MockSafetyController();
         oracle_hoisted = new BellPolicyOracle();
         BellModeEvaluator modeEvaluator = new BellModeEvaluator();
-        address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        deployer = new BellHookDeployer(future, address(sessions), keccak256(type(BellHook).creationCode), address(oracle_hoisted), address(modeEvaluator));
+        address future = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 3);
+        auctionRegistry = new BellAuctionRegistry(future);
+        auctionFactoryModule = new BellAuctionFactoryModule(future, address(auctionRegistry), address(usdg), 600, 900, 512, 25, 100);
+        deployer = IBellHookDeployer(address(new BellHookDeployerV2(
+            future, address(sessions), keccak256(type(BellHookV2).creationCode), address(oracle_hoisted), address(modeEvaluator), address(auctionRegistry), address(auctionFactoryModule)
+        )));
         PoolConfig memory c = PoolConfig({token0:address(token0), token1:address(token1), asset0:bytes32(uint256(1)), asset1:bytes32(uint256(2)),
             poolManager:address(manager),positionManager:address(positions),factory:future,assetRegistry:address(assets),calendarRegistry:address(calendar),
             safetyController:address(safety),treasuryAdapter:address(0),poolClass:1,liquidityMode:0,referenceMode:0,tickSpacing:60,
@@ -152,6 +164,7 @@ contract BellPoolFactoryTest {
         _admit(c.asset0, address(token0), true);
         _admit(c.asset1, address(token1), false);
         calendar.setLeaf(CalendarLeaf(c.asset0, 2026, 0, 9000, 20000, 2, keccak256("fixture")));
+        calendar.setLeaf(CalendarLeaf(c.asset1, 2026, 0, 9000, 20000, 2, keccak256("fixture")));
         request = CreateRequest(c, bytes32(0), 0, 10100, RECIPIENT, uint160(1 << 96), -120, 120, 1000000,
             [uint128(10000),uint128(10000)], 49e6);
         request.salt = _mine(request);
@@ -161,24 +174,33 @@ contract BellPoolFactoryTest {
     }
 
     function testAtomicExplicitMintReceiptPrincipalFeeAndNoForeignSweep() external {
+        bytes32 usdgAsset = keccak256("fixture-usdg");
+        _admit(usdgAsset, address(usdg), false);
+        request.config.token1 = address(usdg);
+        request.config.asset1 = usdgAsset;
+        request.salt = _mine(request);
         token0.mint(address(factory), 777); token1.mint(address(factory), 888);
         uint256 before0 = token0.balanceOf(address(this));
-        uint256 before1 = token1.balanceOf(address(this));
+        uint256 before1 = usdg.balanceOf(address(this));
         (address predicted,bytes32 poolId,) = factory.predict(request);
         CreateResult memory r = factory.createAndSeed(request);
         require(r.hook == predicted && r.poolId == poolId && r.tokenId == 1 && r.liquidity == request.liquidity, "result");
         require(positions.ownerOf(r.tokenId) == RECIPIENT && positions.getPositionLiquidity(r.tokenId) == request.liquidity, "receipt");
-        require(r.seedPrincipal[0] == before0-token0.balanceOf(address(this)) && r.seedPrincipal[0] > 0, "principal debit");
-        require(r.seedPrincipal[1] == before1-token1.balanceOf(address(this)) && r.seedPrincipal[1] > 0, "principal1 debit");
-        require(token0.balanceOf(address(manager)) == r.seedPrincipal[0] && token1.balanceOf(address(manager)) == r.seedPrincipal[1],"core settlement");
+        uint256 expectedDebit0 = uint256(r.seedPrincipal[0]);
+        uint256 expectedDebit1 = uint256(r.seedPrincipal[1]) + factory.serviceFee();
+        require(expectedDebit0 == before0-token0.balanceOf(address(this)) && r.seedPrincipal[0] > 0, "principal debit");
+        require(expectedDebit1 == before1-usdg.balanceOf(address(this)) && r.seedPrincipal[1] > 0, "principal1 debit");
+        require(token0.balanceOf(address(manager)) == r.seedPrincipal[0] && usdg.balanceOf(address(manager)) == r.seedPrincipal[1],"core settlement");
         require(r.positionKey == keccak256(abi.encodePacked(address(positions),request.tickLower,request.tickUpper,bytes32(r.tokenId))),"position key");
         require(token0.balanceOf(address(factory)) == 777 && token1.balanceOf(address(factory)) == 888, "foreign balances");
         require(usdg.balanceOf(SERVICE) == 49e6 && factory.nonces(address(this)) == 1, "fee/nonce");
-        require(token0.allowance(address(factory),address(permit2)) == 0, "erc20 allowance");
+        require(token0.allowance(address(factory),address(permit2)) == 0 && usdg.allowance(address(factory),address(permit2)) == 0, "erc20 allowance");
         (uint160 allowed,,) = permit2.allowance(address(factory),address(token0),address(positions));
-        require(allowed == 0, "permit2 allowance");
+        (uint160 allowedQuote,,) = permit2.allowance(address(factory),address(usdg),address(positions));
+        require(allowed == 0 && allowedQuote == 0, "permit2 allowance");
         require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE) && BellHook(r.hook).getPolicy().mode != uint8(Mode.RECOVERING), "swap gate");
         require(bytes4(_mustFail(request)) == BellPoolFactory.InvalidRequest.selector,"nonce replay validation");
+        require(auctionRegistry.auctionFor(r.poolId) != address(0), "v2 pool auction not registered");
     }
 
     function testInitializationFailureRollsBack() external {
@@ -284,7 +306,17 @@ contract BellPoolFactoryTest {
         stockToken.setOraclePaused(true);
         realSessions.refreshHealth(stockId);
         require(!realSessions.health(stockId).ready,"stock pause not reflected");
-        request.deadline = uint64(block.timestamp + 100);
+        request.deadline = uint64(block.timestamp + 10_000);
+        require(request.config.factory == address(factory), "factory binding");
+        require(request.nonce == factory.nonces(address(this)), "request nonce");
+        require(request.deadline >= block.timestamp && request.deadline <= type(uint48).max, "request deadline");
+        require(request.recipient > address(2) && request.recipient != address(factory), "recipient");
+        require(request.liquidity != 0 && request.amountMax[0] != 0 && request.amountMax[1] != 0, "seed amounts");
+        require(request.maxServiceFee >= factory.serviceFee(), "service fee maximum");
+        require(request.tickLower < request.tickUpper && request.tickLower >= TickMath.MIN_TICK && request.tickUpper <= TickMath.MAX_TICK, "tick range");
+        require(request.tickLower % 60 == 0 && request.tickUpper % 60 == 0, "tick spacing");
+        require(request.sqrtPriceX96 > TickMath.getSqrtPriceAtTick(request.tickLower) && request.sqrtPriceX96 < TickMath.getSqrtPriceAtTick(request.tickUpper), "sqrt bounds");
+        require(address(factory.positionManager()) != request.recipient && factory.nonces(address(this)) != type(uint64).max, "manager or nonce");
         CreateResult memory r = factory.createAndSeed(request);
         require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session-only pool did not activate");
     }
@@ -298,7 +330,7 @@ contract BellPoolFactoryTest {
         vm.warp(block.timestamp + 121);
         realSessions.refreshHealth(stockId);
         require(!realSessions.health(stockId).ready, "fixture unexpectedly healthy");
-        request.deadline = uint64(block.timestamp + 100);
+        request.deadline = uint64(block.timestamp + 10_000);
         CreateResult memory r = factory.createAndSeed(request);
         require(BellHook(r.hook).state().lifecycle == uint8(Lifecycle.LIVE), "session-only pool did not activate");
         require(BellHook(r.hook).getPolicy().canSwap, "session-only pool not tradable without health");
@@ -309,7 +341,10 @@ contract BellPoolFactoryTest {
         vm.warp(block.timestamp + 121);
         realSessions.refreshHealth(stockId);
         realSafety.setPause(ModePolicy.targetId(2,address(stockToken)),true,1);
-        request.deadline = uint64(block.timestamp + 100);
+        request.deadline = uint64(block.timestamp + 10_000);
+        (bool stockPaused,) = realSafety.pauseState(ModePolicy.targetId(2,address(stockToken)));
+        require(stockPaused, "fixture pause not stored");
+        request.deadline = uint64(block.timestamp + 10_000);
         bytes4 sel = bytes4(_rollback(request));
         require(sel == BellPoolFactory.InvalidConfiguration.selector || sel == bytes4(keccak256("BadSeed()")), "pause bypassed");
     }
@@ -348,7 +383,8 @@ contract BellPoolFactoryTest {
     function testRealRegistriesOraclelessDoesNotBypassQuotePause() external {
         _useRealRegistries(true);
         realSafety.setPause(ModePolicy.targetId(2,address(token1)),true,1);
-        require(bytes4(_rollback(request)) == bytes4(keccak256("BadSeed()")),"quote pause bypass");
+        bytes4 sel = bytes4(_rollback(request));
+        require(sel == BellPoolFactory.InvalidConfiguration.selector || sel == bytes4(keccak256("BadSeed()")),"quote pause bypass");
     }
     function testRealRegistriesOraclelessDoesNotBypassQuoteTransferRisk() external {
         _useRealRegistries(true);
@@ -374,7 +410,7 @@ contract BellPoolFactoryTest {
     function testSessionOnlyRequiresExactlyOneAdmittedStock() external {
         AssetDescriptor memory d0 = assets.descriptor(request.config.asset0);
         AssetDescriptor memory d1 = assets.descriptor(request.config.asset1);
-        d0.isStock = false; assets.setDescriptor(d0);
+        d0.isStock = false; d1.isStock = false; assets.setDescriptor(d0); assets.setDescriptor(d1);
         require(bytes4(_rollback(request)) == BellPoolFactory.InvalidConfiguration.selector,"no-stock pool admitted");
         d0.isStock = true; d1.isStock = true; assets.setDescriptor(d0); assets.setDescriptor(d1);
         require(bytes4(_rollback(request)) == BellPoolFactory.InvalidConfiguration.selector,"stock-stock mislabeled session-only");
@@ -412,12 +448,13 @@ contract BellPoolFactoryTest {
         bytes32 quoteOp = realAssets.queueAsset(q,bytes(""));
         vm.warp(block.timestamp + 48 hours);
         stockId = realAssets.activateAsset(stockOp); quoteId = realAssets.activateAsset(quoteOp);
+        nextRealSampleAt = uint64(block.timestamp - 30);
         MockCalendarRegistry calendar = new MockCalendarRegistry();
         calendar.setLeaf(CalendarLeaf(stockId,2026,0,uint64(block.timestamp - 1),uint64(block.timestamp + 1000),2,bytes32(uint256(1))));
         realSessions = new SessionRegistry(address(realAssets),address(calendar));
         _refreshRealStock();
-        vm.warp(block.timestamp + 30); _refreshRealStock();
-        vm.warp(block.timestamp + 30); _refreshRealStock();
+        _refreshRealStock();
+        _refreshRealStock();
         require(realSessions.health(stockId).ready,"real stock fixture unhealthy");
         PoolConfig memory c = request.config;
         c.asset0 = stockFirst ? stockId : quoteId; c.asset1 = stockFirst ? quoteId : stockId;
@@ -443,13 +480,21 @@ contract BellPoolFactoryTest {
         encoded = abi.encode(wires);
     }
     function _refreshRealStock() private {
-        realDirect.setSample(_sampleNow(bytes32(0),0,bytes32(0)));
-        bytes[] memory reports = new bytes[](1); reports[0] = abi.encode(_sampleNow(stockId,2,bytes32(uint256(1))));
+        uint64 nowTime = uint64(block.timestamp);
+        nextRealSampleAt = nowTime > nextRealSampleAt ? nowTime : nextRealSampleAt + 30;
+        if (nextRealSampleAt > block.timestamp) vm.warp(nextRealSampleAt);
+        SourceSample memory direct = _sampleAt(bytes32(0),0,bytes32(0),nextRealSampleAt);
+        SourceSample memory stream = _sampleAt(stockId,2,bytes32(uint256(1)),nextRealSampleAt);
+        realDirect.setSample(direct);
+        bytes[] memory reports = new bytes[](1); reports[0] = abi.encode(stream);
         realSessions.submitReports(stockId,reports); realSessions.refreshHealth(stockId);
     }
     function _sampleNow(bytes32 id,uint8 phase,bytes32 feed) private view returns(SourceSample memory) {
         return SourceSample(id,feed,phase,100e18,uint64(block.timestamp),uint64(block.timestamp),uint64(block.timestamp - 1),
             uint64(block.timestamp + 120),uint64(block.timestamp + 120),keccak256(abi.encode(block.timestamp,phase)));
+    }
+    function _sampleAt(bytes32 id,uint8 phase,bytes32 feed,uint64 timestamp) private pure returns(SourceSample memory) {
+        return SourceSample(id,feed,phase,100e18,timestamp,timestamp,timestamp - 1,timestamp + 120,timestamp + 120,keccak256(abi.encode(timestamp,phase)));
     }
     function testSeedPriceMustBeStrictlyInsideTickRangeBeforeDeployment() external {
         request.sqrtPriceX96 = TickMath.getSqrtPriceAtTick(request.tickLower);

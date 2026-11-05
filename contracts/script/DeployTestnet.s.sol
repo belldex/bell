@@ -5,11 +5,14 @@ import {SafetyController} from "../src/SafetyController.sol";
 import {AssetRegistry} from "../src/registries/AssetRegistry.sol";
 import {CalendarRegistry} from "../src/registries/CalendarRegistry.sol";
 import {SessionRegistry} from "../src/registries/SessionRegistry.sol";
-import {BellHook} from "../src/BellHook.sol";
-import {BellHookDeployer} from "../src/BellHookDeployer.sol";
+import {BellHookV2} from "../src/BellHookV2.sol";
+import {BellHookDeployerV2} from "../src/BellHookDeployerV2.sol";
+import {BellAuctionRegistry} from "../src/auction/BellAuctionRegistry.sol";
+import {BellAuctionFactoryModule} from "../src/auction/BellAuctionFactoryModule.sol";
 import {BellPolicyOracle} from "../src/BellPolicyOracle.sol";
 import {BellModeEvaluator} from "../src/BellModeEvaluator.sol";
 import {BellPoolFactory} from "../src/BellPoolFactory.sol";
+import {IBellHookDeployer} from "../src/interfaces/IBellHookDeployer.sol";
 import {BellRouter} from "../src/BellRouter.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
 import {PoolConfig} from "../src/types/ProtocolTypes.sol";
@@ -63,6 +66,8 @@ contract DeployTestnet {
         address positionManager;
         address modeEvaluator;
         address hookDeployer;
+        address auctionRegistry;
+        address auctionFactoryModule;
         address poolFactory;
         address weth;
         address router;
@@ -173,12 +178,19 @@ contract DeployTestnet {
         // which keeps per-hook initcode inside the EIP-3860 limit.
         address policyOracle = address(new BellPolicyOracle());
         d.modeEvaluator = address(new BellModeEvaluator());
-        address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
-        d.hookDeployer = address(new BellHookDeployer(
-            futureFactory, d.sessionRegistry, keccak256(type(BellHook).creationCode), policyOracle, d.modeEvaluator
+        // Deployment order is registry -> hook deployer -> factory. Predict the factory CREATE
+        // address before deploying the registry so the registry's writer is immutable and final.
+        address futureFactory = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 3);
+        d.auctionRegistry = address(new BellAuctionRegistry(futureFactory));
+        d.auctionFactoryModule = address(new BellAuctionFactoryModule(
+            futureFactory, d.auctionRegistry, feeToken, 600, 900, 512, 25, 100
+        ));
+        d.hookDeployer = address(new BellHookDeployerV2(
+            futureFactory, d.sessionRegistry, keccak256(type(BellHookV2).creationCode),
+            policyOracle, d.modeEvaluator, d.auctionRegistry, d.auctionFactoryModule
         ));
         d.poolFactory = address(new BellPoolFactory(
-            _profile(d, futureFactory), BellHookDeployer(d.hookDeployer), feeToken, roles.recipient
+            _profile(d, futureFactory), IBellHookDeployer(d.hookDeployer), feeToken, roles.recipient
         ));
         require(d.poolFactory == futureFactory, "factory address prediction mismatch");
         d.router = address(new BellRouter(IPoolManager(d.poolManager), d.weth));
@@ -223,8 +235,12 @@ contract DeployTestnet {
             '",\n  "poolManager": "', _hex(d.poolManager),
             '",\n  "positionManager": "', _hex(d.positionManager),
             '",\n  "hookDeployer": "', _hex(d.hookDeployer),
+            '",\n  "auctionRegistry": "', _hex(d.auctionRegistry),
+            '",\n  "auctionFactoryModule": "', _hex(d.auctionFactoryModule),
             '",\n  "modeEvaluator": "', _hex(d.modeEvaluator),
-            '",\n  "poolFactory": "', _hex(d.poolFactory),
+            '",\n  "poolFactory": "', _hex(d.poolFactory)
+        );
+        string memory p4 = string.concat(
             '",\n  "weth": "', _hex(d.weth),
             '",\n  "router": "', _hex(d.router),
             '",\n  "status": "', isMainnet ? "PRODUCTION" : "REHEARSAL",
@@ -233,7 +249,7 @@ contract DeployTestnet {
                 : "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked.",
             '"\n}\n'
         );
-        string memory json = string.concat(p1, p2, p3);
+        string memory json = string.concat(p1, p2, p3, p4);
         string memory defaultPath = isMainnet
             ? "../evidence/deploy/mainnet-4663.json"
             : "../evidence/deploy/testnet-46630.json";
