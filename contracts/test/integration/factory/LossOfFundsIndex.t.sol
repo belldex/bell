@@ -52,6 +52,10 @@ pragma solidity 0.8.26;
 /// 38. Someone else's order cancelled             -> testCancelOrderReturnsEscrowAndRejectsNonOwner
 /// 39. An order filled past its limit             -> testSettleRejectsPriceOutsideTheOrderLimit
 /// 40. A failed settle bricking the pool          -> testBlocksSwapsOnlyInsideTheWindow (swaps reopen on timeout)
+///
+/// AUCTION BINDING (contracts/test/BellAuctionRegistry.t.sol):
+/// 41. A pool rebound to an attacker's auction    -> testRebindIsRejected
+/// 42. A stranger binding a pool's auction        -> testStrangerCannotBind
 contract LossOfFundsIndex {
     // Documentation-only contract: every entry above points at an executable test in this repo.
 }
