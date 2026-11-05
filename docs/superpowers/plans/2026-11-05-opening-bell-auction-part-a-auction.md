@@ -832,9 +832,13 @@ Add to `BellOpeningAuction`:
                 IERC20(token0).forceApprove(adapter, quoteIn);
                 IAuctionResidualAdapter(adapter).swapExactInput(true, quoteIn, uint128(residual), block.timestamp + 300);
             } else {
-                // Give base (token1) to receive quote (token0): token1 in, token0 out.
+                // Give base (token1) to receive quote (token0): token1 in, token0 out. The output
+                // floor is what the sellers are owed at P*; without it the pool could return too
+                // little quote and the final seller claim would come up short.
+                uint256 owed = AuctionClearing.quoteForBase(residual, clearingSqrtPriceX96_, true);
+                uint128 minQuoteOut = uint128((owed * (10_000 - PRICE_TOLERANCE_BPS)) / 10_000);
                 IERC20(token1).forceApprove(adapter, residual);
-                IAuctionResidualAdapter(adapter).swapExactInput(false, uint128(residual), 0, block.timestamp + 300);
+                IAuctionResidualAdapter(adapter).swapExactInput(false, uint128(residual), minQuoteOut, block.timestamp + 300);
             }
         }
 
