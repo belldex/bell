@@ -37,6 +37,21 @@ pragma solidity 0.8.26;
 /// 25. Hook data swaps the policy                 -> testSwapHookDataCannotSupplyPolicyOrReference
 /// 26. Budget inflated across swaps               -> testCoreRollingRejectDoesNotCommitEitherCurrency
 /// 27. Zero-fill steals gas                        -> testCoreZeroOutputFeeOnlyFailsClosedAndRollsBack
+///
+/// OPENING BELL AUCTION (contracts/test/BellOpeningAuction.t.sol):
+/// 28. Escrow drained by a third party            -> testClaimsPayOutOnce (double claim rejected)
+/// 29. Settlement run twice                       -> testSettleTwiceIsRejected
+/// 30. Settlement run after refunds opened        -> testSettleAfterRefundIsRejected
+/// 31. Residual larger than the configured cap    -> testSettleRejectsResidualOverTheCap
+/// 32. Clearing price unverified on a netting book -> testSettleUpdatesThePriceGuardFromThePool
+/// 33. Residual output below the seller floor     -> testSettleRejectsClearingPriceFarFromThePool
+/// 34. Order cancelled or acted on after cutoff   -> testCancelOrderRejectsAfterCutoff
+/// 35. Refund claimed before the window opens     -> testRefundRejectsBeforeTheTimeout
+/// 36. Escrow left stranded after every claim     -> testClaimRefundAllReturnsEveryOrder
+/// 37. Claims taken before settlement             -> testClaimsRejectBeforeSettlement
+/// 38. Someone else's order cancelled             -> testCancelOrderReturnsEscrowAndRejectsNonOwner
+/// 39. An order filled past its limit             -> testSettleRejectsPriceOutsideTheOrderLimit
+/// 40. A failed settle bricking the pool          -> testBlocksSwapsOnlyInsideTheWindow (swaps reopen on timeout)
 contract LossOfFundsIndex {
     // Documentation-only contract: every entry above points at an executable test in this repo.
 }
