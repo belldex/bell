@@ -320,6 +320,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     function _beforeAddLiquidity(address sender, PoolKey calldata key, ModifyLiquidityParams calldata params, bytes calldata hookData)
         internal
+        virtual
         override
         returns (bytes4)
     {
@@ -401,6 +402,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     function _beforeSwap(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
         internal
+        virtual
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
