@@ -1,5 +1,6 @@
 import "./landing.css";
 import "./bell-control-room.css";
+import "./auction-section.css";
 import { CoverReveal } from "./cover-reveal";
 import { FinalReveal } from "./final-reveal";
 import { LandingEffects } from "./landing-effects";
@@ -7,6 +8,7 @@ import { LandingNav } from "./landing-nav";
 import { IdeaScene } from "./idea-scene";
 import { SmoothScroll } from "./smooth-scroll";
 import { FeatureStory } from "./feature-story";
+import { AuctionSection } from "./auction-section";
 import { FactsSection, PathSection, ProductPathsSection, RoadmapSection, SessionSection } from "./sections";
 
 /* The landing page. Presentation only: wallet, chain, credential and proof logic
@@ -28,6 +30,7 @@ export function LandingPage() {
         <ProductPathsSection />
         <FeatureStory />
         <SessionSection />
+        <AuctionSection />
         <RoadmapSection />
         <FactsSection />
       </main>

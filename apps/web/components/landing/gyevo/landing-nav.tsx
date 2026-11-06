@@ -16,12 +16,13 @@ const SECTIONS = [
   { id: "policy-overview", label: "Market hours", desc: "Why each verified session changes the rules." },
   { id: "operating-policy", label: "Operating policy", desc: "Session fees, swap limits and planned closes." },
   { id: "sessions", label: "Fees & sessions", desc: "Base fees across supported market hours." },
+  { id: "auction", label: "Auction", desc: "One clearing price at the open, matched peer to peer." },
   { id: "roadmap", label: "Deployment", desc: "Every contract, verified onchain." },
   { id: "facts", label: "Mainnet status", desc: "Mainnet deployment and pool directory." },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
-const SCROLL_SECTIONS = ["idea", "how", "product", "policy-overview", "operating-policy", "sessions", "roadmap", "facts"] as const;
+const SCROLL_SECTIONS = ["idea", "how", "product", "policy-overview", "operating-policy", "sessions", "auction", "roadmap", "facts"] as const;
 
 function sectionAtReadingLine(): SectionId | null {
   const line = window.innerHeight * 0.4;

@@ -28,7 +28,7 @@
 .lp--bell .lp-brand img { width:44px; height:44px; }
 .lp--bell[data-phase="light"] .lp-brand-mark { filter:invert(1); }
 .lp--bell .lp-nav__links {
-  position:absolute; left:50%; top:50%; width:min(62vw,820px); max-width:calc(100% - 21rem); transform:translate(-50%,-50%); height:auto; margin:0;
+  position:absolute; left:50%; top:50%; width:min(64vw,880px); max-width:calc(100% - 21rem); transform:translate(-50%,-50%); height:auto; margin:0;
   overflow-x:auto; scrollbar-width:none; white-space:nowrap;
   gap:0; padding:0 .2rem; border:0; border-bottom:1px solid rgba(23,23,23,.14); border-radius:0; background:transparent;
   box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none;
@@ -41,7 +41,7 @@
 }
 .lp--bell .lp-bead { display:none; }
 .lp--bell .lp-nav__links a:not(.fx__item) {
-  flex:0 0 auto; height:2.85rem; padding:0 .65rem; border-radius:0; white-space:nowrap;
+  flex:0 0 auto; height:2.85rem; padding:0 .5rem; border-radius:0; white-space:nowrap;
   color:#6B675F; font:500 .82rem/1 var(--font-instrument,"Instrument Sans"),system-ui,sans-serif;
   letter-spacing:-.015em; text-transform:none; transition:color .2s ease;
 }
@@ -52,7 +52,7 @@
 .lp--bell[data-phase="dark"] .lp-nav__links a[data-active="true"] { color:#EEECE5; background:transparent; }
 .lp.lp--bell[data-phase="dark"] .lp-nav__links a[data-active="true"] { color:#EEECE5; background:transparent; }
 .lp--bell .lp-nav__links a:not(.fx__item)::after {
-  left:.65rem; right:.65rem; bottom:-1px; height:2px; border:0; background:var(--lp-accent);
+  left:.5rem; right:.5rem; bottom:-1px; height:2px; border:0; background:var(--lp-accent);
 }
 .lp--bell .lp-pill {
   min-height:2.75rem; padding:0 1.05rem; border-radius:3px; border:1px solid #EEECE5; background:#EEECE5;

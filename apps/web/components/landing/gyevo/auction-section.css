@@ -1,0 +1,120 @@
+/* Opening Bell Auction section. Same carbon, talc and poppy as the rest of the landing:
+   poppy appears once, on the clearing price, so the eye lands where the contract decides. */
+
+.lp--bell .lp-auc__wrap { display:grid; grid-template-columns:minmax(0,1fr); gap:clamp(2rem,4vw,3.4rem); }
+
+/* Intro: title left, plain-language lead and the deployed parameters right. */
+.lp--bell .lp-auc__intro { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(17rem,.72fr); align-items:end; gap:clamp(1.5rem,5vw,5rem); }
+.lp--bell .lp-auc__title { max-width:45rem; }
+.lp--bell .lp-auc__title .lp-eyebrow { margin-bottom:1.1rem; }
+.lp--bell .lp-auc .lp-h2 { max-width:12ch; margin:0; font-size:clamp(2.6rem,5.6vw,5.4rem); line-height:.98; letter-spacing:-.025em; }
+.lp--bell .lp-auc__side .lp-lead { max-width:42ch; margin:0; font-size:clamp(1rem,1.1vw,1.2rem); line-height:1.6; }
+.lp--bell .lp-auc__facts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:1.7rem 0 0; border-top:1px solid var(--lp-line-2); }
+.lp--bell .lp-auc__facts div { display:grid; gap:.35rem; min-width:0; padding:.95rem .9rem .1rem 0; }
+.lp--bell .lp-auc__facts div + div { padding-left:.95rem; border-left:1px solid var(--lp-line); }
+.lp--bell .lp-auc__facts dt { margin:0; color:var(--lp-white); font:600 clamp(1.35rem,1.9vw,1.8rem)/1 var(--lp-font-display); letter-spacing:-.04em; }
+.lp--bell .lp-auc__facts dd { margin:0; color:var(--lp-dim); font:500 .62rem/1.3 var(--lp-font-mono); letter-spacing:.12em; text-transform:uppercase; }
+
+/* The board: an order book that resolves to one price. */
+.lp--bell .lp-auc__board { min-width:0; margin:0; border:0; border-block:1px solid var(--lp-line-2); background:transparent; }
+.lp--bell .lp-auc__cap { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.4rem 1rem; padding:.85rem 0 .65rem; color:var(--lp-muted); font:500 .7rem/1.2 var(--lp-font-mono); letter-spacing:.1em; text-transform:uppercase; }
+.lp--bell .lp-auc__cap span:first-child { color:var(--lp-white); font-weight:600; letter-spacing:.12em; }
+.lp--bell .lp-auc__cap span:last-child { color:var(--lp-accent-light); }
+.lp--bell .lp-auc__plot { height:clamp(16rem,31vw,27rem); padding:.6rem 0 .5rem; }
+.lp--bell .lp-auc__chart { display:block; width:100%; height:100%; overflow:visible; }
+.lp--bell .lp-auc__chart--compact { display:none; }
+
+.lp--bell .lp-auc__grid path { fill:none; stroke:var(--lp-line); stroke-width:1; }
+.lp--bell .lp-auc__grid .lp-auc__axis { stroke:var(--lp-line-2); }
+.lp--bell .lp-auc__grid text { fill:var(--lp-dim); font:500 11px var(--lp-font-mono); letter-spacing:.04em; }
+.lp--bell .lp-auc__grid .lp-auc__unit { font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+
+.lp--bell .lp-auc__seg { fill:none; stroke-width:3; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:0;
+  transition:stroke-dashoffset 1.15s var(--lp-ease) var(--d,0ms); }
+.lp--bell .lp-auc__seg--buy { stroke:var(--lp-white); }
+.lp--bell .lp-auc__seg--sell { stroke:var(--lp-muted); }
+.lp--bell .lp-auc__seg--out { stroke:var(--lp-white); opacity:.34; stroke-width:2.5; }
+.lp--bell .lp-auc__names text { fill:var(--lp-muted); font:500 10px var(--lp-font-mono); letter-spacing:.14em; text-transform:uppercase; }
+
+.lp--bell .lp-auc__match { transition:opacity .8s ease var(--d,0ms); }
+.lp--bell .lp-auc__match rect { fill:rgba(238,236,229,.045); }
+.lp--bell .lp-auc__match path { fill:none; stroke:var(--lp-line-2); stroke-width:1; stroke-dasharray:3 5; }
+.lp--bell .lp-auc__match text { fill:var(--lp-dim); font:500 10px var(--lp-font-mono); letter-spacing:.16em; text-transform:uppercase; }
+.lp--bell .lp-auc__tags { transition:opacity .8s ease var(--d,0ms); }
+.lp--bell .lp-auc__tags text { fill:var(--lp-dim); font:500 10px var(--lp-font-mono); letter-spacing:.16em; text-transform:uppercase; }
+
+.lp--bell .lp-auc__price { fill:none; stroke:var(--lp-accent); stroke-width:2; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:0;
+  transition:stroke-dashoffset 1s var(--lp-ease) var(--d,0ms); }
+.lp--bell .lp-auc__strike { transition:opacity .5s ease var(--d,0ms); }
+.lp--bell .lp-auc__dot { fill:var(--lp-accent); stroke:var(--lp-bg); stroke-width:2; }
+.lp--bell .lp-auc__ring { fill:none; stroke:var(--lp-accent); stroke-width:1.5; transform-box:fill-box; transform-origin:center; opacity:0; }
+.lp--bell .lp-auc__chip { transition:opacity .5s ease var(--d,0ms); }
+.lp--bell .lp-auc__chip rect { fill:var(--lp-accent); }
+.lp--bell .lp-auc__chip text { fill:#EEECE5; font:600 13px var(--lp-font-mono); letter-spacing:.02em; }
+
+/* Before the board scrolls into view (JS only): curves undrawn, annotations hidden.
+   The strike plays once the figure is in; leaving and returning plays it again. */
+.lp--bell[data-js] .lp-auc__board:not([data-rs="in"]) .lp-auc__seg,
+.lp--bell[data-js] .lp-auc__board:not([data-rs="in"]) .lp-auc__price { stroke-dashoffset:1; }
+.lp--bell[data-js] .lp-auc__board:not([data-rs="in"]) :is(.lp-auc__match,.lp-auc__tags,.lp-auc__chip,.lp-auc__strike) { opacity:0; }
+.lp--bell[data-js] .lp-auc__board[data-rs="in"] .lp-auc__ring { animation:lp-auc-ring 2.6s cubic-bezier(.2,.7,.2,1) 2.3s 2 both; }
+@keyframes lp-auc-ring { 0% { opacity:.9; scale:1; } 100% { opacity:0; scale:3.6; } }
+
+.lp--bell .lp-auc__legend { display:flex; flex-wrap:wrap; gap:.55rem 1.7rem; margin:0; padding:.8rem 0 1rem; list-style:none; color:var(--lp-muted); font:500 .64rem/1 var(--lp-font-mono); letter-spacing:.12em; text-transform:uppercase; }
+.lp--bell .lp-auc__legend li { display:inline-flex; align-items:center; gap:.55rem; }
+.lp--bell .lp-auc__legend li::before { content:""; width:1.3rem; height:0; border-top:3px solid var(--lp-white); }
+.lp--bell .lp-auc__legend [data-k="sell"]::before { border-top-color:var(--lp-muted); }
+.lp--bell .lp-auc__legend [data-k="price"]::before { border-top:2px solid var(--lp-accent); }
+.lp--bell .lp-auc__legend [data-k="match"]::before { height:.7rem; border:1px dashed var(--lp-line-2); background:rgba(238,236,229,.07); }
+
+/* The sequence is real, so it is ordered: the open sits in the middle and carries the one bell mark. */
+.lp--bell .lp-auc__stages { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:0; padding:0; list-style:none; }
+.lp--bell .lp-auc__stages li { position:relative; display:grid; align-content:start; gap:.7rem; min-width:0; padding:1.35rem clamp(.9rem,1.5vw,1.5rem) 1.4rem; border-top:1px solid var(--lp-line-2); }
+.lp--bell .lp-auc__stages li:first-child { padding-left:0; }
+.lp--bell .lp-auc__stages li + li::after { content:""; position:absolute; top:1rem; left:0; bottom:1rem; width:1px; background:var(--lp-line); }
+.lp--bell .lp-auc__when { color:var(--lp-dim); font:500 .62rem/1.2 var(--lp-font-mono); letter-spacing:.14em; text-transform:uppercase; }
+.lp--bell .lp-auc__stages b { color:var(--lp-white); font:650 clamp(1rem,1.3vw,1.25rem)/1.1 var(--lp-font-display); letter-spacing:-.035em; }
+.lp--bell .lp-auc__stages small { color:var(--lp-muted); font-size:clamp(.78rem,.85vw,.88rem); line-height:1.55; }
+.lp--bell .lp-auc__stages li[data-bell="true"] { background:linear-gradient(180deg,rgba(238,236,229,.06),transparent 90%); }
+.lp--bell .lp-auc__stages li[data-bell="true"]::before { content:""; position:absolute; top:-5px; left:clamp(.9rem,1.5vw,1.5rem); width:9px; height:9px; background:var(--lp-accent); transform:rotate(45deg); }
+.lp--bell .lp-auc__stages li[data-bell="true"] .lp-auc__when { color:var(--lp-accent-light); }
+
+.lp--bell .lp-auc__bottom { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.2rem 2.5rem; }
+.lp--bell .lp-auc__fine { max-width:68ch; margin:0; color:var(--lp-dim); font-size:.82rem; line-height:1.55; }
+.lp--bell .lp-auc__cta { display:flex; flex-wrap:wrap; gap:.65rem; }
+.lp--bell .lp-auc__cta .lp-btn { min-height:2.9rem; }
+
+@media (max-width:980px) {
+  .lp--bell .lp-auc__intro { grid-template-columns:minmax(0,1fr); align-items:start; }
+  .lp--bell .lp-auc__stages { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .lp--bell .lp-auc__stages li:nth-child(odd) { padding-left:0; }
+  .lp--bell .lp-auc__stages li:nth-child(odd)::after { content:none; }
+  .lp--bell .lp-auc__stages li[data-bell="true"]::before { left:clamp(.9rem,1.5vw,1.5rem); }
+}
+
+/* On phones the drawing is compressed in width, so its type stays readable at about two thirds size. */
+@media (max-width:640px) {
+  .lp--bell .lp-auc__chart--wide { display:none; }
+  .lp--bell .lp-auc__chart--compact { display:block; width:100%; height:auto; }
+  .lp--bell .lp-auc__plot { height:auto; }
+  .lp--bell .lp-auc__grid text { font-size:15px; }
+  .lp--bell .lp-auc__grid .lp-auc__unit,.lp--bell .lp-auc__names text,.lp--bell .lp-auc__tags text,.lp--bell .lp-auc__match text { font-size:12.5px; }
+  .lp--bell .lp-auc__chip text { font-size:16px; }
+  .lp--bell .lp-auc__seg { stroke-width:4; }
+  .lp--bell .lp-auc__seg--out { stroke-width:3.2; }
+  .lp--bell .lp-auc__price { stroke-width:2.6; }
+  .lp--bell .lp-auc__stages { grid-template-columns:minmax(0,1fr); }
+  .lp--bell .lp-auc__stages li,.lp--bell .lp-auc__stages li:first-child { padding-left:1.1rem; border-left:1px solid var(--lp-line-2); border-top:0; }
+  .lp--bell .lp-auc__stages li + li::after { content:none; }
+  .lp--bell .lp-auc__stages li[data-bell="true"]::before { top:1.45rem; left:-5px; }
+  .lp--bell .lp-auc__facts dt { font-size:1.25rem; }
+  .lp--bell .lp-auc__cta { width:100%; }
+  .lp--bell .lp-auc__cta .lp-btn { flex:1 1 11rem; justify-content:center; }
+}
+
+/* Reduced motion and no-JS: the finished drawing, still. */
+@media (prefers-reduced-motion:reduce) {
+  .lp--bell .lp-auc__seg,.lp--bell .lp-auc__price { transition:none; stroke-dashoffset:0 !important; }
+  .lp--bell .lp-auc__match,.lp--bell .lp-auc__tags,.lp--bell .lp-auc__chip,.lp--bell .lp-auc__strike { transition:none; opacity:1 !important; }
+  .lp--bell .lp-auc__ring { animation:none !important; }
+}
