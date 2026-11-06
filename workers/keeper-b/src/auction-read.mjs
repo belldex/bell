@@ -31,7 +31,7 @@ const ABI = parseAbi([
 const batch = (client, contracts) =>
   contracts.length === 0
     ? Promise.resolve([])
-    : client.multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL3 });
+    : client.multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL3, batchSize: 64_000 });
 
 async function readOrders(client, auction, cycle) {
   const count = Number((await batch(client, [{ address: auction, abi: ABI, functionName: 'cycleOrderCount', args: [BigInt(cycle)] }]))[0]);

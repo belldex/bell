@@ -26,15 +26,15 @@ test('auction disclosure does not promise that matching orders reprice the AMM',
   assert.doesNotMatch(page, /cannot take the whole gap/);
 });
 
-test('auction reads use the injected wallet RPC before the browser HTTP fallback', () => {
-  assert.match(page, /provider \?\? getInjectedWalletProvider\(\)/);
-  assert.match(page, /makeClients\(readProvider\)\.publicClient/);
-  assert.match(page, /\}, \[wallet\.provider\]\);/);
+test('auction snapshots and history use the Worker read API instead of browser RPC calls', () => {
+  assert.match(page, /fetchAuctionFeed\(/);
+  assert.match(page, /fetchAuctionCycle\(/);
+  assert.doesNotMatch(page, /createPublicClient\(|http\(RPC\)/);
 });
 
 test('network read errors stay concise and actionable', () => {
-  assert.match(page, /Cannot reach Robinhood Chain/);
-  assert.match(page, /failed to fetch/i);
+  assert.doesNotMatch(page, /request body:|Raw Call Arguments|Contract Call:/i);
+  assert.match(page, /auctionReadError/);
 });
 
 test('auction state is read through the keeper feed so a blocked browser RPC cannot break the page', async () => {

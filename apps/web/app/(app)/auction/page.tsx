@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowUpRight, RefreshCw } from 'lucide-react';
-import { createPublicClient, formatUnits, http, parseAbi, parseUnits, type Address } from 'viem';
+import { formatUnits, parseAbi, parseUnits, type Address } from 'viem';
 import { MAINNET, readLivePools, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { fetchAuctionCycle, fetchAuctionFeed } from '@/lib/auction-feed';
 import { makeClients, useWallet } from '@/lib/wallet';
-import { getInjectedWalletProvider } from '@/lib/wallet-options';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { TokenPair } from '@/components/ui/TokenLogo';
 import { Button } from '@/components/ui/primitives';
@@ -21,9 +20,7 @@ import { Button } from '@/components/ui/primitives';
  * bound auction is shown as such rather than as an empty auction.
  */
 const REGISTRY = MAINNET.auctionRegistry ?? process.env.NEXT_PUBLIC_BELL_AUCTION_REGISTRY as Address | undefined;
-const RPC = MAINNET.publicRpc;
 
-const registryAbi = parseAbi(['function auctionFor(bytes32 poolId) view returns (address)']);
 const auctionAbi = parseAbi([
   'function currentStage() view returns (uint8)',
   'function blocksSwaps() view returns (bool)',
@@ -44,17 +41,10 @@ const auctionAbi = parseAbi([
   'function claimUnfilled(uint64,uint32)',
 ]);
 
-function createAuctionReadClient(provider: ReturnType<typeof useWallet>['provider']) {
-  const readProvider = provider ?? getInjectedWalletProvider();
-  return readProvider
-    ? makeClients(readProvider).publicClient
-    : createPublicClient({ transport: http(RPC) });
-}
-
 function auctionReadError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? '');
   if (/failed to fetch|network request failed|http request failed|cors/i.test(message)) {
-    return 'Cannot reach Robinhood Chain. Check the wallet network or try Refresh.';
+    return 'Could not reach the auction read service. Try Refresh.';
   }
   return message || 'Could not read auction state.';
 }
@@ -138,42 +128,16 @@ function AuctionCard({ view, now, wallet, refresh }: { view: AuctionView; now: n
   }, [view.cycleId, view.orders, view.stage, view.cycleFinalized, view.openTime, view.indicativePriceX96, view.matchedBase]);
 
   const loadCycle = async (cycle: number) => {
-    if (!RPC || !Number.isInteger(cycle) || cycle <= 0 || cycle > view.cycleId) return;
+    if (!Number.isInteger(cycle) || cycle <= 0 || cycle > view.cycleId) return;
     try {
-      // The keeper reads the chain server-side; fall through to a direct read only if it is down.
-      const fed = await fetchAuctionCycle(view.poolIds, view.auction, cycle).catch(() => null);
-      if (fed) {
-        setSelectedCycle(cycle);
-        setHistoryOrders(fed.orders);
-        setHistoryStage(fed.stage);
-        setHistoryFinalized(fed.finalized);
-        setHistoryOpenTime(fed.openTime);
-        setHistoryPriceX96(fed.priceX96);
-        setHistoryMatchedBase(fed.matchedBase);
-        return;
-      }
-      const client = createAuctionReadClient(wallet.provider);
-      const [summary, count] = await Promise.all([
-        client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleSummary', args: [BigInt(cycle)] }),
-        client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleOrderCount', args: [BigInt(cycle)] }),
-      ]);
-      const [openAt, , stage, priceX96, matchedBase, finalized] = summary;
-      const ids = await Promise.all(Array.from({ length: Number(count) }, (_, index) =>
-        client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleOrderId', args: [BigInt(cycle), index] }) as Promise<number>));
-      const orders = await Promise.all(ids.map(async (id) => {
-        const [order, allocation] = await Promise.all([
-          client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'order', args: [id] }),
-          client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'allocation', args: [BigInt(cycle), id] }),
-        ]);
-        return { id, owner: order.owner, isBuyer: order.isBuyer, amountIn: order.amountIn, limitPriceX96: order.limitPriceX96, fillBase: allocation[0], quotePayout: allocation[1], quoteRefund: allocation[2], cancelled: order.cancelled, claimed: order.claimed };
-      }));
+      const cycleData = await fetchAuctionCycle(view.poolIds, view.auction, cycle);
       setSelectedCycle(cycle);
-      setHistoryOrders(orders);
-      setHistoryStage(Number(stage));
-      setHistoryFinalized(finalized);
-      setHistoryOpenTime(Number(openAt));
-      setHistoryPriceX96(priceX96);
-      setHistoryMatchedBase(matchedBase);
+      setHistoryOrders(cycleData.orders);
+      setHistoryStage(cycleData.stage);
+      setHistoryFinalized(cycleData.finalized);
+      setHistoryOpenTime(cycleData.openTime);
+      setHistoryPriceX96(cycleData.priceX96);
+      setHistoryMatchedBase(cycleData.matchedBase);
     } catch (cause) { setError(auctionReadError(cause)); }
   };
 
@@ -348,7 +312,7 @@ export default function AuctionPage() {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
 
   const load = useCallback(async () => {
-    if (!REGISTRY || !RPC) {
+    if (!REGISTRY) {
       setError('The auction registry address is not configured for this deployment.');
       setLoading(false);
       return;
@@ -357,85 +321,22 @@ export default function AuctionPage() {
     try {
       const pools = await readLivePools();
       const poolIds = pools.map((pool) => pool.poolId);
-      const feed = await fetchAuctionFeed(poolIds).catch(() => null);
-      if (feed) {
-        setViews(pools.flatMap((pool) => {
-          const a = feed[pool.poolId.toLowerCase()];
-          return a ? [{
-            pool, poolIds, auction: a.address, stage: a.stage, blocksSwaps: a.blocksSwaps, orderCount: a.orderCount,
-            cycleId: a.cycleId, cycleFinalized: a.cycleFinalized, openTime: a.openTime, auctionLead: a.auctionLead,
-            settleTimeout: a.settleTimeout, indicativePriceX96: a.priceX96, matchedBase: a.matchedBase, orders: a.orders,
-          }] : [];
-        }));
-        setError(null);
-        return;
-      }
-      const client = createAuctionReadClient(wallet.provider);
-      const next: AuctionView[] = [];
-      for (const pool of pools) {
-        const auction = (await client.readContract({
-          address: REGISTRY,
-          abi: registryAbi,
-          functionName: 'auctionFor',
-          args: [pool.poolId],
-        })) as Address;
-        if (auction === '0x0000000000000000000000000000000000000000') continue;
-        const [stage, blocksSwaps, orderCount, openTime, auctionLead, settleTimeout, cycleId] = await Promise.all([
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'currentStage' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'blocksSwaps' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'orderCount' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'openTime' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'auctionLead' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'settleTimeout' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'cycleId' }),
-        ]);
-        const [indicative, count, summary] = await Promise.all([
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'indicativeClearing' }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'cycleOrderCount', args: [cycleId] }),
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'cycleSummary', args: [cycleId] }),
-        ]);
-        const [, indicativeMatchedBase] = indicative as readonly [bigint, bigint];
-        const cycleFinalized = summary[5];
-        const matchedBase = cycleFinalized ? summary[4] : indicativeMatchedBase;
-        const clearingPriceX96 = cycleFinalized ? summary[3] : indicative[0];
-        const ids = await Promise.all(Array.from({ length: Number(count) }, (_, index) =>
-          client.readContract({ address: auction, abi: auctionAbi, functionName: 'cycleOrderId', args: [cycleId, index] }) as Promise<number>));
-        const rawOrders = await Promise.all(ids.map(async (id) => {
-          const [o, a] = await Promise.all([
-            client.readContract({ address: auction, abi: auctionAbi, functionName: 'order', args: [id] }),
-            client.readContract({ address: auction, abi: auctionAbi, functionName: 'allocation', args: [cycleId, id] }),
-          ]);
-          return { id, order: o, allocation: a };
-        }));
-        next.push({
-          pool,
-          poolIds,
-          auction,
-          stage: Number(stage),
-          blocksSwaps,
-          orderCount: Number(orderCount),
-          openTime: Number(summary[0] || openTime),
-          auctionLead: Number(auctionLead),
-          settleTimeout: Number(settleTimeout),
-          cycleFinalized,
-          cycleId: Number(cycleId),
-          indicativePriceX96: clearingPriceX96,
-          matchedBase,
-          orders: rawOrders.map(({ id, order, allocation }) => ({
-            id, owner: order.owner, isBuyer: order.isBuyer, amountIn: order.amountIn,
-            limitPriceX96: order.limitPriceX96, fillBase: allocation[0], quotePayout: allocation[1],
-            quoteRefund: allocation[2], cancelled: order.cancelled, claimed: order.claimed,
-          })),
-        });
-      }
-      setViews(next);
+      const feed = await fetchAuctionFeed(poolIds);
+      setViews(pools.flatMap((pool) => {
+        const a = feed[pool.poolId.toLowerCase()];
+        return a ? [{
+          pool, poolIds, auction: a.address, stage: a.stage, blocksSwaps: a.blocksSwaps, orderCount: a.orderCount,
+          cycleId: a.cycleId, cycleFinalized: a.cycleFinalized, openTime: a.openTime, auctionLead: a.auctionLead,
+          settleTimeout: a.settleTimeout, indicativePriceX96: a.priceX96, matchedBase: a.matchedBase, orders: a.orders,
+        }] : [];
+      }));
       setError(null);
     } catch (e) {
       setError(auctionReadError(e));
     } finally {
       setLoading(false);
     }
-  }, [wallet.provider]);
+  }, []);
 
   useEffect(() => {
     void load();

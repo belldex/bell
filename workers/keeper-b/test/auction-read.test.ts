@@ -9,10 +9,13 @@ const pools = [{ poolId: '0x' + '1'.repeat(64) }, { poolId: '0x' + '2'.repeat(64
 // A fake chain client: multicall answers by function name from a plain state object.
 function fakeClient(state: Record<string, any>) {
   const calls: any[] = [];
+  const batchSizes: number[] = [];
   return {
     calls,
-    multicall: async ({ contracts }: { contracts: any[] }) => {
+    batchSizes,
+    multicall: async ({ contracts, batchSize }: { contracts: any[]; batchSize?: number }) => {
       calls.push(contracts.length);
+      if (batchSize !== undefined) batchSizes.push(batchSize);
       return contracts.map((c) => {
         const v = state[c.functionName];
         return typeof v === 'function' ? v(c.args) : v;
@@ -58,6 +61,7 @@ describe('auction read snapshots', () => {
     await readAuctionSnapshots(many, { registry, pools });
     expect(many.calls.length).toBe(few.calls.length);
     expect(many.calls.length).toBeLessThanOrEqual(8);
+    expect(many.batchSizes).toContain(64_000);
   });
 
   it('returns an empty map when no pool has a bound auction', async () => {
