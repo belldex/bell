@@ -89,15 +89,20 @@ test('no diamonds and no dots anywhere on /v4', async () => {
   }
 });
 
-test('the hero is the landing glyph engine ending on a bell, with a still frame for reduced motion', async () => {
+test('the hero is its own bell of bars, with a still frame for reduced motion', async () => {
   const hero = await read('../components/v4/v4-hero.tsx');
   const css = await read('../components/v4/v4.css');
-  assert.match(hero, /<GlyphField final="bell" \/>/);
-  assert.match(hero, /data-beat = "all"|dataset\.beat = "all"/);
+  assert.doesNotMatch(hero, /GlyphField/);
+  assert.match(hero, /<BellBars \/>/);
+  assert.match(hero, /dataset\.beat = "all"/);
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion:reduce)'));
-  for (const rule of ['.v4-ticker__track', '.v4-hint i::after', '.v4-bellcard::after']) assert.ok(reduced.includes(rule), `reduced motion stops ${rule}`);
+  for (const rule of ['.v4-ticker__track', '.v4-hint i::after', '.v4-bellcard::after', '.v4-bell__swing', '.v4-stripe', '.v4-wave']) assert.ok(reduced.includes(rule), `reduced motion stops ${rule}`);
   assert.match(page, /<AuctionBook \/>/);
   assert.match(page, /<SmoothScroll \/>/);
+});
+
+test('the v4 chip is in the landing bar only', async () => {
+  assert.match(nav, /isLanding && <Link className="lp-v4-link"/);
 });
 
 test('the heaviest effects are kept off animated layers', async () => {

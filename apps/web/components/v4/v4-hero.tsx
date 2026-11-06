@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { FORM_TIMELINE, GlyphField } from "@/components/landing/gyevo/glyph-field";
+import { useEffect, useId, useRef } from "react";
 import { StatusBadge } from "./status-badge";
 
-/* The /v4 hero is the landing hero's own engine: about thirteen hundred letters that turn from one form into
-   the next as the page scrolls, and here they end as a bell. The scroll position becomes three numbers written
-   on the stage (--h, --k, --q, see glyph-field.tsx) and the sculpture is a pure function of them, so it runs in
-   reverse too. The four lines of the claim follow the same numbers, so each one lands with its form. */
+/* The /v4 hero is its own thing: a poppy field and one bell drawn as a stack of horizontal bars. When the bell
+   is struck every bar shudders a little out of line, one after another from the top, and then settles, while
+   lines of sound leave on both sides. The bell rises a few percent as the page scrolls and the four lines of the
+   claim follow the scroll, so each one lands in turn. All motion is transform and opacity only. */
 
 const BEATS = [
   { role: "The stadium", line: "Robinhood Chain has the stock tokens." },
@@ -20,6 +19,48 @@ const BEATS = [
 const TICKER = ["Session-aware fees", "Flow caps", "Fail-closed swaps", "Unblockable exits", "One price at the open", "Immutable hooks", "Zero proxies"];
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/* the bell silhouette: dome, waist, flared lip, in a 400 x 480 box */
+const BODY = "M200 52C152 52 122 98 120 170C118 244 102 300 62 348L62 374L338 374L338 348C298 300 282 244 280 170C278 98 248 52 200 52Z";
+const BARS = Array.from({ length: 40 }, (_, i) => i);
+const WAVES = [150, 190, 230, 270, 310];
+
+export function BellBars() {
+  const id = `bb${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  return (
+    <svg className="v4-bell" viewBox="0 0 400 480" role="img" aria-label="A bell being struck">
+      <defs>
+        <clipPath id={id}><path d={BODY} /><rect x="46" y="372" width="308" height="24" /></clipPath>
+      </defs>
+      <g aria-hidden="true">
+        {WAVES.map((y, i) => (
+          <g key={y}>
+            <rect className="v4-wave v4-wave--l" x={32 - (i % 2) * 16} y={y} width={54 + (i % 2) * 16} height="3" style={{ ["--d" as string]: `${i * 90}ms` }} />
+            <rect className="v4-wave v4-wave--r" x="314" y={y} width={54 + (i % 2) * 16} height="3" style={{ ["--d" as string]: `${i * 90}ms` }} />
+          </g>
+        ))}
+      </g>
+      <g className="v4-bell__swing">
+        <rect className="v4-bell__hanger" x="190" y="22" width="20" height="34" />
+        <g clipPath={`url(#${id})`}>
+          {BARS.map((i) => (
+            <rect
+              key={i}
+              className="v4-stripe"
+              x="40"
+              y={44 + i * 9.1}
+              width="320"
+              height={i > 33 ? 6.5 : 5.2}
+              style={{ ["--d" as string]: `${i * 38}ms`, ["--a" as string]: `${(i % 2 ? 1 : -1) * (7 - (i % 5))}px` }}
+            />
+          ))}
+        </g>
+        <rect className="v4-bell__lip" x="46" y="396" width="308" height="5" />
+        <rect className="v4-bell__clapper" x="188" y="410" width="24" height="46" />
+      </g>
+    </svg>
+  );
+}
 
 export function V4Hero() {
   const runRef = useRef<HTMLElement>(null);
@@ -33,20 +74,14 @@ export function V4Hero() {
       stage.dataset.beat = "all";
       return;
     }
-    const f = FORM_TIMELINE;
     let raf = 0;
     const apply = () => {
       raf = 0;
       const r = run.getBoundingClientRect();
       const travel = r.height - window.innerHeight;
       const p = travel > 0 ? clamp01(-r.top / travel) : 0;
-      const h = clamp01(p / 0.3);
-      const k = clamp01((p - 0.3) / 0.62);
-      stage.style.setProperty("--h", h.toFixed(4));
-      stage.style.setProperty("--k", k.toFixed(4));
       stage.style.setProperty("--p", p.toFixed(4));
-      const s = clamp01((h - f.hFrom) / (f.hTo - f.hFrom)) + clamp01((k - f.bcFrom) / (f.bcTo - f.bcFrom)) + clamp01((k - f.cdFrom) / (f.cdTo - f.cdFrom));
-      const beat = String(Math.round(s));
+      const beat = String(Math.min(3, Math.floor(p * 4)));
       if (stage.dataset.beat !== beat) stage.dataset.beat = beat;
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
@@ -62,17 +97,8 @@ export function V4Hero() {
 
   return (
     <section className="v4-run" id="top" ref={runRef} aria-labelledby="v4-title">
-      <div
-        className="v4-stage"
-        ref={stageRef}
-        data-lp-box
-        data-live="1"
-        data-beat="0"
-        style={{ ["--h" as string]: 0, ["--k" as string]: 0, ["--q" as string]: 0, ["--e" as string]: 1 }}
-      >
-        <GlyphField final="bell" />
-        <div className="lp-glow" aria-hidden="true" />
-        <div className="v4-shade" aria-hidden="true" />
+      <div className="v4-stage" ref={stageRef} data-beat="0" style={{ ["--p" as string]: 0 }}>
+        <div className="v4-art"><BellBars /></div>
 
         <div className="v4-hero">
           <p className="v4-label">BELL v4 / LIVE + ROADMAP</p>
@@ -109,17 +135,11 @@ export function V4Hero() {
   );
 }
 
-/* The same bell, resting: the closing image of the page. The numbers are fixed at the last form. */
+/* The same bell for the closing section, on the dark page. */
 export function BellSculpture() {
   return (
-    <div
-      className="v4-sculpt"
-      data-lp-box
-      data-live="1"
-      style={{ ["--h" as string]: 1, ["--k" as string]: 1, ["--q" as string]: 0, ["--e" as string]: 1 }}
-      aria-hidden="true"
-    >
-      <GlyphField final="bell" />
+    <div className="v4-sculpt" aria-hidden="true">
+      <BellBars />
     </div>
   );
 }

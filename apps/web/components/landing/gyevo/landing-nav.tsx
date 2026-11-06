@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { FaXTwitter } from "react-icons/fa6";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "./bell-mark";
@@ -40,8 +39,6 @@ function sectionAtReadingLine(ids: readonly string[]): SectionId | null {
 /* The same bar serves the landing and the pages that sit beside it (/v4, terms, privacy, cookies).
    `sections` swaps the chapter list; `base="/"` makes every chapter link point back to the landing. */
 export function LandingNav({ appName, sections = SECTIONS, base = "" }: { appName: string; sections?: readonly NavSection[]; base?: string }) {
-  const pathname = usePathname();
-  const onV4 = pathname?.replace(/\/$/, "") === "/v4";
   const isLanding = sections === SECTIONS;
   const ids = sections.map((s) => s.id);
   const [open, setOpen] = useState(false);
@@ -141,7 +138,7 @@ export function LandingNav({ appName, sections = SECTIONS, base = "" }: { appNam
         </nav>
 
         <div className="lp-nav__right">
-          <Link className="lp-v4-link" href="/v4/" aria-current={onV4 ? "page" : undefined}>v4</Link>
+          {isLanding && <Link className="lp-v4-link" href="/v4/" aria-label="BELL v4 and ecosystem">v4</Link>}
           <a className="lp-social-link" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X">
             <FaXTwitter aria-hidden="true" />
           </a>
