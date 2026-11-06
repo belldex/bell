@@ -355,4 +355,36 @@ contract BellOpeningAuctionTest {
         vm.prank(address(0xBEEF)); auction.claimUnfilled(1, 0);
         require(quote.balanceOf(ALICE) == 10_000e18, "permissionless timeout refund");
     }
+
+    function testUnfilledBuyerCrowdedOutByPriorityGetsFullRefund() external {
+        address carol = address(0xCA401);
+        quote.mint(carol, 100e18);
+        _buy(100e18, uint160(1 << 96));
+        vm.prank(carol); quote.approve(address(auction), type(uint256).max);
+        vm.prank(carol); auction.submitOrder(true, 100e18, uint160(1 << 96));
+        _sell(100e18, uint160(1 << 96));
+        vm.warp(OPEN_TIME); auction.settle();
+        (uint128 fill,, uint128 refundAmount) = auction.allocation(1, 1);
+        require(fill == 0 && refundAmount == 100e18, "crowded-out buyer refund recorded");
+        vm.prank(ALICE); auction.claimUnfilled(1, 0);
+        vm.prank(carol); auction.claimUnfilled(1, 1);
+        vm.prank(BOB); auction.claimUnfilled(1, 2);
+        require(quote.balanceOf(carol) == 100e18, "crowded-out buyer got quote back");
+        require(quote.balanceOf(address(auction)) == 0 && base.balanceOf(address(auction)) == 0, "escrow empty");
+    }
+
+    function testBuyerBelowClearingPriceGetsFullRefund() external {
+        address dave = address(0xDA7E);
+        quote.mint(dave, 50e18);
+        _buy(100e18, uint160(1 << 96));
+        vm.prank(dave); quote.approve(address(auction), type(uint256).max);
+        vm.prank(dave); auction.submitOrder(true, 50e18, uint160((1 << 96) / 2));
+        _sell(100e18, uint160(1 << 96));
+        vm.warp(OPEN_TIME); auction.settle();
+        vm.prank(ALICE); auction.claimUnfilled(1, 0);
+        vm.prank(dave); auction.claimUnfilled(1, 1);
+        vm.prank(BOB); auction.claimUnfilled(1, 2);
+        require(quote.balanceOf(dave) == 50e18, "below-price buyer got quote back");
+        require(quote.balanceOf(address(auction)) == 0 && base.balanceOf(address(auction)) == 0, "escrow empty");
+    }
 }

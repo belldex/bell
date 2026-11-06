@@ -52,6 +52,8 @@ pragma solidity 0.8.26;
 /// 38. Failed settle prevents pool reopening       -> testBlocksSwapsDuringOpenAndLockedButReopensAfterTimeout
 /// 39. Settlement while hook policy is halted      -> BellOpeningAuction.settle checks hook.getPolicy().canSwap
 /// 40. Escrow manipulated across users/cycles      -> cycle-scoped quote/base escrow mappings
+/// 43. Unfilled buyer's quote stranded in escrow   -> testUnfilledBuyerCrowdedOutByPriorityGetsFullRefund
+/// 44. Below-clearing-price buyer's quote stranded -> testBuyerBelowClearingPriceGetsFullRefund
 ///
 /// AUCTION BINDING (contracts/test/BellAuctionRegistry.t.sol):
 /// 41. A pool rebound to an attacker's auction    -> testRebindIsRejected

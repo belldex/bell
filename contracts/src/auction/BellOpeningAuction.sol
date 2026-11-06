@@ -453,6 +453,18 @@ contract BellOpeningAuction {
         }
         if (totalQuote > type(uint128).max) revert EscrowInvariant();
         _assignSellerQuote(sellers, sellerCount, matchedBase, totalQuote);
+        _refundUnfilledBuyers(ids);
+    }
+
+    /// @dev A buyer that received no fill (limit below the clearing price, or crowded out by price
+    ///      priority) is owed its whole escrow back. Without this its quote would be stranded.
+    function _refundUnfilledBuyers(uint32[] storage ids) private {
+        for (uint256 i; i < ids.length; ++i) {
+            uint32 id = ids[i];
+            Order storage o = _orders[id];
+            if (o.cancelled || !o.isBuyer) continue;
+            if (_allocations[cycleId][id].baseFill == 0) _quoteRefunds[cycleId][id] = o.amountIn;
+        }
     }
 
     function _assignSellerQuote(uint32[] memory sellers, uint256 sellerCount, uint128 matchedBase, uint256 totalQuote)

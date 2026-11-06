@@ -19,6 +19,6 @@
   `auctionLead + settleTimeout` seconds of the auction window.
 - A pool supports at most 512 cycles in this immutable generation; migrate to a new pool generation
   before that explicit bound. Per-cycle order capacity is 25.
-- Worst-case `settle()` with 25 distinct limits measured 4,753,536 gas in a Foundry fixture. This is
+- Worst-case `settle()` with 25 distinct limits measured 4,870,999 gas in a Foundry fixture. This is
   a local-EVM measurement, not a Robinhood Chain receipt. Before deployment, compare the exact
   simulation estimate on the target-chain RPC; do not treat the local number as a guarantee.
