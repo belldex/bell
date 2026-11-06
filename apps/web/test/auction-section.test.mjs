@@ -16,7 +16,8 @@ test('the auction section sits between the fee sessions and the deployment roadm
 
 test('the landing nav can reach the auction section and tracks it while scrolling', () => {
   assert.match(nav, /id: "auction"/);
-  assert.match(nav, /SCROLL_SECTIONS = \[[^\]]*"sessions", "auction", "roadmap"/);
+  assert.match(nav, /id: "sessions"[\s\S]*id: "auction"[\s\S]*id: "roadmap"/);
+  assert.match(nav, /const ids = sections\.map/);
   assert.match(section, /id="auction"/);
 });
 

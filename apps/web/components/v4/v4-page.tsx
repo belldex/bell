@@ -4,8 +4,8 @@ import { FaXTwitter } from "react-icons/fa6";
 import { AuctionBook } from "@/components/landing/gyevo/auction-section";
 import { BrandLogo } from "@/components/landing/gyevo/bell-mark";
 import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
+import { LandingNav } from "@/components/landing/gyevo/landing-nav";
 import { SmoothScroll } from "@/components/landing/gyevo/smooth-scroll";
-import { BellWordmark } from "@/components/ui/Logo";
 import { BELL_TOKEN, explorerAddress, explorerTx } from "@/config/mainnet";
 import progress from "@/content/build-progress.json";
 import { ContractsLedger } from "./contracts-ledger";
@@ -65,26 +65,15 @@ const RECEIPTS: [string, string | null][] = [
 const DISCLAIMER =
   "BELL is an independent protocol. Not affiliated with or endorsed by Robinhood Markets, Inc., Uniswap Labs, Hyperliquid, or Kinetiq. The Opening Bell Auction contracts are deployed; no auction has settled yet. Independent audit in progress. Not financial advice.";
 
-function Header() {
-  const links: [string, string][] = [["Clock", "#clock"], ["Fits", "#fits"], ["Compare", "#compare"], ["In v4", "#in-v4"], ["The open", "#open"], ["Contracts", "#contracts"], ["Receipts", "#receipts"]];
-  return (
-    <header className="v4-bar">
-      <Link className="lp-brand" href="/" aria-label="BELL home">
-        <BrandLogo size={40} priority />
-        <BellWordmark>BELL</BellWordmark>
-      </Link>
-      <nav aria-label="On this page">
-        {links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
-      </nav>
-      <div className="v4-bar__right">
-        <a className="lp-social-link" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X"><FaXTwitter aria-hidden="true" /></a>
-        <Link className="lp-pill lp-pill--launch" href="/pools">
-          <span>Open app</span><span className="lp-launch__arrow" aria-hidden="true">↗</span>
-        </Link>
-      </div>
-    </header>
-  );
-}
+const NAV = [
+  { id: "clock", label: "Clock", desc: "The session BELL is in right now." },
+  { id: "fits", label: "Where BELL fits", desc: "Robinhood Chain, Uniswap, Hyperliquid and Elysium." },
+  { id: "compare", label: "Compare", desc: "A standard pool next to BELL." },
+  { id: "in-v4", label: "In v4", desc: "Every feature with an honest status." },
+  { id: "open", label: "The open", desc: "One clearing price at the open." },
+  { id: "contracts", label: "Contracts", desc: "Every mainnet address." },
+  { id: "receipts", label: "Receipts", desc: "Check every claim yourself." },
+] as const;
 
 function Eyebrow({ children }: { children: string }) {
   return <p className="lp-eyebrow" data-lp-reveal>{children}</p>;
@@ -93,7 +82,8 @@ function Eyebrow({ children }: { children: string }) {
 export function V4Page() {
   return (
     <div className="lp lp--bell v4" data-phase="dark">
-      <Header />
+      <a className="lp-skip" href="#main">Skip to content</a>
+      <LandingNav appName="BELL" sections={NAV} />
       <main id="main">
         <V4Hero />
 

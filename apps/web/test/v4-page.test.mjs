@@ -105,3 +105,16 @@ test('the heaviest effects are kept off animated layers', async () => {
   assert.doesNotMatch(css, /mask-image/);
   assert.equal((css.match(/backdrop-filter/g) ?? []).length <= 2, true); // only the static sticky bar
 });
+
+test('v4 and the legal pages use the landing bar instead of a bar of their own', async () => {
+  assert.match(page, /<LandingNav appName="BELL" sections=\{NAV\} \/>/);
+  const css = await read('../components/v4/v4.css');
+  assert.doesNotMatch(css, /\.v4-bar/);
+  const legal = await read('../components/legal/legal-page.tsx');
+  assert.match(legal, /<LandingNav appName="BELL" sections=\{LANDING_SECTIONS\} base="\/" \/>/);
+  for (const slug of ['terms', 'privacy', 'cookies']) {
+    const src = await read(`../app/(legal)/${slug}/page.tsx`);
+    assert.match(src, /<LegalPage/);
+    assert.match(src, /export const metadata/);
+  }
+});

@@ -21,13 +21,14 @@ const SECTIONS = [
   { id: "facts", label: "Mainnet status", desc: "Mainnet deployment and pool directory." },
 ] as const;
 
-type SectionId = (typeof SECTIONS)[number]["id"];
-const SCROLL_SECTIONS = ["idea", "how", "product", "policy-overview", "operating-policy", "sessions", "auction", "roadmap", "facts"] as const;
+type NavSection = { id: string; label: string; desc: string };
+type SectionId = string;
+export const LANDING_SECTIONS: readonly NavSection[] = SECTIONS;
 
-function sectionAtReadingLine(): SectionId | null {
+function sectionAtReadingLine(ids: readonly string[]): SectionId | null {
   const line = window.innerHeight * 0.4;
   let current: SectionId | null = null;
-  for (const id of SCROLL_SECTIONS) {
+  for (const id of ids) {
     const section = document.getElementById(id);
     if (section && section.getBoundingClientRect().top <= line) current = id;
     else if (section) break;
@@ -35,7 +36,11 @@ function sectionAtReadingLine(): SectionId | null {
   return current;
 }
 
-export function LandingNav({ appName }: { appName: string }) {
+/* The same bar serves the landing and the pages that sit beside it (/v4, terms, privacy, cookies).
+   `sections` swaps the chapter list; `base="/"` makes every chapter link point back to the landing. */
+export function LandingNav({ appName, sections = SECTIONS, base = "" }: { appName: string; sections?: readonly NavSection[]; base?: string }) {
+  const isLanding = sections === SECTIONS;
+  const ids = sections.map((s) => s.id);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<SectionId | null>(null);
 
@@ -44,29 +49,32 @@ export function LandingNav({ appName }: { appName: string }) {
     let raf = 0;
     const syncFromScroll = () => {
       raf = 0;
-      if (!getFeature()) setActive(sectionAtReadingLine());
+      if (!isLanding || !getFeature()) setActive(sectionAtReadingLine(ids));
     };
     const scheduleSync = () => {
       if (!raf) raf = requestAnimationFrame(syncFromScroll);
     };
-    const feature = getFeature();
-    setActive(feature ? "operating-policy" : sectionAtReadingLine());
-    const unsubscribe = subscribeFeature((feature) => setActive(feature ? "operating-policy" : sectionAtReadingLine()));
-    window.addEventListener("scroll", scheduleSync, { passive: true });
-    window.addEventListener("resize", scheduleSync, { passive: true });
+    const feature = isLanding ? getFeature() : null;
+    setActive(feature ? "operating-policy" : base ? null : sectionAtReadingLine(ids));
+    const unsubscribe = isLanding ? subscribeFeature((feature) => setActive(feature ? "operating-policy" : sectionAtReadingLine(ids))) : () => {};
+    if (!base) {
+      window.addEventListener("scroll", scheduleSync, { passive: true });
+      window.addEventListener("resize", scheduleSync, { passive: true });
+    }
     return () => {
       if (raf) cancelAnimationFrame(raf);
       unsubscribe();
       window.removeEventListener("scroll", scheduleSync);
       window.removeEventListener("resize", scheduleSync);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* arriving with a hash (from another page, or back/forward): put the introduction in view once the page has laid out */
   useEffect(() => {
     const jump = () => {
       const id = window.location.hash.slice(1);
-      if (!id || !SECTIONS.some((s) => s.id === id)) return;
+      if (base || !id || !sections.some((s) => s.id === id)) return;
       window.setTimeout(
         () =>
           document
@@ -99,6 +107,7 @@ export function LandingNav({ appName }: { appName: string }) {
   const go =
     (id: SectionId) => (event: React.MouseEvent<HTMLAnchorElement>) => {
       setOpen(false);
+      if (base) return;
       setActive(id);
       if (scrollToId(id)) {
         event.preventDefault();
@@ -115,10 +124,10 @@ export function LandingNav({ appName }: { appName: string }) {
         </Link>
 
         <nav className="lp-nav__links" aria-label="Main navigation">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <a
               key={s.id}
-              href={`#${s.id}`}
+              href={`${base}#${s.id}`}
               data-active={active === s.id ? "true" : "false"}
               aria-current={active === s.id ? "location" : undefined}
               onClick={go(s.id)}
@@ -158,9 +167,9 @@ export function LandingNav({ appName }: { appName: string }) {
         hidden={!open}
       >
         <p className="lp-menu__label">Explore</p>
-        {SECTIONS.map((s) => (
+        {sections.map((s) => (
           <a
-            href={`#${s.id}`}
+            href={`${base}#${s.id}`}
             key={s.id}
             data-active={active === s.id ? "true" : "false"}
             aria-current={active === s.id ? "location" : undefined}

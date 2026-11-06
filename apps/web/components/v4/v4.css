@@ -4,17 +4,6 @@
 .v4 { --v4-pixel: var(--font-pixel, "Silkscreen"), var(--lp-font-mono), monospace; background:var(--lp-bg); color:var(--lp-text); min-height:100svh; }
 .v4 a { text-underline-offset:.2em; }
 
-/* ---- bar ---- */
-.v4-bar { position:sticky; top:0; z-index:60; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; height:4.4rem; padding:0 var(--lp-gutter); background:rgba(23,23,23,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--lp-line); }
-.v4-bar .lp-brand { position:static; transform:none; color:var(--lp-text); }
-.v4-bar nav { display:flex; gap:.1rem; min-width:0; overflow-x:auto; scrollbar-width:none; }
-.v4-bar nav::-webkit-scrollbar { display:none; }
-.v4-bar nav a { flex:none; padding:.55rem .7rem; color:var(--lp-muted); font:500 .82rem/1 var(--lp-font-ui); letter-spacing:-.01em; text-decoration:none; transition:color .2s ease; }
-.v4-bar nav a:hover { color:var(--lp-white); }
-.v4-bar__right { display:flex; align-items:center; gap:.7rem; }
-.v4 .lp-pill--launch { position:static; }
-@media (max-width:960px) { .v4-bar nav { display:none; } }
-
 /* ---- shared ---- */
 .v4-sec { padding-block:clamp(4rem,2.4rem + 6vw,8rem); }
 .v4-h2 { max-width:20ch; margin:1.1rem 0 0; font-size:clamp(2.1rem,4.4vw,4.3rem); line-height:1; letter-spacing:-.03em; }
@@ -153,7 +142,7 @@
 .v4-stage .lp-field { transform:none; opacity:1; will-change:auto; }
 .v4-stage .lp-field canvas.lp-form { left:72%; top:50%; width:min(78vw,96svh); height:min(78vw,96svh); }
 .v4-shade { position:absolute; inset:0; z-index:1; pointer-events:none; background:linear-gradient(90deg,rgba(23,23,23,.92) 0%,rgba(23,23,23,.72) 34%,rgba(23,23,23,0) 62%),linear-gradient(0deg,rgba(23,23,23,.9),rgba(23,23,23,0) 22%); }
-.v4-hero { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; justify-content:center; padding:5.5rem var(--lp-gutter) 7rem; max-width:var(--lp-max); margin-inline:auto; }
+.v4-hero { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; justify-content:center; padding:calc(var(--lp-nav-h) + 1.5rem) var(--lp-gutter) 7rem; max-width:var(--lp-max); margin-inline:auto; }
 .v4-h1 { margin:1.4rem 0 0; max-width:11ch; font:700 clamp(3rem,7.4vw,7.6rem)/.93 var(--lp-font-display); letter-spacing:-.05em; text-wrap:balance; }
 .v4-h1 em { font-style:normal; color:var(--lp-accent); }
 .v4-beats { position:relative; height:clamp(5.6rem,9vw,7.4rem); margin-top:2rem; max-width:34rem; }

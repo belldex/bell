@@ -25,8 +25,8 @@ test('served landing and legal copy describe Mainnet and enabled wallet flows tr
   const footer = await read('../components/landing/gyevo/final-reveal.tsx');
   const nav = await read('../components/landing/gyevo/landing-nav.tsx');
   const cover = await read('../components/landing/gyevo/cover-reveal.tsx');
-  const terms = await read('../app/(app)/terms/page.tsx');
-  const privacy = await read('../app/(app)/privacy/page.tsx');
+  const terms = await read('../app/(legal)/terms/page.tsx');
+  const privacy = await read('../app/(legal)/privacy/page.tsx');
   const publicCopy = [landing, footer, nav, cover, terms, privacy].join('\n');
   for (const obsolete of [/Testnet only/i, /Testnet snapshot/i, /No protocol deployment/i, /sample pools/i, /No swap or pool creation transaction is enabled/i, /no Mainnet deployment/i]) {
     assert.doesNotMatch(publicCopy, obsolete);
@@ -219,7 +219,8 @@ test('obsolete static create flow does not return', async () => {
 });
 
 test('legal and protocol pages resolve from the shared app navigation', async () => {
-  for (const path of ['protocol', 'privacy', 'terms', 'cookies']) {
-    assert.match(await read(`../app/(app)/${path}/page.tsx`), /export default/);
+  assert.match(await read('../app/(app)/protocol/page.tsx'), /export default/);
+  for (const path of ['privacy', 'terms', 'cookies']) {
+    assert.match(await read(`../app/(legal)/${path}/page.tsx`), /export default/);
   }
 });
