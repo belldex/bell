@@ -10,13 +10,15 @@
   "sessionRegistry": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
   "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
   "positionManager": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
-  "hookDeployer": "0x3e5cEBb068ac71D742f700Db918908a15B8c45C5",
-  "poolFactory": "0xf677edc6346be53686E6DD42374A744cab9d0A5B",
+  "hookDeployer": "0xd052eff605fcefe74cfc323488ae595d077a27dd",
+  "poolFactory": "0xdc830f83d4f7cd13e24a8f512c0fbf92ea5228a8",
   "weth": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
   "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
-  "modeEvaluator": "0xEBDb2291f07F10490E7f34a5cD5C37dF95F877F4",
-  "policyOracle": "0x908bea5cd3C5297Ad69aCb19279c413d594cd335",
+  "modeEvaluator": "0x55b210aa5d592841dd4dcdf1e219a921ee5d08cb",
+  "policyOracle": "0x4fa14349907929ff8f96b6c4589d1648d9f84a08",
+  "auctionRegistry": "0x933ec47875a5b5e0d18d7c40543f93d0ea98ac75",
+  "auctionFactoryModule": "0x41640436f79ff84c9c00e607ea3e36de3272c0e5",
   "feeToken": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
   "status": "PRODUCTION",
-  "note": "Factory upgraded 2026-11-02 so SESSION_ONLY admission no longer requires fresh stock health and flow caps are per-pool. Registries and liquidity infrastructure are reused."
+  "note": "Factory and BellHookV2 template upgraded; auctionRegistry is write-once and per-pool auctions are P2P-only. Verified Mainnet asset/session/calendar registries and liquidity infrastructure are reused."
 }

@@ -114,6 +114,7 @@ export async function settleBellAuctions(env, {
   nowSeconds = Math.floor(Date.now() / 1000),
   publicClient: injectedPublicClient,
   walletClient: injectedWalletClient,
+  poolDirectoryClient: injectedPoolDirectoryClient,
   fetchPools = runPools,
 } = {}) {
   const registry = env.BELL_AUCTION_REGISTRY;
@@ -125,6 +126,12 @@ export async function settleBellAuctions(env, {
   const account = privateKeyToAccount(txKey);
   const publicClient = injectedPublicClient ?? createPublicClient({ transport: http(rpcUrl) });
   const walletClient = injectedWalletClient ?? createWalletClient({ account, transport: http(rpcUrl) });
+  // The transaction RPC may accept eth_call but reject eth_getLogs. Pool discovery uses the
+  // same secondary/archive preference as /pools, while reads and writes stay on the primary.
+  const poolDirectoryRpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || rpcUrl;
+  const poolDirectoryClient = injectedPoolDirectoryClient ?? (poolDirectoryRpcUrl === rpcUrl
+    ? publicClient
+    : createPublicClient({ transport: http(poolDirectoryRpcUrl) }));
   const chainId = await publicClient.getChainId();
   const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
   if (chainId !== expectedChainId) {
@@ -144,7 +151,7 @@ export async function settleBellAuctions(env, {
         poolCache = await cached.json();
       } catch { poolCache = null; }
     }
-    directoryResult = await fetchPools(env, { client: publicClient, cache: poolCache });
+    directoryResult = await fetchPools(env, { client: poolDirectoryClient, cache: poolCache });
     ({ pools } = directoryResult);
     // `/pools` uses this Durable Object cache too. Reusing and updating it here prevents the cron
     // from repeating the full factory scan and static metadata reads every minute.

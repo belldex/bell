@@ -1,14 +1,14 @@
 {
   "chainId": 4663,
-  "verifiedAt": "2026-11-02",
+  "verifiedAt": "2026-11-06",
   "status": "PRODUCTION_DEPLOYED",
-  "sourceCommit": "f9b8142",
-  "manifestHash": "0xde47892e7756c31ff415989f7b87a12c5dd2451da23f19c958afbc1df3b32018",
+  "sourceCommit": "f5d46bd",
+  "manifestHash": "0x3e7622d84915960b17aff61f304cebfaa3ba4d779f0ac2d1909e2f6959fad68e",
   "deployer": "0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399",
   "blocks": {
-    "first": 103948123,
-    "last": 103948148,
-    "verifiedAtBlock": 103948602
+    "first": 107204491,
+    "last": 107204492,
+    "verifiedAtBlock": 107204510
   },
   "contracts": {
     "safetyController": {
@@ -42,14 +42,14 @@
       "codeHash": "0x27cad064438e815b2fc990ed3a4e17868720b71225f657a10457e34cbb6166b6"
     },
     "hookDeployer": {
-      "address": "0x3e5cEBb068ac71D742f700Db918908a15B8c45C5",
-      "codeBytes": 3305,
-      "codeHash": "0xa8b57c12205af98fba937d74360f6ab0be5126057e37ab3d06530cbacd3c88d5"
+      "address": "0xd052eff605fcefe74cfc323488ae595d077a27dd",
+      "codeBytes": 3795,
+      "codeHash": "0x45e2fe9df1c8c9c1c424d15f8e5bfd5e1e5396e14effd8d0b10670eac2527111"
     },
     "poolFactory": {
-      "address": "0xf677edc6346be53686E6DD42374A744cab9d0A5B",
-      "codeBytes": 22652,
-      "codeHash": "0x8f3b1621822232a45e7331393524932ac2620fb520abcf1a0a20946b0488cd72"
+      "address": "0xdc830f83d4f7cd13e24a8f512c0fbf92ea5228a8",
+      "codeBytes": 22498,
+      "codeHash": "0x87e53096bd66025fbec042885c7e747c2f9a1d9bfa109ca2dd1301169811612b"
     },
     "weth": {
       "address": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
@@ -62,14 +62,24 @@
       "codeHash": "0x38148d7db1d6656af4f566752832450cc8f61db7ca8c56331b355b7dfabab036"
     },
     "modeEvaluator": {
-      "address": "0xEBDb2291f07F10490E7f34a5cD5C37dF95F877F4",
-      "codeBytes": 15254,
-      "codeHash": "0x92eea1dad5569d6564affd33158c41b668fcecd6d0574da8c618d9093fcc432c"
+      "address": "0x55b210aa5d592841dd4dcdf1e219a921ee5d08cb",
+      "codeBytes": 14030,
+      "codeHash": "0x743105f46008f9ab255cba5b578b94473e16849d0a113c623b0eeb4e1c793b69"
     },
     "policyOracle": {
-      "address": "0x908bea5cd3C5297Ad69aCb19279c413d594cd335",
-      "codeBytes": 18807,
-      "codeHash": "0xd29bde11cd58f0338eb25baa5af1602740f680418e533d3eab3301431c145ec3"
+      "address": "0x4fa14349907929ff8f96b6c4589d1648d9f84a08",
+      "codeBytes": 19031,
+      "codeHash": "0xd3ebcaa7aea761b35349635d76b57df85228573673b9ecdff50560babed6e419"
+    },
+    "auctionRegistry": {
+      "address": "0x933ec47875a5b5e0d18d7c40543f93d0ea98ac75",
+      "codeBytes": 818,
+      "codeHash": "0x7af150320c78a4629a0c147bae81a636e2f407b1069cf9b5669b13ebe0ae4e8a"
+    },
+    "auctionFactoryModule": {
+      "address": "0x41640436f79ff84c9c00e607ea3e36de3272c0e5",
+      "codeBytes": 16854,
+      "codeHash": "0xa3cd75cc9dd5f2a6f3d38857e8aff49052e979f8c22bd14009df825e3f948a2f"
     },
     "feeToken": {
       "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
@@ -79,9 +89,9 @@
       "label": "PRODUCTION_FEE_TOKEN"
     },
     "policyDependencyReader": {
-      "address": "0xe5D8c6Ba18589a71a89D11c54B9E03806A260CE3",
-      "codeBytes": 10064,
-      "codeHash": "0x732df7553048929ff4a7c78e2599a700e4da798ab8f2013cf9b8343a39dab5d6"
+      "address": "0x4345Ee3c8f1bdb290c875AD33A76fdA376d57c73",
+      "codeBytes": 9303,
+      "codeHash": "0x230e738e9eae2c95891f48cc48cb31b1e8c3a0ceb01a231d2de8d962d2f62cc4"
     }
   },
   "wiringChecks": {
@@ -90,19 +100,27 @@
     "positionManager.poolManager": "0x8b26FEfa276860592D45114Cb30B335DdDd87B56",
     "positionManager.WETH9": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
     "positionManager.permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    "poolFactory.hookDeployer": "0x3e5cEBb068ac71D742f700Db918908a15B8c45C5",
+    "poolFactory.hookDeployer": "0xD052EfF605fceFe74CFc323488ae595d077a27dD",
     "poolFactory.positionManager": "0x84da249Aafa359886C6A2Ae1ebDC78a6059B662D",
     "poolFactory.serviceToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
-    "hookDeployer.factory": "0xf677edc6346be53686E6DD42374A744cab9d0A5B",
+    "hookDeployer.factory": "0xDC830f83D4F7cd13E24A8f512C0Fbf92ea5228a8",
     "hookDeployer.sessionRegistry": "0x5F1b0212dc6167CBC1883f910640A685B1243795",
     "sessionRegistry.assetRegistry": "0x0D9C0c8b2065b08A8aD4Abc861eB128385Ef18C6",
     "sessionRegistry.calendarRegistry": "0x394983BfF2715d57197389F323d807b0D61c05a3",
     "assetRegistry.safetyController": "0x7243cF13f0308edd4A0397551042FeA3Cf9da179",
     "calendarRegistry.safetyController": "0x7243cF13f0308edd4A0397551042FeA3Cf9da179",
     "poolManager.owner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
-    "hookDeployer.modeEvaluator": "0xEBDb2291f07F10490E7f34a5cD5C37dF95F877F4",
-    "hookDeployer.policyOracle": "0x908bea5cd3C5297Ad69aCb19279c413d594cd335",
-    "policyOracle.dependencyReader": "0xe5D8c6Ba18589a71a89D11c54B9E03806A260CE3",
+    "hookDeployer.modeEvaluator": "0x55B210AA5D592841Dd4dcdf1E219a921Ee5D08CB",
+    "hookDeployer.policyOracle": "0x4FA14349907929fF8F96b6c4589d1648D9F84A08",
+    "policyOracle.dependencyReader": "0x4345Ee3c8f1bdb290c875AD33A76fdA376d57c73",
+    "auction.factoryWiring": {
+      "deployerRegistry": "0x933EC47875A5b5e0d18D7c40543F93d0ea98Ac75",
+      "deployerModule": "0x41640436F79fF84c9C00e607eA3e36DE3272c0E5",
+      "registryFactory": "0xDC830f83D4F7cd13E24A8f512C0Fbf92ea5228a8",
+      "registryModule": "0x41640436F79fF84c9C00e607eA3e36DE3272c0E5",
+      "moduleFactory": "0xDC830f83D4F7cd13E24A8f512C0Fbf92ea5228a8",
+      "moduleRegistry": "0x933EC47875A5b5e0d18D7c40543F93d0ea98Ac75"
+    },
     "safetyController.roles": {
       "governance": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
       "guardian": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
@@ -112,16 +130,16 @@
     "factory.liquidityMode": 0,
     "factory.serviceFee": "49000000",
     "factory.serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC",
-    "factory.profileHash": "0x909fe229a6ef91d6f7875e8b5dc99336357d42720f734ac246cfccbb1a38e766",
-    "hookDeployer.templateCodeHash": "0xbd519d12f737d9148118ea9464130a439d265da4dc5dcb6d6f52d023115e3238",
+    "factory.profileHash": "0x8686da2323d3f80f5ddb33a90d0c608099d81abf164a3bc9ae792620bdf19b63",
+    "hookDeployer.templateCodeHash": "0xa1028906bf7a531090ed71e04641f8504ba9d061b3269f9d4f78a70b222e69c9",
     "weth.symbol": "WETH",
     "weth.decimals": 18
   },
   "gas": {
-    "txCount": 4,
-    "used": "22210958",
-    "priceWei": "20224000",
-    "costEth": "0.000449194414592"
+    "txCount": 6,
+    "used": "25491500",
+    "priceWei": "21928000",
+    "costEth": "0.000558977612"
   },
   "notCovered": [
     "Neither pool class guarantees a fixed or maximum loss; AMM liquidity, price divergence, arbitrage, and market depth remain economic risks",
@@ -130,14 +148,5 @@
     "The keeper provides public status and pool discovery; pool swaps read their policy directly from the deployed hook",
     "PoolManager ownership is held by the deployer; a handover to governance has not run",
     "Stock token rights and entitlements are NOT verified by this script; it only proves the contracts are wired"
-  ],
-  "note": "Factory upgraded 2026-11-02: SESSION_ONLY admission no longer requires fresh stock health, and flow caps are per-pool (removed from profileHash). Registries, PoolManager, PositionManager, WETH, fee token and router are reused.",
-  "upgradeGas": {
-    "txCount": 4,
-    "gasUsed": "22194308"
-  },
-  "superseded": {
-    "poolFactory": "0x675482e99a5f3c848C7d8E22c68c593BD70a6f02",
-    "hookDeployer": "0xdCf4e76bc4d304cd1c6b321e5Ea14ED5F758D9C9"
-  }
+  ]
 }

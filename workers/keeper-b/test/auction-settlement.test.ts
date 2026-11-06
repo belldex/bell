@@ -78,6 +78,31 @@ describe('auction settlement selection', () => {
     expect(result.results[0]).toMatchObject({ status: 'settled', txHash: '0xsettled', hook, cycleId: 7 });
   });
 
+  it('uses a separate log-capable client for pool discovery when provided', async () => {
+    const primaryClient = { getChainId: async () => 4663 };
+    const directoryClient = {};
+    let clientUsed: unknown;
+    const result = await settleBellAuctions({
+      BELL_AUCTION_REGISTRY: addr('9'),
+      BELL_TRANSACTION_PRIVATE_KEY: `0x${'1'.repeat(64)}`,
+      BELL_RPC_URL: 'https://rpc-primary.invalid',
+      RH_MAINNET_RPC_SECONDARY: 'https://rpc-logs.invalid',
+      BELL_EXPECTED_CHAIN_ID: '4663',
+    }, {
+      nowSeconds: 1_500,
+      publicClient: primaryClient as any,
+      walletClient: {} as any,
+      poolDirectoryClient: directoryClient as any,
+      fetchPools: async (_env, options) => {
+        clientUsed = options?.client;
+        return { pools: [] };
+      },
+    });
+
+    expect(clientUsed).toBe(directoryClient);
+    expect(result).toMatchObject({ status: 'idle', eligibleCount: 0 });
+  });
+
   it('never broadcasts when the auction rejects the proposed pool price', async () => {
     const auction = addr('6');
     const pool = { hook: addr('5'), poolId: `0x${'7'.repeat(64)}`, poolManager: addr('8') };
