@@ -36,3 +36,11 @@ test('network read errors stay concise and actionable', () => {
   assert.match(page, /Cannot reach Robinhood Chain/);
   assert.match(page, /failed to fetch/i);
 });
+
+test('auction state is read through the keeper feed so a blocked browser RPC cannot break the page', async () => {
+  const feed = await readFile(new URL('../lib/auction-feed.ts', import.meta.url), 'utf8');
+  assert.match(feed, /\/auctions/);
+  assert.match(feed, /fetchAuctionFeed/);
+  assert.match(page, /fetchAuctionFeed/);
+  assert.match(page, /fetchAuctionCycle/);
+});

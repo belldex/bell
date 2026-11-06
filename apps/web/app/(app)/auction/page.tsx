@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowUpRight, RefreshCw } from 'lucide-react';
 import { createPublicClient, formatUnits, http, parseAbi, parseUnits, type Address } from 'viem';
 import { MAINNET, readLivePools, tokenAbi, type LivePool } from '@/lib/mainnet-live';
+import { fetchAuctionCycle, fetchAuctionFeed } from '@/lib/auction-feed';
 import { makeClients, useWallet } from '@/lib/wallet';
 import { getInjectedWalletProvider } from '@/lib/wallet-options';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
@@ -67,6 +68,7 @@ const STAGE_REFUNDED = 5;
 
 type AuctionView = {
   pool: LivePool;
+  poolIds: string[];
   auction: Address;
   stage: number;
   blocksSwaps: boolean;
@@ -138,6 +140,18 @@ function AuctionCard({ view, now, wallet, refresh }: { view: AuctionView; now: n
   const loadCycle = async (cycle: number) => {
     if (!RPC || !Number.isInteger(cycle) || cycle <= 0 || cycle > view.cycleId) return;
     try {
+      // The keeper reads the chain server-side; fall through to a direct read only if it is down.
+      const fed = await fetchAuctionCycle(view.poolIds, view.auction, cycle).catch(() => null);
+      if (fed) {
+        setSelectedCycle(cycle);
+        setHistoryOrders(fed.orders);
+        setHistoryStage(fed.stage);
+        setHistoryFinalized(fed.finalized);
+        setHistoryOpenTime(fed.openTime);
+        setHistoryPriceX96(fed.priceX96);
+        setHistoryMatchedBase(fed.matchedBase);
+        return;
+      }
       const client = createAuctionReadClient(wallet.provider);
       const [summary, count] = await Promise.all([
         client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleSummary', args: [BigInt(cycle)] }),
@@ -341,8 +355,22 @@ export default function AuctionPage() {
     }
     setLoading(true);
     try {
-      const client = createAuctionReadClient(wallet.provider);
       const pools = await readLivePools();
+      const poolIds = pools.map((pool) => pool.poolId);
+      const feed = await fetchAuctionFeed(poolIds).catch(() => null);
+      if (feed) {
+        setViews(pools.flatMap((pool) => {
+          const a = feed[pool.poolId.toLowerCase()];
+          return a ? [{
+            pool, poolIds, auction: a.address, stage: a.stage, blocksSwaps: a.blocksSwaps, orderCount: a.orderCount,
+            cycleId: a.cycleId, cycleFinalized: a.cycleFinalized, openTime: a.openTime, auctionLead: a.auctionLead,
+            settleTimeout: a.settleTimeout, indicativePriceX96: a.priceX96, matchedBase: a.matchedBase, orders: a.orders,
+          }] : [];
+        }));
+        setError(null);
+        return;
+      }
+      const client = createAuctionReadClient(wallet.provider);
       const next: AuctionView[] = [];
       for (const pool of pools) {
         const auction = (await client.readContract({
@@ -381,6 +409,7 @@ export default function AuctionPage() {
         }));
         next.push({
           pool,
+          poolIds,
           auction,
           stage: Number(stage),
           blocksSwaps,
