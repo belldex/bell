@@ -2,19 +2,22 @@
 
 Single source of truth. Mainnet claims below are checked against deployment evidence and live chain reads.
 
-## Opening Bell Auction rollout — checked 2026-11-05
+## Opening Bell Auction rollout — deployed 2026-11-06
 
-The auction implementation and `/auction` page exist in the `feat/opening-bell-auction` branch, but they are
-not live yet. The current Mainnet factory listed below is still the deployed version; no auction registry or
-per-pool auction is bound on Mainnet. Both `bellstocks.tech/auction/` and `www.bellstocks.tech/auction/` returned
-404, and the deployed keeper `/status` response had no auction settlement fields.
+The P2P Opening Bell Auction stack is live on Robinhood Chain 4663. It was redeployed on 2026-11-06 after a
+review found that a buyer who received no fill (limit below the clearing price, or crowded out by price
+priority) had no quote refund recorded. `BellOpeningAuction._refundUnfilledBuyers` now refunds that escrow, with
+regression tests `testUnfilledBuyerCrowdedOutByPriorityGetsFullRefund` and `testBuyerBelowClearingPriceGetsFullRefund`.
+The earlier 2026-11-06 deployment (factory `0xDC83…28a8`, registry `0x933E…8c75`) carried that defect and has no
+bound pool; do not create pools through it.
 
-A read-only factory-upgrade simulation completed on Robinhood Chain 4663. It predicted factory
-`0xDC830f83D4F7cd13E24A8f512C0Fbf92ea5228a8`, auction registry
-`0x933EC47875A5b5e0d18D7c40543F93d0ea98Ac75`, and an estimated deployment cost of
-`0.001327943957394948 ETH`. These are simulation outputs, not deployed addresses. The configured deployer held
-`0.00000070476285 ETH` at preflight, so the live upgrade was not sent. Re-run the simulation and preflight before
-any later broadcast because both gas estimates and balances can change.
+Current stack: factory `0xcf3E5C2ae1915631055ca47aAf353f4d2743aF50`, auction registry
+`0x0e8515551a9de41FFF251705e34a16b20Ce9eE95`, auction module `0x8673e11b49137C27Be36F4479f83b7690c2a089a`,
+hook deployer `0x050A5eBA02947CfFf5A780534773e82Ef7a5024c`, policy oracle
+`0x44690b07840c45726D33515Df8570be1A51C275b`, mode evaluator `0xcDAb1F3B607190C3e64aF70E3A988cB05050BB37`.
+Gas spent was about 0.000554 ETH. Pools created before this upgrade keep their original hooks and are not bound
+to an auction; only new `SESSION_ONLY` USDG/stock pools get one. The Worker serves auction state at `/auctions`
+so the page does not depend on a visitor's browser reaching the chain RPC.
 
 The auction is P2P-only: matched orders can clear at one uniform price, but unmatched orders are refunded and
 the AMM price itself does not move. The feature does not promise to close the market-price gap or fill a one-sided
