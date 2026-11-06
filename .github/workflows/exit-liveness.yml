@@ -1,0 +1,31 @@
+name: exit-liveness
+# Reads every pool from the BELL keeper and fails if any hook address could be called when liquidity is removed.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/verify-exit-liveness.ts
+      - apps/web/content/exit-proof.json
+
+permissions:
+  contents: read
+
+jobs:
+  hooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      # Exit code 2 means the keeper could not be read: that is a warning, not a failed proof.
+      - name: Verify every live hook
+        run: |
+          set +e
+          node scripts/verify-exit-liveness.ts
+          code=$?
+          if [ "$code" -eq 2 ]; then echo "::warning::keeper unreachable, live check skipped"; exit 0; fi
+          exit "$code"

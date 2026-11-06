@@ -121,4 +121,5 @@ test('v4 and the legal pages use the landing bar instead of a bar of their own',
 
 test('the v4 chip is in the landing bar only', () => {
   assert.match(nav, /isLanding && <Link className="lp-v4-link"/);
+  assert.match(nav, /const isLanding = sections === SECTIONS && !base;/);
 });

@@ -39,7 +39,7 @@ function sectionAtReadingLine(ids: readonly string[]): SectionId | null {
 /* The same bar serves the landing and the pages that sit beside it (/v4, terms, privacy, cookies).
    `sections` swaps the chapter list; `base="/"` makes every chapter link point back to the landing. */
 export function LandingNav({ appName, sections = SECTIONS, base = "" }: { appName: string; sections?: readonly NavSection[]; base?: string }) {
-  const isLanding = sections === SECTIONS;
+  const isLanding = sections === SECTIONS && !base;
   const ids = sections.map((s) => s.id);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<SectionId | null>(null);

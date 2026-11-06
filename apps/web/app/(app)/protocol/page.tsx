@@ -10,6 +10,7 @@ const sections = [
   { id: 'checked-price', category: 'Pool type', code: 'Checked price', title: 'External price check', body: 'Both assets need an approved external price source. The pool keeps trading close to it while the source is available. When it is not, the pool steps aside to its own market price with a 1% fee and the tightest flow caps, bounded by the calendar interval and closure budget.', short: 'Checked price' },
   { id: 'market-price', category: 'Pool type', code: 'Market price', title: 'Own-market pricing', body: 'Prices come from the pool liquidity itself and never wait for an external feed. Session fees and raw-unit flow limits still apply, but no outside price is claimed and no USD valuation is shown.', short: 'Market price' },
   { id: 'closure', category: 'Recovery', title: 'Recovery and exit', body: 'Trading resumes only after required fresh checkpoints and recovery delay. The connected Positions page discovers wallet-owned BELL NFTs and offers direct add, minimum-output in-kind removal, and fee collection through PositionManager.', short: 'Recovery and exit' },
+  { id: 'exit-liveness', category: 'Exit', title: 'Exit liveness', body: "A hook's permissions are the low 14 bits of its own address. BELL's mask 0x2CC0 sets five of them (beforeInitialize, beforeAddLiquidity, afterAddLiquidity, beforeSwap, afterSwap) and none of the three that touch removing liquidity, so no BELL policy can hold a withdraw back. That holds only while the Uniswap v4 PositionManager and Robinhood Chain run normally. Check every pool on the Exit proof page.", short: 'Exit liveness' },
 ];
 
 export default function ProtocolPage() {
@@ -29,7 +30,7 @@ export default function ProtocolPage() {
 
       <div className="app-protocol-grid">
         {sections.filter((s) => s.id !== 'contracts').map((section) => (
-          <section key={section.id} id={section.id} className={`app-protocol-card${section.id === 'closure' ? ' app-protocol-card--wide' : ''}`}>
+          <section key={section.id} id={section.id} className={`app-protocol-card${section.id === 'closure' || section.id === 'exit-liveness' ? ' app-protocol-card--wide' : ''}`}>
             <div className="app-protocol-card__eyebrow">
               <span>{section.category}</span>
               {section.code && <code>{section.code}</code>}
@@ -46,6 +47,7 @@ export default function ProtocolPage() {
         <div className="flex flex-wrap gap-x-6 gap-y-3 font-mono text-xs">
           <Link href="/pools">Pool directory <ArrowUpRight aria-hidden="true" /></Link>
           <Link href="/positions">Exit policy <ArrowUpRight aria-hidden="true" /></Link>
+          <Link href="/proof">Exit proof <ArrowUpRight aria-hidden="true" /></Link>
           <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer">Explorer <ArrowUpRight aria-hidden="true" /></a>
         </div>
         <span><ShieldCheck aria-hidden="true" /> Verified Mainnet bytecode · chain 4663</span>

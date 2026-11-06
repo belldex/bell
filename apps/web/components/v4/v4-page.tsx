@@ -7,6 +7,7 @@ import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
 import { LandingNav } from "@/components/landing/gyevo/landing-nav";
 import { SmoothScroll } from "@/components/landing/gyevo/smooth-scroll";
 import { BELL_TOKEN, explorerAddress, explorerTx } from "@/config/mainnet";
+import exitProof from "@/content/exit-proof.json";
 import progress from "@/content/build-progress.json";
 import { ContractsLedger } from "./contracts-ledger";
 import { LiveProvider, LiveStrip } from "./live";
@@ -41,13 +42,15 @@ const VERSUS: [string, string, string][] = [
   ["Contract upgrades", "Often behind a proxy", "Zero proxies, immutable hooks"],
 ];
 
+const exitDone = exitProof.receipts.filter((r) => r.status === "DONE").length;
+
 const FEATURES: { name: string; status: Status; note: string }[] = [
   { name: "Session-aware fees, flow caps, fail-closed swaps", status: "LIVE", note: "On mainnet" },
   { name: "Unblockable LP exits", status: "LIVE", note: "Hook mask 0x2CC0 has five flags, none of them for removing liquidity" },
   { name: "Opening Bell Auction", status: "LIVE", note: `Contracts live and verified. First opening: ${progress.firstOpeningLabel}` },
   { name: "BellHookV2 and the write-once auction registry", status: "LIVE", note: "Pools created from the current factory get their own auction" },
   { name: `Source verification of the ${progress.coreContractsVerified} core contracts`, status: "LIVE", note: `Verified on ${progress.verifiedOn}. Pool hooks are next` },
-  { name: "Exit Liveness Proof at /proof", status: "PLANNED", note: "" },
+  { name: "Exit Liveness Proof at /proof", status: "LIVE", note: `Every hook checked from its address. Withdraw receipts: ${exitDone} of ${exitProof.receipts.length} recorded` },
   { name: "Orders private until the bell (sealed-bid)", status: "PLANNED", note: "v2 auction" },
   { name: "HyperCore reference price", status: "BUILDING TOWARD", note: "Depends on the HyperCore read precompile Elysium plans to add after its mainnet" },
 ];
@@ -59,6 +62,7 @@ const RECEIPTS: [string, string | null][] = [
   ["$BELL chart", null],
   ["Source code", "https://github.com/belldex/bell"],
   ["All contracts", "/protocol/#contracts"],
+  ["Exit liveness proof", "/proof/"],
   ["Official X", "https://x.com/BELLdexFi"],
 ];
 

@@ -30,4 +30,6 @@ jobs:
       - run: pnpm run test:runtime:portable
       - run: pnpm run test:workers
       - run: pnpm run check:secrets
+      # Every committed hook address must keep its remove-liquidity permission bits clear.
+      - run: node scripts/verify-exit-liveness.ts --snapshot
       # forge test needs foundry-rs/setup-foundry; that runs in the contracts lane.

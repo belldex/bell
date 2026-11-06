@@ -169,6 +169,7 @@ export function FinalReveal({ appName }: { appName: string }) {
               <ul>
                 <li><Link href="/#sessions">Market sessions</Link></li>
                 <li><Link href="/#planned-close">Planned close</Link></li>
+                <li><Link href="/proof">Exit proof</Link></li>
                 <li><Link href="/terms">Terms of use</Link></li>
                 <li><Link href="/privacy">Privacy policy</Link></li>
               </ul>

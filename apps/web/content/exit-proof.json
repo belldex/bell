@@ -1,0 +1,120 @@
+{
+  "chainId": 4663,
+  "mask": "0x2cc0",
+  "generatedAt": "2026-11-06T16:05:57.383Z",
+  "hooks": [
+    {
+      "pair": "AAPL / USDG",
+      "poolId": "0x40cbbda621e09d5eafc9cbbf020165fecb4f800b15248cfd5cf2e59d48a9ac54",
+      "hook": "0xf9692a364e0edf76bba12e54c3eba599f436acc0",
+      "flags": "0x2cc0",
+      "configHash": "0x757584e83dfaaec34c900256a18795b5c81f2445370f6f74777768d7361f1726",
+      "poolClass": 1
+    },
+    {
+      "pair": "AAPL / USDG",
+      "poolId": "0xaa8fa89dcc79d21a48c04392aa6a0e37733cbc6ee15e4f56e6158c7440d43fb9",
+      "hook": "0x6c31e485883a9f0c3a5b4b9b2f012e7793e2acc0",
+      "flags": "0x2cc0",
+      "configHash": "0x757584e83dfaaec34c900256a18795b5c81f2445370f6f74777768d7361f1726",
+      "poolClass": 1
+    },
+    {
+      "pair": "AAPL / USDG",
+      "poolId": "0x7e729e1e272c76f825260df1e594175222ac724c05ad5b84465f7b8044248dd4",
+      "hook": "0xc1ada05c75160ed1a62d7eacf30ef28859886cc0",
+      "flags": "0x2cc0",
+      "configHash": "0xf881ae59afd0b5781a9e0ea8ad1f72af4c8e2fc3206e43c0e15f453d4be7ab92",
+      "poolClass": 1
+    },
+    {
+      "pair": "NVDA / USDG",
+      "poolId": "0x54f63cca77fb16f3cb9e5c42d82ac342e791aeb8a42cd3fa4e7080428b6a2ef9",
+      "hook": "0x89d4792e613199e3ed7e8ce7af51d0372027ecc0",
+      "flags": "0x2cc0",
+      "configHash": "0x68db0e1b2697885d08e68a5dd7a882433d6e383e68b7df6bd9d78b9aebebbcfa",
+      "poolClass": 1
+    },
+    {
+      "pair": "TSLA / USDG",
+      "poolId": "0xed6ac4429aa4fa2faea32569f1fde170d16b67a07080d9a6d419eed2a31d4b4c",
+      "hook": "0x6657dc160e05c0ff6afe2122ca7d8244390decc0",
+      "flags": "0x2cc0",
+      "configHash": "0x4a383ddbaaaa7dcdaffb597169f2bfb6145f5dc267f103ae4b3cf511a72cae1d",
+      "poolClass": 1
+    },
+    {
+      "pair": "TSLA / USDG",
+      "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
+      "hook": "0xeece9e0c1a6b483d9989db9920596feba6d06cc0",
+      "flags": "0x2cc0",
+      "configHash": "0xc8c96a933a11de18315eb76acba06cf9cf89247b014174299272e4858e6d3374",
+      "poolClass": 1
+    }
+  ],
+  "receipts": [
+    {
+      "scenario": "Regular session",
+      "proves": "Baseline: a withdraw in market hours",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "To record in a regular session."
+    },
+    {
+      "scenario": "Pre-market",
+      "proves": "Exit works in the first session of the day, with session fees and flow caps in force",
+      "status": "DONE",
+      "session": "Pre-market, Fri 07:59 ET",
+      "tx": "0x3a6144b81e988cdda55994fb6eafdc55067fb26c1694c50765fcf271d5628bfc",
+      "when": "2026-11-06T11:59:09Z",
+      "note": "TSLA / USDG pool, through the Uniswap v4 PositionManager."
+    },
+    {
+      "scenario": "Market closed (weekend)",
+      "proves": "Exit works while the market is closed and the closure budget governs swaps",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "To record on a Saturday or Sunday."
+    },
+    {
+      "scenario": "Overnight",
+      "proves": "Exit works outside market hours",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "To record in the overnight session."
+    },
+    {
+      "scenario": "Stale price feed",
+      "proves": "Swaps fail closed while exit stays open",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "Recorded only when a feed actually goes stale. Not forced."
+    },
+    {
+      "scenario": "Safety pause",
+      "proves": "A pause stops swaps and not exits",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "On a dedicated test pool only, announced first. Never on a user pool."
+    },
+    {
+      "scenario": "Collect fees after a withdraw",
+      "proves": "Fees are not held back",
+      "status": "PENDING",
+      "session": null,
+      "tx": null,
+      "when": null,
+      "note": "Recorded with the next withdraw."
+    }
+  ]
+}
