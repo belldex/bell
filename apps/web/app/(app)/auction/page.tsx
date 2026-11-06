@@ -6,6 +6,7 @@ import { ArrowUpRight, RefreshCw } from 'lucide-react';
 import { createPublicClient, formatUnits, http, parseAbi, parseUnits, type Address } from 'viem';
 import { MAINNET, readLivePools, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { makeClients, useWallet } from '@/lib/wallet';
+import { getInjectedWalletProvider } from '@/lib/wallet-options';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { TokenPair } from '@/components/ui/TokenLogo';
 import { Button } from '@/components/ui/primitives';
@@ -41,6 +42,21 @@ const auctionAbi = parseAbi([
   'function cancelOrder(uint32 orderId)',
   'function claimUnfilled(uint64,uint32)',
 ]);
+
+function createAuctionReadClient(provider: ReturnType<typeof useWallet>['provider']) {
+  const readProvider = provider ?? getInjectedWalletProvider();
+  return readProvider
+    ? makeClients(readProvider).publicClient
+    : createPublicClient({ transport: http(RPC) });
+}
+
+function auctionReadError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  if (/failed to fetch|network request failed|http request failed|cors/i.test(message)) {
+    return 'Cannot reach Robinhood Chain. Check the wallet network or try Refresh.';
+  }
+  return message || 'Could not read auction state.';
+}
 
 const STAGE = ['Idle', 'Armed', 'Open', 'Locked', 'Settled', 'Refunded'] as const;
 const STAGE_ARMED = 1;
@@ -122,7 +138,7 @@ function AuctionCard({ view, now, wallet, refresh }: { view: AuctionView; now: n
   const loadCycle = async (cycle: number) => {
     if (!RPC || !Number.isInteger(cycle) || cycle <= 0 || cycle > view.cycleId) return;
     try {
-      const client = createPublicClient({ transport: http(RPC) });
+      const client = createAuctionReadClient(wallet.provider);
       const [summary, count] = await Promise.all([
         client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleSummary', args: [BigInt(cycle)] }),
         client.readContract({ address: view.auction, abi: auctionAbi, functionName: 'cycleOrderCount', args: [BigInt(cycle)] }),
@@ -144,7 +160,7 @@ function AuctionCard({ view, now, wallet, refresh }: { view: AuctionView; now: n
       setHistoryOpenTime(Number(openAt));
       setHistoryPriceX96(priceX96);
       setHistoryMatchedBase(matchedBase);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not read that auction cycle.'); }
+    } catch (cause) { setError(auctionReadError(cause)); }
   };
 
   const submit = async (isBuyer: boolean) => {
@@ -325,7 +341,7 @@ export default function AuctionPage() {
     }
     setLoading(true);
     try {
-      const client = createPublicClient({ transport: http(RPC) });
+      const client = createAuctionReadClient(wallet.provider);
       const pools = await readLivePools();
       const next: AuctionView[] = [];
       for (const pool of pools) {
@@ -386,11 +402,11 @@ export default function AuctionPage() {
       setViews(next);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not read auction state');
+      setError(auctionReadError(e));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [wallet.provider]);
 
   useEffect(() => {
     void load();
