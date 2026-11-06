@@ -723,7 +723,9 @@ export async function runPositionCandidates(env, owner, { client } = {}) {
   const expectedChainId = Number(env.BELL_EXPECTED_CHAIN_ID || 4663);
   if (await chain.getChainId() !== expectedChainId) throw quoteError('wrong chain for position directory', 503);
   const latest = await chain.getBlockNumber();
-  const start = BigInt(env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
+  // Position NFTs are minted by every pool ever created, so this scan must reach back to the first BELL
+  // deployment. BELL_POOL_SCAN_FROM_BLOCK moves forward with each factory upgrade and must not bound it.
+  const start = BigInt(env.BELL_POSITION_SCAN_FROM_BLOCK || env.BELL_POOL_SCAN_FROM_BLOCK || '101800000');
   const ownerTopic = `0x${owner.slice(2).toLowerCase().padStart(64, '0')}`;
   const selector = toEventSelector(parseAbiItem('event Transfer(address indexed from,address indexed to,uint256 indexed tokenId)'));
   // Same Cloudflare subrequest ceiling as the pool directory: size the pages to the budget and run
