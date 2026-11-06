@@ -1289,3 +1289,5 @@
 .lp--bell .lp-v4-link { display:inline-flex; align-items:center; min-height:2.75rem; padding:0 .3rem; color:#6B675F; font:400 .78rem/1 var(--font-pixel,"Silkscreen"),var(--lp-font-mono),monospace; letter-spacing:.08em; text-decoration:none; transition:color .2s ease; }
 .lp--bell[data-phase="dark"] .lp-v4-link { color:#B7B4AD; }
 .lp--bell .lp-v4-link:hover { color:var(--lp-accent); }
+
+.lp--bell .lp-v4-link[aria-current="page"] { color:var(--lp-accent); box-shadow:inset 0 -2px 0 var(--lp-accent); }

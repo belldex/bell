@@ -67,7 +67,7 @@ const DISCLAIMER =
 
 const NAV = [
   { id: "clock", label: "Clock", desc: "The session BELL is in right now." },
-  { id: "fits", label: "Where BELL fits", desc: "Robinhood Chain, Uniswap, Hyperliquid and Elysium." },
+  { id: "fits", label: "Fits", desc: "Robinhood Chain, Uniswap, Hyperliquid and Elysium." },
   { id: "compare", label: "Compare", desc: "A standard pool next to BELL." },
   { id: "in-v4", label: "In v4", desc: "Every feature with an honest status." },
   { id: "open", label: "The open", desc: "One clearing price at the open." },
