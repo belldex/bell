@@ -111,6 +111,30 @@ describe('auction settlement selection', () => {
     expect(batches.slice(2).every((size) => size === 5)).toBe(true); // re-reads are one batch per auction, not one call per field
   });
 
+  it('reuses cached pool ids between refresh ticks instead of re-reading the whole directory', async () => {
+    const cache = { static: { [addr('5')]: { poolId: `0x${'7'.repeat(64)}`, hook: addr('5') } } };
+    const doStub = { fetch: async () => new Response(JSON.stringify(cache)) };
+    const env = {
+      BELL_AUCTION_REGISTRY: addr('9'),
+      BELL_TRANSACTION_PRIVATE_KEY: `0x${'1'.repeat(64)}`,
+      RH_MAINNET_RPC_PRIMARY: 'https://rpc.invalid',
+      BELL_EXPECTED_CHAIN_ID: '4663',
+      KEEPER_DO: { idFromName: () => 'id', get: () => doStub },
+    };
+    const publicClient = {
+      getChainId: async () => 4663,
+      multicall: async ({ contracts }: any) => contracts.map(() => '0x0000000000000000000000000000000000000000'),
+    };
+    let directoryReads = 0;
+    const fetchPools = async () => { directoryReads += 1; return { pools: [] }; };
+    // Minute 25 of the hour: not a refresh tick.
+    await settleBellAuctions(env, { nowSeconds: 1_500, publicClient: publicClient as any, walletClient: {} as any, fetchPools });
+    expect(directoryReads).toBe(0);
+    // Minute 30: every tenth minute the directory is refreshed.
+    await settleBellAuctions(env, { nowSeconds: 1_800, publicClient: publicClient as any, walletClient: {} as any, fetchPools });
+    expect(directoryReads).toBe(1);
+  });
+
   it('uses a separate log-capable client for pool discovery when provided', async () => {
     const primaryClient = { getChainId: async () => 4663 };
     const directoryClient = {};

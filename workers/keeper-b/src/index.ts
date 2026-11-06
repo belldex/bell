@@ -152,20 +152,30 @@ export async function settleBellAuctions(env, {
         poolCache = await cached.json();
       } catch { poolCache = null; }
     }
-    directoryResult = await fetchPools(env, { client: poolDirectoryClient, cache: poolCache });
-    ({ pools } = directoryResult);
-    // `/pools` uses this Durable Object cache too. Reusing and updating it here prevents the cron
-    // from repeating the full factory scan and static metadata reads every minute.
-    if (doStub && directoryResult?.cache) {
-      const jsonSafe = JSON.stringify(directoryResult.cache, (_key, value) =>
-        typeof value === 'bigint' ? value.toString() : value);
-      await doStub.fetch(new Request('https://do/poolcache', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: jsonSafe,
-      }));
-      await doStub.fetch(new Request('https://do/hooks', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(pools.map((pool) => pool.hook)),
-      }));
+    // A full directory refresh (factory scan plus three reads per pool) costs about twenty subrequests, and a
+    // cron tick that has already run calendar maintenance and pool recovery can hit Cloudflare's cap of fifty.
+    // The auction step only needs pool ids, which the Durable Object cache already holds, so refresh the
+    // directory when the cache is empty or once every ten minutes and otherwise reuse the cached ids.
+    const cachedEntries = Object.entries(poolCache?.static ?? {}).filter(([, entry]: any) => entry?.poolId);
+    const refreshDue = cachedEntries.length === 0 || Math.floor(nowSeconds / 60) % 10 === 0;
+    if (!refreshDue) {
+      pools = cachedEntries.map(([key, entry]: any) => ({ hook: entry.hook ?? key, poolId: entry.poolId }));
+    } else {
+      directoryResult = await fetchPools(env, { client: poolDirectoryClient, cache: poolCache });
+      ({ pools } = directoryResult);
+      // `/pools` uses this Durable Object cache too. Reusing and updating it here prevents the cron
+      // from repeating the full factory scan and static metadata reads every minute.
+      if (doStub && directoryResult?.cache) {
+        const jsonSafe = JSON.stringify(directoryResult.cache, (_key, value) =>
+          typeof value === 'bigint' ? value.toString() : value);
+        await doStub.fetch(new Request('https://do/poolcache', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: jsonSafe,
+        }));
+        await doStub.fetch(new Request('https://do/hooks', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(pools.map((pool) => pool.hook)),
+        }));
+      }
     }
   } catch (error) {
     const detail = String(error?.shortMessage ?? error?.message ?? error).slice(0, 180);
