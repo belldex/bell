@@ -129,6 +129,7 @@ export function LandingNav({ appName }: { appName: string }) {
         </nav>
 
         <div className="lp-nav__right">
+          <Link className="lp-v4-link" href="/v4/">v4</Link>
           <a className="lp-social-link" href="https://x.com/BELLdexFi" target="_blank" rel="noopener noreferrer" aria-label="BELL on X">
             <FaXTwitter aria-hidden="true" />
           </a>

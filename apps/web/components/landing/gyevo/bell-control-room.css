@@ -1284,3 +1284,8 @@
   .lp--bell .lp-product__assets { grid-template-columns:1fr; gap:1.25rem; }
   .lp--bell .lp-product__assets > p { grid-column:auto; }
 }
+
+/* The /v4 page link sits with the actions, so the section rail keeps its width. */
+.lp--bell .lp-v4-link { display:inline-flex; align-items:center; min-height:2.75rem; padding:0 .3rem; color:#6B675F; font:400 .78rem/1 var(--font-pixel,"Silkscreen"),var(--lp-font-mono),monospace; letter-spacing:.08em; text-decoration:none; transition:color .2s ease; }
+.lp--bell[data-phase="dark"] .lp-v4-link { color:#B7B4AD; }
+.lp--bell .lp-v4-link:hover { color:var(--lp-accent); }
