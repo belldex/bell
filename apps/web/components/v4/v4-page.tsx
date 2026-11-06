@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowUpRight, Check, X } from "lucide-react";
+import { Activity, ArrowUpRight, Bell, Check, Cog, Landmark, Waypoints, X, type LucideIcon } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 import { BrandLogo } from "@/components/landing/gyevo/bell-mark";
 import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
 import { BellWordmark } from "@/components/ui/Logo";
 import { BELL_TOKEN, explorerAddress, explorerTx } from "@/config/mainnet";
 import progress from "@/content/build-progress.json";
+import { BellRings, ClearVignette, LockVignette, OrdersVignette } from "./art";
 import { ContractsLedger } from "./contracts-ledger";
 import { LiveProvider, LiveStrip } from "./live";
 import { StatusBadge, type Status } from "./status-badge";
@@ -22,11 +23,11 @@ BELL holds the bell.
 
 bellstocks.tech/v4`;
 
-const FITS: { name: string; role: string; text: string; status: Status }[] = [
-  { name: "Robinhood Chain", role: "The stadium", status: null, text: "Stock tokens trade 24/7. Standard pools can’t tell 3 AM Sunday from 10 AM Tuesday." },
-  { name: "Uniswap v4", role: "The engine", status: "LIVE", text: "The best AMM engine onchain. BELL is built natively on it, and gives it a clock." },
-  { name: "Hyperliquid", role: "The scoreboard", status: null, text: "Equity prices that never stop. A 24/7 price still doesn’t protect a spot LP from the weekend." },
-  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", text: "Contracts that read HyperCore directly. The price BELL’s auction wants at the open." },
+const FITS: { name: string; role: string; text: string; status: Status; icon: LucideIcon }[] = [
+  { name: "Robinhood Chain", role: "The stadium", status: null, icon: Landmark, text: "Stock tokens trade 24/7. Standard pools can’t tell 3 AM Sunday from 10 AM Tuesday." },
+  { name: "Uniswap v4", role: "The engine", status: "LIVE", icon: Cog, text: "The best AMM engine onchain. BELL is built natively on it, and gives it a clock." },
+  { name: "Hyperliquid", role: "The scoreboard", status: null, icon: Activity, text: "Equity prices that never stop. A 24/7 price still doesn’t protect a spot LP from the weekend." },
+  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", icon: Waypoints, text: "Contracts that read HyperCore directly. The price BELL’s auction wants at the open." },
 ];
 
 const VERSUS: [string, string, string][] = [
@@ -48,11 +49,13 @@ const FEATURES: { name: string; status: Status; note: string }[] = [
   { name: "HyperCore reference price", status: "BUILDING TOWARD", note: "Depends on Elysium EL1Read" },
 ];
 
-const OPEN_STEPS = [
-  { n: "01", title: "Orders collect", text: "Before the open, orders gather in escrow instead of racing each other. Cancel any time until the book locks." },
-  { n: "02", title: "Book locks", text: "At the bell the book closes. No order can jump the line, and ordinary swaps on that pool pause." },
-  { n: "03", title: "One clearing price", text: "The contract picks the single price that matches the most volume. Everything that does not match is refunded." },
+const OPEN_STEPS: { n: string; title: string; text: string; art: () => React.ReactElement }[] = [
+  { n: "01", title: "Orders collect", art: OrdersVignette, text: "Before the open, orders gather in escrow instead of racing each other. Cancel any time until the book locks." },
+  { n: "02", title: "Book locks", art: LockVignette, text: "At the bell the book closes. No order can jump the line, and ordinary swaps on that pool pause." },
+  { n: "03", title: "One clearing price", art: ClearVignette, text: "The contract picks the single price that matches the most volume. Everything that does not match is refunded." },
 ];
+
+const TICKER = ["Session-aware fees", "Flow caps", "Fail-closed swaps", "Unblockable exits", "One price at the open", "Immutable hooks", "Zero proxies", "Escrow with permissionless refunds"];
 
 const RECEIPTS: [string, string | null][] = [
   ["$BELL buyback", explorerTx("0xae06d09f417ed585532963b33610f682cd1c94fd46973b2c7affab5d19b4880a")],
@@ -99,6 +102,10 @@ export function V4Page() {
       <main id="main">
         {/* 01 · hero */}
         <section className="lp-sec v4-hero" id="top" aria-labelledby="v4-title">
+          <div className="v4-hero__art" aria-hidden="true">
+            <span className="v4-hero__v4">V4</span>
+            <BellRings />
+          </div>
           <div className="lp-wrap v4-hero__grid">
             <div className="v4-hero__copy">
               <p className="v4-label" data-lp-reveal>BELL v4 · LIVE + ROADMAP</p>
@@ -120,6 +127,16 @@ export function V4Page() {
           </div>
         </section>
 
+        <div className="v4-marquee" aria-label="What the BELL hook enforces">
+          <div className="v4-marquee__track">
+            {[0, 1].map((copy) => (
+              <ul key={copy} aria-hidden={copy === 1}>
+                {TICKER.map((t) => <li key={t}>{t}</li>)}
+              </ul>
+            ))}
+          </div>
+        </div>
+
         {/* 02 · where BELL fits */}
         <section className="lp-sec v4-sec" id="fits" aria-labelledby="fits-title">
           <div className="lp-wrap">
@@ -130,6 +147,7 @@ export function V4Page() {
             <ul className="v4-fits">
               {FITS.map((f, i) => (
                 <li key={f.name} data-lp-reveal style={{ ["--i" as string]: i }}>
+                  <span className="v4-ico"><f.icon size={20} strokeWidth={1.6} aria-hidden="true" /></span>
                   <span className="v4-role">{f.role}</span>
                   <b>{f.name}</b>
                   <p>{f.text}</p>
@@ -139,6 +157,7 @@ export function V4Page() {
             </ul>
             <article className="v4-bellcard" data-lp-reveal>
               <div>
+                <span className="v4-ico v4-ico--bell"><Bell size={20} strokeWidth={1.6} aria-hidden="true" /></span>
                 <span className="v4-role">The bell</span>
                 <h3>BELL</h3>
               </div>
@@ -201,6 +220,7 @@ export function V4Page() {
             <ol className="v4-open">
               {OPEN_STEPS.map((s, i) => (
                 <li key={s.n} data-lp-reveal style={{ ["--i" as string]: i }}>
+                  <div className="v4-open__art"><s.art /></div>
                   <span className="v4-open__n" aria-hidden="true">{s.n}</span>
                   <b>{s.title}</b>
                   <p>{s.text}</p>
@@ -273,6 +293,7 @@ export function V4Page() {
 
         {/* 09 · cta */}
         <section className="lp-sec v4-cta-sec" id="cta" aria-labelledby="cta-title">
+          <div className="v4-cta-art" aria-hidden="true"><BellRings /></div>
           <div className="lp-wrap">
             <h2 className="v4-h1 v4-h1--cta" id="cta-title" data-lp-reveal>The bell rings <em>onchain.</em></h2>
             <div className="v4-cta" data-lp-reveal style={{ ["--i" as string]: 1 }}>

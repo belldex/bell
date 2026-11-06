@@ -72,3 +72,30 @@ test('the share text, copy buttons, and mobile cards from the brief are present'
 test('the landing nav links to /v4 without widening the section rail', () => {
   assert.match(nav, /href="\/v4\/"/);
 });
+
+test('no rotated squares anywhere on /v4 or in the landing auction section', async () => {
+  for (const file of ['../components/v4/v4.css', '../components/landing/gyevo/auction-section.css']) {
+    const css = await read(file);
+    assert.doesNotMatch(css, /rotate\(45deg\)/, `${file} draws a diamond`);
+  }
+  const art = await read('../components/v4/art.tsx');
+  assert.doesNotMatch(art, /rotate\(45/);
+});
+
+test('looping art is pure SVG and CSS, and every loop has a still frame for reduced motion', async () => {
+  const css = await read('../components/v4/v4.css');
+  const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion:reduce)', css.indexOf('motion off')));
+  for (const rule of ['.v4-rings__ring { animation:none; }', '.v4-marquee__track { animation:none; }', '.v4-vig__dot { animation:none;', '.v4-vig__hit { animation:none;', '.v4-bellcard::after']) {
+    assert.ok(reduced.includes(rule), `reduced motion stops ${rule}`);
+  }
+  assert.match(page, /BellRings/);
+  assert.match(page, /OrdersVignette/);
+  assert.match(page, /ClearVignette/);
+  assert.match(page, /v4-marquee/);
+});
+
+test('the heaviest effects are kept off animated layers', async () => {
+  const css = await read('../components/v4/v4.css');
+  assert.doesNotMatch(css, /mask-image/);
+  assert.equal((css.match(/backdrop-filter/g) ?? []).length <= 2, true); // only the static sticky bar
+});

@@ -386,7 +386,7 @@ async function main() {
       out(`${c.text("✓")} ${c.muted("opened")} ${c.text(link[1].length > 90 ? link[1].slice(0, 90) + "…" : link[1])}`);
     }
   }
-  out(); out(`${c.red("◆")} ${c.text("BELL")}  ${c.muted("The market finally has a bell.")}`); out();
+  out(); out(`${c.red("●")} ${c.text("BELL")}  ${c.muted("The market finally has a bell.")}`); out();
   rl.close(); process.exit(0);
 }
 

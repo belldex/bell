@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bell } from "lucide-react";
 import { Arrow } from "./arrow";
 
 /* Opening Bell Auction. Presentation only: every figure below is a deployed contract parameter
@@ -157,7 +158,7 @@ export function AuctionSection() {
         <ol className="lp-auc__stages">
           {STAGES.map((s) => (
             <li key={s.name} data-bell={"bell" in s ? "true" : "false"} data-lp-reveal style={{ ["--i" as string]: 1 }}>
-              <span className="lp-auc__when">{s.when}</span>
+              <span className="lp-auc__when">{"bell" in s && <Bell className="lp-auc__bell" size={13} strokeWidth={1.8} aria-hidden="true" />}{s.when}</span>
               <b>{s.name}</b>
               <small>{s.text}</small>
             </li>

@@ -86,7 +86,7 @@ async function main() {
   out();
   for (const l of banner('BELL')) { out(l); await sleep(70); }
   out();
-  out(`${ion('◆')} ${bold(ink('BELL PROTOCOL'))}  ${bold(ink('Smart contract verification'))}`);
+  out(`${ion('●')} ${bold(ink('BELL PROTOCOL'))}  ${bold(ink('Smart contract verification'))}`);
   out(dim('Fees follow the session. Limits hold the line.'));
   out(line('─'.repeat(58)));
   out();

@@ -76,8 +76,8 @@
 .lp--bell .lp-auc__stages b { color:var(--lp-white); font:650 clamp(1rem,1.3vw,1.25rem)/1.1 var(--lp-font-display); letter-spacing:-.035em; }
 .lp--bell .lp-auc__stages small { color:var(--lp-muted); font-size:clamp(.78rem,.85vw,.88rem); line-height:1.55; }
 .lp--bell .lp-auc__stages li[data-bell="true"] { background:linear-gradient(180deg,rgba(238,236,229,.06),transparent 90%); }
-.lp--bell .lp-auc__stages li[data-bell="true"]::before { content:""; position:absolute; top:-5px; left:clamp(.9rem,1.5vw,1.5rem); width:9px; height:9px; background:var(--lp-accent); transform:rotate(45deg); }
-.lp--bell .lp-auc__stages li[data-bell="true"] .lp-auc__when { color:var(--lp-accent-light); }
+.lp--bell .lp-auc__stages li[data-bell="true"] .lp-auc__when { display:inline-flex; align-items:center; gap:.45rem; color:var(--lp-accent-light); }
+.lp--bell .lp-auc__bell { flex:none; color:var(--lp-accent); }
 
 .lp--bell .lp-auc__bottom { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.2rem 2.5rem; }
 .lp--bell .lp-auc__fine { max-width:68ch; margin:0; color:var(--lp-dim); font-size:.82rem; line-height:1.55; }
@@ -89,8 +89,7 @@
   .lp--bell .lp-auc__stages { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .lp--bell .lp-auc__stages li:nth-child(odd) { padding-left:0; }
   .lp--bell .lp-auc__stages li:nth-child(odd)::after { content:none; }
-  .lp--bell .lp-auc__stages li[data-bell="true"]::before { left:clamp(.9rem,1.5vw,1.5rem); }
-}
+  }
 
 /* On phones the drawing is compressed in width, so its type stays readable at about two thirds size. */
 @media (max-width:640px) {
@@ -106,8 +105,7 @@
   .lp--bell .lp-auc__stages { grid-template-columns:minmax(0,1fr); }
   .lp--bell .lp-auc__stages li,.lp--bell .lp-auc__stages li:first-child { padding-left:1.1rem; border-left:1px solid var(--lp-line-2); border-top:0; }
   .lp--bell .lp-auc__stages li + li::after { content:none; }
-  .lp--bell .lp-auc__stages li[data-bell="true"]::before { top:1.45rem; left:-5px; }
-  .lp--bell .lp-auc__facts dt { font-size:1.25rem; }
+    .lp--bell .lp-auc__facts dt { font-size:1.25rem; }
   .lp--bell .lp-auc__cta { width:100%; }
   .lp--bell .lp-auc__cta .lp-btn { flex:1 1 11rem; justify-content:center; }
 }
