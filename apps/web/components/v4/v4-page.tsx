@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ArrowUpRight, Bell, Check, Cog, Landmark, Waypoints, X, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Check, X } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
 import { AuctionBook } from "@/components/landing/gyevo/auction-section";
 import { BrandLogo } from "@/components/landing/gyevo/bell-mark";
@@ -25,11 +25,12 @@ BELL holds the bell.
 
 bellstocks.tech/v4`;
 
-const FITS: { name: string; role: string; text: string; status: Status; icon: LucideIcon }[] = [
-  { name: "Robinhood Chain", role: "The stadium", status: null, icon: Landmark, text: "Stock tokens trade 24/7. Standard pools can’t tell 3 AM Sunday from 10 AM Tuesday." },
-  { name: "Uniswap v4", role: "The engine", status: "LIVE", icon: Cog, text: "The best AMM engine onchain. BELL is built natively on it, and gives it a clock." },
-  { name: "Hyperliquid", role: "The scoreboard", status: null, icon: Activity, text: "Equity prices that never stop. A 24/7 price still doesn’t protect a spot LP from the weekend." },
-  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", icon: Waypoints, text: "Contracts that read HyperCore directly. The price BELL’s auction wants at the open." },
+/* Official marks, as each project publishes them (wordmarks for Robinhood and Uniswap, the mark for Hyperliquid and Elysium). */
+const FITS: { name: string; role: string; text: string; status: Status; logo: { src: string; w: number; h: number; invert?: boolean } }[] = [
+  { name: "Robinhood Chain", role: "The stadium", status: null, logo: { src: "/landing/partners/robinhood.svg", w: 148, h: 29, invert: true }, text: "Stock tokens trade 24/7. Standard pools can’t tell 3 AM Sunday from 10 AM Tuesday." },
+  { name: "Uniswap v4", role: "The engine", status: "LIVE", logo: { src: "/landing/partners/uniswap.svg", w: 112, h: 28, invert: true }, text: "The best AMM engine onchain. BELL is built natively on it, and gives it a clock." },
+  { name: "Hyperliquid", role: "The scoreboard", status: null, logo: { src: "/landing/partners/hyperliquid.png", w: 40, h: 40 }, text: "Equity prices that never stop. A 24/7 price still doesn’t protect a spot LP from the weekend." },
+  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", logo: { src: "/landing/partners/elysium.svg", w: 40, h: 40, invert: true }, text: "Contracts that read HyperCore directly. The price BELL’s auction wants at the open." },
 ];
 
 const VERSUS: [string, string, string][] = [
@@ -115,7 +116,7 @@ export function V4Page() {
             <ul className="v4-fits">
               {FITS.map((f, i) => (
                 <li key={f.name} data-lp-reveal style={{ ["--i" as string]: i }}>
-                  <span className="v4-ico"><f.icon size={20} strokeWidth={1.6} aria-hidden="true" /></span>
+                  <span className="v4-logo"><img src={f.logo.src} width={f.logo.w} height={f.logo.h} alt="" data-invert={f.logo.invert ? "1" : undefined} loading="lazy" decoding="async" /></span>
                   <span className="v4-role">{f.role}</span>
                   <b>{f.name}</b>
                   <p>{f.text}</p>
@@ -125,7 +126,7 @@ export function V4Page() {
             </ul>
             <article className="v4-bellcard" data-lp-reveal>
               <div>
-                <span className="v4-ico v4-ico--bell"><Bell size={20} strokeWidth={1.6} aria-hidden="true" /></span>
+                <span className="v4-logo"><BrandLogo size={34} /></span>
                 <span className="v4-role">The bell</span>
                 <h3>BELL</h3>
               </div>

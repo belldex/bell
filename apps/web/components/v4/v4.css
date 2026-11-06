@@ -224,3 +224,8 @@
   .v4-stage { position:relative; height:auto; min-height:100svh; }
   .v4-beat,.v4-clock__needle,.v4-row,.v4-copy { transition:none; }
 }
+
+/* official partner marks */
+.v4-logo { display:flex; align-items:center; height:2.7rem; }
+.v4-logo img { display:block; height:1.7rem; width:auto; max-width:100%; }
+.v4-logo img[data-invert="1"] { filter:brightness(0) invert(.93); }
