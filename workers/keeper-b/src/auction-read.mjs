@@ -77,18 +77,59 @@ export async function readAuctionSnapshots(client, { registry, pools, auction, c
     };
   }
 
+  if (bound.length === 0) return {};
+
+  // Batch each snapshot field across all bound auctions. One Multicall per field group keeps
+  // request count constant as a factory accumulates pools instead of spending ~5 RPC requests
+  // for every bound auction on every page load.
+  const stateFields = [
+    'currentStage', 'blocksSwaps', 'orderCount', 'openTime',
+    'auctionLead', 'settleTimeout', 'cycleId', 'indicativeClearing',
+  ];
+  const states = await batch(client, bound.flatMap(({ address }) =>
+    stateFields.map((functionName) => ({ address, abi: ABI, functionName }))));
+  const cycleCounts = await batch(client, bound.map(({ address }, i) => ({
+    address, abi: ABI, functionName: 'cycleOrderCount', args: [states[i * stateFields.length + 6]],
+  })));
+  const summaries = await batch(client, bound.map(({ address }, i) => ({
+    address, abi: ABI, functionName: 'cycleSummary', args: [states[i * stateFields.length + 6]],
+  })));
+  const orderRefs = bound.flatMap((entry, i) => Array.from({ length: Number(cycleCounts[i]) }, (_, index) => ({
+    auction: entry.address,
+    cycle: BigInt(states[i * stateFields.length + 6]),
+    index,
+  })));
+  const orderIds = (await batch(client, orderRefs.map((ref) => ({
+    address: ref.auction, abi: ABI, functionName: 'cycleOrderId', args: [ref.cycle, ref.index],
+  })))).map(Number);
+  const orderReads = await batch(client, orderRefs.flatMap((ref, i) => [
+    { address: ref.auction, abi: ABI, functionName: 'order', args: [orderIds[i]] },
+    { address: ref.auction, abi: ABI, functionName: 'allocation', args: [ref.cycle, orderIds[i]] },
+  ]));
+
   const out = {};
-  for (const entry of bound) {
-    const a = entry.address;
-    const one = (functionName) => ({ address: a, abi: ABI, functionName });
-    const [stage, blocksSwaps, orderCount, openTime, auctionLead, settleTimeout, cycleId, indicative] = await batch(client, [
-      one('currentStage'), one('blocksSwaps'), one('orderCount'), one('openTime'),
-      one('auctionLead'), one('settleTimeout'), one('cycleId'), one('indicativeClearing'),
-    ]);
-    const summary = (await batch(client, [{ address: a, abi: ABI, functionName: 'cycleSummary', args: [cycleId] }]))[0];
+  let orderCursor = 0;
+  for (let i = 0; i < bound.length; i += 1) {
+    const entry = bound[i];
+    const state = states.slice(i * stateFields.length, (i + 1) * stateFields.length);
+    const [stage, blocksSwaps, orderCount, openTime, auctionLead, settleTimeout, cycleId, indicative] = state;
+    const summary = summaries[i];
     const finalized = summary[5];
+    const orderCountInCycle = Number(cycleCounts[i]);
+    const orders = orderIds.slice(orderCursor, orderCursor + orderCountInCycle).map((id, localIndex) => {
+      const readIndex = 2 * (orderCursor + localIndex);
+      const order = orderReads[readIndex];
+      const allocation = orderReads[readIndex + 1];
+      return {
+        id, owner: order.owner, isBuyer: order.isBuyer, amountIn: String(order.amountIn),
+        limitPriceX96: String(order.limitPriceX96), fillBase: String(allocation[0]),
+        quotePayout: String(allocation[1]), quoteRefund: String(allocation[2]),
+        cancelled: order.cancelled, claimed: order.claimed,
+      };
+    });
+    orderCursor += orderCountInCycle;
     out[entry.poolId] = {
-      address: a,
+      address: entry.address,
       stage: Number(stage),
       blocksSwaps,
       orderCount: Number(orderCount),
@@ -99,7 +140,7 @@ export async function readAuctionSnapshots(client, { registry, pools, auction, c
       settleTimeout: Number(settleTimeout),
       priceX96: String(finalized ? summary[3] : indicative[0]),
       matchedBase: String(finalized ? summary[4] : indicative[1]),
-      orders: await readOrders(client, a, Number(cycleId)),
+      orders,
     };
   }
   return out;

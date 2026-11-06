@@ -64,6 +64,20 @@ describe('auction read snapshots', () => {
     expect(many.batchSizes).toContain(64_000);
   });
 
+  it('keeps directory multicalls bounded as the number of bound pools grows', async () => {
+    const manyPools = Array.from({ length: 10 }, (_, i) => ({ poolId: `0x${(i + 10).toString(16).padStart(64, '0')}` }));
+    const client = fakeClient({
+      ...baseState(),
+      auctionFor: () => auctionAddr,
+      cycleOrderCount: 25,
+      cycleOrderId: ([, index]: [bigint, number]) => index,
+    });
+
+    await readAuctionSnapshots(client, { registry, pools: manyPools });
+
+    expect(client.calls.length).toBeLessThanOrEqual(8);
+  });
+
   it('returns an empty map when no pool has a bound auction', async () => {
     const state = { ...baseState(), auctionFor: ZERO };
     expect(await readAuctionSnapshots(fakeClient(state), { registry, pools })).toEqual({});
