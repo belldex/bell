@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { Activity, ArrowUpRight, Bell, Check, Cog, Landmark, Waypoints, X, type LucideIcon } from "lucide-react";
 import { FaXTwitter } from "react-icons/fa6";
+import { AuctionBook } from "@/components/landing/gyevo/auction-section";
 import { BrandLogo } from "@/components/landing/gyevo/bell-mark";
 import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
+import { SmoothScroll } from "@/components/landing/gyevo/smooth-scroll";
 import { BellWordmark } from "@/components/ui/Logo";
 import { BELL_TOKEN, explorerAddress, explorerTx } from "@/config/mainnet";
 import progress from "@/content/build-progress.json";
-import { BellRings, ClearVignette, LockVignette, OrdersVignette } from "./art";
 import { ContractsLedger } from "./contracts-ledger";
 import { LiveProvider, LiveStrip } from "./live";
 import { StatusBadge, type Status } from "./status-badge";
+import { BellSculpture, V4Hero } from "./v4-hero";
 import { WeekClock } from "./week-clock";
 
 /* /v4. Every claim carries a status from the same small vocabulary, and each status is true on the day it ships.
@@ -49,14 +51,6 @@ const FEATURES: { name: string; status: Status; note: string }[] = [
   { name: "HyperCore reference price", status: "BUILDING TOWARD", note: "Depends on Elysium EL1Read" },
 ];
 
-const OPEN_STEPS: { n: string; title: string; text: string; art: () => React.ReactElement }[] = [
-  { n: "01", title: "Orders collect", art: OrdersVignette, text: "Before the open, orders gather in escrow instead of racing each other. Cancel any time until the book locks." },
-  { n: "02", title: "Book locks", art: LockVignette, text: "At the bell the book closes. No order can jump the line, and ordinary swaps on that pool pause." },
-  { n: "03", title: "One clearing price", art: ClearVignette, text: "The contract picks the single price that matches the most volume. Everything that does not match is refunded." },
-];
-
-const TICKER = ["Session-aware fees", "Flow caps", "Fail-closed swaps", "Unblockable exits", "One price at the open", "Immutable hooks", "Zero proxies", "Escrow with permissionless refunds"];
-
 const RECEIPTS: [string, string | null][] = [
   ["$BELL buyback", explorerTx("0xae06d09f417ed585532963b33610f682cd1c94fd46973b2c7affab5d19b4880a")],
   ["$BELL burn (2.9M)", explorerTx("0x72b08574afe1045d5bd6f71e70b28d61f7886225d388ad524e4c2b2b0c365c30")],
@@ -71,7 +65,7 @@ const DISCLAIMER =
   "BELL is an independent protocol. Not affiliated with or endorsed by Robinhood Markets, Inc., Uniswap Labs, Hyperliquid, or Kinetiq. The Opening Bell Auction contracts are deployed; no auction has settled yet. Independent audit in progress. Not financial advice.";
 
 function Header() {
-  const links: [string, string][] = [["Fits", "#fits"], ["Compare", "#compare"], ["In v4", "#in-v4"], ["The open", "#open"], ["Contracts", "#contracts"], ["Receipts", "#receipts"]];
+  const links: [string, string][] = [["Clock", "#clock"], ["Fits", "#fits"], ["Compare", "#compare"], ["In v4", "#in-v4"], ["The open", "#open"], ["Contracts", "#contracts"], ["Receipts", "#receipts"]];
   return (
     <header className="v4-bar">
       <Link className="lp-brand" href="/" aria-label="BELL home">
@@ -92,7 +86,7 @@ function Header() {
 }
 
 function Eyebrow({ children }: { children: string }) {
-  return <p className="lp-eyebrow" data-lp-reveal><i aria-hidden="true" />{children}</p>;
+  return <p className="lp-eyebrow" data-lp-reveal>{children}</p>;
 }
 
 export function V4Page() {
@@ -100,44 +94,18 @@ export function V4Page() {
     <div className="lp lp--bell v4" data-phase="dark">
       <Header />
       <main id="main">
-        {/* 01 · hero */}
-        <section className="lp-sec v4-hero" id="top" aria-labelledby="v4-title">
-          <div className="v4-hero__art" aria-hidden="true">
-            <span className="v4-hero__v4">V4</span>
-            <BellRings />
-          </div>
-          <div className="lp-wrap v4-hero__grid">
-            <div className="v4-hero__copy">
-              <p className="v4-label" data-lp-reveal>BELL v4 · LIVE + ROADMAP</p>
-              <h1 className="v4-h1" id="v4-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-                The market finally has <em>a bell.</em>
-              </h1>
-              <p className="v4-sub" data-lp-reveal style={{ ["--i" as string]: 2 }}>
-                <span>Robinhood Chain has the stock tokens.</span>
-                <span>Uniswap has the engine.</span>
-                <span>Hyperliquid has the 24/7 price.</span>
-                <strong>BELL holds the bell.</strong>
-              </p>
-              <div className="v4-cta" data-lp-reveal style={{ ["--i" as string]: 3 }}>
-                <Link className="lp-btn lp-btn--primary" href="/swap/">Swap <StatusBadge status="LIVE" /></Link>
-                <a className="lp-btn lp-btn--ghost" href="#contracts">See contracts</a>
-              </div>
-            </div>
-            <div className="v4-hero__clock" data-lp-reveal style={{ ["--i" as string]: 2 }}><WeekClock /></div>
+        <V4Hero />
+
+        <section className="lp-sec v4-sec" id="clock" aria-labelledby="clock-title">
+          <div className="lp-wrap">
+            <Eyebrow>The clock BELL keeps</Eyebrow>
+            <h2 className="lp-h2 v4-h2" id="clock-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
+              A market that never closes <em className="o">needs a clock.</em>
+            </h2>
+            <div className="v4-clockwrap" data-lp-reveal style={{ ["--i" as string]: 2 }}><WeekClock /></div>
           </div>
         </section>
 
-        <div className="v4-marquee" aria-label="What the BELL hook enforces">
-          <div className="v4-marquee__track">
-            {[0, 1].map((copy) => (
-              <ul key={copy} aria-hidden={copy === 1}>
-                {TICKER.map((t) => <li key={t}>{t}</li>)}
-              </ul>
-            ))}
-          </div>
-        </div>
-
-        {/* 02 · where BELL fits */}
         <section className="lp-sec v4-sec" id="fits" aria-labelledby="fits-title">
           <div className="lp-wrap">
             <Eyebrow>Where BELL fits</Eyebrow>
@@ -167,7 +135,6 @@ export function V4Page() {
           </div>
         </section>
 
-        {/* 03 · there vs here */}
         <section className="lp-sec v4-sec" id="compare" aria-labelledby="compare-title">
           <div className="lp-wrap">
             <Eyebrow>There vs here</Eyebrow>
@@ -191,7 +158,6 @@ export function V4Page() {
           </div>
         </section>
 
-        {/* 04 · what's in v4 */}
         <section className="lp-sec v4-sec" id="in-v4" aria-labelledby="in-v4-title">
           <div className="lp-wrap">
             <Eyebrow>What’s in v4</Eyebrow>
@@ -210,31 +176,22 @@ export function V4Page() {
           </div>
         </section>
 
-        {/* 05 · how the open works */}
-        <section className="lp-sec v4-sec" id="open" aria-labelledby="open-title">
-          <div className="lp-wrap">
-            <Eyebrow>How the open works</Eyebrow>
-            <h2 className="lp-h2 v4-h2" id="open-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
-              Three steps. <em className="o">One price.</em>
-            </h2>
-            <ol className="v4-open">
-              {OPEN_STEPS.map((s, i) => (
-                <li key={s.n} data-lp-reveal style={{ ["--i" as string]: i }}>
-                  <div className="v4-open__art"><s.art /></div>
-                  <span className="v4-open__n" aria-hidden="true">{s.n}</span>
-                  <b>{s.title}</b>
-                  <p>{s.text}</p>
-                </li>
-              ))}
-            </ol>
-            <p className="v4-open__foot" data-lp-reveal>
-              10 minute order window · up to 25 orders per cycle · no auction fee.{" "}
-              <Link href="/#auction">Watch the book clear <ArrowUpRight size={14} aria-hidden="true" /></Link>
+        {/* the landing's own order book, so the drawing and the copy are one thing */}
+        <section className="lp-sec lp-auc v4-sec" id="open" aria-labelledby="open-title">
+          <div className="lp-wrap lp-auc__wrap">
+            <div>
+              <Eyebrow>How the open works</Eyebrow>
+              <h2 className="lp-h2 v4-h2" id="open-title" data-lp-reveal style={{ ["--i" as string]: 1 }}>
+                Orders gather. The book locks. <em className="o">One price.</em>
+              </h2>
+            </div>
+            <AuctionBook />
+            <p className="v4-openfoot" data-lp-reveal>
+              <Link href="/#auction">The full auction, with its parameters <ArrowUpRight size={14} aria-hidden="true" /></Link>
             </p>
           </div>
         </section>
 
-        {/* 06 · live on mainnet */}
         <section className="lp-sec v4-sec" id="contracts" aria-labelledby="contracts-title">
           <div className="lp-wrap">
             <Eyebrow>Live on mainnet today</Eyebrow>
@@ -248,7 +205,6 @@ export function V4Page() {
           </div>
         </section>
 
-        {/* 07 · receipts */}
         <section className="lp-sec v4-sec" id="receipts" aria-labelledby="receipts-title">
           <div className="lp-wrap v4-two">
             <div>
@@ -271,7 +227,6 @@ export function V4Page() {
           </div>
         </section>
 
-        {/* 08 · build progress */}
         <section className="lp-sec v4-sec" id="progress" aria-labelledby="progress-title">
           <div className="lp-wrap v4-two">
             <div>
@@ -284,17 +239,16 @@ export function V4Page() {
               <StatusBadge status="LIVE" />
               <p>
                 Opening Bell Auction {progress.auctionMergedToMain ? "merged to main" : "not merged to main"}
-                {" · "}{progress.coreContractsVerified} core contracts verified on {progress.verifiedOn}
+                {" / "}{progress.coreContractsVerified} core contracts verified on {progress.verifiedOn}
               </p>
               <small>Updated {progress.updated} from content/build-progress.json</small>
             </article>
           </div>
         </section>
 
-        {/* 09 · cta */}
         <section className="lp-sec v4-cta-sec" id="cta" aria-labelledby="cta-title">
-          <div className="v4-cta-art" aria-hidden="true"><BellRings /></div>
-          <div className="lp-wrap">
+          <BellSculpture />
+          <div className="lp-wrap v4-cta-sec__copy">
             <h2 className="v4-h1 v4-h1--cta" id="cta-title" data-lp-reveal>The bell rings <em>onchain.</em></h2>
             <div className="v4-cta" data-lp-reveal style={{ ["--i" as string]: 1 }}>
               <Link className="lp-btn lp-btn--primary" href="/swap/">Swap on BELL</Link>
@@ -307,7 +261,6 @@ export function V4Page() {
         </section>
       </main>
 
-      {/* 10 · disclaimer */}
       <footer className="v4-foot">
         <div className="lp-wrap">
           <p>{DISCLAIMER}</p>
@@ -319,6 +272,7 @@ export function V4Page() {
         </div>
       </footer>
       <LandingEffects />
+      <SmoothScroll />
     </div>
   );
 }

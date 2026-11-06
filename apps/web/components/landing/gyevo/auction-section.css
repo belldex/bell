@@ -46,7 +46,7 @@
 .lp--bell .lp-auc__price { fill:none; stroke:var(--lp-accent); stroke-width:2; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:0;
   transition:stroke-dashoffset 1s var(--lp-ease) var(--d,0ms); }
 .lp--bell .lp-auc__strike { transition:opacity .5s ease var(--d,0ms); }
-.lp--bell .lp-auc__dot { fill:var(--lp-accent); stroke:var(--lp-bg); stroke-width:2; }
+.lp--bell .lp-auc__dot { fill:none; stroke:var(--lp-accent); stroke-width:3; }
 .lp--bell .lp-auc__ring { fill:none; stroke:var(--lp-accent); stroke-width:1.5; transform-box:fill-box; transform-origin:center; opacity:0; }
 .lp--bell .lp-auc__chip { transition:opacity .5s ease var(--d,0ms); }
 .lp--bell .lp-auc__chip rect { fill:var(--lp-accent); }

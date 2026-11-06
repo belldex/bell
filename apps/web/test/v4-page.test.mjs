@@ -38,8 +38,9 @@ test('addresses come from one config fed by the deployment record, not from lite
   }
 });
 
-test('the status copy is true to what is deployed and does not overclaim', () => {
-  assert.match(page, /BELL v4 · LIVE \+ ROADMAP/);
+test('the status copy is true to what is deployed and does not overclaim', async () => {
+  const hero = await read('../components/v4/v4-hero.tsx');
+  assert.match(hero, /BELL v4 \/ LIVE \+ ROADMAP/);
   assert.match(page, /no auction has settled yet/);
   assert.doesNotMatch(page, /Opening Bell Auction is in development and not live/);
   assert.doesNotMatch(page, /all contracts (are )?verified/i);
@@ -73,25 +74,30 @@ test('the landing nav links to /v4 without widening the section rail', () => {
   assert.match(nav, /href="\/v4\/"/);
 });
 
-test('no rotated squares anywhere on /v4 or in the landing auction section', async () => {
+test('no diamonds and no dots anywhere on /v4', async () => {
   for (const file of ['../components/v4/v4.css', '../components/landing/gyevo/auction-section.css']) {
     const css = await read(file);
     assert.doesNotMatch(css, /rotate\(45deg\)/, `${file} draws a diamond`);
   }
-  const art = await read('../components/v4/art.tsx');
-  assert.doesNotMatch(art, /rotate\(45/);
+  const css = await read('../components/v4/v4.css');
+  assert.doesNotMatch(css, /border-radius:\s*50%/, 'no round dots in v4.css');
+  assert.doesNotMatch(css, /v4-rings|v4-vig|v4-marquee/);
+  for (const file of ['v4-page.tsx', 'v4-hero.tsx', 'week-clock.tsx', 'contracts-ledger.tsx', 'live.tsx']) {
+    const src = await read(`../components/v4/${file}`);
+    assert.ok(!src.includes('·'), `${file} uses a middle dot separator`);
+    assert.doesNotMatch(src, /<circle/, `${file} draws a circle`);
+  }
 });
 
-test('looping art is pure SVG and CSS, and every loop has a still frame for reduced motion', async () => {
+test('the hero is the landing glyph engine ending on a bell, with a still frame for reduced motion', async () => {
+  const hero = await read('../components/v4/v4-hero.tsx');
   const css = await read('../components/v4/v4.css');
-  const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion:reduce)', css.indexOf('motion off')));
-  for (const rule of ['.v4-rings__ring { animation:none; }', '.v4-marquee__track { animation:none; }', '.v4-vig__dot { animation:none;', '.v4-vig__hit { animation:none;', '.v4-bellcard::after']) {
-    assert.ok(reduced.includes(rule), `reduced motion stops ${rule}`);
-  }
-  assert.match(page, /BellRings/);
-  assert.match(page, /OrdersVignette/);
-  assert.match(page, /ClearVignette/);
-  assert.match(page, /v4-marquee/);
+  assert.match(hero, /<GlyphField final="bell" \/>/);
+  assert.match(hero, /data-beat = "all"|dataset\.beat = "all"/);
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion:reduce)'));
+  for (const rule of ['.v4-ticker__track', '.v4-hint i::after', '.v4-bellcard::after']) assert.ok(reduced.includes(rule), `reduced motion stops ${rule}`);
+  assert.match(page, /<AuctionBook \/>/);
+  assert.match(page, /<SmoothScroll \/>/);
 });
 
 test('the heaviest effects are kept off animated layers', async () => {

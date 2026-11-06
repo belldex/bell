@@ -149,3 +149,66 @@ export function buildCloseAnchor(count: number): HeroForm {
     pal(i) { return tone[i]; },
   };
 }
+
+/* The bell itself, for the /v4 hero: a flared shell with a heavy lip, a crown loop and a clapper, all set in
+   the same letters. It hangs and swings a few degrees, so it reads as a bell that has just been struck. */
+export function buildBell(count: number): HeroForm {
+  const base = new Float32Array(count * 3);
+  const tone = new Uint8Array(count);
+  const top = 0.86;
+  const bottom = -0.74;
+  const profile = (v: number) => 0.17 + Math.pow(v, 1.55) * 0.6 + smooth(0.78, 1, v) * 0.22;
+  const yAt = (v: number) => top + (bottom - top) * v;
+  const shell = Math.floor(count * 0.7);
+  const lip = Math.floor(count * 0.12);
+  const crown = Math.floor(count * 0.07);
+
+  for (let i = 0; i < count; i++) {
+    const o = i * 3;
+    if (i < shell) {
+      const v = Math.pow(rnd(i * 2.3 + 1), 0.82);
+      const a = i * 2.399963229728653;
+      const r = profile(v) * (0.985 + rnd(i * 3.7) * 0.03);
+      base[o] = Math.cos(a) * r;
+      base[o + 1] = yAt(v) + (rnd(i * 5.1) - 0.5) * 0.02;
+      base[o + 2] = Math.sin(a) * r;
+      tone[i] = shellTone(i, count, 5);
+    } else if (i < shell + lip) {
+      const j = i - shell;
+      const a = j * 2.399963229728653;
+      const r = profile(1) - rnd(j * 4.3 + 2) * 0.09;
+      base[o] = Math.cos(a) * r;
+      base[o + 1] = bottom + (rnd(j * 6.7) - 0.5) * 0.075;
+      base[o + 2] = Math.sin(a) * r;
+      tone[i] = rnd(j * 1.9) > 0.35 ? 4 : 0;
+    } else if (i < shell + lip + crown) {
+      const j = i - shell - lip;
+      const a = (j / crown) * TAU;
+      base[o] = Math.cos(a) * 0.12;
+      base[o + 1] = top + 0.2 + Math.sin(a) * 0.12;
+      base[o + 2] = (rnd(j * 3.3) - 0.5) * 0.05;
+      tone[i] = 4;
+    } else {
+      const j = i - shell - lip - crown;
+      const n = count - shell - lip - crown;
+      const y = 1 - ((j + 0.5) * 2) / n;
+      const a = j * 2.399963229728653;
+      const rr = Math.sqrt(Math.max(0, 1 - y * y)) * 0.19;
+      base[o] = Math.cos(a) * rr;
+      base[o + 1] = bottom + 0.22 + y * 0.19;
+      base[o + 2] = Math.sin(a) * rr;
+      tone[i] = j % 3 === 0 ? 4 : 1;
+    }
+  }
+
+  return {
+    pos(i, t, out) {
+      const swing = Math.sin(t * 0.9) * 0.05;
+      const x = base[i * 3];
+      const y = base[i * 3 + 1] - 0.08;
+      const p: V3 = [x * Math.cos(swing) - y * Math.sin(swing), x * Math.sin(swing) + y * Math.cos(swing), base[i * 3 + 2]];
+      turned(p, t, 0.06, out);
+    },
+    pal(i, t) { return tone[i] === 4 && Math.sin(t * 1.6 + i * 0.31) > 0.7 ? 0 : tone[i]; },
+  };
+}

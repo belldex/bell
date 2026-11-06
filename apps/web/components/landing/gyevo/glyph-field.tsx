@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { buildBoundedGate, buildCloseAnchor, buildFeeStack, type HeroForm } from "./hero-forms";
+import { buildBell, buildBoundedGate, buildCloseAnchor, buildFeeStack, type HeroForm } from "./hero-forms";
+
+/* The landing ends on the close iris; the /v4 page ends on the bell. Everything before the last form is shared. */
+export type FinalForm = "close" | "bell";
 
 /* The BELL hero sculpture uses one glyph-cloud engine and four market-specific forms:
 
@@ -74,7 +77,7 @@ interface Model {
   delayD: Float32Array;
 }
 
-function buildModel(): Model {
+function buildModel(final: FinalForm): Model {
   const a = new Float32Array(COUNT * 3);
   /* A market-session dial: a dense face, a thick turned bezel, three session tracks and a compact spindle.
      It reads as a timing instrument rather than a serving dome or a wire globe. */
@@ -153,7 +156,7 @@ function buildModel(): Model {
 
   /* the same pairing, by place, for B -> C and C -> D (all three measured at t = 0) */
   const gate = buildBoundedGate(COUNT);
-  const close = buildCloseAnchor(COUNT);
+  const close = final === "bell" ? buildBell(COUNT) : buildCloseAnchor(COUNT);
   const pairOf = (from: (i: number, out: Float32Array) => void, to: (i: number, out: Float32Array) => void) => {
     const kf = Float32Array.from({ length: COUNT }, (_, i) => { from(i, tmp); return keyOf(tmp[0], tmp[1], tmp[2]); });
     const kt = Float32Array.from({ length: COUNT }, (_, i) => { to(i, tmp); return keyOf(tmp[0], tmp[1], tmp[2]); });
@@ -183,7 +186,7 @@ function buildModel(): Model {
   };
 }
 
-export function GlyphField() {
+export function GlyphField({ final = "close" }: { final?: FinalForm } = {}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
 
@@ -199,7 +202,7 @@ export function GlyphField() {
     /* wide screens put the form beside the headline (full strength); narrow ones put it behind, so it is dimmer */
     const twoSide = window.matchMedia("(min-width: 861px) and (min-aspect-ratio: 1 / 1)");
 
-    const M = buildModel();
+    const M = buildModel(final);
     const cur = new Float32Array(3);
     const cur2 = new Float32Array(3);
     const sx = new Float32Array(COUNT);

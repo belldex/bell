@@ -101,14 +101,48 @@ function ClearingBoard({ wide }: { wide: boolean }) {
       {/* The strike: one price across the book. */}
       <path className="lp-auc__price" pathLength="1" d={`M60 ${CLEAR_Y}H${right}`} style={d(1500)} />
       <g className="lp-auc__strike" style={d(2200)}>
-        <circle className="lp-auc__ring" cx={clearX} cy={CLEAR_Y} r="9" />
-        <circle className="lp-auc__dot" cx={clearX} cy={CLEAR_Y} r="5" />
+        <rect className="lp-auc__ring" x={clearX - 9} y={CLEAR_Y - 9} width="18" height="18" />
+        <path className="lp-auc__dot" d={`M${clearX} ${CLEAR_Y - 22}V${CLEAR_Y + 22}`} />
       </g>
       <g className="lp-auc__chip" style={d(2100)}>
         <rect x={right - 92} y={CLEAR_Y - 31} width="92" height="24" rx="2" />
         <text x={right - 46} y={CLEAR_Y - 15} textAnchor="middle">349.00</text>
       </g>
     </svg>
+  );
+}
+
+/* The order book and the four steps around it. Shared with /v4, so the drawing and the copy cannot drift apart. */
+export function AuctionBook() {
+  return (
+    <>
+        <figure className="lp-auc__board" data-lp-reveal="up" style={{ ["--i" as string]: 2 }}>
+          <figcaption className="lp-auc__cap">
+            <span>Example book · sample orders</span>
+            <span>Clears at 349.00 USDG per AAPL</span>
+          </figcaption>
+          <div className="lp-auc__plot">
+            <ClearingBoard wide />
+            <ClearingBoard wide={false} />
+          </div>
+          <ul className="lp-auc__legend" aria-label="How to read the drawing">
+            <li data-k="buy">Buy limits</li>
+            <li data-k="sell">Sell limits</li>
+            <li data-k="price">Clearing price</li>
+            <li data-k="match">Matched volume</li>
+          </ul>
+        </figure>
+
+        <ol className="lp-auc__stages">
+          {STAGES.map((s) => (
+            <li key={s.name} data-bell={"bell" in s ? "true" : "false"} data-lp-reveal style={{ ["--i" as string]: 1 }}>
+              <span className="lp-auc__when">{"bell" in s && <Bell className="lp-auc__bell" size={13} strokeWidth={1.8} aria-hidden="true" />}{s.when}</span>
+              <b>{s.name}</b>
+              <small>{s.text}</small>
+            </li>
+          ))}
+        </ol>
+    </>
   );
 }
 
@@ -138,32 +172,7 @@ export function AuctionSection() {
           </div>
         </header>
 
-        <figure className="lp-auc__board" data-lp-reveal="up" style={{ ["--i" as string]: 2 }}>
-          <figcaption className="lp-auc__cap">
-            <span>Example book · sample orders</span>
-            <span>Clears at 349.00 USDG per AAPL</span>
-          </figcaption>
-          <div className="lp-auc__plot">
-            <ClearingBoard wide />
-            <ClearingBoard wide={false} />
-          </div>
-          <ul className="lp-auc__legend" aria-label="How to read the drawing">
-            <li data-k="buy">Buy limits</li>
-            <li data-k="sell">Sell limits</li>
-            <li data-k="price">Clearing price</li>
-            <li data-k="match">Matched volume</li>
-          </ul>
-        </figure>
-
-        <ol className="lp-auc__stages">
-          {STAGES.map((s) => (
-            <li key={s.name} data-bell={"bell" in s ? "true" : "false"} data-lp-reveal style={{ ["--i" as string]: 1 }}>
-              <span className="lp-auc__when">{"bell" in s && <Bell className="lp-auc__bell" size={13} strokeWidth={1.8} aria-hidden="true" />}{s.when}</span>
-              <b>{s.name}</b>
-              <small>{s.text}</small>
-            </li>
-          ))}
-        </ol>
+        <AuctionBook />
 
         <footer className="lp-auc__bottom">
           <p className="lp-auc__fine" data-lp-reveal>

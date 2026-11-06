@@ -60,8 +60,8 @@ function HooksGroup() {
             <div className="v4-row__name">
               <b>{p.pair} hook</b>
               <small>
-                {p.funded === null ? "Liquidity unknown" : p.funded ? "Has liquidity" : "No liquidity · withdrawn"}
-                {p.auction ? " · has an Opening Bell Auction" : ""}
+                {p.funded === null ? "Liquidity unknown" : p.funded ? "Has liquidity" : "No liquidity / withdrawn"}
+                {p.auction ? " / has an Opening Bell Auction" : ""}
               </small>
             </div>
             <Address address={p.hook} name={`${p.pair} hook`} />

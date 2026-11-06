@@ -36,15 +36,19 @@ export function WeekClock() {
 
   return (
     <div className="v4-clock" aria-label="The current BELL session">
-      <p className="v4-clock__label">Right now · America/New_York</p>
-      <p className="v4-clock__phase" data-phase={phase ?? "none"} aria-live="polite">
-        {phase === null ? "Reading the clock" : PHASE_META[phase].label}
-      </p>
-      <dl className="v4-clock__facts">
-        <div><dt>Base LP fee</dt><dd>{phase === null ? "—" : feePercent(BASE_FEE_UNITS[phase])}</dd></div>
-        <div><dt>Window</dt><dd>{phase === null ? "—" : PHASE_META[phase].window}</dd></div>
-        <div><dt>ET</dt><dd>{now === null ? "—" : `${now.day} ${now.time}`}</dd></div>
-      </dl>
+      <div className="v4-clock__top">
+        <div>
+          <p className="v4-clock__label">Right now / America/New_York</p>
+          <p className="v4-clock__phase" data-phase={phase ?? "none"} aria-live="polite">
+            {phase === null ? "Reading the clock" : PHASE_META[phase].label}
+          </p>
+        </div>
+        <dl className="v4-clock__facts">
+          <div><dt>Base LP fee</dt><dd>{phase === null ? "—" : feePercent(BASE_FEE_UNITS[phase])}</dd></div>
+          <div><dt>Window</dt><dd>{phase === null ? "—" : PHASE_META[phase].window}</dd></div>
+          <div><dt>Eastern time</dt><dd>{now === null ? "—" : `${now.day} ${now.time}`}</dd></div>
+        </dl>
+      </div>
 
       <div className="v4-clock__bar" role="img" aria-label="Sessions across the week, with the current time marked">
         {segments.map((s) => (
@@ -55,14 +59,16 @@ export function WeekClock() {
             title={`${PHASE_META[s.phase].label} ${formatWeekMinute(s.from).day} ${formatWeekMinute(s.from).time}`}
           />
         ))}
-        {minute !== null && <span className="v4-clock__needle" style={{ left: `${(minute / WEEK_MINUTES) * 100}%` }} />}
+        {minute !== null && (
+          <span className="v4-clock__needle" style={{ left: `${(minute / WEEK_MINUTES) * 100}%` }}><b>Now</b></span>
+        )}
       </div>
       <ol className="v4-clock__days" aria-hidden="true">
         {DAYS.map((d) => <li key={d}>{d}</li>)}
       </ol>
       <ul className="v4-clock__key" aria-label="Session colours">
         {(["OVERNIGHT", "PRE", "REGULAR", "POST", "CLOSED"] as Phase[]).map((p) => (
-          <li key={p}><i style={{ background: PHASE_META[p].css }} />{PHASE_META[p].label}</li>
+          <li key={p}><i style={{ background: PHASE_META[p].css }} />{PHASE_META[p].label} <small>{feePercent(BASE_FEE_UNITS[p])}</small></li>
         ))}
       </ul>
     </div>

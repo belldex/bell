@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/components/landing/gyevo/landing.css";
 import "@/components/landing/gyevo/bell-control-room.css";
+import "@/components/landing/gyevo/auction-section.css";
 import "@/components/v4/v4.css";
 import { V4Page } from "@/components/v4/v4-page";
 
