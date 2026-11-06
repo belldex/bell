@@ -33,6 +33,7 @@ import { runChainlinkStatus } from './chainlink-status.mjs';
 import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.mjs';
+import { readAuctionSnapshots } from './auction-read.mjs';
 
 export { KeeperState };
 
@@ -989,7 +990,7 @@ const worker = {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
-    const isPublicRead = ['/quote', '/pools', '/positions', '/status'].includes(url.pathname);
+    const isPublicRead = ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -1034,6 +1035,31 @@ const worker = {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);
         console.error('pool directory failed', error?.name ?? 'Error', detail);
         return cors(json({ error: 'Live pool discovery is temporarily unavailable' }, error.status || 503));
+      }
+    }
+    if (url.pathname === '/auctions') {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      const registry = env.BELL_AUCTION_REGISTRY;
+      const rpcUrl = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
+      if (!registry || !rpcUrl) return cors(json({ auctions: {} }));
+      const hex = /^0x[0-9a-fA-F]{64}$/;
+      const pools = (url.searchParams.get('pools') || '').split(',').filter(Boolean);
+      if (pools.length > 50 || !pools.every((id) => hex.test(id))) return cors(json({ error: 'invalid pools' }, 400));
+      const auction = url.searchParams.get('auction');
+      const cycle = Number(url.searchParams.get('cycle'));
+      if (auction !== null && !/^0x[0-9a-fA-F]{40}$/.test(auction)) return cors(json({ error: 'invalid auction' }, 400));
+      try {
+        const client = createPublicClient({ transport: http(rpcUrl) });
+        const result = await readAuctionSnapshots(client, {
+          registry, pools: pools.map((poolId) => ({ poolId })),
+          ...(auction === null ? {} : { auction, cycle }),
+        });
+        return cors(json(auction === null ? { auctions: result } : { cycle: result }));
+      } catch (error) {
+        const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 160);
+        console.error('auction read failed', detail);
+        const clientError = /not a bound auction|cycle out of range/.test(detail);
+        return cors(json({ error: clientError ? detail : 'Live auction reads are temporarily unavailable' }, clientError ? 400 : 503));
       }
     }
     if (url.pathname === '/positions') {

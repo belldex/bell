@@ -167,7 +167,7 @@ test('Mainnet banner reads live per-asset Chainlink freshness from the Worker', 
 
 test('quote and pool Worker reads are public, no-store and CORS enabled', async () => {
   const worker = await read('../../../workers/keeper-b/src/index.ts');
-  assert.match(worker, /\['\/quote', '\/pools', '\/positions', '\/status'\]/);
+  assert.match(worker, /\['\/quote', '\/pools', '\/positions', '\/status', '\/auctions'\]/);
   assert.match(worker, /access-control-allow-origin', '\*'/);
   assert.match(worker, /'cache-control': 'no-store'/);
   assert.match(worker, /BELL_POOL_FACTORY/);
