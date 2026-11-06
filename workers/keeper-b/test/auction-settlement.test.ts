@@ -78,6 +78,39 @@ describe('auction settlement selection', () => {
     expect(result.results[0]).toMatchObject({ status: 'settled', txHash: '0xsettled', hook, cycleId: 7 });
   });
 
+  it('reads every pool through batched multicalls so a busy tick stays under the subrequest cap', async () => {
+    const auction = addr('6');
+    const pools = ['1', '2', '3', '4', '5'].map((id) => ({ hook: addr(id), poolId: `0x${id.repeat(64)}`, poolManager: addr('8') }));
+    const batches: number[] = [];
+    const publicClient = {
+      getChainId: async () => 4663,
+      // A per-pool readContract would cost one subrequest each; it must not be used when multicall exists.
+      readContract: async () => { throw new Error('per-pool read used'); },
+      multicall: async ({ contracts }: any) => {
+        batches.push(contracts.length);
+        return contracts.map(({ functionName }: any) => ({
+          auctionFor: auction, currentStage: 4, blocksSwaps: false, openTime: 1_000n, cycleDeadline: 1_900n, cycleId: 2n,
+        } as any)[functionName]);
+      },
+      simulateContract: async (request: any) => ({ request, result: false }),
+      waitForTransactionReceipt: async () => ({ status: 'success' }),
+    };
+    const result = await settleBellAuctions({
+      BELL_AUCTION_REGISTRY: addr('9'),
+      BELL_TRANSACTION_PRIVATE_KEY: `0x${'1'.repeat(64)}`,
+      RH_MAINNET_RPC_PRIMARY: 'https://rpc.invalid',
+      BELL_EXPECTED_CHAIN_ID: '4663',
+    }, {
+      nowSeconds: 1_500,
+      publicClient: publicClient as any,
+      walletClient: { writeContract: async () => '0xtx' } as any,
+      fetchPools: async () => ({ pools }),
+    });
+    expect(batches.slice(0, 2)).toEqual([5, 25]); // one batch to find auctions, one to scan all of them
+    expect(result.results.every((entry: any) => entry.status !== 'failed')).toBe(true);
+    expect(batches.slice(2).every((size) => size === 5)).toBe(true); // re-reads are one batch per auction, not one call per field
+  });
+
   it('uses a separate log-capable client for pool discovery when provided', async () => {
     const primaryClient = { getChainId: async () => 4663 };
     const directoryClient = {};

@@ -173,27 +173,29 @@ export async function settleBellAuctions(env, {
   }
 
   const registryAddress = registry as `0x${string}`;
-  const bound = await Promise.all(pools.map(async (pool) => {
-    try {
-      const auction = await publicClient.readContract({
-        address: registryAddress,
-        abi: AUCTION_REGISTRY_ABI,
-        functionName: 'auctionFor',
-        args: [pool.poolId],
-      });
-      if (auction === '0x0000000000000000000000000000000000000000') return null;
-      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = await Promise.all([
-        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'currentStage' }),
-        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'blocksSwaps' }),
-        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'openTime' }),
-        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'cycleDeadline' }),
-        publicClient.readContract({ address: auction, abi: AUCTION_ABI, functionName: 'cycleId' }),
-      ]);
+  // A cron tick already spends many subrequests (calendar, recovery, pool directory). Cloudflare aborts
+  // an invocation at 50, which made every auction read fail with "HTTP request failed". Batch the reads
+  // through Multicall3 so the whole auction scan costs two subrequests, however many pools exist.
+  const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+  const readBatch = (contracts) => (typeof publicClient.multicall === 'function'
+    ? publicClient.multicall({ contracts, allowFailure: false, multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11' })
+    : Promise.all(contracts.map((contract) => publicClient.readContract(contract))));
+  let bound;
+  try {
+    const found = await readBatch(pools.map((pool) => ({
+      address: registryAddress, abi: AUCTION_REGISTRY_ABI, functionName: 'auctionFor', args: [pool.poolId],
+    })));
+    const boundPools = pools.map((pool, index) => ({ pool, auction: found[index] })).filter((entry) => entry.auction !== ZERO_ADDRESS);
+    const fields = ['currentStage', 'blocksSwaps', 'openTime', 'cycleDeadline', 'cycleId'];
+    const values = await readBatch(boundPools.flatMap(({ auction }) => fields.map((functionName) => ({ address: auction, abi: AUCTION_ABI, functionName }))));
+    bound = boundPools.map(({ pool, auction }, index) => {
+      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = values.slice(index * fields.length, (index + 1) * fields.length);
       return { pool, auction, stage: Number(stage), blocksSwaps, openTime: Number(openTime), cycleDeadline: Number(cycleDeadline), cycleId: Number(cycleId) };
-    } catch (error) {
-      return { pool, error: String(error?.shortMessage ?? error?.message ?? error).slice(0, 160) };
-    }
-  }));
+    });
+  } catch (error) {
+    const reason = String(error?.shortMessage ?? error?.message ?? error).slice(0, 160);
+    bound = pools.map((pool) => ({ pool, error: reason }));
+  }
 
   const byPoolId = Object.fromEntries(bound.filter(Boolean).filter((x) => !x.error).map((x) => [
     x.pool.poolId.toLowerCase(),
@@ -246,13 +248,9 @@ export async function settleBellAuctions(env, {
   for (const item of bound) {
     if (!item || item.error) continue;
     try {
-      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = await Promise.all([
-        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'currentStage' }),
-        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'blocksSwaps' }),
-        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'openTime' }),
-        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'cycleDeadline' }),
-        publicClient.readContract({ address: item.auction, abi: AUCTION_ABI, functionName: 'cycleId' }),
-      ]);
+      const [stage, blocksSwaps, openTime, cycleDeadline, cycleId] = await readBatch(
+        ['currentStage', 'blocksSwaps', 'openTime', 'cycleDeadline', 'cycleId']
+          .map((functionName) => ({ address: item.auction, abi: AUCTION_ABI, functionName })));
       item.stage = Number(stage);
       item.blocksSwaps = blocksSwaps;
       item.openTime = Number(openTime);

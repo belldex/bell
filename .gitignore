@@ -26,3 +26,4 @@ evidence/private/
 # vercel
 .vercel
 .env*.local
+contracts/.verify/

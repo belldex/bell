@@ -1,0 +1,234 @@
+[
+ {
+  "group": "Core registries & router",
+  "label": "safetyController",
+  "name": "SafetyController",
+  "file": "src/SafetyController.sol",
+  "address": "0x7243cf13f0308edd4a0397551042fea3cf9da179",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Core registries & router",
+  "label": "assetRegistry",
+  "name": "AssetRegistry",
+  "file": "src/registries/AssetRegistry.sol",
+  "address": "0x0d9c0c8b2065b08a8ad4abc861eb128385ef18c6",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Core registries & router",
+  "label": "calendarRegistry",
+  "name": "CalendarRegistry",
+  "file": "src/registries/CalendarRegistry.sol",
+  "address": "0x394983bff2715d57197389f323d807b0d61c05a3",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Core registries & router",
+  "label": "sessionRegistry",
+  "name": "SessionRegistry",
+  "file": "src/registries/SessionRegistry.sol",
+  "address": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Core registries & router",
+  "label": "router",
+  "name": "BellRouter",
+  "file": "src/BellRouter.sol",
+  "address": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Policy & pools",
+  "label": "hookDeployer",
+  "name": "BellHookDeployerV2",
+  "file": "src/BellHookDeployerV2.sol",
+  "address": "0x050a5eba02947cfff5a780534773e82ef7a5024c",
+  "commit": "current"
+ },
+ {
+  "group": "Policy & pools",
+  "label": "poolFactory",
+  "name": "BellPoolFactory",
+  "file": "src/BellPoolFactory.sol",
+  "address": "0xcf3e5c2ae1915631055ca47aaf353f4d2743af50",
+  "commit": "current"
+ },
+ {
+  "group": "Policy & pools",
+  "label": "modeEvaluator",
+  "name": "BellModeEvaluator",
+  "file": "src/BellModeEvaluator.sol",
+  "address": "0xcdab1f3b607190c3e64af70e3a988cb05050bb37",
+  "commit": "current"
+ },
+ {
+  "group": "Policy & pools",
+  "label": "policyOracle",
+  "name": "BellPolicyOracle",
+  "file": "src/BellPolicyOracle.sol",
+  "address": "0x44690b07840c45726d33515df8570be1a51c275b",
+  "commit": "current"
+ },
+ {
+  "group": "Policy & pools",
+  "label": "policyDependencyReader",
+  "name": "BellPolicyDependencyReader",
+  "file": "src/BellPolicyDependencyReader.sol",
+  "address": "0xe950efea664e2a59efea5aa4de90ac5cdeabf205",
+  "commit": "b296daf"
+ },
+ {
+  "group": "Opening Bell Auction",
+  "label": "auctionRegistry",
+  "name": "BellAuctionRegistry",
+  "file": "src/auction/BellAuctionRegistry.sol",
+  "address": "0x0e8515551a9de41fff251705e34a16b20ce9ee95",
+  "commit": "current"
+ },
+ {
+  "group": "Opening Bell Auction",
+  "label": "auctionFactoryModule",
+  "name": "BellAuctionFactoryModule",
+  "file": "src/auction/BellAuctionFactoryModule.sol",
+  "address": "0x8673e11b49137c27be36f4479f83b7690c2a089a",
+  "commit": "current"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "AAPL.directAdapter",
+  "name": "AggregatorAdapter",
+  "file": "src/adapters/AggregatorAdapter.sol",
+  "address": "0xacc5d29a7be56bf54dec5ce66216b22c45461e44",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "AAPL.regularAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x09df1e7a62566c1bcafed8a0b24666c699203850",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "AAPL.extendedAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0xc125e0a940b5b44a313cb10aabf940158af688fb",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "AAPL.overnightAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x2f814f8e59081796622ebdd66d9e08d76b036cc3",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "NVDA.directAdapter",
+  "name": "AggregatorAdapter",
+  "file": "src/adapters/AggregatorAdapter.sol",
+  "address": "0x06b3fede7eac97fafaa4f77eb3653b75c269b7c3",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "NVDA.regularAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x9aad6451bd052ed65086ba853f171ab2f48db19b",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "NVDA.extendedAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x68984740638b3775827d6aca5e68a3e3c67398be",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "NVDA.overnightAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x2286610e61293a6a8c9328e2fccaf529a8ca5e0b",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "TSLA.directAdapter",
+  "name": "AggregatorAdapter",
+  "file": "src/adapters/AggregatorAdapter.sol",
+  "address": "0x88e05a4664748fafcb6fe67c05593129ab0b2692",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "TSLA.regularAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0xfc4448cf35cec33cb29515031992e59178ed996b",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "TSLA.extendedAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0xbb6b6799860bae2a5b935b9723bfb3be0883d774",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink session adapters",
+  "label": "TSLA.overnightAdapter",
+  "name": "ChainlinkEquitySessionAdapter",
+  "file": "src/adapters/ChainlinkEquitySessionAdapter.sol",
+  "address": "0x613fa750060d2727b496350cdfe24d6f20e9593b",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink reference adapters",
+  "label": "ref AAPL/USD",
+  "name": "ChainlinkTokenReferenceAdapter",
+  "file": "src/adapters/ChainlinkTokenReferenceAdapter.sol",
+  "address": "0x4e048280f6a5eada5d7b35e49276934426c71049",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink reference adapters",
+  "label": "ref NVDA/USD",
+  "name": "ChainlinkTokenReferenceAdapter",
+  "file": "src/adapters/ChainlinkTokenReferenceAdapter.sol",
+  "address": "0x9d36ecf35310cb03d1f1d622306963fbedb9efe6",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink reference adapters",
+  "label": "ref TSLA/USD",
+  "name": "ChainlinkTokenReferenceAdapter",
+  "file": "src/adapters/ChainlinkTokenReferenceAdapter.sol",
+  "address": "0x35ce0b38a70c7d3df0d3a33fba2dfdd900298741",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink reference adapters",
+  "label": "ref WETH/USD",
+  "name": "ChainlinkTokenReferenceAdapter",
+  "file": "src/adapters/ChainlinkTokenReferenceAdapter.sol",
+  "address": "0xcf4c113f1b080c950bb9c1798568e9ba22a07de2",
+  "commit": "27924e7"
+ },
+ {
+  "group": "Chainlink reference adapters",
+  "label": "ref USDG/USD",
+  "name": "ChainlinkTokenReferenceAdapter",
+  "file": "src/adapters/ChainlinkTokenReferenceAdapter.sol",
+  "address": "0x5f35813cbaa5a70af6b8a56e47b2c6aba6d95f77",
+  "commit": "27924e7"
+ }
+]

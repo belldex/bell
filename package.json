@@ -70,7 +70,13 @@
     "mainnet:prepare-oracles": "node scripts/deploy/mainnet-prepare-oracles.mjs",
     "mainnet:acceptance": "node scripts/deploy/mainnet-acceptance.mjs",
     "mainnet:keeper-config": "node scripts/deploy/mainnet-keeper-config.mjs",
-    "mainnet:keeper-config:write": "node scripts/deploy/mainnet-keeper-config.mjs --write"
+    "mainnet:keeper-config:write": "node scripts/deploy/mainnet-keeper-config.mjs --write",
+    "bell": "node scripts/auction-cli/bell-v4.mjs",
+    "bell:record": "node scripts/auction-cli/bell-v4.mjs --static",
+    "auction:cli": "node scripts/auction-cli/bell-auction.mjs",
+    "auction:demo": "node scripts/auction-cli/bell-auction.mjs --demo",
+    "auction:verify": "node scripts/auction-cli/bell-verify.mjs",
+    "auction:record": "node scripts/auction-cli/bell-verify.mjs --static"
   },
   "devDependencies": {
     "@chainlink/data-streams-sdk": "2.0.0",
