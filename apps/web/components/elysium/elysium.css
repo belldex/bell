@@ -1,0 +1,27 @@
+/* /elysium: the /proof reading frame plus an at-a-glance strip, pool cards, check rows and the auction figures. */
+
+.el-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; margin:0 auto 2.4rem; border:1px solid var(--lp-line-2); background:var(--lp-line-2); }
+.el-stat { display:grid; gap:.5rem; padding:1.4rem 1.2rem; background:var(--lp-bg,#0b0b0b); }
+.el-stat strong { color:var(--lp-white); font:600 clamp(1.8rem,4vw,2.6rem)/1 var(--lp-font-mono); letter-spacing:-.02em; }
+.el-stat span { color:var(--lp-dim); font:500 .66rem/1.4 var(--lp-font-mono); letter-spacing:.14em; text-transform:uppercase; }
+@media (max-width:700px) { .el-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.el-pools { display:grid; grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr)); gap:1rem; margin:1.4rem 0; }
+.el-pool { display:grid; gap:.7rem; align-content:start; padding:1.2rem; border:1px solid var(--lp-line-2); }
+.el-pool__pair { margin:0; color:var(--lp-white); font:600 1.1rem/1.2 var(--lp-font-mono); }
+.el-pool__kind { margin:0; color:var(--lp-accent-light); font:500 .62rem/1.5 var(--lp-font-mono); letter-spacing:.12em; text-transform:uppercase; }
+.el-pool dl { display:grid; gap:.5rem; margin:.2rem 0 .4rem; }
+.el-pool dl div { display:flex; justify-content:space-between; gap:1rem; color:var(--lp-muted); font-size:.86rem; }
+.el-pool dt { color:var(--lp-dim); }
+.el-pool dd { margin:0; text-align:right; }
+
+.el-checks { margin:1.6rem 0; }
+.el-checks__group { margin:0 0 .8rem; color:var(--lp-dim); font:500 .66rem/1.4 var(--lp-font-mono); letter-spacing:.16em; text-transform:uppercase; }
+.el-check { margin:.8rem 0; }
+.el-check .pf-receipt__hash { word-break:break-all; }
+
+.el-auction { display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr)); gap:1px; margin:1.4rem 0; border:1px solid var(--lp-line-2); background:var(--lp-line-2); }
+.el-auction div { display:grid; gap:.4rem; padding:1.1rem; background:var(--lp-bg,#0b0b0b); }
+.el-auction span { color:var(--lp-dim); font:500 .62rem/1.4 var(--lp-font-mono); letter-spacing:.14em; text-transform:uppercase; }
+.el-auction strong { color:var(--lp-white); font:600 1.15rem/1.3 var(--lp-font-mono); }
+.el-auction small { color:var(--lp-muted); font-size:.8rem; }

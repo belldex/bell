@@ -62,6 +62,7 @@ const RECEIPTS: [string, string | null][] = [
   ["Source code", "https://github.com/belldex/bell"],
   ["All contracts", "/protocol/#contracts"],
   ["Exit liveness proof", "/proof/"],
+  ["Elysium testnet rehearsal", "/elysium/"],
   ["Official X", "https://x.com/BELLdexFi"],
 ];
 
