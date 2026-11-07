@@ -27,6 +27,8 @@ test('every check carries a real transaction hash and a result the page can stat
 
 test('contracts and pools are real addresses on chain 99801', () => {
   assert.equal(data.chainId, 99801);
+  assert.equal(data.contracts.length, 31, 'every address of the deployment is listed');
+  assert.equal(new Set(data.contracts.map((c) => c.address.toLowerCase())).size, 31, 'no address is listed twice');
   for (const c of data.contracts) assert.match(c.address, ADDRESS, c.name);
   assert.equal(data.pools.length, 3);
   for (const p of data.pools) {

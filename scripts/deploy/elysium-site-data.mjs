@@ -23,6 +23,7 @@ const lower = (a) => a.toLowerCase();
 const matchOf = (a) => verification.verified?.[lower(a)] ?? null;
 const row = (group, name, address) => ({ group, name, address, source: matchOf(address) });
 
+const poolPair = (p) => (p.auction == null ? 'tAAPL / WETH' : tests.find((t) => t.test === 'opening auction full cycle' && t.pool.toLowerCase() === p.hook.toLowerCase()) ? 'tNVDA / tUSDG' : 'tAAPL / tUSDG');
 const contracts = [
   ...[['safetyController', 'SafetyController'], ['assetRegistry', 'AssetRegistry'], ['calendarRegistry', 'CalendarRegistry'], ['sessionRegistry', 'SessionRegistry']]
     .map(([k, n]) => row('Registries', n, manifest[k])),
@@ -35,6 +36,22 @@ const contracts = [
   row('Test tokens', 'tAAPL (BELL test)', manifest.testStock),
   row('Test tokens', 'tUSDG (BELL test)', manifest.feeToken),
   ...(rehearsal ? [row('Test tokens', 'tNVDA (BELL test)', rehearsal.stock2)] : []),
+  // Created by the factory inside each pool-creation transaction.
+  ...pools.map((p) => row('Pool hooks (mask 0x2CC0)', `BellHookV2, ${poolPair(p)}`, p.hook)),
+  ...pools.filter((p) => p.auction).map((p) => row('Auctions, one per USDG/stock pool', `BellOpeningAuction, ${poolPair(p)}`, p.auction)),
+  // Rehearsal attestation adapters and helper, deployed from Node scripts.
+  ...(adapters ? [
+    row('Attestation adapters (rehearsal)', 'YahooSourceVerifier', adapters.verifier),
+    row('Attestation adapters (rehearsal)', 'tAAPL direct adapter', adapters.directAdapter),
+    row('Attestation adapters (rehearsal)', 'tAAPL regular adapter', adapters.regularAdapter),
+    row('Attestation adapters (rehearsal)', 'tAAPL extended adapter', adapters.extendedAdapter),
+  ] : []),
+  ...(rehearsal?.adapters ? [
+    row('Attestation adapters (rehearsal)', 'tNVDA direct adapter', rehearsal.adapters.direct),
+    row('Attestation adapters (rehearsal)', 'tNVDA regular adapter', rehearsal.adapters.regular),
+    row('Attestation adapters (rehearsal)', 'tNVDA extended adapter', rehearsal.adapters.extended),
+  ] : []),
+  ...(executor ? [row('Rehearsal helper', 'TestnetSwapExecutor', executor.executor)] : []),
 ];
 
 // Pool labels. The pool with the rehearsal auction cycle is the tNVDA pool; the other auction pool is tAAPL / tUSDG.

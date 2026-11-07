@@ -78,7 +78,7 @@ export function ElysiumPage() {
           <div className="legal__body">
             <Section id="deployed" n={1} title="What is deployed">
               <p>
-                The contracts are the ones running on Robinhood Chain, with no change to any of them. The only additions are test tokens named <code>(BELL test)</code>, which cannot pass for a real asset. Uniswap v4 had no published address on Elysium testnet, so BELL deployed its own PoolManager and PositionManager.
+                The contracts are the ones running on Robinhood Chain, with no change to any of them. The only additions are test tokens named <code>(BELL test)</code>, which cannot pass for a real asset, rehearsal price adapters for those tokens, and a helper that swaps straight on the PoolManager. Hooks and auctions are created by the factory inside each pool-creation transaction. Uniswap v4 had no published address on Elysium testnet, so BELL deployed its own PoolManager and PositionManager.
               </p>
               {groups.map((g) => (
                 <div key={g} className="pf-scroll">

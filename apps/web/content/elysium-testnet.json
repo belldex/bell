@@ -2,9 +2,9 @@
   "chainId": 99801,
   "network": "Elysium testnet",
   "explorer": "https://testnet.elysium.kinetiq.xyz",
-  "generatedAt": "2026-11-07T15:32:49.461Z",
+  "generatedAt": "2026-11-07T16:01:10.086Z",
   "stats": {
-    "contracts": 18,
+    "contracts": 31,
     "pools": 3,
     "checks": 12,
     "auctions": 1
@@ -116,6 +116,84 @@
       "group": "Test tokens",
       "name": "tNVDA (BELL test)",
       "address": "0x6f83f4ad84b0dd99dbdd5de366a0dfb23de0a4b1",
+      "source": "partial"
+    },
+    {
+      "group": "Pool hooks (mask 0x2CC0)",
+      "name": "BellHookV2, tAAPL / WETH",
+      "address": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+      "source": "partial"
+    },
+    {
+      "group": "Pool hooks (mask 0x2CC0)",
+      "name": "BellHookV2, tAAPL / tUSDG",
+      "address": "0x44879463Ef804f935287f045457418dEf786eCc0",
+      "source": "partial"
+    },
+    {
+      "group": "Pool hooks (mask 0x2CC0)",
+      "name": "BellHookV2, tNVDA / tUSDG",
+      "address": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "source": "partial"
+    },
+    {
+      "group": "Auctions, one per USDG/stock pool",
+      "name": "BellOpeningAuction, tAAPL / tUSDG",
+      "address": "0x14aF86C9C6EAB5F99174b14B55D01a89fE3912dB",
+      "source": "partial"
+    },
+    {
+      "group": "Auctions, one per USDG/stock pool",
+      "name": "BellOpeningAuction, tNVDA / tUSDG",
+      "address": "0xBEA9E171aFB7122F325aADBF9EE39Da03446f931",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "YahooSourceVerifier",
+      "address": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tAAPL direct adapter",
+      "address": "0x87dd96d10c3ac4022b3fdf0ebf577b6e7a56cee2",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tAAPL regular adapter",
+      "address": "0x046eaaf4ff343a44f50b4b8c73f600b692f59c50",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tAAPL extended adapter",
+      "address": "0xa034c4063072332905fb5ec5444a55e89c6834aa",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tNVDA direct adapter",
+      "address": "0x8ff868679315542da29b30df205c8d59bd4ee0be",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tNVDA regular adapter",
+      "address": "0x1979ee0496d102c99b71b7ca188c938bd4b9d798",
+      "source": "partial"
+    },
+    {
+      "group": "Attestation adapters (rehearsal)",
+      "name": "tNVDA extended adapter",
+      "address": "0xb2eb043eeb9987eb34c6673329d0f510a9546db1",
+      "source": "partial"
+    },
+    {
+      "group": "Rehearsal helper",
+      "name": "TestnetSwapExecutor",
+      "address": "0x7603931a349310a433daf91de279fe31988204c8",
       "source": "partial"
     }
   ],
@@ -278,7 +356,7 @@
   },
   "verification": {
     "full": 0,
-    "partial": 18,
+    "partial": 31,
     "none": 0,
     "status": "partially verified",
     "meaning": "Source, ABI and constructor arguments are published and match. The explorer reports a partial match for every address, which means the deployed bytecode equals the compiled bytecode except for the metadata hash. None is a full match.",
