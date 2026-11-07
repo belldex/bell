@@ -24,6 +24,8 @@ if (CHAIN_FLAG && !ELYSIUM) {
   console.error(`unknown chain "${CHAIN_FLAG}". Supported: elysium-testnet (the default is Robinhood Chain mainnet, chain 4663).`);
   process.exit(2);
 }
+// The Elysium walkthrough is its own module: it paces itself, reads the chain live and never returns here.
+if (ELYSIUM) await import("./bell-elysium.mjs");
 const STATIC = ARGS.has("--static") || ARGS.has("--demo");
 const SNAPSHOT = ARGS.has("--snapshot");
 const AUTO = ARGS.has("--auto");

@@ -177,9 +177,11 @@ Foundry also refuses to write there if the `deployments/` folder is missing, so 
 
 ## Recording
 
-`node scripts/auction-cli/bell-v4.mjs --chain elysium-testnet` reads the chain live (every address with `eth_getCode`), the
-pools from the factory evidence, and the receipts from the test evidence. `--static` replays a snapshot taken with
-`--snapshot`, for a recording that does not depend on the network. Without `--chain` the CLI behaves exactly as before.
+`node scripts/auction-cli/bell-elysium.mjs` (or `node scripts/auction-cli/bell-v4.mjs --chain elysium-testnet`) is a paced walkthrough of
+eight scenes. It reads the chain live: the latest block, the code at every one of the 31 addresses, each hook's permissions
+drawn from its own address, each pool's current policy, the receipt of each of the 12 checks, and the settled auction.
+Press Enter between scenes, which suits a recording. `--auto` advances on a timer and `--fast` shortens every pause. Without
+`--chain` the v4 CLI behaves exactly as before.
 
 ## Next steps
 
