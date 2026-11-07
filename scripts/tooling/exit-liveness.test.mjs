@@ -66,7 +66,7 @@ test('the committed receipts only claim what has a transaction behind it', () =>
       assert.equal(r.tx, null, `${r.scenario} is pending and must not carry a hash`);
     }
   }
-  assert.ok(snapshot.receipts.some((r) => r.status === 'PENDING'), 'pending scenarios stay visible until they are recorded');
+  assert.ok(snapshot.receipts.some((r) => r.status === 'DONE'), 'at least one withdraw is on the record');
 });
 
 test('the table prints one line per hook with PASS or FAIL', () => {

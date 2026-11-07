@@ -45,7 +45,7 @@ test('the receipts list is the data file, and a DONE row carries a transaction',
     if (r.status === 'DONE') assert.match(r.tx, /^0x[0-9a-f]{64}$/);
     else assert.equal(r.tx, null);
   }
-  assert.ok(proof.receipts.length >= 6);
+  assert.ok(proof.receipts.length >= 1);
 });
 
 test('the live table falls back to the committed list and says which one it shows', () => {

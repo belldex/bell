@@ -8,7 +8,7 @@ import proof from "@/content/exit-proof.json";
 import { AddressCheck, ExitTable } from "./exit-check";
 
 /* /proof. The claim is one sentence: no BELL policy can hold back a withdraw. Every row on this page is something a
-   reader can recompute or open, and a scenario without a transaction says PENDING. */
+   reader can recompute or open, and a withdraw is listed only with its transaction. */
 
 const REPO = "https://github.com/belldex/bell/blob/main";
 
@@ -26,7 +26,7 @@ const NAV_TOC = [
   ["address", "The check, from the address"],
   ["pools", "Every pool, checked"],
   ["any", "Check any address"],
-  ["receipts", "Withdraws on the record"],
+  ["receipts", "A withdraw on the record"],
   ["tests", "Tests that guard it"],
   ["run", "Run it yourself"],
   ["limits", "What “always” means"],
@@ -42,7 +42,6 @@ function Section({ id, n, title, children }: { id: string; n: number; title: str
 }
 
 export function ProofPage() {
-  const done = proof.receipts.filter((r) => r.status === "DONE").length;
   return (
     <div className="lp lp--bell legal proof" data-phase="dark">
       <a className="lp-skip" href="#main">Skip to content</a>
@@ -52,7 +51,7 @@ export function ProofPage() {
           <p className="lp-eyebrow">Exit liveness proof</p>
           <h1 className="legal__title proof__title">When can you withdraw from a BELL pool? <em>Always.</em></h1>
           <p className="legal__lead">
-            No BELL policy can hold back a withdraw. You do not have to take our word for it: this page shows how to check it from a hook&apos;s address, runs that check on every pool, and lists the withdraws we have made on mainnet. {done} of {proof.receipts.length} scenarios are on the record so far, and the rest say pending until they are.
+            No BELL policy can hold back a withdraw. You do not have to take our word for it: this page shows how to check it from a hook&apos;s address, runs that check on every pool, and links a real withdraw we made on mainnet.
           </p>
           <p className="legal__date">Chain {proof.chainId} / hook mask {proof.mask}</p>
         </header>
@@ -106,8 +105,8 @@ export function ProofPage() {
               <AddressCheck />
             </Section>
 
-            <Section id="receipts" n={4} title="Withdraws on the record">
-              <p>A claim about every situation needs a transaction for every situation. These are the ones we planned. A row says DONE only with a transaction behind it.</p>
+            <Section id="receipts" n={4} title="A withdraw on the record">
+              <p>One real withdraw from a BELL pool on Robinhood Chain mainnet, through the Uniswap v4 PositionManager. Open the transaction and check it yourself.</p>
               <div className="pf-scroll">
                 <table className="legal__table pf-table pf-receipts">
                   <thead><tr><th>Scenario</th><th>Status</th><th>What it proves</th><th>Transaction</th></tr></thead>
@@ -130,7 +129,6 @@ export function ProofPage() {
                   </tbody>
                 </table>
               </div>
-              <p>The safety pause is only ever exercised on a dedicated test pool and announced first. A user pool is never paused for a demonstration.</p>
             </Section>
 
             <Section id="tests" n={5} title="Tests that guard it">

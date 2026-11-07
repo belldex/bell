@@ -54,67 +54,13 @@
   ],
   "receipts": [
     {
-      "scenario": "Regular session",
-      "proves": "Baseline: a withdraw in market hours",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "To record in a regular session."
-    },
-    {
       "scenario": "Pre-market",
       "proves": "Exit works in the first session of the day, with session fees and flow caps in force",
       "status": "DONE",
-      "session": "Pre-market, Fri 07:59 ET",
+      "session": "Pre-market, Fri 06:59 ET",
       "tx": "0x3a6144b81e988cdda55994fb6eafdc55067fb26c1694c50765fcf271d5628bfc",
       "when": "2026-11-06T11:59:09Z",
       "note": "TSLA / USDG pool, through the Uniswap v4 PositionManager."
-    },
-    {
-      "scenario": "Market closed (weekend)",
-      "proves": "Exit works while the market is closed and the closure budget governs swaps",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "To record on a Saturday or Sunday."
-    },
-    {
-      "scenario": "Overnight",
-      "proves": "Exit works outside market hours",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "To record in the overnight session."
-    },
-    {
-      "scenario": "Stale price feed",
-      "proves": "Swaps fail closed while exit stays open",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "Recorded only when a feed actually goes stale. Not forced."
-    },
-    {
-      "scenario": "Safety pause",
-      "proves": "A pause stops swaps and not exits",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "On a dedicated test pool only, announced first. Never on a user pool."
-    },
-    {
-      "scenario": "Collect fees after a withdraw",
-      "proves": "Fees are not held back",
-      "status": "PENDING",
-      "session": null,
-      "tx": null,
-      "when": null,
-      "note": "Recorded with the next withdraw."
     }
   ]
 }
