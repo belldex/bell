@@ -15,6 +15,7 @@ import {BellPoolFactory} from "../src/BellPoolFactory.sol";
 import {IBellHookDeployer} from "../src/interfaces/IBellHookDeployer.sol";
 import {BellRouter} from "../src/BellRouter.sol";
 import {WETH} from "solmate/src/tokens/WETH.sol";
+import {TestToken} from "../src/fixtures/TestToken.sol";
 import {PoolConfig} from "../src/types/ProtocolTypes.sol";
 import {PoolManager} from "@uniswap/v4-core/src/PoolManager.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
@@ -49,11 +50,14 @@ interface VmDeploy {
 ///
 /// Run testnet: forge script script/DeployTestnet.s.sol --rpc-url $RH_TESTNET_RPC_PRIMARY --broadcast
 /// Run mainnet: forge script script/DeployTestnet.s.sol --rpc-url $RH_MAINNET_RPC_PRIMARY --broadcast
+/// Run Elysium testnet: FOUNDRY_PROFILE=elysium_testnet forge script script/DeployTestnet.s.sol --broadcast --skip-simulation
 contract DeployTestnet {
     VmDeploy private constant vm = VmDeploy(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     uint256 internal constant TESTNET_CHAIN_ID = 46630;
     uint256 internal constant MAINNET_CHAIN_ID = 4663;
+    /// @dev Elysium testnet (Kinetiq, Arbitrum Orbit on Hyperliquid). Same contracts, same script, testnet roles.
+    uint256 internal constant ELYSIUM_TESTNET_CHAIN_ID = 99801;
     address internal constant CANONICAL_PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     uint256 internal constant POSITION_MANAGER_UNSUBSCRIBE_GAS_LIMIT = 100000;
 
@@ -71,11 +75,16 @@ contract DeployTestnet {
         address poolFactory;
         address weth;
         address router;
+        address feeToken;
+        address testStock; // Elysium testnet only: "tAAPL (BELL test)"; the quote is feeToken, "tUSDG (BELL test)"
     }
 
     function run() external returns (Deployment memory d) {
         bool isMainnet = block.chainid == MAINNET_CHAIN_ID;
-        require(isMainnet || block.chainid == TESTNET_CHAIN_ID, "wrong chain: expected Robinhood 4663 or 46630");
+        require(
+            isMainnet || block.chainid == TESTNET_CHAIN_ID || block.chainid == ELYSIUM_TESTNET_CHAIN_ID,
+            "wrong chain: expected Robinhood 4663 or 46630, or Elysium testnet 99801"
+        );
 
         uint256 pk = _deployerKey(isMainnet);
         address deployer = vm.addr(pk);
@@ -152,6 +161,17 @@ contract DeployTestnet {
         // Governance latency is a deployment parameter, not a network property. It defaults to 0 so
         // a launch can go live in one block; raise it with BELL_GOVERNANCE_DELAY_SECONDS once the
         // operator set is ready for a real timelock.
+        // Elysium testnet has no stock token and no USDG, so the rehearsal brings its own, named so they cannot pass for
+        // real assets. An explicitly supplied fee token still wins.
+        if (block.chainid == ELYSIUM_TESTNET_CHAIN_ID) {
+            if (feeToken == address(0)) {
+                feeToken = address(new TestToken("tUSDG (BELL test)", "tUSDG", 6, deployer, 100_000e6));
+                TestToken(feeToken).mint(deployer, 10_000_000e6);
+            }
+            d.testStock = address(new TestToken("tAAPL (BELL test)", "tAAPL", 18, deployer, 1_000e18));
+            TestToken(d.testStock).mint(deployer, 100_000e18);
+            d.feeToken = feeToken;
+        }
         uint32 governanceDelay = uint32(vm.envOr("BELL_GOVERNANCE_DELAY_SECONDS", uint256(0)));
         uint32 calendarLead = uint32(vm.envOr("BELL_CALENDAR_PUBLICATION_LEAD_SECONDS", uint256(0)));
         uint32 operationExpiry = uint32(vm.envOr("BELL_OPERATION_EXPIRY_SECONDS", uint256(604800)));
@@ -217,6 +237,7 @@ contract DeployTestnet {
     function _writeManifest(
         Deployment memory d, address deployer, address treasury, address recipient, address feeToken, bool isMainnet
     ) private {
+        if (d.feeToken != address(0)) feeToken = d.feeToken;
         string memory p1 = string.concat(
             '{\n  "chainId": ', vm.toString(block.chainid),
             ',\n  "deployer": "', _hex(deployer),
@@ -243,16 +264,21 @@ contract DeployTestnet {
         string memory p4 = string.concat(
             '",\n  "weth": "', _hex(d.weth),
             '",\n  "router": "', _hex(d.router),
+            d.testStock == address(0) ? "" : string.concat('",\n  "testStock": "', _hex(d.testStock)),
             '",\n  "status": "', isMainnet ? "PRODUCTION" : "REHEARSAL",
             '",\n  "note": "', isMainnet
                 ? "PRICE_GUARDED stays blocked until an independent reference is admitted."
-                : "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked.",
+                : d.testStock != address(0)
+                    ? "testStock is tAAPL (BELL test) and feeToken is tUSDG (BELL test): test tokens with no value. PRICE_GUARDED remains blocked."
+                    : "FeeToken zero means FeeTokenNotBound fail-closed; PRICE_GUARDED remains blocked.",
             '"\n}\n'
         );
         string memory json = string.concat(p1, p2, p3, p4);
         string memory defaultPath = isMainnet
             ? "../evidence/deploy/mainnet-4663.json"
-            : "../evidence/deploy/testnet-46630.json";
+            : block.chainid == ELYSIUM_TESTNET_CHAIN_ID
+                ? "../deployments/elysium-testnet.json"
+                : "../evidence/deploy/testnet-46630.json";
         string memory manifestPath = vm.envOr("BELL_MANIFEST_PATH", defaultPath);
         vm.writeFile(manifestPath, json);
     }

@@ -17,7 +17,7 @@ optimizer_runs = 1
 via_ir = true
 evm_version = "cancun"
 bytecode_hash = "none"
-fs_permissions = [{ access = "read-write", path = "../evidence" }]
+fs_permissions = [{ access = "read-write", path = "../evidence" }, { access = "read-write", path = "../deployments" }]
 
 [fuzz]
 runs = 100000
@@ -26,3 +26,9 @@ runs = 100000
 runs = 10000
 depth = 100
 fail_on_revert = true
+
+# Elysium testnet (Kinetiq's Arbitrum Orbit L2 on Hyperliquid), chain 99801, gas in HYPE.
+# Cancun opcodes (TSTORE, MCOPY) and the canonical Permit2, CREATE2 proxy and Multicall3 are present on it.
+[profile.elysium_testnet]
+eth_rpc_url = "https://testnet-rpc.elysium.kinetiq.xyz"
+chain_id = 99801
