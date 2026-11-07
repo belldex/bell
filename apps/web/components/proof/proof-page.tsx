@@ -18,6 +18,8 @@ const TESTS: { file: string; name: string; what: string }[] = [
   { file: "contracts/test/integration/public-lp/PublicPositionManager.t.sol", name: "testPublicInKindExitWithStaleHealthAndCalendar", what: "Health and calendar data gone stale: the owner still exits." },
   { file: "contracts/test/integration/public-lp/PublicPositionManager.t.sol", name: "testPublicInKindExitWithAllBellDependenciesUnavailable", what: "Every BELL dependency reverts on read: the owner still exits." },
   { file: "contracts/test/integration/public-lp/PublicPositionManager.t.sol", name: "testPublicInKindExitClosedLatchedAndExhaustedBudgets", what: "Market closed, closure latched and every flow budget spent: the owner still exits." },
+  { file: "contracts/test/invariant/exit/ExitLivenessFuzz.t.sol", name: "testFuzzOwnerCanAlwaysExitAfterAnySequenceOfBellEvents", what: "The fuzzer combines pauses, dead dependencies, stale time, a latched closure and spent budgets in any order. After every step the owner removes all liquidity in kind and BELL's state is unchanged." },
+  { file: "contracts/test/invariant/exit/ExitLivenessFuzz.t.sol", name: "testOwnerExitsAfterEveryEventAtOnce", what: "Every kind of event stacked on one pool, in a fixed order, so a regression names itself without a seed." },
 ];
 
 const NAV_TOC = [
@@ -141,7 +143,7 @@ export function ProofPage() {
                   </li>
                 ))}
               </ul>
-              <p>A randomised invariant test over arbitrary sequences of swaps, adds, pauses, session changes and stale feeds is not written yet. Until it is, this page does not claim one.</p>
+              <p>The randomised test draws up to 24 events per run and 1,500 runs per pass. It checks the exit after each event on a snapshot it then rolls back. It does not cover swaps, which BELL is allowed to stop, or the Uniswap contracts themselves.</p>
             </Section>
 
             <Section id="run" n={6} title="Run it yourself">

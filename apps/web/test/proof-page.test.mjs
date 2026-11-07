@@ -22,7 +22,9 @@ test('the page states the claim and its limits, and does not overclaim', () => {
   assert.match(page, /Uniswap v4 PositionManager and PoolManager/);
   assert.match(page, /Only exits are guaranteed/);
   assert.match(page, /independent security audit is not complete/i);
-  assert.match(page, /not written yet/i, 'the missing invariant test is stated, not implied');
+  assert.match(page, /ExitLivenessFuzz\.t\.sol/, 'the fuzz test is linked');
+  assert.doesNotMatch(page, /not written yet/i);
+  assert.match(page, /does not cover swaps/i, 'what the fuzz test leaves out is stated');
   assert.doesNotMatch(page, /guarantee(s|d)? (that )?(you|your funds)/i);
 });
 
