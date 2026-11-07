@@ -1,0 +1,7 @@
+{
+  "chainId": 99801,
+  "executor": "0x7603931a349310a433daf91de279fe31988204c8",
+  "deployTx": "0xf619e5f7bb7cf8c6c7e9a46fab049506b1b104516d2c22e3d9ddc7c0d909d3f2",
+  "poolManager": "0x6cbab0a9c85ad2ca9d451875360065d39d6f4f5e",
+  "note": "Rehearsal helper: swaps directly on the PoolManager with empty hookData. Holds no funds and no allowance."
+}

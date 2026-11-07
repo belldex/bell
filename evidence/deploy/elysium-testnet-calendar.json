@@ -1,0 +1,14 @@
+{
+  "chainId": 99801,
+  "assetId": "0x6d9dc7a512688789c840b27636b18948fbaf9f4066ea40d50d8858f7efbe1479",
+  "root": "0xff840e11658fbfe769b0dcaf249f4d001b6ef30853bc3100339aa5395626391a",
+  "operationId": "0x3d55b175726f8e1fa2cb0a73d2b3d74674e555795770244dbe8237fdf3f7b2d8",
+  "year": 2026,
+  "coverageStart": 1794056986,
+  "coverageEnd": 1797944986,
+  "leafCount": 130,
+  "activePhase": 5,
+  "activeStart": 1794056986,
+  "activeEnd": 1794186000,
+  "committedAt": "2026-11-07T13:09:46.675Z"
+}

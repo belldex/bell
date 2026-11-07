@@ -1,0 +1,53 @@
+{
+  "chainId": 99801,
+  "stockToken": "0x4ed7166e5ffe57a1575eeae0d667d95bb8a81f1a",
+  "reporter": "0x7b0b8b0aDb59Ba3Ad2dFFFa4DCC971f0490572c3",
+  "verifier": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+  "verifierCodeHash": "0xb8283d6e8abd36df173f5405da63f0355da646e9c0c0bb5a955edbaf656d7722",
+  "directAdapter": "0x87dd96d10c3ac4022b3fdf0ebf577b6e7a56cee2",
+  "regularAdapter": "0x046eaaf4ff343a44f50b4b8c73f600b692f59c50",
+  "extendedAdapter": "0xa034c4063072332905fb5ec5444a55e89c6834aa",
+  "directWire": {
+    "kind": 1,
+    "phaseScope": 0,
+    "endpoint": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "feedId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "schema": 0,
+    "decimals": 18,
+    "priceBasis": 2,
+    "heartbeatSec": 120,
+    "expectedCodeHash": "0xb8283d6e8abd36df173f5405da63f0355da646e9c0c0bb5a955edbaf656d7722",
+    "expectedImplementation": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "canonicalTokenId": "0x46ccfcf2e3b5683656a990145c663299fed25449f4a38dbd22ecb3023bd51cbb"
+  },
+  "regularWire": {
+    "kind": 3,
+    "phaseScope": 1,
+    "endpoint": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "feedId": "0xe0191b64923c20f5760f4993778c3fb836c4d6d27b35733bc4cd73dc27e65e2b",
+    "schema": 12,
+    "decimals": 18,
+    "priceBasis": 1,
+    "heartbeatSec": 120,
+    "expectedCodeHash": "0xb8283d6e8abd36df173f5405da63f0355da646e9c0c0bb5a955edbaf656d7722",
+    "expectedImplementation": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "canonicalTokenId": "0x46ccfcf2e3b5683656a990145c663299fed25449f4a38dbd22ecb3023bd51cbb"
+  },
+  "extendedWire": {
+    "kind": 3,
+    "phaseScope": 2,
+    "endpoint": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "feedId": "0x6db5b18a4a76ac8566c730fdd2ffd64b80bd0147bfb259fc66da07e94f2df3f9",
+    "schema": 12,
+    "decimals": 18,
+    "priceBasis": 1,
+    "heartbeatSec": 120,
+    "expectedCodeHash": "0xb8283d6e8abd36df173f5405da63f0355da646e9c0c0bb5a955edbaf656d7722",
+    "expectedImplementation": "0xe6a37b439e1395aa727258c5b288372099bd2865",
+    "canonicalTokenId": "0x46ccfcf2e3b5683656a990145c663299fed25449f4a38dbd22ecb3023bd51cbb"
+  },
+  "directWireHash": "0x9803a90141cc591b7e890bb2b80664a1ac4c307a10d97aa9af7ad08a70e06b05",
+  "regularWireHash": "0x614e20d1636f837b02520cea6e32694f279e257e2971da767daacb1b7625abda",
+  "extendedWireHash": "0x98d8749f55f707f43f712fd38e2f2708dbb81bfa81f29d1b25cd5feaf2c415a6",
+  "note": "Rehearsal attestation for a test token. tAAPL (BELL test) has no value and these adapters are not a price oracle for any real asset."
+}

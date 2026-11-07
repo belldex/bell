@@ -1,0 +1,17 @@
+{
+  "chainId": 99801,
+  "registry": "0x287c7d94be98cd200cc5afbf33ae7118df3e92f0",
+  "stock": {
+    "token": "0x4ed7166e5ffe57a1575eeae0d667d95bb8a81f1a",
+    "descriptorId": "0x6d9dc7a512688789c840b27636b18948fbaf9f4066ea40d50d8858f7efbe1479"
+  },
+  "tusdg": {
+    "token": "0x61aaa348ea06cf6232dd41593d01a2f36ac1856e",
+    "descriptorId": "0x5133635eaa079e70cc3f7e423306d0c983d045f8a65a9e8da9cdb411aac4f155"
+  },
+  "weth": {
+    "token": "0x049bf33b1512622dcc91757ccdc11a4ba135bb1f",
+    "descriptorId": "0x74aaff6447f36f98127243b74b61342dad136ae153c23c843f5e7a2b633fbad2"
+  },
+  "admittedAt": "2026-11-07T13:07:38.347Z"
+}

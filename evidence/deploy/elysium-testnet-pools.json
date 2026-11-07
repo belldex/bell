@@ -1,0 +1,64 @@
+{
+  "chainId": 99801,
+  "factory": "0xafa3d9de6fec9535a94b4eebf193536de0b69b97",
+  "recordedAt": "2026-11-07T13:30:15.042Z",
+  "pools": [
+    {
+      "hook": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+      "poolId": "0x0dbb644adffcfe1b792d128133fd3696da38f9eb8483fa5e36ea4f4c50b8cdb3",
+      "tokenId": 1,
+      "createTx": "0x023f47fbc90516641f377a6d9e0ce9e5394b6cab1ed163e11eb7c774edf65bc8",
+      "blockNumber": 25666587,
+      "hookMaskOk": true,
+      "lifecycle": 2,
+      "mode": 2,
+      "canSwap": true,
+      "phase": 5,
+      "reasonBits": "0",
+      "seedPrincipal": [
+        "3990853770999727",
+        "39999999999999999988"
+      ],
+      "auction": null,
+      "kind": "SESSION_ONLY"
+    },
+    {
+      "hook": "0x44879463Ef804f935287f045457418dEf786eCc0",
+      "poolId": "0x6ee9428d19321e118593d3a1ee026721103fc9e99fc09e2c572d87a9a4b0cb26",
+      "tokenId": 2,
+      "createTx": "0x7801473a0649545944ff5ebe0736cb29bf8c678a5638fbf48fb16232e2ea5e96",
+      "blockNumber": 25666596,
+      "hookMaskOk": true,
+      "lifecycle": 2,
+      "mode": 2,
+      "canSwap": true,
+      "phase": 5,
+      "reasonBits": "0",
+      "seedPrincipal": [
+        "99999999999999995065",
+        "9858034588"
+      ],
+      "auction": "0x14aF86C9C6EAB5F99174b14B55D01a89fE3912dB",
+      "kind": "SESSION_ONLY + Opening Bell Auction"
+    },
+    {
+      "hook": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "poolId": "0xd5a84566182c03c8850ddde7c0b84d4da88e1caa38c95090db79daaff555eff3",
+      "tokenId": 3,
+      "createTx": "0x041a9513cf564600ba3d206a35af94db79ec38c8e0471f1339e9e65f066cd728",
+      "blockNumber": 25675405,
+      "hookMaskOk": true,
+      "lifecycle": 2,
+      "mode": 2,
+      "canSwap": true,
+      "phase": 5,
+      "reasonBits": "0",
+      "seedPrincipal": [
+        "9858034588",
+        "99999999999999995065"
+      ],
+      "auction": "0xBEA9E171aFB7122F325aADBF9EE39Da03446f931",
+      "kind": "SESSION_ONLY + Opening Bell Auction"
+    }
+  ]
+}

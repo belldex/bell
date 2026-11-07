@@ -1,0 +1,240 @@
+{
+  "chainId": 99801,
+  "entries": [
+    {
+      "test": "swap inside the cap",
+      "pool": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+      "executor": "0x7603931a349310a433daf91de279fe31988204c8",
+      "phase": 5,
+      "mode": 2,
+      "tx": "0xeb949f22087cab220c20e9ec94870532897edc65ce604def129b677d6d925eec",
+      "block": 25669724,
+      "amount0": "19774602234610",
+      "amount1": "-200000000000000000",
+      "closureRemainingBefore": [
+        "80000000000000",
+        "800000000000000000"
+      ],
+      "closureRemainingAfter": [
+        "60225397765390",
+        "600000000000000000"
+      ],
+      "at": "2026-11-07T13:20:19.737Z"
+    },
+    {
+      "test": "swap above the cap reverts",
+      "pool": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+      "executor": "0x7603931a349310a433daf91de279fe31988204c8",
+      "phase": 5,
+      "closureRemaining": [
+        "60225397765390",
+        "600000000000000000"
+      ],
+      "attempted": "1200000000000000000",
+      "tx": "0xb967490e910e2d24e3385d807c638be1caef171c380947735b00c59a5274f973",
+      "block": 25669806,
+      "status": "reverted",
+      "reason": "WrappedError from 0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0 (0xb47b2fb1), inner revert 0xecb1f63f data 0xecb1f63f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006af2a6bd96360000000000000000000000000000000000000000000000000000246139ca8000",
+      "at": "2026-11-07T13:20:28.062Z",
+      "error": {
+        "name": "TradeCapExceeded",
+        "signature": "TradeCapExceeded(uint8,uint256,uint256)",
+        "selector": "0xecb1f63f",
+        "args": {
+          "currency": "0",
+          "amount": "7706405245583491072",
+          "cap": "40000000000000"
+        },
+        "raisedBy": "BellHook.beforeSwap (wrapped by the PoolManager as WrappedError)"
+      }
+    },
+    {
+      "test": "withdraw while the market is CLOSED",
+      "pool": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+      "phase": 5,
+      "tokenId": 1,
+      "tx": "0xdc732ab9b312de8db7e58697f114529f9cee7dd50e2f688eb8e2d04afe20fbe4",
+      "block": 25669837,
+      "liquidityBefore": "1541620367962465240",
+      "liquidityRemoved": "154162036796246524",
+      "liquidityAfter": "1387458331166218716",
+      "received": [
+        "397107916876511",
+        "4021799999999999997"
+      ],
+      "at": "2026-11-07T13:20:32.022Z"
+    },
+    {
+      "test": "swap inside the cap",
+      "pool": "0x44879463Ef804f935287f045457418dEf786eCc0",
+      "executor": "0x7603931a349310a433daf91de279fe31988204c8",
+      "phase": 5,
+      "mode": 2,
+      "tx": "0x1c172931d2bd93cc7555d89b99f474b24ceba8606db62b3c33c3a15a046d1567",
+      "block": 25670443,
+      "amount0": "-200000000000000000",
+      "amount1": "19789772",
+      "closureRemainingBefore": [
+        "2000000000000000000",
+        "200000000"
+      ],
+      "closureRemainingAfter": [
+        "1800000000000000000",
+        "180210228"
+      ],
+      "at": "2026-11-07T13:21:33.389Z"
+    },
+    {
+      "test": "swap while CLOSED, before the auction window",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 5,
+      "phaseName": "CLOSED",
+      "mode": 2,
+      "canSwap": true,
+      "lpFeeUnits": 0,
+      "tx": "0xd57b5addfcdb4075c9a8db61d249ba44b62ce26b9fb11ee63bc1304f7bb44ef1",
+      "block": 25675577,
+      "amount0": "29676993",
+      "amount1": "-300000000000000000",
+      "rollingRemainingBefore": [
+        "5000000000",
+        "50000000000000000000"
+      ],
+      "rollingRemainingAfter": [
+        "4970323007",
+        "49700000000000000000"
+      ],
+      "at": "2026-11-07T13:30:26.428Z"
+    },
+    {
+      "test": "swap during the auction window is blocked",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 5,
+      "mode": 2,
+      "tx": "0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80",
+      "block": 25685019,
+      "status": "reverted",
+      "reason": "WrappedError from 0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0 (0x575e24b4) inner 0xb37f7006 data 0xb37f7006",
+      "at": "2026-11-07T13:47:14.455Z"
+    },
+    {
+      "test": "auction orders submitted",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "auction": "0xBEA9E171aFB7122F325aADBF9EE39Da03446f931",
+      "cycle": 1,
+      "sellOrder": {
+        "id": 0,
+        "tx": "0xe053816dbbdafaaff1f7d2341cdd79dd22e3d8bef290f795973bec14ec390581"
+      },
+      "buyOrder": {
+        "id": 1,
+        "tx": "0x96b8c1967311701e49adc62411bd5c320a3a2ac7a2147717a60c0fc377c8c843"
+      },
+      "at": "2026-11-07T13:47:18.819Z"
+    },
+    {
+      "test": "opening auction full cycle",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "auction": "0xBEA9E171aFB7122F325aADBF9EE39Da03446f931",
+      "cycle": 1,
+      "openTime": 1794059833,
+      "settleTx": "0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda",
+      "settleBlock": 25696000,
+      "finalized": true,
+      "clearingPriceX96": "7843588088912169421",
+      "clearingPriceUsdgPerStock": 98.999999,
+      "matchedBase": "5000000000000000000",
+      "stageBeforeSettle": "LOCKED",
+      "stageAfter": "SETTLED",
+      "allocationSell": {
+        "baseFill": "5000000000000000000",
+        "quotePayout": "495000000"
+      },
+      "allocationBuy": {
+        "baseFill": "5000000000000000000",
+        "quoteRefund": "105000000"
+      },
+      "claimTxs": [
+        "0xccf48e01bb8d5e35e5e21a3a581663995ec782f42365dcaee9f1090d5508e7cb",
+        "0x44b5ec55e7ce54cf71379c26584982d36543375a99ed48fc9bb9d629d0b9919a"
+      ],
+      "netStockChange": "5000000000000000000",
+      "netQuoteChange": "600000000",
+      "keeperNote": "the closure latch was released by two refreshState checkpoints sixty seconds apart before settle",
+      "at": "2026-11-07T14:07:48.981Z"
+    },
+    {
+      "test": "swap in the PRE session",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 1,
+      "phaseName": "PRE",
+      "mode": 1,
+      "canSwap": true,
+      "lpFeeUnits": 0,
+      "tx": "0xad27484c0f93da7835a4ea87458f68853f56c835beeb4bb51a48f77716d0faf0",
+      "block": 25696033,
+      "amount0": "19898770",
+      "amount1": "-200000000000000000",
+      "rollingRemainingBefore": [
+        "4970323007",
+        "49700000000000000000"
+      ],
+      "rollingRemainingAfter": [
+        "4980101230",
+        "49800000000000000000"
+      ],
+      "at": "2026-11-07T14:07:50.426Z"
+    },
+    {
+      "test": "swap in the REGULAR session",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 2,
+      "phaseName": "REGULAR",
+      "mode": 1,
+      "canSwap": true,
+      "lpFeeUnits": 0,
+      "tx": "0xc8819c356de2f79441200c84903acaedf42b114580db1d8b68414bc5e0a838ce",
+      "block": 25699617,
+      "amount0": "19927913",
+      "amount1": "-200000000000000000",
+      "rollingRemainingBefore": [
+        "4980101230",
+        "49800000000000000000"
+      ],
+      "rollingRemainingAfter": [
+        "4960173317",
+        "49600000000000000000"
+      ],
+      "at": "2026-11-07T14:14:31.719Z"
+    },
+    {
+      "test": "swap in CLOSED after the session fails closed (no close anchor)",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 5,
+      "mode": 2,
+      "tx": "0x5af596a6f31ff9fcce45cb8c6c1b117f8a07885285c4095663fbe20065c0289a",
+      "block": 25712168,
+      "status": "reverted",
+      "reason": "WrappedError from 0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0 (0x575e24b4) inner 0x8b60127a data 0x8b60127a0000000000000000000000000000000000000000000000000000000000001000",
+      "at": "2026-11-07T14:37:16.762Z"
+    },
+    {
+      "test": "withdraw while swaps are blocked (no close anchor)",
+      "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+      "phase": 5,
+      "canSwap": false,
+      "mode": 2,
+      "tokenId": 3,
+      "tx": "0x6bb168f003b794c130bff52bddf45d5b9196cf30c3114e7f2e426882fe17fe42",
+      "block": 25712179,
+      "liquidityBefore": "3831107179206916",
+      "liquidityRemoved": "383110717920691",
+      "liquidityAfter": "3447996461286225",
+      "received": [
+        "978853090",
+        "10073329999999983735"
+      ],
+      "at": "2026-11-07T14:37:18.550Z"
+    }
+  ]
+}

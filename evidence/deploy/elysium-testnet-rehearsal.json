@@ -1,0 +1,101 @@
+{
+  "chainId": 99801,
+  "stock2": "0x6f83f4ad84b0dd99dbdd5de366a0dfb23de0a4b1",
+  "assetId": "0x6a38bcb121a3a6674632a222d893305ba6b34d1da55aa4c4f578e245508bab42",
+  "adapters": {
+    "direct": "0x8ff868679315542da29b30df205c8d59bd4ee0be",
+    "regular": "0x1979ee0496d102c99b71b7ca188c938bd4b9d798",
+    "extended": "0xb2eb043eeb9987eb34c6673329d0f510a9546db1"
+  },
+  "calendar": {
+    "year": 2026,
+    "root": "0xfe4cb1a69207b1339705d25971b1e1bd43675992e73bb3b1688f06b30a69d76e",
+    "operationId": null,
+    "coverageStart": 1794058033,
+    "coverageEnd": 1794063433,
+    "plan": [
+      [
+        "CLOSED",
+        30
+      ],
+      [
+        "PRE",
+        15
+      ],
+      [
+        "REGULAR",
+        20
+      ],
+      [
+        "CLOSED",
+        25
+      ]
+    ],
+    "leaves": [
+      {
+        "chainId": "99801",
+        "calendarRegistry": "0x7904df8965033b28fdd9a409eb72c74afce794d9",
+        "assetId": "0x6a38bcb121a3a6674632a222d893305ba6b34d1da55aa4c4f578e245508bab42",
+        "year": 2026,
+        "index": 0,
+        "start": "1794058033",
+        "end": "1794059833",
+        "phase": 5,
+        "provenanceHash": "0xe3b78ffd384056f1ebd9380294b4adb569858340e799ef756a2c5e0550c7f047"
+      },
+      {
+        "chainId": "99801",
+        "calendarRegistry": "0x7904df8965033b28fdd9a409eb72c74afce794d9",
+        "assetId": "0x6a38bcb121a3a6674632a222d893305ba6b34d1da55aa4c4f578e245508bab42",
+        "year": 2026,
+        "index": 1,
+        "start": "1794059833",
+        "end": "1794060733",
+        "phase": 1,
+        "provenanceHash": "0xe3b78ffd384056f1ebd9380294b4adb569858340e799ef756a2c5e0550c7f047"
+      },
+      {
+        "chainId": "99801",
+        "calendarRegistry": "0x7904df8965033b28fdd9a409eb72c74afce794d9",
+        "assetId": "0x6a38bcb121a3a6674632a222d893305ba6b34d1da55aa4c4f578e245508bab42",
+        "year": 2026,
+        "index": 2,
+        "start": "1794060733",
+        "end": "1794061933",
+        "phase": 2,
+        "provenanceHash": "0xe3b78ffd384056f1ebd9380294b4adb569858340e799ef756a2c5e0550c7f047"
+      },
+      {
+        "chainId": "99801",
+        "calendarRegistry": "0x7904df8965033b28fdd9a409eb72c74afce794d9",
+        "assetId": "0x6a38bcb121a3a6674632a222d893305ba6b34d1da55aa4c4f578e245508bab42",
+        "year": 2026,
+        "index": 3,
+        "start": "1794061933",
+        "end": "1794063433",
+        "phase": 5,
+        "provenanceHash": "0xe3b78ffd384056f1ebd9380294b4adb569858340e799ef756a2c5e0550c7f047"
+      }
+    ],
+    "proofs": [
+      [
+        "0x7b5ad6a2e0ad1afce0c8470c88fa8a45ccef72d16f3e056db45ed1ecebcd79e9",
+        "0x585d2aba276b3322a25f115439b9827806bc79c6af5aea356508656059c4ba5f"
+      ],
+      [
+        "0xc17d7da437228bddf8f8e97c9701a9c3ded314f4b8f2fea904de3c31a3c8a192",
+        "0x585d2aba276b3322a25f115439b9827806bc79c6af5aea356508656059c4ba5f"
+      ],
+      [
+        "0xdcf62ca351864d3b50e2cb1fb4a14df21ba6002b762b870d1424b90e07ee348f",
+        "0x7064bc1144d941de7b496d377cfc8d36c511dd65b559d56c46eb0f5c2c2b4f18"
+      ],
+      [
+        "0x1bccdef7dd1ffc96c3a6c271c879fd242ba972b57534f0ecee91d760b24fb533",
+        "0x7064bc1144d941de7b496d377cfc8d36c511dd65b559d56c46eb0f5c2c2b4f18"
+      ]
+    ]
+  },
+  "note": "REHEARSAL calendar for a separate test asset, compressed to ninety minutes. Not a market calendar.",
+  "createdAt": "2026-11-07T13:25:02.039Z"
+}
