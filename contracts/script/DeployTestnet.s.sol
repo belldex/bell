@@ -112,7 +112,14 @@ contract DeployTestnet {
         address recipient;
     }
 
+    /// @dev On Elysium only ELYSIUM_* variables are read. There is no fallback to the Robinhood keys or to the
+    ///      generic DEPLOYER_PRIVATE_KEY, so a Robinhood wallet can never be spent from by an Elysium run.
+    function _isElysium() private view returns (bool) {
+        return block.chainid == ELYSIUM_TESTNET_CHAIN_ID;
+    }
+
     function _deployerKey(bool isMainnet) private view returns (uint256 pk) {
+        if (_isElysium()) return vm.envUint("ELYSIUM_DEPLOYER_PRIVATE_KEY");
         // On mainnet the chain-specific key is checked FIRST. Falling back to the shared
         // RH_DEPLOYER_PRIVATE_KEY there would silently spend from the rehearsal wallet.
         if (isMainnet) {
@@ -126,6 +133,22 @@ contract DeployTestnet {
     }
 
     function _roles(bool isMainnet, address deployer) private view returns (Roles memory roles) {
+        if (_isElysium()) {
+            roles.governance = vm.envOr("ELYSIUM_GOVERNANCE_ADDRESS", deployer);
+            roles.guardian = vm.envOr("ELYSIUM_GUARDIAN_ADDRESS", address(0));
+            roles.treasury = vm.envOr("ELYSIUM_TREASURY_ADDRESS", address(0));
+            roles.recipient = vm.envOr("ELYSIUM_SERVICE_RECIPIENT", address(0));
+            require(
+                roles.treasury != address(0) && roles.recipient != address(0) && roles.guardian != address(0),
+                "missing role address: set ELYSIUM_GUARDIAN_ADDRESS, ELYSIUM_TREASURY_ADDRESS and ELYSIUM_SERVICE_RECIPIENT"
+            );
+            require(
+                roles.governance != roles.guardian && roles.governance != roles.treasury
+                    && roles.guardian != roles.treasury,
+                "roles must be distinct"
+            );
+            return roles;
+        }
         roles.governance = vm.envOr(
             isMainnet ? "MAINNET_GOVERNANCE_ADDRESS" : "TESTNET_GOVERNANCE_ADDRESS", deployer
         );
@@ -151,6 +174,7 @@ contract DeployTestnet {
     }
 
     function _feeToken(bool isMainnet) private view returns (address feeToken) {
+        if (_isElysium()) return vm.envOr("ELYSIUM_FEE_TOKEN_ADDRESS", address(0));
         feeToken = vm.envOr(isMainnet ? "MAINNET_FEE_TOKEN_ADDRESS" : "TESTNET_FEE_TOKEN_ADDRESS", address(0));
         if (isMainnet) require(feeToken != address(0), "mainnet requires a real fee token");
     }
@@ -184,7 +208,9 @@ contract DeployTestnet {
         d.poolManager = address(new PoolManager(deployer));
         // WETH for the wrap/unwrap path. On mainnet a canonical WETH must be supplied; deploying a
         // fixture would silently give users a token that is not the chain's real wrapped ETH.
-        d.weth = vm.envOr(isMainnet ? "MAINNET_WETH_ADDRESS" : "TESTNET_WETH_ADDRESS", address(0));
+        d.weth = vm.envOr(
+            _isElysium() ? "ELYSIUM_WETH_ADDRESS" : isMainnet ? "MAINNET_WETH_ADDRESS" : "TESTNET_WETH_ADDRESS", address(0)
+        );
         if (isMainnet) require(d.weth != address(0), "mainnet requires the canonical WETH address");
         if (d.weth == address(0)) d.weth = address(new WETH());
         d.positionManager = address(new PositionManager(

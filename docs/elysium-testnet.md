@@ -50,11 +50,12 @@ PoolManager, PositionManager, WETH and the two test tokens, about 63M gas (estim
 
 ```bash
 cd contracts
+# contracts/.env (git-ignored) holds only ELYSIUM_* names. On chain 99801 the script reads nothing else, so a Robinhood
+# key can never be used by an Elysium run.
+#   ELYSIUM_DEPLOYER_PRIVATE_KEY   a testnet wallet funded with HYPE from the faucet
+#   ELYSIUM_GUARDIAN_ADDRESS, ELYSIUM_TREASURY_ADDRESS, ELYSIUM_SERVICE_RECIPIENT   three different addresses
+#   ELYSIUM_GOVERNANCE_ADDRESS     optional, defaults to the deployer
 export FOUNDRY_PROFILE=elysium_testnet
-export DEPLOYER_PRIVATE_KEY=0x...            # a testnet wallet funded with HYPE from the faucet
-export TESTNET_GUARDIAN_ADDRESS=0x...        # three different addresses, none of them the deployer
-export TESTNET_TREASURY_ADDRESS=0x...
-export TESTNET_SERVICE_RECIPIENT=0x...
 forge script script/DeployTestnet.s.sol                        # dry run: simulates, sends nothing
 forge script script/DeployTestnet.s.sol --broadcast --skip-simulation
 ```
