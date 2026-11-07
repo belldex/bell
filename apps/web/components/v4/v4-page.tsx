@@ -30,7 +30,7 @@ const FITS: { name: string; role: string; text: string; status: Status; logo: { 
   { name: "Robinhood Chain", role: "The stadium", status: null, logo: { src: "/landing/partners/robinhood.svg", w: 148, h: 29, invert: true }, text: "Stock tokens trade 24/7. Standard pools can’t tell 3 AM Sunday from 10 AM Tuesday." },
   { name: "Uniswap v4", role: "The engine", status: "LIVE", logo: { src: "/landing/partners/uniswap.svg", w: 112, h: 28, invert: true }, text: "The best AMM engine onchain. BELL is built natively on it, and gives it a clock." },
   { name: "Hyperliquid", role: "The scoreboard", status: null, logo: { src: "/landing/partners/hyperliquid.png", w: 40, h: 40 }, text: "Equity prices that never stop. A 24/7 price still doesn’t protect a spot LP from the weekend." },
-  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", logo: { src: "/landing/partners/elysium.svg", w: 40, h: 40 }, text: "Kinetiq’s Hyperliquid L2. Its planned HyperCore read access is the price BELL’s auction wants at the open." },
+  { name: "Elysium", role: "The bridge", status: "BUILDING TOWARD", logo: { src: "/landing/partners/elysium.svg", w: 40, h: 40 }, text: "Kinetiq’s Hyperliquid L2. BELL is deployed on its testnet with test tokens. Its planned HyperCore read access is the price BELL’s auction wants at the open." },
 ];
 
 const VERSUS: [string, string, string][] = [
@@ -48,6 +48,7 @@ const FEATURES: { name: string; status: Status; note: string }[] = [
   { name: "Opening Bell Auction", status: "LIVE", note: `Contracts live and verified. First opening: ${progress.firstOpeningLabel}` },
   { name: "BellHookV2 and the write-once auction registry", status: "LIVE", note: "Pools created from the current factory get their own auction" },
   { name: `Source verification of the ${progress.coreContractsVerified} core contracts`, status: "LIVE", note: `Verified on ${progress.verifiedOn}. Pool hooks are next` },
+  { name: "Elysium testnet rehearsal", status: "DEPLOYED", note: "The same contracts on Elysium testnet, with test tokens that have no value. Elysium mainnet is not deployed" },
   { name: "Exit Liveness Proof at /proof", status: "LIVE", note: `Every hook checked from its address. A mainnet withdraw is linked as proof` },
   { name: "Orders private until the bell (sealed-bid)", status: "PLANNED", note: "v2 auction" },
   { name: "HyperCore reference price", status: "BUILDING TOWARD", note: "Depends on the HyperCore read precompile Elysium plans to add after its mainnet" },
