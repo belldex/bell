@@ -70,3 +70,19 @@ test('the other pages point at /proof', async () => {
   assert.match(protocol, /0x2CC0 sets five/);
   assert.match(protocol, /href="\/proof"/);
 });
+
+test('the hero draws the fourteen bits from the committed data and never names a wrong suffix', async () => {
+  const hero = await read('../components/proof/proof-hero.tsx');
+  const heroCss = await read('../components/proof/proof-hero.css');
+  assert.match(hero, /from "@\/lib\/hook-flags"/);
+  assert.match(hero, /from "@\/content\/exit-proof\.json"/);
+  assert.match(hero, /checkHook\(h\.hook\)/, 'the stats are computed, not typed in');
+  assert.match(hero, /data-exit=/);
+  assert.doesNotMatch(hero, /<circle/);
+  assert.ok(!hero.includes('·'));
+  assert.doesNotMatch(heroCss, /rotate\(45deg\)|border-radius:\s*50%/);
+  assert.doesNotMatch(page, /end in <code>…?ecc0/, 'hooks end in cc0; the digit before it varies');
+  assert.match(page, /end in <code>cc0<\/code>/);
+  const suffixes = new Set(proof.hooks.map((h) => h.hook.slice(-4)));
+  for (const s of suffixes) assert.match(s, /^[26ae]cc0$/, `${s} must be 0x2cc0 plus two free high bits`);
+});

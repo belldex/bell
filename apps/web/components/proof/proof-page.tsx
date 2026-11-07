@@ -6,6 +6,8 @@ import { EXPECTED_BELL_FLAGS, PERMISSION_BITS } from "@/lib/hook-flags";
 import { explorerTx } from "@/config/mainnet";
 import proof from "@/content/exit-proof.json";
 import { AddressCheck, ExitTable } from "./exit-check";
+import { ProofHero } from "./proof-hero";
+import "./proof-hero.css";
 
 /* /proof. The claim is one sentence: no BELL policy can hold back a withdraw. Every row on this page is something a
    reader can recompute or open, and a withdraw is listed only with its transaction. */
@@ -55,6 +57,7 @@ export function ProofPage() {
           </p>
           <p className="legal__date">Chain {proof.chainId} / hook mask {proof.mask}</p>
         </header>
+        <ProofHero />
 
         <div className="legal__grid lp-wrap">
           <nav className="legal__toc" aria-label="On this page">
@@ -72,7 +75,7 @@ export function ProofPage() {
                 In Uniswap v4 a hook&apos;s permissions are not stored anywhere you have to trust. They are the <strong>low 14 bits of the hook&apos;s own address</strong>. The PoolManager calls a hook callback only when its bit is set, so a hook whose remove-liquidity bits are clear is never called while liquidity is removed. That can be read from the address alone, without reading any source code.
               </p>
               <p>
-                BELL hooks end in <code>…ecc0</code>, which is <code>0x2cc0</code>. It sets five permissions and clears the three that touch removal.
+                BELL hook addresses end in <code>cc0</code>. The digit before it varies, because the two highest of those sixteen bits are not permissions. The fourteen that are read <code>0x2cc0</code>, which sets five permissions and clears the three that touch removal.
               </p>
               <div className="pf-scroll">
                 <table className="legal__table pf-table">
@@ -107,28 +110,22 @@ export function ProofPage() {
 
             <Section id="receipts" n={4} title="A withdraw on the record">
               <p>One real withdraw from a BELL pool on Robinhood Chain mainnet, through the Uniswap v4 PositionManager. Open the transaction and check it yourself.</p>
-              <div className="pf-scroll">
-                <table className="legal__table pf-table pf-receipts">
-                  <thead><tr><th>Scenario</th><th>Status</th><th>What it proves</th><th>Transaction</th></tr></thead>
-                  <tbody>
-                    {proof.receipts.map((r) => (
-                      <tr key={r.scenario}>
-                        <td>{r.scenario}</td>
-                        <td><span className="pf-badge" data-done={r.status === "DONE" ? "1" : "0"}>{r.status}</span></td>
-                        <td>{r.proves}{r.note && <small>{r.note}</small>}</td>
-                        <td>
-                          {r.tx ? (
-                            <>
-                              <a href={explorerTx(r.tx)} target="_blank" rel="noopener noreferrer">{r.tx.slice(0, 10)}…{r.tx.slice(-6)} <ArrowUpRight size={13} aria-hidden="true" /></a>
-                              <small>{r.session}, {r.when?.replace("T", " ").replace("Z", " UTC")}</small>
-                            </>
-                          ) : <span className="pf-dim">none yet</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {proof.receipts.map((r) => (
+                <article key={r.scenario} className="pf-receipt">
+                  <div className="pf-receipt__top">
+                    <span className="pf-badge" data-done={r.status === "DONE" ? "1" : "0"}>{r.status}</span>
+                    <h3 className="pf-receipt__title">{r.scenario} withdraw</h3>
+                  </div>
+                  <p>{r.proves}.{r.note ? ` ${r.note}` : ""}</p>
+                  {r.tx && (
+                    <>
+                      <p className="pf-receipt__hash">{r.tx}</p>
+                      <p className="pf-receipt__meta">{r.session} / {r.when?.replace("T", " ").replace("Z", " UTC")}</p>
+                      <a className="pf-btn pf-btn--solid" href={explorerTx(r.tx)} target="_blank" rel="noopener noreferrer">Open on Blockscout <ArrowUpRight size={15} aria-hidden="true" /></a>
+                    </>
+                  )}
+                </article>
+              ))}
             </Section>
 
             <Section id="tests" n={5} title="Tests that guard it">
