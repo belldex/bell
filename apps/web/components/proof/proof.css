@@ -45,3 +45,7 @@
 .pf-tests li { display:grid; gap:.3rem; padding-left:1rem; border-left:2px solid var(--lp-accent); }
 .pf-tests span { color:var(--lp-muted); font-size:.94rem; line-height:1.55; }
 .pf-code { margin:1.2rem 0; padding:1.1rem 1.2rem; overflow-x:auto; border:1px solid var(--lp-line-2); background:rgba(238,236,229,.03); color:var(--lp-text); font:500 .8rem/1.7 var(--lp-font-mono); }
+
+.pf-figure { margin:1.6rem 0; }
+.pf-figure img { display:block; border:1px solid var(--lp-line-2); }
+.pf-figure figcaption { margin-top:.6rem; color:var(--lp-muted, rgba(238,236,229,.6)); font-size:.85rem; }

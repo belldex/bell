@@ -86,3 +86,23 @@ test('the hero draws the fourteen bits from the committed data and never names a
   const suffixes = new Set(proof.hooks.map((h) => h.hook.slice(-4)));
   for (const s of suffixes) assert.match(s, /^[26ae]cc0$/, `${s} must be 0x2cc0 plus two free high bits`);
 });
+
+const lp = JSON.parse(await read('../content/lp-proof.json'));
+
+test('the LP proof section states a simulation, its assumptions and a link to the script', () => {
+  assert.match(page, /LP proof: the weekend replay/);
+  assert.match(page, /This is a simulation, not a live result/);
+  assert.match(page, /not final until they do/);
+  assert.match(page, /Real volume may be smaller/);
+  assert.match(page, /not a fork of mainnet/);
+  assert.match(page, /research\/replay/);
+  assert.doesNotMatch(page, /BELL (always|guarantees) (beats|outperforms)/i);
+});
+
+test('the LP figures come from the replay and are internally consistent', () => {
+  assert.equal(lp.rows, 60);
+  assert.equal(lp.better + lp.worse + lp.tie, lp.rows);
+  assert.equal(lp.bigGap.rows + lp.smallGap.rows, lp.rows);
+  assert.ok(lp.weekends >= 10, 'the brief asks for at least ten weekends');
+  assert.equal(lp.auctionSettled, lp.rows);
+});

@@ -1,0 +1,30 @@
+{
+  "generatedFrom": "research/replay/results.csv",
+  "priceSource": "Yahoo Finance public chart endpoint, interval=1h, includePrePost=true",
+  "pricesFetchedAt": "2026-11-08T04:50:10.036Z",
+  "weekends": 20,
+  "firstFriday": "2026-06-05",
+  "lastFriday": "2026-10-30",
+  "rows": 60,
+  "capitalUsd": 100000,
+  "better": 16,
+  "worse": 0,
+  "tie": 44,
+  "meanLpNetBpStandard": -0.42,
+  "meanLpNetBpBell": -0.25,
+  "totalDifferenceUsd": 96.92,
+  "largestLossBpStandard": -3.48,
+  "largestLossBpBell": -1.86,
+  "bigGap": {
+    "rows": 16,
+    "meanBpStandard": -1.41,
+    "meanBpBell": -0.78
+  },
+  "smallGap": {
+    "rows": 44,
+    "meanBpStandard": -0.06,
+    "meanBpBell": -0.06
+  },
+  "auctionSettled": 60,
+  "auctionMeanMatchedUsd": 12545
+}

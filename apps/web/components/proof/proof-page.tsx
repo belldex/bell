@@ -5,6 +5,7 @@ import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
 import { EXPECTED_BELL_FLAGS, PERMISSION_BITS } from "@/lib/hook-flags";
 import { explorerTx } from "@/config/mainnet";
 import proof from "@/content/exit-proof.json";
+import lp from "@/content/lp-proof.json";
 import { AddressCheck, ExitTable } from "./exit-check";
 import { ProofHero } from "./proof-hero";
 import "./proof-hero.css";
@@ -32,6 +33,7 @@ const NAV_TOC = [
   ["tests", "Tests that guard it"],
   ["run", "Run it yourself"],
   ["limits", "What “always” means"],
+  ["lp", "LP proof: the weekend replay"],
 ] as const;
 
 function Section({ id, n, title, children }: { id: string; n: number; title: string; children: React.ReactNode }) {
@@ -169,6 +171,46 @@ node scripts/verify-exit-liveness.ts --rpc https://your-robinhood-chain-rpc`}</p
                 <li>Swaps are a different matter. BELL can and does stop swaps in some sessions and states. Only exits are guaranteed.</li>
                 <li>An independent security audit is not complete. Treat every BELL contract as unaudited. See the <Link href="/terms/">terms</Link>.</li>
               </ul>
+            </Section>
+
+            <Section id="lp" n={8} title="LP proof: the weekend replay">
+              <p>
+                Exit liveness is about getting your tokens out. This section is about what an LP keeps while the market is closed. We replayed {lp.weekends} real weekends of TSLA, NVDA and AAPL, {lp.firstFriday} to {lp.lastFriday}, against two pools that start with the same liquidity, the same range and the same price: a standard Uniswap v4 pool with a fixed 0.30% fee, and a BELL pool with the Opening Bell Auction.
+              </p>
+              <div className="legal__note"><p>This is a simulation, not a live result. The live tests on Robinhood Chain mainnet have not run yet, and these figures are not final until they do.</p></div>
+              <div className="pf-scroll">
+                <table className="legal__table pf-table">
+                  <thead><tr><th>Over {lp.rows} stock-weekends</th><th>Standard pool</th><th>BELL pool</th></tr></thead>
+                  <tbody>
+                    <tr><td>Average LP result against holding</td><td>{lp.meanLpNetBpStandard} bp</td><td>{lp.meanLpNetBpBell} bp</td></tr>
+                    <tr><td>Largest loss in one stock-weekend</td><td>{lp.largestLossBpStandard} bp</td><td>{lp.largestLossBpBell} bp</td></tr>
+                    <tr><td>Gap of 1% or more ({lp.bigGap.rows} rows), average</td><td>{lp.bigGap.meanBpStandard} bp</td><td>{lp.bigGap.meanBpBell} bp</td></tr>
+                    <tr><td>Gap under 1% ({lp.smallGap.rows} rows), average</td><td>{lp.smallGap.meanBpStandard} bp</td><td>{lp.smallGap.meanBpBell} bp</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                One basis point (bp) is 0.01% of the starting liquidity, which was {lp.capitalUsd.toLocaleString("en-US")} USD in each pool. BELL did better in {lp.better} of {lp.rows} rows, the standard pool did better in {lp.worse}, and {lp.tie} were a tie. The ties are the weekends with a gap under about 1%: there both pools end at the same price with the same fees. The difference appears when the gap is large, which is when the closed-session fee and the flow caps act.
+              </p>
+              <figure className="pf-figure">
+                <img src="/proof/chart-lp-net-by-weekend.png" width={1600} height={900} loading="lazy" alt="Bar chart of LP result against holding for each of the 20 weekends, standard pool in grey and BELL pool in white." style={{ width: "100%", height: "auto" }} />
+                <figcaption>LP result after the weekend, standard pool against BELL, average of three stocks per weekend.</figcaption>
+              </figure>
+              <figure className="pf-figure">
+                <img src="/proof/chart-gap-vs-difference.png" width={1600} height={900} loading="lazy" alt="Scatter chart of weekend gap against the BELL LP result minus the standard pool LP result, one point per stock and weekend." style={{ width: "100%", height: "auto" }} />
+                <figcaption>Each point is one stock over one weekend. Up means the BELL LP kept more.</figcaption>
+              </figure>
+              <p>What the simulation assumes, and where it stops:</p>
+              <ul>
+                <li>The arbitrage agent is rational, informed and fast. Real arbitrage is slower and less certain.</li>
+                <li>Auction participation is simulated: the arbitrage agent plus eight pseudo-random orders per weekend. Real volume may be smaller. The auction matches orders peer to peer and does not move the pool price, so the LP difference above comes from the closed-session fee, the flow caps and the bell fee, not from the auction clearing.</li>
+                <li>The contracts are the repository&apos;s own bytecode run in a Foundry test. It is not a fork of mainnet: tokens, calendar and session data are test doubles.</li>
+                <li>Prices are hourly bars from Yahoo Finance. The overnight session from 20:00 to 04:00 ET is not in that source.</li>
+                <li>Results depend on the size of the gap, and the sample is {lp.weekends} weekends of three stocks.</li>
+              </ul>
+              <p>
+                The script, the prices, the result of every row and the charts are in the public repository: <a href={`${REPO}/research/replay/README.md`} target="_blank" rel="noopener noreferrer">research/replay</a>. To rerun it, run <code>forge test --match-contract WeekendReplay -vv</code> from the <code>contracts</code> folder.
+              </p>
             </Section>
           </div>
         </div>
