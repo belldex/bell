@@ -1,0 +1,133 @@
+{
+  "note": "Test D of the LP proof. Testnet entries are real transactions from the Elysium rehearsal. Mainnet entries stay PENDING until a real transaction exists.",
+  "testnet": {
+    "chainId": 99801,
+    "entries": [
+      {
+        "id": "swap-above-cap-reverts",
+        "rule": "A swap above the trade cap reverts",
+        "expect": "REVERTS",
+        "status": "DONE",
+        "chainId": 99801,
+        "pool": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+        "tx": "0xb967490e910e2d24e3385d807c638be1caef171c380947735b00c59a5274f973",
+        "block": 25669806,
+        "at": "2026-11-07T13:20:28.062Z",
+        "error": "TradeCapExceeded"
+      },
+      {
+        "id": "swap-in-uncertain-session-reverts",
+        "rule": "A swap while the session is uncertain (no close anchor) reverts",
+        "expect": "REVERTS",
+        "status": "DONE",
+        "chainId": 99801,
+        "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+        "tx": "0x5af596a6f31ff9fcce45cb8c6c1b117f8a07885285c4095663fbe20065c0289a",
+        "block": 25712168,
+        "at": "2026-11-07T14:37:16.762Z",
+        "error": "PolicyBlocked"
+      },
+      {
+        "id": "swap-during-auction-reverts",
+        "rule": "A swap while the opening auction is open reverts",
+        "expect": "REVERTS",
+        "status": "DONE",
+        "chainId": 99801,
+        "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+        "tx": "0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80",
+        "block": 25685019,
+        "at": "2026-11-07T13:47:14.455Z",
+        "error": "AuctionActive"
+      },
+      {
+        "id": "withdraw-while-closed-succeeds",
+        "rule": "A withdraw while the market is CLOSED succeeds",
+        "expect": "SUCCEEDS",
+        "status": "DONE",
+        "chainId": 99801,
+        "pool": "0x3F5d142Bb8a502e2608EB770Eb2c2E8d2519ecC0",
+        "tx": "0xdc732ab9b312de8db7e58697f114529f9cee7dd50e2f688eb8e2d04afe20fbe4",
+        "block": 25669837,
+        "at": "2026-11-07T13:20:32.022Z",
+        "error": null
+      },
+      {
+        "id": "withdraw-while-swaps-blocked-succeeds",
+        "rule": "A withdraw while swaps are blocked succeeds",
+        "expect": "SUCCEEDS",
+        "status": "DONE",
+        "chainId": 99801,
+        "pool": "0x34A34A40d73155FcA22e05b53F06e23C09EC6Cc0",
+        "tx": "0x6bb168f003b794c130bff52bddf45d5b9196cf30c3114e7f2e426882fe17fe42",
+        "block": 25712179,
+        "at": "2026-11-07T14:37:18.550Z",
+        "error": null
+      }
+    ]
+  },
+  "mainnet": {
+    "chainId": 4663,
+    "entries": [
+      {
+        "id": "swap-above-cap-reverts",
+        "rule": "A swap above the trade cap reverts",
+        "expect": "REVERTS",
+        "status": "PENDING",
+        "chainId": 4663,
+        "pool": null,
+        "tx": null,
+        "block": null,
+        "at": null,
+        "error": "TradeCapExceeded"
+      },
+      {
+        "id": "swap-in-uncertain-session-reverts",
+        "rule": "A swap while the session is uncertain (no close anchor) reverts",
+        "expect": "REVERTS",
+        "status": "PENDING",
+        "chainId": 4663,
+        "pool": null,
+        "tx": null,
+        "block": null,
+        "at": null,
+        "error": "PolicyBlocked"
+      },
+      {
+        "id": "swap-during-auction-reverts",
+        "rule": "A swap while the opening auction is open reverts",
+        "expect": "REVERTS",
+        "status": "PENDING",
+        "chainId": 4663,
+        "pool": null,
+        "tx": null,
+        "block": null,
+        "at": null,
+        "error": "AuctionActive"
+      },
+      {
+        "id": "withdraw-while-closed-succeeds",
+        "rule": "A withdraw while the market is CLOSED succeeds",
+        "expect": "SUCCEEDS",
+        "status": "PENDING",
+        "chainId": 4663,
+        "pool": null,
+        "tx": null,
+        "block": null,
+        "at": null,
+        "error": null
+      },
+      {
+        "id": "withdraw-while-swaps-blocked-succeeds",
+        "rule": "A withdraw while swaps are blocked succeeds",
+        "expect": "SUCCEEDS",
+        "status": "PENDING",
+        "chainId": 4663,
+        "pool": null,
+        "tx": null,
+        "block": null,
+        "at": null,
+        "error": null
+      }
+    ]
+  }
+}
