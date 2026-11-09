@@ -215,7 +215,20 @@ node scripts/verify-exit-liveness.ts --rpc https://your-robinhood-chain-rpc`}</p
                 <li>A swap above the trade cap on the TSLA/USDG pool reverted with <code>TradeCapExceeded</code>: <a href="https://robinhoodchain.blockscout.com/tx/0x6eadcd4f35343ee43f13c52c4552770e50d08a6d363f8dd78e4088bc722448a4" target="_blank" rel="noopener noreferrer">transaction</a>.</li>
               </ul>
               <p>
-                What has not run: no weekend has been measured live against a standard pool, no mainnet withdraw has been made while the market was closed, and the one Opening Bell Auction cycle on mainnet so far (9 November) closed with no orders. The amounts in these pools are small, so they show that the rules work, not what an LP keeps.
+                The one real weekend on record is 7 and 8 November. Three funded BELL pools held liquidity through it, and none of them took a swap, so no LP in them paid anything for the weekend. Prices below were read on 9 November at 02:57 UTC; the Friday close is the last post-market bar on 6 November.
+              </p>
+              <div className="pf-scroll">
+                <table className="legal__table pf-table">
+                  <thead><tr><th>Pool</th><th>Pool price</th><th>Friday close</th><th>Difference</th><th>Swaps since creation</th></tr></thead>
+                  <tbody>
+                    <tr><td>AAPL/USDG</td><td>325.21</td><td>342.65</td><td>-5.1%</td><td>0</td></tr>
+                    <tr><td>NVDA/USDG</td><td>207.05</td><td>188.70</td><td>+9.7%</td><td>0</td></tr>
+                    <tr><td>TSLA/USDG</td><td>350.34</td><td>359.40</td><td>-2.5%</td><td>0</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Read this carefully. The differences come from the price each pool was seeded at, not from the weekend, and nobody has traded to correct them. So these pools show that a BELL pool takes no flow while it sits unpriced, and they do not show that a BELL LP loses less than an LP in a standard pool: there is no standard pool beside them and there was no arbitrage to lose to. What has not run: a live weekend measured side by side with a standard pool, a mainnet withdraw while the market was closed, and an Opening Bell Auction on mainnet with orders in it (the cycle on 9 November closed with none). The amounts are small, so they show that the rules work, not what an LP keeps.
               </p>
               <p>
                 The script, the prices, the result of every row and the charts are in the public repository:<a href={`${REPO}/research/replay/README.md`} target="_blank" rel="noopener noreferrer">research/replay</a>. To rerun it, run <code>forge test --match-contract WeekendReplay -vv</code> from the <code>contracts</code> folder.
