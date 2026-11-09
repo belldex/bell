@@ -18,7 +18,8 @@
   "bigGap": {
     "rows": 16,
     "meanBpStandard": -1.41,
-    "meanBpBell": -0.78
+    "meanBpBell": -0.78,
+    "lossReductionPct": 45
   },
   "smallGap": {
     "rows": 44,

@@ -192,6 +192,9 @@ node scripts/verify-exit-liveness.ts --rpc https://your-robinhood-chain-rpc`}</p
               <p>
                 One basis point (bp) is 0.01% of the starting liquidity, which was {lp.capitalUsd.toLocaleString("en-US")} USD in each pool. BELL did better in {lp.better} of {lp.rows} rows, the standard pool did better in {lp.worse}, and {lp.tie} were a tie. The ties are the weekends with a gap under about 1%: there both pools end at the same price with the same fees. The difference appears when the gap is large, which is when the closed-session fee and the flow caps act.
               </p>
+              <p>
+                In the {lp.bigGap.rows} stock-weekends with a gap of 1% or more, the LP in the standard pool lost {lp.bigGap.meanBpStandard} bp on average and the LP in the BELL pool lost {lp.bigGap.meanBpBell} bp, which is {lp.bigGap.lossReductionPct}% less. The LP still pays for most of the move in both pools, because the price has to reach its new level either way. The difference comes from fees: arbitrage while the market is closed is charged 1.00% in a BELL pool and 0.30% in the standard pool, and the fee goes to the LP. On {lp.capitalUsd.toLocaleString("en-US")} USD of liquidity, that is a few dollars per stock-weekend.
+              </p>
               <figure className="pf-figure">
                 <img src="/proof/chart-lp-net-by-weekend.png" width={1600} height={900} loading="lazy" alt="Bar chart of LP result against holding for each of the 20 weekends, standard pool in grey and BELL pool in white." style={{ width: "100%", height: "auto" }} />
                 <figcaption>LP result after the weekend, standard pool against BELL, average of three stocks per weekend.</figcaption>

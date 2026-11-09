@@ -69,6 +69,7 @@ One row per weekend per stock.
   it is rounding dust, not a result.
 * The average LP result against holding was -0.42 basis points of the starting liquidity in the standard pool and -0.25 in BELL.
   In dollars on 100,000 per pool, the difference summed over all 60 rows is about 97 USD.
+* When the gap is 1% or more, the BELL LP lost about 45% less than the standard-pool LP (1.41 bp against 0.78 bp on average over 16 rows). The LP pays for most of the price move in both pools; the saving is fee income from the 1.00% closed-session fee.
 * The difference is zero when the gap is under about 1%, and positive above it. That follows from the design: the closed-session
   fee is 1.00%, so below a 1% gap neither pool leaves a profitable trade until the bell fee has decayed, and both end at the same price
   with the same fees. Above 1% the closed-session fee and the flow caps make the agent push the price in several smaller steps at higher fees.

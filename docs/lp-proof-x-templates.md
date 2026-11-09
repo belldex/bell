@@ -9,8 +9,8 @@ Every number must be copied from `research/replay/results.csv`, `deployments/rul
 > We replayed [N] real weekends of TSLA, NVDA and AAPL against two pools: a standard Uniswap v4 pool and a BELL pool.
 > Same liquidity, same range, same Friday close.
 >
-> Result: the LP in the standard pool lost [A] bp against holding. The LP in the BELL pool lost [B] bp.
-> Weekends with a gap under 1%: no difference. Weekends with a gap of 1% or more: [bigGapA] bp against [bigGapB] bp.
+> Result: when the weekend gap was 1% or more, the LP in the standard pool lost [bigGapA] bp against holding and the LP in the BELL pool lost [bigGapB] bp, [lossReductionPct]% less. The LP still pays for most of the move in both pools. The difference is the 1.00% closed-session fee, which goes to the LP.
+> When the gap was under 1%: no difference.
 >
 > It is a simulation. The arbitrage agent is perfect and the auction orders are simulated.
 > Script, prices and every row are public: github.com/belldex/bell/tree/main/research/replay

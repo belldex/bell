@@ -41,7 +41,7 @@ const out = {
   totalDifferenceUsd: Number(sum(n('difference_usd')).toFixed(2)),
   largestLossBpStandard: Number((Math.min(...n('lp_net_a_pct')) * 100).toFixed(2)),
   largestLossBpBell: Number((Math.min(...n('lp_net_b_pct')) * 100).toFixed(2)),
-  bigGap: { rows: bigGap.length, meanBpStandard: Number(mean(bigGap, 'lp_net_a_pct').toFixed(2)), meanBpBell: Number(mean(bigGap, 'lp_net_b_pct').toFixed(2)) },
+  bigGap: { rows: bigGap.length, meanBpStandard: Number(mean(bigGap, 'lp_net_a_pct').toFixed(2)), meanBpBell: Number(mean(bigGap, 'lp_net_b_pct').toFixed(2)), lossReductionPct: bigGap.length ? Math.round((1 - mean(bigGap, 'lp_net_b_pct') / mean(bigGap, 'lp_net_a_pct')) * 100) : 0 },
   smallGap: { rows: smallGap.length, meanBpStandard: Number(mean(smallGap, 'lp_net_a_pct').toFixed(2)), meanBpBell: Number(mean(smallGap, 'lp_net_b_pct').toFixed(2)) },
   auctionSettled: rows.filter((r) => r.auction_settled === '1').length,
   auctionMeanMatchedUsd: Math.round(sum(n('auction_matched_usd')) / rows.length),
