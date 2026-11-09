@@ -93,8 +93,7 @@ One row per weekend per stock.
   overnight session is not in this source. Bars are hourly, so every price is a bar open or close, not a tick.
 * **Results depend on the gap.** Small-gap weeks show no difference. The sample is 20 weekends of three stocks from June to October 2026, which is
   a short window. The LP net figure ignores gas and any value of the LP position beyond the weekend.
-* **The numbers are not final.** The live tests (A, C and D) are still to run. No number from this folder should be published as a result of the
-  protocol before they finish.
+* **This is a simulation, not a live result.** No weekend has been measured live against a standard pool. What has run on Robinhood Chain mainnet (one seed, swap and withdraw cycle, one withdraw, one revert above the trade cap) is listed on the /proof page; those pools are too small to say what an LP keeps.
 
 ## Files
 

@@ -91,8 +91,8 @@ const lp = JSON.parse(await read('../content/lp-proof.json'));
 
 test('the LP proof section states a simulation, its assumptions and a link to the script', () => {
   assert.match(page, /LP proof: the weekend replay/);
-  assert.match(page, /This is a simulation, not a live result/);
-  assert.match(page, /not final until they do/);
+  assert.match(page, /This replay is a simulation, not a live weekend result/);
+  assert.match(page, /has not been run/);
   assert.match(page, /Real volume may be smaller/);
   assert.match(page, /not a fork of mainnet/);
   assert.match(page, /research\/replay/);

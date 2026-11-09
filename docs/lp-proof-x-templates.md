@@ -1,6 +1,7 @@
 # X content templates: LP proof
 
-Fill the brackets from the files named in each template. Publish nothing before the tests it quotes have run.
+Fill the brackets from the files named in each template. Publish only what the tests behind it have shown.
+The live weekend test (template 2) has not run. Until it does, post template 1 as a simulation and say that no live weekend has been measured.
 Every number must be copied from `research/replay/results.csv`, `deployments/rule-tests.json` or a transaction on the explorer.
 
 ## 1. Historical Replay release (Sunday 23 Nov)

@@ -177,7 +177,7 @@ node scripts/verify-exit-liveness.ts --rpc https://your-robinhood-chain-rpc`}</p
               <p>
                 Exit liveness is about getting your tokens out. This section is about what an LP keeps while the market is closed. We replayed {lp.weekends} real weekends of TSLA, NVDA and AAPL, {lp.firstFriday} to {lp.lastFriday}, against two pools that start with the same liquidity, the same range and the same price: a standard Uniswap v4 pool with a fixed 0.30% fee, and a BELL pool with the Opening Bell Auction.
               </p>
-              <div className="legal__note"><p>This is a simulation, not a live result. The live tests on Robinhood Chain mainnet have not run yet, and these figures are not final until they do.</p></div>
+              <div className="legal__note"><p>This replay is a simulation, not a live weekend result. A live side-by-side test of a standard pool and a BELL pool over a real weekend has not been run. What has run on Robinhood Chain mainnet is listed under the replay.</p></div>
               <div className="pf-scroll">
                 <table className="legal__table pf-table">
                   <thead><tr><th>Over {lp.rows} stock-weekends</th><th>Standard pool</th><th>BELL pool</th></tr></thead>
@@ -208,8 +208,17 @@ node scripts/verify-exit-liveness.ts --rpc https://your-robinhood-chain-rpc`}</p
                 <li>Prices are hourly bars from Yahoo Finance. The overnight session from 20:00 to 04:00 ET is not in that source.</li>
                 <li>Results depend on the size of the gap, and the sample is {lp.weekends} weekends of three stocks.</li>
               </ul>
+              <p>What has run on Robinhood Chain mainnet so far, each one a transaction you can open:</p>
+              <ul>
+                <li>An LP seeded a USDG/AAPL pool, swapped in it and withdrew all of it within seven minutes on 2 November, during the regular session, before the Opening Bell Auction existed: <a href="https://robinhoodchain.blockscout.com/tx/0x832da6d3ac7b6d79e00a79109232a843509d0dec75c255278492f03c2217f97b" target="_blank" rel="noopener noreferrer">seed</a>, <a href="https://robinhoodchain.blockscout.com/tx/0x06c73162f5dd214b30e622201124fa811843a664e5d5f8593e295de6ffc2647c" target="_blank" rel="noopener noreferrer">swap</a>, <a href="https://robinhoodchain.blockscout.com/tx/0x427c4f646a7fa74ef1d51090087ac37fbfe2ce58123407433aa753767a59a9da" target="_blank" rel="noopener noreferrer">withdraw</a>.</li>
+                <li>An LP withdrew all of the liquidity from a TSLA/USDG pool on 6 November, in the pre-market session: <a href="https://robinhoodchain.blockscout.com/tx/0x3a6144b81e988cdda55994fb6eafdc55067fb26c1694c50765fcf271d5628bfc" target="_blank" rel="noopener noreferrer">withdraw</a>.</li>
+                <li>A swap above the trade cap on the TSLA/USDG pool reverted with <code>TradeCapExceeded</code>: <a href="https://robinhoodchain.blockscout.com/tx/0x6eadcd4f35343ee43f13c52c4552770e50d08a6d363f8dd78e4088bc722448a4" target="_blank" rel="noopener noreferrer">transaction</a>.</li>
+              </ul>
               <p>
-                The script, the prices, the result of every row and the charts are in the public repository: <a href={`${REPO}/research/replay/README.md`} target="_blank" rel="noopener noreferrer">research/replay</a>. To rerun it, run <code>forge test --match-contract WeekendReplay -vv</code> from the <code>contracts</code> folder.
+                What has not run: no weekend has been measured live against a standard pool, no mainnet withdraw has been made while the market was closed, and the one Opening Bell Auction cycle on mainnet so far (9 November) closed with no orders. The amounts in these pools are small, so they show that the rules work, not what an LP keeps.
+              </p>
+              <p>
+                The script, the prices, the result of every row and the charts are in the public repository:<a href={`${REPO}/research/replay/README.md`} target="_blank" rel="noopener noreferrer">research/replay</a>. To rerun it, run <code>forge test --match-contract WeekendReplay -vv</code> from the <code>contracts</code> folder.
               </p>
             </Section>
           </div>
