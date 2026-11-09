@@ -8,7 +8,7 @@
  * market is CLOSED succeeds. Today every entry is from the Elysium testnet rehearsal (chain 99801). The mainnet entries
  * (chain 4663) are listed as PENDING with no transaction: a mainnet entry is only ever written from a real transaction hash.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 
 const tests = JSON.parse(readFileSync('evidence/deploy/elysium-testnet-tests.json', 'utf8'));
 const by = (name) => tests.entries.find((e) => e.test === name);
@@ -27,11 +27,20 @@ const testnet = RULES.map((r) => {
   if (!e || !HASH.test(e.tx ?? '')) throw new Error(`no transaction recorded for: ${r.test}`);
   return { id: r.id, rule: r.rule, expect: r.expect, status: 'DONE', chainId: 99801, pool: e.pool, tx: e.tx, block: e.block, at: e.at, error: r.error ?? null };
 });
-const mainnet = RULES.map((r) => ({ id: r.id, rule: r.rule, expect: r.expect, status: 'PENDING', chainId: 4663, pool: null, tx: null, block: null, at: null, error: r.error ?? null }));
+// A mainnet entry exists only where a script wrote an evidence file for a real transaction (evidence/lp-proof/mainnet-rule-test-*.json).
+const mainnetEvidence = existsSync('evidence/lp-proof')
+  ? readdirSync('evidence/lp-proof').filter((f) => /^mainnet-rule-test-.*\.json$/.test(f)).map((f) => JSON.parse(readFileSync(`evidence/lp-proof/${f}`, 'utf8')))
+  : [];
+const mainnet = RULES.map((r) => {
+  const e = mainnetEvidence.filter((x) => x.id === r.id && HASH.test(x.tx ?? '') && x.chainId === 4663).sort((a, b) => a.at.localeCompare(b.at))[0];
+  if (!e) return { id: r.id, rule: r.rule, expect: r.expect, status: 'PENDING', chainId: 4663, pool: null, tx: null, block: null, at: null, error: r.error ?? null };
+  return { id: r.id, rule: r.rule, expect: r.expect, status: 'DONE', chainId: 4663, pool: e.hook, poolId: e.poolId, pair: e.pair, wallet: e.wallet, tx: e.tx, block: e.block, at: e.at, error: e.error ?? r.error ?? null };
+});
 
 writeFileSync('deployments/rule-tests.json', `${JSON.stringify({
   note: 'Test D of the LP proof. Testnet entries are real transactions from the Elysium rehearsal. Mainnet entries stay PENDING until a real transaction exists.',
   testnet: { chainId: 99801, entries: testnet },
   mainnet: { chainId: 4663, entries: mainnet },
 }, null, 2)}\n`);
-console.log(`wrote deployments/rule-tests.json: ${testnet.length} testnet entries DONE, ${mainnet.length} mainnet entries PENDING`);
+const done = mainnet.filter((m) => m.status === 'DONE').length;
+console.log(`wrote deployments/rule-tests.json: ${testnet.length} testnet entries DONE, ${done} mainnet entries DONE, ${mainnet.length - done} PENDING`);

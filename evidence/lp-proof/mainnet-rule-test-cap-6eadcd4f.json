@@ -1,0 +1,21 @@
+{
+  "id": "swap-above-cap-reverts",
+  "chainId": 4663,
+  "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+  "hook": "0xeece9e0c1a6b483d9989db9920596feba6d06cc0",
+  "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
+  "pair": "TSLA/USDG",
+  "wallet": "0xf3784048450e72596cd18bF079aED441894176e4",
+  "amountIn": "1234800000000000",
+  "effectiveTradeCap": "617400000000000",
+  "tx": "0x6eadcd4f35343ee43f13c52c4552770e50d08a6d363f8dd78e4088bc722448a4",
+  "block": 109710206,
+  "at": "2026-11-09T02:27:45.056Z",
+  "error": "TradeCapExceeded",
+  "errorArgs": [
+    "0",
+    "1234800000000000",
+    "154350000000000"
+  ],
+  "gasUsed": "1018173"
+}
