@@ -22,7 +22,11 @@ const encodeCursor = value => btoa(JSON.stringify(value)).replaceAll('+', '-').r
 /**
  * Bounded, on-demand receipt index. Each cursor freezes the head and a <=10k-block window.
  * Pages within a window share a five-minute Cache API entry (at most 2k events); the next
- * cursor advances the window, including empty windows. No Durable Object history grows with
+ * cursor advances the window, including empty windows. Dense windows are halved until they fit;
+ * continuation starts immediately after that smaller window so no receipts are skipped. A
+ * single block above the event budget fails explicitly. At most 15 attempts / 30 log requests
+ * are needed for a 10k-block window, keeping the route within the 50-subrequest ceiling.
+ * No Durable Object history grows with
  * swaps. Cache eviction only causes that bounded window to be scanned again. Values and block
  * numbers are decimal strings where the ABI uses bigint; fee/logIndex are JSON numbers.
  */
@@ -49,34 +53,44 @@ export async function readPoolReceipts({ client, pool, auctionRegistry, expected
   const snapshot = state ? BigInt(state.snapshot) : head;
   if (snapshot > head) throw error('Invalid receipt cursor');
   const from = state ? BigInt(state.from) : genesis;
-  const to = state ? BigInt(state.to) : (from + MAX_BLOCKS - 1n < snapshot ? from + MAX_BLOCKS - 1n : snapshot);
+  let to = state ? BigInt(state.to) : (from + MAX_BLOCKS - 1n < snapshot ? from + MAX_BLOCKS - 1n : snapshot);
   const offset = state?.offset ?? 0;
   const auction = auctionRegistry ? await client.readContract({ address: auctionRegistry, abi: REGISTRY_ABI, functionName: 'auctionFor', args: [poolId], blockNumber: snapshot }) : ZERO;
-  const key = `${chainId}/${poolId}/${pool.poolManager.toLowerCase()}/${auction.toLowerCase()}/${from}/${to}`;
-  let receipts = await readCache(key);
+  const cacheKey = () => `${chainId}/${poolId}/${pool.poolManager.toLowerCase()}/${auction.toLowerCase()}/${from}/${to}`;
+  let receipts = await readCache(cacheKey());
   if (!receipts) {
     receipts = [];
     if (from <= to) {
       const sources = [{ address: pool.poolManager, abi: POOL_EVENTS, topics: [POOL_EVENTS.map(toEventSelector), poolId] }];
       if (auction.toLowerCase() !== ZERO) sources.push({ address: auction, abi: AUCTION_EVENTS, topics: [AUCTION_EVENTS.map(toEventSelector)] });
-      for (const source of sources) {
-        const logs = await client.request({ method: 'eth_getLogs', params: [{ address: source.address, fromBlock: toHex(from), toBlock: toHex(to), topics: source.topics }] });
-        if (!Array.isArray(logs) || logs.length + receipts.length > MAX_LOGS) throw error('Receipt window exceeds safe capacity', 503);
-        for (const log of logs) {
-          if (log.removed) continue;
-          const decoded = decodeEventLog({ abi: source.abi, data: log.data, topics: log.topics, strict: true });
-          if (decoded.args.id && decoded.args.id.toLowerCase() !== poolId) continue;
-          const args = JSON.parse(JSON.stringify(decoded.args, (_k, value) => typeof value === 'bigint' ? String(value) : value));
-          receipts.push({ event: decoded.eventName, poolId, address: source.address, blockNumber: String(BigInt(log.blockNumber)), blockHash: log.blockHash,
-            transactionHash: log.transactionHash, logIndex: Number(BigInt(log.logIndex)), args,
-            ...(decoded.eventName === 'Swap' ? { fee: Number(decoded.args.fee) } : {}),
-            explorerUrl: `https://robinhoodchain.blockscout.com/tx/${log.transactionHash}` });
+      while (true) {
+        receipts = [];
+        let oversized = false;
+        for (const source of sources) {
+          const logs = await client.request({ method: 'eth_getLogs', params: [{ address: source.address, fromBlock: toHex(from), toBlock: toHex(to), topics: source.topics }] });
+          if (!Array.isArray(logs)) throw error('Malformed receipt logs', 503);
+          if (logs.length + receipts.length > MAX_LOGS) { oversized = true; break; }
+          for (const log of logs) {
+            if (log.removed) continue;
+            const decoded = decodeEventLog({ abi: source.abi, data: log.data, topics: log.topics, strict: true });
+            if (decoded.args.id && decoded.args.id.toLowerCase() !== poolId) continue;
+            const args = JSON.parse(JSON.stringify(decoded.args, (_k, value) => typeof value === 'bigint' ? String(value) : value));
+            receipts.push({ event: decoded.eventName, poolId, address: source.address, blockNumber: String(BigInt(log.blockNumber)), blockHash: log.blockHash,
+              transactionHash: log.transactionHash, logIndex: Number(BigInt(log.logIndex)), args,
+              ...(decoded.eventName === 'Swap' ? { fee: Number(decoded.args.fee) } : {}),
+              explorerUrl: `https://robinhoodchain.blockscout.com/tx/${log.transactionHash}` });
+          }
         }
+        if (!oversized) break;
+        // An already-issued offset belongs to the original window. A reorg or changed RPC
+        // result must not silently reinterpret it against a newly shortened window.
+        if (from === to || offset > 0) throw error('Receipt block exceeds safe capacity', 503);
+        to = from + (to - from) / 2n;
       }
       receipts.sort((a, b) => BigInt(a.blockNumber) < BigInt(b.blockNumber) ? -1 : BigInt(a.blockNumber) > BigInt(b.blockNumber) ? 1 : a.logIndex - b.logIndex);
       receipts = [...new Map(receipts.map(row => [`${row.transactionHash}:${row.logIndex}`, row])).values()];
     }
-    await writeCache(key, receipts);
+    await writeCache(cacheKey(), receipts);
   }
   if (offset > receipts.length) throw error('Invalid receipt cursor');
   const page = receipts.slice(offset, offset + pageSize);

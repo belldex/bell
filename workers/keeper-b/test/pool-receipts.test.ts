@@ -55,9 +55,49 @@ describe('public pool receipt pages', () => {
     expect(second.receipts.map(x => x.event)).toEqual(['Swap']);
     expect(chain.ranges).toEqual([]);
   });
-  it('fails explicitly instead of silently dropping an oversized RPC window', async () => {
-    const logs = Array.from({ length: 2001 }, (_, i) => ({ ...swap(), logIndex: `0x${i.toString(16)}` }));
-    await expect(readPoolReceipts({ client: client(logs), pool })).rejects.toMatchObject({ status: 503 });
+  it('traverses dense mixed-event ranges without losing receipts at the window budget', async () => {
+    const swapFixture = swap();
+    const auctionFixture = settled();
+    const logs = Array.from({ length: 2202 }, (_, i) => ({
+      ...(i % 2 ? auctionFixture : swapFixture),
+      blockNumber: i < 2000 ? '0x64' : '0x65',
+      logIndex: `0x${i.toString(16)}`,
+    }));
+    const chain = client(logs, 101n);
+    const cache = new Map();
+    const readCache = async key => cache.get(key);
+    const writeCache = async (key, value) => { cache.set(key, value); };
+    const seen: any[] = [];
+    let cursor = null;
+    let firstRange = null;
+    let completed = false;
+    for (let i = 0; i < 25; i++) {
+      const page = await readPoolReceipts({ client: chain, pool, auctionRegistry: manager, limit: '100', cursor, readCache, writeCache });
+      firstRange ??= page.range;
+      expect(page.blockNumber).toBe('101');
+      seen.push(...page.receipts);
+      cursor = page.nextCursor;
+      if (cursor === null) { completed = page.complete; break; }
+    }
+    expect(firstRange).toEqual({ fromBlock: '100', toBlock: '100' });
+    expect(completed).toBe(true);
+    expect(seen).toHaveLength(2202);
+    expect(seen.map(row => row.logIndex)).toEqual(Array.from({ length: 2202 }, (_, i) => i));
+    expect(seen[1999]).toMatchObject({ blockNumber: '100', event: 'CycleSettled' });
+    expect(seen[2000]).toMatchObject({ blockNumber: '101', event: 'Swap' });
+    expect([...cache.values()].every(rows => rows.length <= 2000)).toBe(true);
+    expect(chain.ranges.length).toBeLessThan(10);
+  });
+  it('fails explicitly for an oversized single block within a bounded split budget', async () => {
+    const swapFixture = swap();
+    const auctionFixture = settled();
+    const logs = Array.from({ length: 2001 }, (_, i) => ({
+      ...(i % 2 ? auctionFixture : swapFixture), blockNumber: '0x64', logIndex: `0x${i.toString(16)}`,
+    }));
+    const chain = client(logs, 10099n);
+    await expect(readPoolReceipts({ client: chain, pool, auctionRegistry: manager })).rejects.toMatchObject({ status: 503 });
+    expect(chain.ranges.length).toBeLessThanOrEqual(30);
+    expect(chain.ranges.at(-1)).toMatchObject({ fromBlock: '0x64', toBlock: '0x64' });
   });
   it('rejects invalid or cross-pool cursors', async () => {
     await expect(readPoolReceipts({ client: client([]), pool, cursor: 'garbage' })).rejects.toMatchObject({ status: 400 });
