@@ -34,6 +34,7 @@ import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.mjs';
 import { readAuctionSnapshots } from './auction-read.mjs';
+import { readPoolReceipts } from './pool-receipts.mjs';
 
 export { KeeperState };
 
@@ -1000,7 +1001,8 @@ const worker = {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
-    const isPublicRead = ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
+    const receiptRoute = /^\/pools\/([^/]+)\/receipts$/.exec(url.pathname);
+    const isPublicRead = Boolean(receiptRoute) || ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -1009,6 +1011,46 @@ const worker = {
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     };
     if (isPublicRead && request.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
+    if (receiptRoute) {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      const poolId = receiptRoute[1].toLowerCase();
+      if (!/^0x[0-9a-f]{64}$/.test(poolId)) return cors(json({ error: 'Invalid pool ID' }, 400));
+      try {
+        // Scheduled discovery and /pools maintain this directory. Do not repeat the cold
+        // directory's per-pool reads here: that plus receipt scans exceeds 50 subrequests.
+        const stub = env.KEEPER_DO.get(env.KEEPER_DO.idFromName('bell-keeper'));
+        const directory = await (await stub.fetch(new Request('https://do/poolcache'))).json();
+        if (!directory?.static) throw new Error('Pool directory cache unavailable');
+        const entry: any = Object.values(directory.static).find((row: any) => row.poolId?.toLowerCase() === poolId);
+        if (!entry) return cors(json({ error: 'Unknown pool' }, 404));
+        if (!entry.config?.poolManager || !entry.createdAtBlock) throw new Error('Pool metadata unavailable');
+        const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC
+          || env.BELL_RPC_URL || env.RH_TESTNET_RPC_PRIMARY;
+        if (!rpcUrl) throw new Error('Receipt RPC unavailable');
+        const client = createPublicClient({ transport: http(rpcUrl) });
+        const cacheRequest = (key) => new Request(`https://bell-receipts.invalid/v1/${encodeURIComponent(key)}`);
+        const result = await readPoolReceipts({ client,
+          pool: { poolId, poolManager: entry.config.poolManager, createdAtBlock: entry.createdAtBlock },
+          auctionRegistry: env.BELL_AUCTION_REGISTRY,
+          expectedChainId: Number(env.BELL_EXPECTED_CHAIN_ID || 4663),
+          limit: url.searchParams.get('limit') ?? '50', cursor: url.searchParams.get('cursor'),
+          readCache: async (key) => {
+            try { const hit = await caches.default.match(cacheRequest(key)); return hit ? await hit.json() : null; }
+            catch { return null; }
+          },
+          writeCache: async (key, rows) => {
+            try { await caches.default.put(cacheRequest(key), new Response(JSON.stringify(rows), {
+              headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' },
+            })); } catch { /* Cache eviction/unavailability affects latency, never receipt completeness. */ }
+          },
+        });
+        return cors(json(result));
+      } catch (error) {
+        // Validation errors are our own fixed strings. Never expose upstream RPC URLs or errors.
+        const clientError = error?.receiptValidation === true;
+        return cors(json({ error: clientError ? error.message : 'Live pool receipts are temporarily unavailable' }, clientError ? 400 : 503));
+      }
+    }
     if (url.pathname === '/pools') {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
       try {
