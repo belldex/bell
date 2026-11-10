@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {BellSwapLens} from "../../../src/BellSwapLens.sol";
 import {IBellSwapLens} from "../../../src/interfaces/IBellSwapLens.sol";
+import {IBellErrors} from "../../../src/interfaces/ProtocolEvents.sol";
 import {BellHook} from "../../../src/BellHook.sol";
 import {BellHookV2} from "../../../src/BellHookV2.sol";
 import {BellOpeningAuction} from "../../../src/auction/BellOpeningAuction.sol";
@@ -47,6 +48,23 @@ interface VmLens {
     function prank(address) external;
     function getNonce(address) external view returns (uint64);
     function computeCreateAddress(address, uint256) external pure returns (address);
+    function mockCall(address, bytes calldata, bytes calldata) external;
+    function mockCallRevert(address, bytes calldata, bytes calldata) external;
+    function clearMockedCalls() external;
+}
+
+/// @dev Synthetic reference boundary; admission binds the stock token and real oracle/evaluator
+/// policy/price-path logic consumes these fixed reference prices throughout the regression tests.
+contract LensReference {
+    address public immutable stockToken;
+
+    constructor(address token) {
+        stockToken = token;
+    }
+
+    function referencePrice() external pure returns (uint128) {
+        return 1e18;
+    }
 }
 
 /// @dev Real factory, HookV2, oracle, evaluator, PoolManager and PositionManager.
@@ -246,6 +264,92 @@ contract BellSwapLensTest is IUnlockCallback {
     function testLensZeroAmountMatchesCore() external {
         _init();
         _parity(true, 0, false, IPoolManager.SwapAmountCannotBeZero.selector);
+    }
+
+    function _initPriceGuarded() private {
+        request.config.poolClass = 0;
+        request.config.referenceAdapter0 = address(new LensReference(address(token0)));
+        request.config.referenceAdapter1 = address(new LensReference(address(0)));
+        request.salt = _mine();
+        _init();
+        _parity(true, 3, true, bytes4(0));
+    }
+
+    function _badDecimals(uint8 kind) private {
+        bytes memory selector = abi.encodeWithSignature("decimals()");
+        // Alter only the external token read, retaining real policy, quote and swap execution.
+        // This also keeps the admitted code fingerprint intact, isolating error precedence.
+        if (kind == 0) {
+            lensVm.mockCallRevert(
+                address(token0), selector, abi.encodeWithSignature("Error(string)", "decimals unavailable")
+            );
+        } else if (kind == 1) {
+            lensVm.mockCall(address(token0), selector, hex"01");
+        } else {
+            lensVm.mockCall(address(token0), selector, abi.encode(uint256(19)));
+        }
+    }
+
+    function testLensPriceGuardedBadDecimalsOrdinaryAmountMatchesCore() external {
+        _initPriceGuarded();
+        for (uint8 kind; kind < 3; ++kind) {
+            _badDecimals(kind);
+            _parity(true, 3, false, IBellErrors.BadConfig.selector);
+            _parity(false, 3, false, IBellErrors.BadConfig.selector);
+            require(lens.getSwapStatus(id, true, 3).currentFeePips == 0, "unavailable fee must not be invented");
+            lensVm.clearMockedCalls();
+        }
+    }
+
+    function testLensPriceGuardedBadDecimalsAuctionActiveMatchesCore() external {
+        _initPriceGuarded();
+        BellOpeningAuction auction = new BellOpeningAuction(
+            address(factory),
+            address(poolHook),
+            request.config.calendarRegistry,
+            request.config.asset0,
+            address(token1),
+            address(token0),
+            600,
+            900,
+            512,
+            1,
+            1,
+            25
+        );
+        address registry = BellHookV2(address(poolHook)).auctionRegistry();
+        address module = BellHookDeployerV2(address(factory.hookDeployer())).auctionFactoryModule();
+        // Current factory policy omits PRICE_GUARDED auctions. Bind at the registry boundary
+        // to test HookV2's independent guard with a real auction rather than mocking its outcome.
+        lensVm.prank(module);
+        BellAuctionRegistry(registry).setAuction(id, address(auction));
+        MockCalendarRegistry calendar = MockCalendarRegistry(request.config.calendarRegistry);
+        CalendarLeaf memory next = CalendarLeaf(request.config.asset0, 2026, 2, 11500, 20000, 1, keccak256("pre"));
+        calendar.setLeaf(CalendarLeaf(request.config.asset0, 2026, 1, 10400, 11500, 5, keccak256("close")));
+        calendar.setNextLeaf(next);
+        require(auction.armNext(), "arm real auction");
+        lensVm.warp(11500);
+        calendar.setLeaf(next);
+        // A real LOCKED auction blocks swaps while PRE policy still has live reference prices.
+        require(auction.blocksSwaps(), "auction must block before token read");
+        for (uint8 kind; kind < 3; ++kind) {
+            _badDecimals(kind);
+            _parity(true, 3, false, BellHookV2.AuctionActive.selector);
+            _parity(false, 3, false, BellHookV2.AuctionActive.selector);
+            // Core's zero check precedes even an active auction.
+            _parity(true, 0, false, IPoolManager.SwapAmountCannotBeZero.selector);
+            lensVm.clearMockedCalls();
+        }
+    }
+
+    function testLensPriceGuardedBadDecimalsZeroAmountMatchesCore() external {
+        _initPriceGuarded();
+        for (uint8 kind; kind < 3; ++kind) {
+            _badDecimals(kind);
+            _parity(true, 0, false, IPoolManager.SwapAmountCannotBeZero.selector);
+            _parity(false, 0, false, IPoolManager.SwapAmountCannotBeZero.selector);
+            lensVm.clearMockedCalls();
+        }
     }
 
     function testLensClosedAllowedAndEpisodeExhaustionMatchesCore() external {

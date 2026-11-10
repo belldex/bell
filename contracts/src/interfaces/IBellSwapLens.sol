@@ -19,6 +19,7 @@ interface IBellSwapLens {
     /// @dev Admission covers hook/core policy, not payer balances, allowances, router deadlines or slippage.
     /// maxIn fields are remaining token-denominated gross budgets; the opposite-side budget and price
     /// path can further restrict a quote. reason is the unwrapped hook/core error selector.
+    /// When a blocked swap's fee metadata is unavailable, currentFeePips is zero.
     function getSwapStatus(bytes32 poolId, bool zeroForOne, uint256 amountIn) external view returns (SwapStatus memory);
 
     /// @notice Unknown pool IDs return zero metadata. Each immutable lens is bound to one hook/pool.

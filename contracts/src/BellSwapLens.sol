@@ -78,7 +78,6 @@ contract BellSwapLens is IBellSwapLens {
         PolicyView memory policy = boundHook.getPolicy();
         status.session = policy.phase;
         status.nextTransition = _nextTransition(config);
-        status.currentFeePips = _fee(policy, boundHook.state(), config);
         (,,, address auction) = getPoolInfo(poolId);
         bool auctionBlocks;
         if (auction != address(0)) {
@@ -105,6 +104,11 @@ contract BellSwapLens is IBellSwapLens {
             }
         } catch (bytes memory reason) {
             status.reason = auctionBlocks ? BellHookV2.AuctionActive.selector : bytes4(reason);
+            // Fee metadata is auxiliary: a failed token read must not replace the canonical
+            // swap rejection (or escape the status query). Zero explicitly means unavailable.
+            try this.readFee(policy, boundHook.state(), config) returns (uint24 fee) {
+                status.currentFeePips = fee;
+            } catch {}
         }
         // Core rejects zero before initialization or any hook callback, including the auction guard.
         if (amountIn == 0) {
@@ -211,7 +215,8 @@ contract BellSwapLens is IBellSwapLens {
         }
     }
 
-    function _fee(PolicyView memory p, PoolState memory state, PoolConfig memory c) private view returns (uint24) {
+    /// @dev External only to isolate failures in blocked-policy fee metadata from swap admission.
+    function readFee(PolicyView memory p, PoolState memory state, PoolConfig memory c) external view returns (uint24) {
         if (p.phase == 0 || state.bellStart == 0 || state.bellStart > block.timestamp) return 0;
         uint24 base = p.phase == 2 ? 500 : p.phase == 1 || p.phase == 3 ? 3000 : p.phase == 4 ? 5000 : 10000;
         bool fallbackMode = (p.flags & 2) != 0;
