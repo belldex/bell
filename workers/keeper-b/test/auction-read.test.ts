@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readAuctionSnapshots } from '../src/auction-read.mjs';
+import { readAuctionBindings, readAuctionSnapshots } from '../src/auction-read.mjs';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 const registry = '0x00000000000000000000000000000000000000aa';
@@ -36,6 +36,13 @@ const baseState = () => ({
 });
 
 describe('auction read snapshots', () => {
+  it('reads bound and unbound pools in one directory multicall', async () => {
+    const client = fakeClient(baseState());
+    const out = await readAuctionBindings(client, { registry, pools, blockNumber: 100n });
+    expect(out[pools[0].poolId]).toEqual({ address: auctionAddr });
+    expect(out[pools[1].poolId]).toBeNull();
+    expect(client.calls).toEqual([2]);
+  });
   it('returns bound auctions keyed by pool id with JSON-safe values', async () => {
     const client = fakeClient(baseState());
     const out = await readAuctionSnapshots(client, { registry, pools });

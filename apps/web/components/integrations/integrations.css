@@ -1,0 +1,21 @@
+.integrations .legal__body { max-width:52rem; }
+.integrations .legal__body section { scroll-margin-top:calc(var(--lp-nav-h) + 1.5rem); }
+.integrations__section { padding:0 0 2.5rem; margin:0 0 2.4rem; border-bottom:1px solid var(--lp-line-2); }
+.integrations__section h2 { margin:.55rem 0 1rem; color:var(--lp-white); font:600 clamp(1.45rem,3vw,2rem)/1.15 var(--lp-font-display); }
+.integrations__section p { max-width:46rem; color:var(--lp-muted); font-size:.94rem; line-height:1.7; }
+.integrations__section code { color:var(--lp-white); font:500 .78rem/1.5 var(--lp-font-mono); }
+.integrations__section a { color:var(--lp-accent-light); text-decoration:underline; text-underline-offset:.18em; }
+.integrations__section a svg { display:inline; vertical-align:-.15em; }
+.integrations__section-head { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:1rem; }
+.integrations__refresh { display:inline-flex; align-items:center; gap:.5rem; border:1px solid var(--lp-line-2); padding:.55rem .8rem; color:var(--lp-muted); font:500 .66rem/1 var(--lp-font-mono); text-transform:uppercase; }
+.integrations__refresh:disabled { opacity:.55; }
+.integrations__spin { animation:integrations-spin 1s linear infinite; }
+@keyframes integrations-spin { to { transform:rotate(360deg); } }
+.integrations__error { margin:1rem 0; border-left:2px solid var(--lp-accent); padding:.75rem 1rem; color:var(--lp-accent-light)!important; }
+.integrations__code { margin:1rem 0; overflow-x:auto; border:1px solid var(--lp-line-2); padding:1rem; background:rgba(238,236,229,.035); }
+.integrations__plain-list,.integrations__errors,.integrations__contracts { display:grid; gap:.55rem; margin:1rem 0; padding:0; list-style:none; }
+.integrations__plain-list li,.integrations__errors li,.integrations__contracts li { display:flex; flex-wrap:wrap; justify-content:space-between; gap:.6rem 1rem; border-bottom:1px solid var(--lp-line-2); padding:.65rem 0; color:var(--lp-muted); font-size:.84rem; }
+.integrations__errors li span { max-width:32rem; }
+.integrations__contracts li span { color:var(--lp-white); }
+.integrations__footer { display:flex; flex-wrap:wrap; gap:1rem; margin-top:1.3rem; font:500 .75rem/1.5 var(--lp-font-mono); }
+@media (max-width:560px) { .integrations__section { padding-bottom:1.8rem; margin-bottom:1.8rem; } .integrations__plain-list li,.integrations__errors li,.integrations__contracts li { display:grid; } }

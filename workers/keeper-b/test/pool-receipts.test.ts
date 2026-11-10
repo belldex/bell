@@ -24,15 +24,15 @@ const settled = () => log('event CycleSettled(uint64 indexed cycleId,uint160 cle
 describe('public pool receipt pages', () => {
   it('normalizes Initialize, Swap fee and auction values with source identifiers', async () => {
     const out = await readPoolReceipts({ client: client([settled(), swap(), initialize()]), pool, auctionRegistry: manager });
-    expect(out.receipts.map(x => x.event)).toEqual(['Initialize', 'Swap', 'CycleSettled']);
+    expect(out.receipts.map(x => x.event)).toEqual(['CycleSettled', 'Swap', 'Initialize']);
     expect(out.receipts[1]).toMatchObject({ poolId, blockNumber: '101', blockHash: hash, transactionHash: tx, logIndex: 2, fee: 3000, args: { amount0: '-10', amount1: '9' }, explorerUrl: `https://robinhoodchain.blockscout.com/tx/${tx}` });
     expect(() => JSON.stringify(out)).not.toThrow();
   });
-  it('paginates a pinned chronological snapshot without duplicates', async () => {
+  it('paginates a pinned newest-first snapshot without duplicates', async () => {
     const first = await readPoolReceipts({ client: client([swap(), initialize()]), pool, limit: '1' });
     const second = await readPoolReceipts({ client: client([swap(), initialize(), settled()], 999n), pool, limit: '1', cursor: first.nextCursor });
-    expect(first.receipts.map(x => x.event)).toEqual(['Initialize']);
-    expect(second.receipts.map(x => x.event)).toEqual(['Swap']);
+    expect(first.receipts.map(x => x.event)).toEqual(['Swap']);
+    expect(second.receipts.map(x => x.event)).toEqual(['Initialize']);
     expect(second.blockNumber).toBe('105');
     expect(second.nextCursor).toBeNull();
   });
@@ -43,6 +43,7 @@ describe('public pool receipt pages', () => {
     expect(chain.ranges.every(x => BigInt(x.toBlock) - BigInt(x.fromBlock) < 10000n)).toBe(true);
     expect(out.nextCursor).toBeTruthy();
     expect(out.complete).toBe(false);
+    expect(out.range).toEqual({ fromBlock: '990000', toBlock: '999999' });
   });
   it('reuses cached decoded windows between pages', async () => {
     const cache = new Map();
@@ -52,7 +53,7 @@ describe('public pool receipt pages', () => {
     const first = await readPoolReceipts({ client: chain, pool, limit: '1', readCache, writeCache });
     chain.ranges.length = 0;
     const second = await readPoolReceipts({ client: chain, pool, cursor: first.nextCursor, readCache, writeCache });
-    expect(second.receipts.map(x => x.event)).toEqual(['Swap']);
+    expect(second.receipts.map(x => x.event)).toEqual(['Initialize']);
     expect(chain.ranges).toEqual([]);
   });
   it('traverses dense mixed-event ranges without losing receipts at the window budget', async () => {
@@ -79,12 +80,12 @@ describe('public pool receipt pages', () => {
       cursor = page.nextCursor;
       if (cursor === null) { completed = page.complete; break; }
     }
-    expect(firstRange).toEqual({ fromBlock: '100', toBlock: '100' });
+    expect(firstRange).toEqual({ fromBlock: '101', toBlock: '101' });
     expect(completed).toBe(true);
     expect(seen).toHaveLength(2202);
-    expect(seen.map(row => row.logIndex)).toEqual(Array.from({ length: 2202 }, (_, i) => i));
-    expect(seen[1999]).toMatchObject({ blockNumber: '100', event: 'CycleSettled' });
-    expect(seen[2000]).toMatchObject({ blockNumber: '101', event: 'Swap' });
+    expect(seen.map(row => row.logIndex)).toEqual(Array.from({ length: 2202 }, (_, i) => 2201 - i));
+    expect(seen[201]).toMatchObject({ blockNumber: '101', event: 'Swap' });
+    expect(seen[202]).toMatchObject({ blockNumber: '100', event: 'CycleSettled' });
     expect([...cache.values()].every(rows => rows.length <= 2000)).toBe(true);
     expect(chain.ranges.length).toBeLessThan(10);
   });
@@ -92,12 +93,12 @@ describe('public pool receipt pages', () => {
     const swapFixture = swap();
     const auctionFixture = settled();
     const logs = Array.from({ length: 2001 }, (_, i) => ({
-      ...(i % 2 ? auctionFixture : swapFixture), blockNumber: '0x64', logIndex: `0x${i.toString(16)}`,
+      ...(i % 2 ? auctionFixture : swapFixture), blockNumber: '0x2773', logIndex: `0x${i.toString(16)}`,
     }));
     const chain = client(logs, 10099n);
     await expect(readPoolReceipts({ client: chain, pool, auctionRegistry: manager })).rejects.toMatchObject({ status: 503 });
     expect(chain.ranges.length).toBeLessThanOrEqual(30);
-    expect(chain.ranges.at(-1)).toMatchObject({ fromBlock: '0x64', toBlock: '0x64' });
+    expect(chain.ranges.at(-1)).toMatchObject({ fromBlock: '0x2773', toBlock: '0x2773' });
   });
   it('rejects invalid or cross-pool cursors', async () => {
     await expect(readPoolReceipts({ client: client([]), pool, cursor: 'garbage' })).rejects.toMatchObject({ status: 400 });

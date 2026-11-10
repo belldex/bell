@@ -67,7 +67,7 @@ test('live pool directory reads the Worker API and has an honest empty state', a
   const adapter = await read('../lib/mainnet-live.ts');
   assert.match(pools, /readLivePools\(/);
   assert.match(pools, /Your pool will appear here/);
-  assert.match(pools, /Pool details/);
+  assert.match(pools, /Verify this pool/);
   assert.match(adapter, /replace\(\/\\\/quote\$\/.*\/pools/);
   assert.match(adapter, /Number\(body\.chainId\) !== MAINNET\.chainId/);
   assert.match(adapter, /client\.getLogs/);

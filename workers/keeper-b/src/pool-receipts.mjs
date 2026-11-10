@@ -22,8 +22,8 @@ const encodeCursor = value => btoa(JSON.stringify(value)).replaceAll('+', '-').r
 /**
  * Bounded, on-demand receipt index. Each cursor freezes the head and a <=10k-block window.
  * Pages within a window share a five-minute Cache API entry (at most 2k events); the next
- * cursor advances the window, including empty windows. Dense windows are halved until they fit;
- * continuation starts immediately after that smaller window so no receipts are skipped. A
+ * cursor moves backwards, including empty windows. Dense windows are halved until they fit;
+ * continuation starts immediately before that smaller window so no receipts are skipped. A
  * single block above the event budget fails explicitly. At most 15 attempts / 30 log requests
  * are needed for a 10k-block window, keeping the route within the 50-subrequest ceiling.
  * No Durable Object history grows with
@@ -41,7 +41,7 @@ export async function readPoolReceipts({ client, pool, auctionRegistry, expected
     try {
       if (cursor.length > 512 || !/^[A-Za-z0-9_-]+$/.test(cursor)) throw new Error();
       state = JSON.parse(atob(cursor.replaceAll('-', '+').replaceAll('_', '/')));
-      if (state.v !== 1 || state.poolId !== poolId || !['snapshot', 'from', 'to'].every(k => /^\d{1,20}$/.test(state[k]))
+      if (state.v !== 2 || state.poolId !== poolId || !['snapshot', 'from', 'to'].every(k => /^\d{1,20}$/.test(state[k]))
         || !Number.isSafeInteger(state.offset) || state.offset < 0 || state.offset > MAX_LOGS) throw new Error();
       if (BigInt(state.from) < genesis || BigInt(state.to) < BigInt(state.from) || BigInt(state.to) > BigInt(state.snapshot)
         || BigInt(state.to) - BigInt(state.from) >= MAX_BLOCKS) throw new Error();
@@ -52,8 +52,8 @@ export async function readPoolReceipts({ client, pool, auctionRegistry, expected
   const head = await client.getBlockNumber();
   const snapshot = state ? BigInt(state.snapshot) : head;
   if (snapshot > head) throw error('Invalid receipt cursor');
-  const from = state ? BigInt(state.from) : genesis;
-  let to = state ? BigInt(state.to) : (from + MAX_BLOCKS - 1n < snapshot ? from + MAX_BLOCKS - 1n : snapshot);
+  let to = state ? BigInt(state.to) : snapshot;
+  let from = state ? BigInt(state.from) : (to - genesis >= MAX_BLOCKS ? to - MAX_BLOCKS + 1n : genesis);
   const offset = state?.offset ?? 0;
   const auction = auctionRegistry ? await client.readContract({ address: auctionRegistry, abi: REGISTRY_ABI, functionName: 'auctionFor', args: [poolId], blockNumber: snapshot }) : ZERO;
   const cacheKey = () => `${chainId}/${poolId}/${pool.poolManager.toLowerCase()}/${auction.toLowerCase()}/${from}/${to}`;
@@ -85,9 +85,9 @@ export async function readPoolReceipts({ client, pool, auctionRegistry, expected
         // An already-issued offset belongs to the original window. A reorg or changed RPC
         // result must not silently reinterpret it against a newly shortened window.
         if (from === to || offset > 0) throw error('Receipt block exceeds safe capacity', 503);
-        to = from + (to - from) / 2n;
+        from = from + (to - from + 1n) / 2n;
       }
-      receipts.sort((a, b) => BigInt(a.blockNumber) < BigInt(b.blockNumber) ? -1 : BigInt(a.blockNumber) > BigInt(b.blockNumber) ? 1 : a.logIndex - b.logIndex);
+      receipts.sort((a, b) => BigInt(a.blockNumber) < BigInt(b.blockNumber) ? 1 : BigInt(a.blockNumber) > BigInt(b.blockNumber) ? -1 : b.logIndex - a.logIndex);
       receipts = [...new Map(receipts.map(row => [`${row.transactionHash}:${row.logIndex}`, row])).values()];
     }
     await writeCache(cacheKey(), receipts);
@@ -95,9 +95,11 @@ export async function readPoolReceipts({ client, pool, auctionRegistry, expected
   if (offset > receipts.length) throw error('Invalid receipt cursor');
   const page = receipts.slice(offset, offset + pageSize);
   const hasMoreRows = offset + page.length < receipts.length;
-  const hasMoreBlocks = to < snapshot;
-  const nextCursor = hasMoreRows || hasMoreBlocks ? encodeCursor({ v: 1, poolId, snapshot: String(snapshot), from: String(hasMoreRows ? from : to + 1n),
-    to: String(hasMoreRows ? to : (to + MAX_BLOCKS < snapshot ? to + MAX_BLOCKS : snapshot)), offset: hasMoreRows ? offset + page.length : 0 }) : null;
+  const hasMoreBlocks = from > genesis;
+  const nextTo = from - 1n;
+  const nextFrom = nextTo - genesis >= MAX_BLOCKS ? nextTo - MAX_BLOCKS + 1n : genesis;
+  const nextCursor = hasMoreRows || hasMoreBlocks ? encodeCursor({ v: 2, poolId, snapshot: String(snapshot), from: String(hasMoreRows ? from : nextFrom),
+    to: String(hasMoreRows ? to : nextTo), offset: hasMoreRows ? offset + page.length : 0 }) : null;
   return { version: 1, chainId, poolId, blockNumber: String(snapshot), observedAt: new Date().toISOString(), limit: pageSize,
     range: { fromBlock: String(from), toBlock: String(to) }, receipts: page, nextCursor, complete: nextCursor === null };
 }

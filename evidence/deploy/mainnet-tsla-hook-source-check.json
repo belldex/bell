@@ -1,0 +1,21 @@
+{
+  "chainId": 4663,
+  "address": "0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0",
+  "contract": "src/BellHookV2.sol:BellHookV2",
+  "compiler": "0.8.26+commit.8a97fa7a",
+  "observedAt": "2026-11-10T06:38:51Z",
+  "sourcify": {
+    "verificationId": "46be400c-55f1-409b-857d-4d07cbcfe99d",
+    "matchId": "58977979",
+    "creationMatch": "match",
+    "runtimeMatch": "match",
+    "url": "https://sourcify.dev/server/v2/contract/4663/0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0"
+  },
+  "blockscout": {
+    "sourceVerified": false,
+    "automaticSubmission": "Fail - Unable to verify",
+    "standardJsonSubmission": "Fail - Unable to verify",
+    "url": "https://robinhoodchain.blockscout.com/address/0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0"
+  },
+  "note": "Local creation bytecode matched the prefix of the explorer creation bytecode; local runtime matched onchain runtime with immutable references masked. Sourcify reports match, not exact_match. Blockscout did not accept either submission."
+}

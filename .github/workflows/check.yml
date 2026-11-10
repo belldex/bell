@@ -29,6 +29,11 @@ jobs:
       - run: pnpm run abi:check
       - run: pnpm run test:runtime:portable
       - run: pnpm run test:workers
+      - run: node --test scripts/verify-bell.test.mjs
+      # Public, read-only Mainnet verification: pool permission mask, swap fees, and rule receipts.
+      - run: pnpm run verify:bell
+        env:
+          RH_MAINNET_RPC_SECONDARY: ${{ secrets.RH_MAINNET_RPC_SECONDARY }}
       - run: pnpm run check:secrets
       # Every committed hook address must keep its remove-liquidity permission bits clear.
       - run: node scripts/verify-exit-liveness.ts --snapshot

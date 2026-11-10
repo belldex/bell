@@ -7,6 +7,8 @@ import { readLivePools, type LivePool } from '@/lib/mainnet-live';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { TokenPair } from '@/components/ui/TokenLogo';
 import { Button } from '@/components/ui/primitives';
+import lensMap from '@/content/mainnet-pool-lenses.json';
+import { KEEPER_URL } from '@/config/mainnet';
 
 const MODE_LABEL = ['Halted', 'Active', 'Closed', 'Recovering', 'Setup'] as const;
 const PHASE_LABEL = ['Unknown', 'Pre-market', 'Regular', 'Post-market', 'Overnight', 'Closed'] as const;
@@ -21,15 +23,26 @@ function statusFor(pool: LivePool) {
 }
 
 function PoolCard({ pool }: { pool: LivePool }) {
+  const [liveFee, setLiveFee] = useState<number | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${KEEPER_URL}/pools/${pool.poolId}/status?zeroForOne=true&amountIn=0`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((body) => { const fee = Number(body?.status?.currentFeePips); setLiveFee(Number.isFinite(fee) && fee > 0 ? fee : null); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [pool.poolId]);
   const status = statusFor(pool);
   const [left, right] = pool.legs;
   const mode = MODE_LABEL[pool.policy.mode] ?? `Mode ${pool.policy.mode}`;
   const phase = PHASE_LABEL[pool.policy.phase] ?? `Phase ${pool.policy.phase}`;
-  const fee = `${(pool.policy.lpFeeUnits / 10_000).toFixed(3)}%`;
+  const fee = liveFee === null ? 'Unavailable' : `${(liveFee / 10_000).toFixed(3)}%`;
+  const detailsHref = lensMap.pools.some((entry) => entry.poolId.toLowerCase() === pool.poolId.toLowerCase())
+    ? `/pool/${pool.poolId}/` : `/pool/?id=${pool.poolId}`;
   return (
     <li className="glass border border-line bg-surface/75 p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <Link href={`/pool/?hook=${pool.hook}`} className="inline-flex min-w-0 items-center gap-3">
+        <Link href={detailsHref} className="inline-flex min-w-0 items-center gap-3">
           <TokenPair symbols={[left.symbol, right.symbol]} size={34} />
           <span className="min-w-0">
             <span className="block truncate font-display text-2xl leading-tight text-ink">
@@ -76,10 +89,10 @@ function PoolCard({ pool }: { pool: LivePool }) {
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Link
-          href={`/pool/?hook=${pool.hook}`}
+          href={detailsHref}
           className="inline-flex min-h-10 flex-1 sm:flex-none justify-center items-center gap-2 border border-line px-3 font-mono text-[11px] uppercase text-muted transition-colors hover:border-line-strong hover:text-ink"
         >
-          Pool details
+          Verify this pool
         </Link>
         {pool.lifecycle !== 3 && (
           <Link

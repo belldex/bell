@@ -76,7 +76,8 @@
     "auction:cli": "node scripts/auction-cli/bell-auction.mjs",
     "auction:demo": "node scripts/auction-cli/bell-auction.mjs --demo",
     "auction:verify": "node scripts/auction-cli/bell-verify.mjs",
-    "auction:record": "node scripts/auction-cli/bell-verify.mjs --static"
+    "auction:record": "node scripts/auction-cli/bell-verify.mjs --static",
+    "verify:bell": "node scripts/verify-bell.ts"
   },
   "devDependencies": {
     "@chainlink/data-streams-sdk": "2.0.0",

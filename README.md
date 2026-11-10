@@ -437,6 +437,18 @@ A market-price pool trades in every session and needs no external feed. A checke
 
 If any document conflicts with `docs/CURRENT-STATE.md`, that document is out of date.
 
+## 🔎 Verify BELL onchain
+
+Run the public, read-only verifier from the repository root:
+
+```bash
+pnpm verify:bell
+```
+
+It reads Robinhood Chain Mainnet events and the rule-test ledger, checks each pool's hook permission bits, reports the latest observed swap fee by session, and writes a block-stamped `verify-output.json`. A missing rule-test receipt or a permission mismatch is reported as incomplete/failed; the script does not submit transactions.
+
+The RPC must support historical `eth_getLogs` over the BELL factory and PoolManager history. Set `RH_MAINNET_RPC_SECONDARY` or `RH_MAINNET_ARCHIVE_RPC` if the public endpoint restricts log ranges. `INCOMPLETE` reports outstanding evidence without treating it as a pass; use `pnpm verify:bell -- --require-complete` when a nonzero exit is required for pending evidence.
+
 ---
 
 ## 🤝 Contributing

@@ -33,10 +33,16 @@ import { runChainlinkStatus } from './chainlink-status.mjs';
 import { buildCalendarActivation } from './calendar-maintenance.mjs';
 import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.mjs';
-import { readAuctionSnapshots } from './auction-read.mjs';
+import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
+import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
 
 export { KeeperState };
+
+const BELL_SWAP_LENS_ABI = parseAbi([
+  'function getPoolInfo(bytes32 poolId) view returns (address hook,uint16 hookFlags,bool hasAuction,address auction)',
+  'function getSwapStatus(bytes32 poolId,bool zeroForOne,uint256 amountIn) view returns ((bool allowed,bytes4 reason,uint8 session,uint24 currentFeePips,uint256 maxIn0,uint256 maxIn1,bool auctionWindow,uint64 nextTransition))',
+]);
 
 // CalendarLeaf.year is uint32 onchain (ProtocolTypes.sol:92), and every tuple component must be
 // NAMED. Two separate defects lived in this one constant:
@@ -1002,7 +1008,8 @@ const worker = {
   async fetch(request, env) {
     const url = new URL(request.url);
     const receiptRoute = /^\/pools\/([^/]+)\/receipts$/.exec(url.pathname);
-    const isPublicRead = Boolean(receiptRoute) || ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
+    const poolStatusRoute = /^\/pools\/([^/]+)\/status$/.exec(url.pathname);
+    const isPublicRead = Boolean(receiptRoute || poolStatusRoute) || ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -1011,6 +1018,55 @@ const worker = {
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     };
     if (isPublicRead && request.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
+    if (poolStatusRoute) {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      const input = parsePoolStatusRequest(url.pathname, url.searchParams);
+      if (!input || input.error) return cors(json({ error: input?.error ?? 'Invalid status request' }, 400));
+      const lens = lensForPool(env.BELL_SWAP_LENS_MAP, input.poolId);
+      if (!lens) return cors(json({ error: 'No deployed Lens is registered for this pool' }, 404));
+      const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
+      if (!rpcUrl) return cors(json({ error: 'Live pool status is temporarily unavailable' }, 503));
+      try {
+        const client = createPublicClient({ transport: http(rpcUrl) });
+        const chainId = await client.getChainId();
+        if (chainId !== 4663) return cors(json({ error: 'Live pool status is temporarily unavailable' }, 503));
+        const blockNumber = await client.getBlockNumber();
+        const [info, status, block] = await Promise.all([
+          client.readContract({ address: lens, abi: BELL_SWAP_LENS_ABI, functionName: 'getPoolInfo', args: [input.poolId], blockNumber }),
+          client.readContract({ address: lens, abi: BELL_SWAP_LENS_ABI, functionName: 'getSwapStatus', args: [input.poolId, input.zeroForOne, input.amountIn], blockNumber }),
+          client.getBlock({ blockNumber }),
+        ]);
+        const at = (value, index, name) => value?.[name] ?? value?.[index];
+        return cors(json({
+          version: 1,
+          chainId,
+          poolId: input.poolId,
+          lens,
+          hook: at(info, 0, 'hook'),
+          hookFlags: `0x${Number(at(info, 1, 'hookFlags')).toString(16).padStart(4, '0')}`,
+          hasAuction: Boolean(at(info, 2, 'hasAuction')),
+          auction: at(info, 3, 'auction'),
+          request: { zeroForOne: input.zeroForOne, amountIn: input.amountIn.toString() },
+          status: {
+            allowed: Boolean(status?.allowed ?? status?.[0]),
+            reason: status?.reason ?? status?.[1],
+            session: Number(status?.session ?? status?.[2]),
+            currentFeePips: Number(status?.currentFeePips ?? status?.[3]),
+            maxIn0: String(status?.maxIn0 ?? status?.[4]),
+            maxIn1: String(status?.maxIn1 ?? status?.[5]),
+            auctionWindow: Boolean(status?.auctionWindow ?? status?.[6]),
+            nextTransition: String(status?.nextTransition ?? status?.[7]),
+          },
+          blockNumber: blockNumber.toString(),
+          observedAt: new Date(Number(block.timestamp) * 1000).toISOString(),
+        }));
+      } catch (error) {
+        const detail = String(error?.shortMessage ?? error?.message ?? error)
+          .replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180);
+        console.error('Lens status read failed', detail);
+        return cors(json({ error: 'Live pool status is temporarily unavailable' }, 503));
+      }
+    }
     if (receiptRoute) {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
       const poolId = receiptRoute[1].toLowerCase();
@@ -1081,7 +1137,19 @@ const worker = {
           }
         }
         const { cache: _omit, ...response } = pools;
-        return cors(json(response));
+        let auctions = null;
+        const registry = env.BELL_AUCTION_REGISTRY;
+        const auctionRpc = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
+        if (registry && auctionRpc && response.pools.length) {
+          try {
+            auctions = await readAuctionBindings(createPublicClient({ transport: http(auctionRpc) }), {
+              registry, pools: response.pools, blockNumber: BigInt(response.blockNumber),
+            });
+          } catch (error) {
+            console.error('pool auction bindings unavailable', error?.name ?? 'Error');
+          }
+        }
+        return cors(json({ ...response, pools: integrationPoolFields(response.pools, env.BELL_SWAP_LENS_MAP, auctions) }));
       }
       catch (error) {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);
@@ -1093,7 +1161,7 @@ const worker = {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
       const registry = env.BELL_AUCTION_REGISTRY;
       const rpcUrl = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
-      if (!registry || !rpcUrl) return cors(json({ auctions: {} }));
+      if (!registry || !rpcUrl) return cors(json({ error: 'Live auction reads are not configured' }, 503));
       const hex = /^0x[0-9a-fA-F]{64}$/;
       const pools = (url.searchParams.get('pools') || '').split(',').filter(Boolean);
       if (pools.length > 50 || !pools.every((id) => hex.test(id))) return cors(json({ error: 'invalid pools' }, 400));

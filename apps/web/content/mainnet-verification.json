@@ -1,0 +1,152 @@
+{
+  "chainId": 4663,
+  "observedAt": "2026-11-10T06:39:46.766Z",
+  "observedBlock": "110684019",
+  "poolCount": 6,
+  "pools": [
+    {
+      "poolId": "0x40cbbda621e09d5eafc9cbbf020165fecb4f800b15248cfd5cf2e59d48a9ac54",
+      "hook": "0xF9692a364E0edF76Bba12E54c3eBa599f436ACc0",
+      "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0x7c651b1a052ad6b39a89157e5f9d9e097aaf8d4cd5386e84e25c9a1f5069c84b",
+        "blockNumber": "104263457",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0x7c651b1a052ad6b39a89157e5f9d9e097aaf8d4cd5386e84e25c9a1f5069c84b"
+      },
+      "token0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "token1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "latestSwapBySession": []
+    },
+    {
+      "poolId": "0xaa8fa89dcc79d21a48c04392aa6a0e37733cbc6ee15e4f56e6158c7440d43fb9",
+      "hook": "0x6C31E485883A9f0c3A5b4b9B2f012E7793e2ACc0",
+      "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0x832da6d3ac7b6d79e00a79109232a843509d0dec75c255278492f03c2217f97b",
+        "blockNumber": "104357538",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0x832da6d3ac7b6d79e00a79109232a843509d0dec75c255278492f03c2217f97b"
+      },
+      "token0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "token1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "latestSwapBySession": [
+        {
+          "session": "REGULAR",
+          "fee": 2305,
+          "sessionSource": "hook policy at event block",
+          "blockNumber": "104359896",
+          "logIndex": 14,
+          "tx": "0x06c73162f5dd214b30e622201124fa811843a664e5d5f8593e295de6ffc2647c",
+          "explorer": "https://robinhoodchain.blockscout.com/tx/0x06c73162f5dd214b30e622201124fa811843a664e5d5f8593e295de6ffc2647c"
+        }
+      ]
+    },
+    {
+      "poolId": "0x7e729e1e272c76f825260df1e594175222ac724c05ad5b84465f7b8044248dd4",
+      "hook": "0xC1ADa05c75160eD1A62d7eaCf30Ef28859886CC0",
+      "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0x2ff6319a63d5ac41220f0b6ff6d8e59eaf517273d4ae5335ace0783aa87aef43",
+        "blockNumber": "105018758",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0x2ff6319a63d5ac41220f0b6ff6d8e59eaf517273d4ae5335ace0783aa87aef43"
+      },
+      "token0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "token1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "latestSwapBySession": []
+    },
+    {
+      "poolId": "0x54f63cca77fb16f3cb9e5c42d82ac342e791aeb8a42cd3fa4e7080428b6a2ef9",
+      "hook": "0x89d4792e613199E3ed7E8ce7Af51D0372027Ecc0",
+      "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0xa8a175949a515a0029cd22e33d58d4d7bc2bdf9e055d7c4b3a7d2991b2b0696b",
+        "blockNumber": "105021008",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0xa8a175949a515a0029cd22e33d58d4d7bc2bdf9e055d7c4b3a7d2991b2b0696b"
+      },
+      "token0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "token1": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "latestSwapBySession": []
+    },
+    {
+      "poolId": "0xed6ac4429aa4fa2faea32569f1fde170d16b67a07080d9a6d419eed2a31d4b4c",
+      "hook": "0x6657Dc160E05c0fF6aFE2122cA7D8244390DECc0",
+      "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0x7dfa41188b7474942c73e83473c8428d870a1c8641a85e777f399a38610aa55f",
+        "blockNumber": "105022038",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0x7dfa41188b7474942c73e83473c8428d870a1c8641a85e777f399a38610aa55f"
+      },
+      "token0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "token1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "latestSwapBySession": []
+    },
+    {
+      "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
+      "hook": "0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0",
+      "factory": "0xcf3e5c2ae1915631055ca47aaf353f4d2743af50",
+      "hookFlags": "0x2cc0",
+      "permission": "PASS",
+      "initialization": {
+        "tx": "0xe705697f24b8efffac5d65168295aafe14093131a00f5d8a352d3ff8c0158cc7",
+        "blockNumber": "107565201",
+        "explorer": "https://robinhoodchain.blockscout.com/tx/0xe705697f24b8efffac5d65168295aafe14093131a00f5d8a352d3ff8c0158cc7"
+      },
+      "token0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "token1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "latestSwapBySession": []
+    }
+  ],
+  "ruleTests": [
+    {
+      "id": "swap-above-cap-reverts",
+      "status": "PASS",
+      "expected": "REVERTS",
+      "actual": "REVERTS",
+      "error": "TradeCapExceeded",
+      "errorSource": "recorded test evidence; receipt status alone does not prove the error",
+      "rule": "A swap above the trade cap reverts",
+      "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
+      "tx": "0x6eadcd4f35343ee43f13c52c4552770e50d08a6d363f8dd78e4088bc722448a4",
+      "blockNumber": "109710206",
+      "explorer": "https://robinhoodchain.blockscout.com/tx/0x6eadcd4f35343ee43f13c52c4552770e50d08a6d363f8dd78e4088bc722448a4"
+    },
+    {
+      "id": "swap-in-uncertain-session-reverts",
+      "rule": "A swap while the session is uncertain (no close anchor) reverts",
+      "poolId": null,
+      "status": "PENDING",
+      "expected": "REVERTS"
+    },
+    {
+      "id": "swap-during-auction-reverts",
+      "rule": "A swap while the opening auction is open reverts",
+      "poolId": null,
+      "status": "PENDING",
+      "expected": "REVERTS"
+    },
+    {
+      "id": "withdraw-while-closed-succeeds",
+      "rule": "A withdraw while the market is CLOSED succeeds",
+      "poolId": null,
+      "status": "PENDING",
+      "expected": "SUCCEEDS"
+    },
+    {
+      "id": "withdraw-while-swaps-blocked-succeeds",
+      "rule": "A withdraw while swaps are blocked succeeds",
+      "poolId": null,
+      "status": "PENDING",
+      "expected": "SUCCEEDS"
+    }
+  ],
+  "status": "INCOMPLETE"
+}

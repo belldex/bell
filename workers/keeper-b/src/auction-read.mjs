@@ -33,6 +33,16 @@ const batch = (client, contracts) =>
     ? Promise.resolve([])
     : client.multicall({ contracts, allowFailure: false, multicallAddress: MULTICALL3, batchSize: 64_000 });
 
+/** Read just registry bindings, without retrieving every auction cycle or order. */
+export async function readAuctionBindings(client, { registry, pools, blockNumber }) {
+  if (!pools.length) return {};
+  const addresses = await client.multicall({
+    contracts: pools.map((pool) => ({ address: registry, abi: REGISTRY_ABI, functionName: 'auctionFor', args: [pool.poolId] })),
+    allowFailure: false, multicallAddress: MULTICALL3, batchSize: 64_000, blockNumber,
+  });
+  return Object.fromEntries(pools.map((pool, index) => [pool.poolId, addresses[index] === ZERO ? null : { address: addresses[index] }]));
+}
+
 async function readOrders(client, auction, cycle) {
   const count = Number((await batch(client, [{ address: auction, abi: ABI, functionName: 'cycleOrderCount', args: [BigInt(cycle)] }]))[0]);
   const ids = (await batch(client, Array.from({ length: count }, (_, index) =>

@@ -27,3 +27,5 @@ evidence/private/
 .vercel
 .env*.local
 contracts/.verify/
+## Local output from the public BELL Mainnet verifier.
+/verify-output.json

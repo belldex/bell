@@ -45,7 +45,8 @@
     "BELL_SESSION_REGISTRY": "0x5f1b0212dc6167cbc1883f910640a685b1243795",
     "BELL_CALENDAR_COUNTER_ASSET_ID": "0x97ee8f8dffff3c09ee5b72aeabc111f64385e66e447d860bd9b9677c788b5d58",
     "BELL_CALENDAR_ROOTS": "{\"AAPL\":{\"root\":\"0x6c4ebe1609026e3960c84713e403cc0c310ec737bc7f5ed3eb96d4c170f74b32\",\"year\":2026,\"coverageStart\":1793419842,\"coverageEnd\":1798603842,\"capabilityMask\":30},\"NVDA\":{\"root\":\"0x6cbb137cab75dad0002b08709459c074d3d13818809b59d346a4f1e4e1b8be07\",\"year\":2026,\"coverageStart\":1793419847,\"coverageEnd\":1798603847,\"capabilityMask\":30},\"TSLA\":{\"root\":\"0x7d54f0683e8378c0d2ab57984e0d4d4cdde3fa0e1c991efca26c340af5f4e442\",\"year\":2026,\"coverageStart\":1793419852,\"coverageEnd\":1798603852,\"capabilityMask\":30}}",
-    "BELL_AUCTION_REGISTRY": "0x0e8515551a9de41fff251705e34a16b20ce9ee95"
+    "BELL_AUCTION_REGISTRY": "0x0e8515551a9de41fff251705e34a16b20ce9ee95",
+    "BELL_SWAP_LENS_MAP": "{}"
   },
   "observability": {
     "enabled": true
