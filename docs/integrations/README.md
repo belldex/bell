@@ -61,7 +61,7 @@ if (!status.allowed) {
 
 The production router is `BellRouter` at [`0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5`](https://robinhoodchain.blockscout.com/address/0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5). It validates the pool binding, request deadline/config hash, quote envelope and flow limits before the PoolManager swap.
 
-The Universal Router rehearsal with empty hook data remains **PLANNED / NOT VERIFIED**. No successful receipt is recorded. Do not assume that a generic Uniswap v4 integration can execute every BELL pool without the BELL request data the hook requires.
+The hook source accepts empty `hookData` for an ordinary swap; non-empty data is used for encoded oracle updates. A Universal Router rehearsal with empty hook data remains **PLANNED / NOT VERIFIED**: no successful receipt is recorded, so source-level support alone does not establish end-to-end router compatibility.
 
 ## Fees and sessions
 
