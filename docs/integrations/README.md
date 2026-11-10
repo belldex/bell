@@ -1,7 +1,7 @@
 # BELL Integration Pack
 
 **Network:** Robinhood Chain Mainnet · chain ID `4663`
-**Status:** BELL protocol contracts and the updated Worker are deployed. Per-pool Lens contracts are not yet deployed; the status endpoint returns 404 until a Lens is registered. Third-party integration acceptance is not established.
+**Status:** BELL protocol contracts, the updated Worker, and six per-pool Lens contracts are deployed. All six Lens instances have an exact Sourcify source match. Third-party integration acceptance is not established.
 **Updated:** 10 November 2026
 
 This pack is for wallets, terminals, aggregators and indexers integrating BELL pools. It is a data and routing guide, not a promise that a pool has liquidity, that a quote will execute, or that a third party has accepted an integration.
@@ -26,7 +26,7 @@ The response includes `Initialize`, `Swap` (including the fee field), and auctio
 
 ## Check policy before routing
 
-Once the Lens is deployed, obtain the pool's hook and Lens address from `/pools` and ask the Lens whether the exact input and direction are allowed:
+Obtain the pool's hook and Lens address from `/pools` and ask the Lens whether the exact input and direction are allowed:
 
 ```text
 GET https://bell-keeper-b.asysyifaq25.workers.dev/pools/{poolId}/status?zeroForOne=true&amountIn={raw-uint256}

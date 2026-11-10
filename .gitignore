@@ -29,3 +29,6 @@ evidence/private/
 contracts/.verify/
 ## Local output from the public BELL Mainnet verifier.
 /verify-output.json
+
+# Local Lens build artifacts and source-verification input
+contracts/out-lens-ipfs/

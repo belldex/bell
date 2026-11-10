@@ -1,0 +1,124 @@
+{
+  "chainId": 4663,
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "contracts": [
+    {
+      "poolId": "0x40cbbda621e09d5eafc9cbbf020165fecb4f800b15248cfd5cf2e59d48a9ac54",
+      "hook": "0xF9692a364E0edF76Bba12E54c3eBa599f436ACc0",
+      "tx": "0xf40082563f58588509d1ad8e23485b53384fae7226f19b9473f763f062f08148",
+      "status": "deployed",
+      "address": "0x8c05759392294edb316a477b3082895177b20298",
+      "blockNumber": "110710316",
+      "gasUsed": "4580607",
+      "effectiveGasPrice": "20040000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "5037c448-4b6b-47eb-9ef1-42a6b9fb76b4",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0x8c05759392294edb316a477b3082895177b20298"
+      }
+    },
+    {
+      "poolId": "0xaa8fa89dcc79d21a48c04392aa6a0e37733cbc6ee15e4f56e6158c7440d43fb9",
+      "hook": "0x6C31E485883A9f0c3A5b4b9B2f012E7793e2ACc0",
+      "tx": "0x757149f439241598f12bbbd8a957d5ac6c2387e4831d795240258e00db094d27",
+      "status": "deployed",
+      "address": "0x5bde2a2bacfcce12ccc62dc375b9914e97280554",
+      "blockNumber": "110711321",
+      "gasUsed": "4580612",
+      "effectiveGasPrice": "20026000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "fb7e3c7c-50c4-4947-a5ba-0f1d5c2674c7",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0x5bde2a2bacfcce12ccc62dc375b9914e97280554"
+      }
+    },
+    {
+      "poolId": "0x7e729e1e272c76f825260df1e594175222ac724c05ad5b84465f7b8044248dd4",
+      "hook": "0xC1ADa05c75160eD1A62d7eaCf30Ef28859886CC0",
+      "tx": "0xa79e7d2afcba0f517f6427c15c5028d6fc0302240b4e23065af52249afbd8d55",
+      "status": "deployed",
+      "address": "0xe73cbe86b2368698a25e0dfb728cac28f6564242",
+      "blockNumber": "110711389",
+      "gasUsed": "4580603",
+      "effectiveGasPrice": "20056000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "89045ccf-5bad-4f9f-b6bb-6921e66a31c2",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0xe73cbe86b2368698a25e0dfb728cac28f6564242"
+      }
+    },
+    {
+      "poolId": "0x54f63cca77fb16f3cb9e5c42d82ac342e791aeb8a42cd3fa4e7080428b6a2ef9",
+      "hook": "0x89d4792e613199E3ed7E8ce7Af51D0372027Ecc0",
+      "tx": "0x420562cf502075da12dd9b2763e9fb27eb84418c7b8f498a29bc03f97db1cb00",
+      "status": "deployed",
+      "address": "0x58416579d38a9d33200d92cb7285f785eb0e7408",
+      "blockNumber": "110711511",
+      "gasUsed": "4580609",
+      "effectiveGasPrice": "20038000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "1402803b-1348-4aae-978b-80aa7b6c1146",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0x58416579d38a9d33200d92cb7285f785eb0e7408"
+      }
+    },
+    {
+      "poolId": "0xed6ac4429aa4fa2faea32569f1fde170d16b67a07080d9a6d419eed2a31d4b4c",
+      "hook": "0x6657Dc160E05c0fF6aFE2122cA7D8244390DECc0",
+      "tx": "0x20184bc8786df06e232f556af2a4ca529a7aa288bca8bb83a571d5bd0afddc4f",
+      "status": "deployed",
+      "address": "0xc4aaa4d03c79c99053031e2c4efcca1bba4aa0a2",
+      "blockNumber": "110711836",
+      "gasUsed": "4580549",
+      "effectiveGasPrice": "20228000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "932d2fa1-0b9d-4da4-804b-a6772cc2050a",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0xc4aaa4d03c79c99053031e2c4efcca1bba4aa0a2"
+      }
+    },
+    {
+      "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
+      "hook": "0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0",
+      "tx": "0x6bf50f01a96515b0ddb829aac96dcfe04d67c9cf411d2bc3f4ff50c99529a31c",
+      "status": "deployed",
+      "address": "0x7ab862cd68f69a32a18c8040c0bd021aeb329d09",
+      "blockNumber": "110712093",
+      "gasUsed": "4580702",
+      "effectiveGasPrice": "20020000",
+      "verification": {
+        "provider": "Sourcify",
+        "verificationId": "aa812618-fa97-4b2c-8e15-a51dcaa3ffe2",
+        "match": "exact_match",
+        "creationMatch": "exact_match",
+        "runtimeMatch": "exact_match",
+        "url": "https://sourcify.dev/server/v2/contract/4663/0x7ab862cd68f69a32a18c8040c0bd021aeb329d09"
+      }
+    }
+  ],
+  "compiler": {
+    "version": "0.8.26+commit.8a97fa7a",
+    "optimizerRuns": 1,
+    "viaIR": true,
+    "evmVersion": "cancun",
+    "bytecodeHash": "ipfs"
+  },
+  "totalGasUsed": "27483682",
+  "totalGasCostEth": "0.000551542516314",
+  "workerVersion": "e86dda5d-3d5c-4613-87e4-9f5efe9613ca"
+}

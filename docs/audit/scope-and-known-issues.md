@@ -13,7 +13,7 @@ The requested review scope is:
 - `BellSwapLens` (one immutable instance per live hook)
 - supporting libraries that affect value movement or policy: `FlowBudget`, `ModePolicy`, `FeePolicy`, `AssetPolicy`, and auction clearing logic
 
-Current Mainnet deployment addresses are in [`evidence/deploy/mainnet-4663.json`](../../evidence/deploy/mainnet-4663.json); verified code/bindings are in [`evidence/deploy/mainnet-4663-verification.json`](../../evidence/deploy/mainnet-4663-verification.json). Historical and current pool hooks/IDs are in [`apps/web/content/mainnet-pool-lenses.json`](../../apps/web/content/mainnet-pool-lenses.json) and the generated verifier snapshot. The Lens addresses are **not yet verified** until that map records a successful deployment receipt and full source match.
+Current Mainnet deployment addresses are in [`evidence/deploy/mainnet-4663.json`](../../evidence/deploy/mainnet-4663.json); verified code/bindings are in [`evidence/deploy/mainnet-4663-verification.json`](../../evidence/deploy/mainnet-4663-verification.json). Historical and current pool hooks/IDs are in [`apps/web/content/mainnet-pool-lenses.json`](../../apps/web/content/mainnet-pool-lenses.json) and the generated verifier snapshot. The six Lens deployment receipts, hook bindings, compiler settings and Sourcify exact matches are in [`evidence/deploy/mainnet-4663-lenses.json`](../../evidence/deploy/mainnet-4663-lenses.json).
 
 ## Out of scope
 
@@ -41,7 +41,7 @@ Before an audit engagement starts, replace this section with the exact immutable
 
 - No independent security audit has been completed as of this draft.
 - `BellSwapLens.getSwapStatus` covers exact-input swaps with empty hook data and standard full-range price limits. It does not check a caller's token balance, allowance, router slippage, or arbitrary limit-price requests.
-- Lens deployment and source full-match status must be recorded per pool before the public status endpoint can return a live result.
+- Each new pool needs a separately deployed and registered Lens before its public status endpoint can return a result.
 - Several Mainnet rule-test rows are still pending. Do not promote pending evidence to PASS.
 - Existing auction receipt may show a bound but inactive/empty cycle. That is not evidence of a matched auction.
 - The onchain feed, calendar, and external data-provider assumptions need independent validation and rights review.

@@ -82,7 +82,7 @@ export function IntegrationsPage() {
       <header className="legal__head lp-wrap">
         <p className="lp-eyebrow">Protocol integration pack · chain 4663</p>
         <h1 className="legal__title proof__title">Build against BELL. <em>Verify every route.</em></h1>
-        <p className="legal__lead">A live directory, session-fee receipts, auction status, and deployed contracts. Per-pool Lens preflight is planned and becomes available only after its Lens is deployed and registered.</p>
+        <p className="legal__lead">A live directory, session-fee receipts, auction status, and deployed contracts. Per-pool Lens preflight reads the deployed, registered Lens for each supported pool.</p>
         <p className="legal__date">{directory ? `Observed at block ${directory.blockNumber}` : 'Live snapshot not loaded'} · {directory?.observedAt ?? 'Refresh to read the current directory'}</p>
       </header>
 
@@ -109,7 +109,7 @@ export function IntegrationsPage() {
                   <td><code>{pool.poolId.slice(0, 12)}…</code></td><td>{pair}</td>
                   <td><a href={`${EXPLORER}/address/${pool.hook}`} target="_blank" rel="noreferrer">{pool.hook.slice(0, 8)}…</a></td>
                   <td>{auction?.address ? <a href={`${EXPLORER}/address/${auction.address}`} target="_blank" rel="noreferrer">LIVE · {auction.stageLabel ?? `stage ${auction.stage}`}</a> : auctionsLoaded ? 'No auction bound' : pool.hasAuction === true ? 'Bound · details unavailable' : 'Unavailable'}</td>
-                  <td>{pool.lens ? <a href={`${EXPLORER}/address/${pool.lens}`} target="_blank" rel="noreferrer">DEPLOYED</a> : 'PLANNED'}</td>
+                  <td>{pool.lens ? <><a href={`${EXPLORER}/address/${pool.lens}`} target="_blank" rel="noreferrer">DEPLOYED</a> · <a href={`https://sourcify.dev/server/v2/contract/4663/${pool.lens}?fields=all`} target="_blank" rel="noreferrer">SOURCE</a></> : 'PLANNED'}</td>
                   <td><Link href={lensMap.pools.some((entry) => entry.poolId.toLowerCase() === pool.poolId.toLowerCase()) ? `/pool/${pool.poolId}/` : `/pool/?id=${pool.poolId}`}>Verify pool <ArrowUpRight size={12} /></Link></td>
                 </tr>;
               })}</tbody>
@@ -119,7 +119,6 @@ export function IntegrationsPage() {
 
           <section id="quote" className="integrations__section" aria-labelledby="quote-title">
             <p className="lp-eyebrow">Before routing</p><h2 id="quote-title">Ask the Lens about the exact input</h2>
-            <p className="integrations__error">Lens deployment is pending. The status endpoint cannot provide a live preflight for a pool until its Lens is registered.</p>
             <p>Call <code>BellSwapLens.getSwapStatus(poolId, zeroForOne, amountIn)</code> before routing. `amountIn` is the raw integer token amount. Route only when <code>allowed</code> is true; display <code>reason</code>, the current fee, and both token budgets when it is not.</p>
             <pre className="integrations__code"><code>{`GET ${KEEPER_URL}/pools/<poolId>/status?zeroForOne=true&amountIn=<raw-uint256>`}</code></pre>
             <p>The Worker pins the read to one observed block and returns the Lens address, hook flags, auction binding, current session, fee, remaining gross budgets, and next transition. It does not sign, approve, or submit a swap.</p>

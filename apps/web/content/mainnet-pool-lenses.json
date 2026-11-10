@@ -9,7 +9,7 @@
       "poolId": "0x40cbbda621e09d5eafc9cbbf020165fecb4f800b15248cfd5cf2e59d48a9ac54",
       "hook": "0xF9692a364E0edF76Bba12E54c3eBa599f436ACc0",
       "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
-      "lens": null,
+      "lens": "0x8c05759392294edb316a477b3082895177b20298",
       "initializeTx": "0x7c651b1a052ad6b39a89157e5f9d9e097aaf8d4cd5386e84e25c9a1f5069c84b",
       "initializeBlock": "104263457"
     },
@@ -17,7 +17,7 @@
       "poolId": "0xaa8fa89dcc79d21a48c04392aa6a0e37733cbc6ee15e4f56e6158c7440d43fb9",
       "hook": "0x6C31E485883A9f0c3A5b4b9B2f012E7793e2ACc0",
       "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
-      "lens": null,
+      "lens": "0x5bde2a2bacfcce12ccc62dc375b9914e97280554",
       "initializeTx": "0x832da6d3ac7b6d79e00a79109232a843509d0dec75c255278492f03c2217f97b",
       "initializeBlock": "104357538"
     },
@@ -25,7 +25,7 @@
       "poolId": "0x7e729e1e272c76f825260df1e594175222ac724c05ad5b84465f7b8044248dd4",
       "hook": "0xC1ADa05c75160eD1A62d7eaCf30Ef28859886CC0",
       "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
-      "lens": null,
+      "lens": "0xe73cbe86b2368698a25e0dfb728cac28f6564242",
       "initializeTx": "0x2ff6319a63d5ac41220f0b6ff6d8e59eaf517273d4ae5335ace0783aa87aef43",
       "initializeBlock": "105018758"
     },
@@ -33,7 +33,7 @@
       "poolId": "0x54f63cca77fb16f3cb9e5c42d82ac342e791aeb8a42cd3fa4e7080428b6a2ef9",
       "hook": "0x89d4792e613199E3ed7E8ce7Af51D0372027Ecc0",
       "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
-      "lens": null,
+      "lens": "0x58416579d38a9d33200d92cb7285f785eb0e7408",
       "initializeTx": "0xa8a175949a515a0029cd22e33d58d4d7bc2bdf9e055d7c4b3a7d2991b2b0696b",
       "initializeBlock": "105021008"
     },
@@ -41,7 +41,7 @@
       "poolId": "0xed6ac4429aa4fa2faea32569f1fde170d16b67a07080d9a6d419eed2a31d4b4c",
       "hook": "0x6657Dc160E05c0fF6aFE2122cA7D8244390DECc0",
       "factory": "0xf677edc6346be53686e6dd42374a744cab9d0a5b",
-      "lens": null,
+      "lens": "0xc4aaa4d03c79c99053031e2c4efcca1bba4aa0a2",
       "initializeTx": "0x7dfa41188b7474942c73e83473c8428d870a1c8641a85e777f399a38610aa55f",
       "initializeBlock": "105022038"
     },
@@ -49,7 +49,7 @@
       "poolId": "0xae8849e2450f7bca031e8978764a9d33582be7e3558f11ba596d7ab481e3584e",
       "hook": "0xeECE9e0c1A6b483D9989dB9920596fEBa6D06Cc0",
       "factory": "0xcf3e5c2ae1915631055ca47aaf353f4d2743af50",
-      "lens": null,
+      "lens": "0x7ab862cd68f69a32a18c8040c0bd021aeb329d09",
       "initializeTx": "0xe705697f24b8efffac5d65168295aafe14093131a00f5d8a352d3ff8c0158cc7",
       "initializeBlock": "107565201"
     }
