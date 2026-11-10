@@ -118,9 +118,11 @@ export function VerifyPage() {
             </Section>
 
             <div className="verify__footer">
-              <a href="https://github.com/belldex/bell/blob/main/scripts/verify-bell.ts" target="_blank" rel="noreferrer">Read the verifier source <ArrowUpRight size={14} /></a>
+              <a href="/integrations/verify-bell.ts" target="_blank" rel="noreferrer">Read the verifier source <ArrowUpRight size={14} /></a>
+              <a href="/integrations/bell-verifier.zip">Download runnable verifier bundle <ArrowUpRight size={14} /></a>
               <Link href="/integrations/">Open the integration pack <ArrowUpRight size={14} /></Link>
             </div>
+            <p>To run the bundle: unzip it, install Node.js 24, then run <code>npm install</code> and <code>npm run verify:bell</code>. Historical log access may require an RPC with a wider block range.</p>
           </div>
         </div>
       </main>

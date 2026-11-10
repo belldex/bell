@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "compilerVersion": "0.8.26",
-  "abiSha256": "9daed0099c8332232ad797757561a2291d1264085794da7593954aec4eb68265",
+  "abiSha256": "c81c5fede92ed10e3bf816c00c5810030144364d08dab81eae7d70a4fa9be152",
   "interfaces": {
     "AggregatorV3Interface": [
       {
@@ -398,6 +398,34 @@
             "internalType": "bytes",
             "name": "",
             "type": "bytes"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
+    "IBellAuctionWiringDeployer": [
+      {
+        "inputs": [],
+        "name": "auctionFactoryModule",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "auctionRegistry",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -1896,6 +1924,531 @@
         "type": "function"
       }
     ],
+    "IBellHookDeployer": [
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "token0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token1",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset0",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset1",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "poolManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "positionManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "assetRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "calendarRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "safetyController",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "treasuryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "uint8",
+                "name": "poolClass",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "liquidityMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "referenceMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "tradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "windowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "policyId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter1",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolConfig",
+            "name": "config",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "Currency",
+                "name": "currency0",
+                "type": "address"
+              },
+              {
+                "internalType": "Currency",
+                "name": "currency1",
+                "type": "address"
+              },
+              {
+                "internalType": "uint24",
+                "name": "fee",
+                "type": "uint24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "contract IHooks",
+                "name": "hooks",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolKey",
+            "name": "key",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "salt",
+            "type": "bytes32"
+          }
+        ],
+        "name": "deploy",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "factory",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "token0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token1",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset0",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset1",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "poolManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "positionManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "assetRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "calendarRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "safetyController",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "treasuryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "uint8",
+                "name": "poolClass",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "liquidityMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "referenceMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "tradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "windowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "policyId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter1",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolConfig",
+            "name": "config",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "Currency",
+                "name": "currency0",
+                "type": "address"
+              },
+              {
+                "internalType": "Currency",
+                "name": "currency1",
+                "type": "address"
+              },
+              {
+                "internalType": "uint24",
+                "name": "fee",
+                "type": "uint24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "contract IHooks",
+                "name": "hooks",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolKey",
+            "name": "key",
+            "type": "tuple"
+          }
+        ],
+        "name": "initCodeHash",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "token0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "token1",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset0",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "asset1",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "poolManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "positionManager",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "factory",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "assetRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "calendarRegistry",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "safetyController",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "treasuryAdapter",
+                "type": "address"
+              },
+              {
+                "internalType": "uint8",
+                "name": "poolClass",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "liquidityMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint8",
+                "name": "referenceMode",
+                "type": "uint8"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "tradeCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "windowCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "uint128[2]",
+                "name": "closureCap",
+                "type": "uint128[2]"
+              },
+              {
+                "internalType": "bytes32",
+                "name": "policyId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter0",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "referenceAdapter1",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolConfig",
+            "name": "config",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "Currency",
+                "name": "currency0",
+                "type": "address"
+              },
+              {
+                "internalType": "Currency",
+                "name": "currency1",
+                "type": "address"
+              },
+              {
+                "internalType": "uint24",
+                "name": "fee",
+                "type": "uint24"
+              },
+              {
+                "internalType": "int24",
+                "name": "tickSpacing",
+                "type": "int24"
+              },
+              {
+                "internalType": "contract IHooks",
+                "name": "hooks",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PoolKey",
+            "name": "key",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "salt",
+            "type": "bytes32"
+          }
+        ],
+        "name": "predict",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "sessionRegistry",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "templateCodeHash",
+        "outputs": [
+          {
+            "internalType": "bytes32",
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ],
     "IBellPoolFactory": [
       {
         "inputs": [
@@ -2518,6 +3071,118 @@
           }
         ],
         "stateMutability": "payable",
+        "type": "function"
+      }
+    ],
+    "IBellSwapLens": [
+      {
+        "inputs": [],
+        "name": "PoolNotBound",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "getPoolInfo",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "hook",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "hookFlags",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "hasAuction",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "auction",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "bytes32",
+            "name": "poolId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bool",
+            "name": "zeroForOne",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountIn",
+            "type": "uint256"
+          }
+        ],
+        "name": "getSwapStatus",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "bool",
+                "name": "allowed",
+                "type": "bool"
+              },
+              {
+                "internalType": "bytes4",
+                "name": "reason",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "uint8",
+                "name": "session",
+                "type": "uint8"
+              },
+              {
+                "internalType": "uint24",
+                "name": "currentFeePips",
+                "type": "uint24"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxIn0",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxIn1",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "auctionWindow",
+                "type": "bool"
+              },
+              {
+                "internalType": "uint64",
+                "name": "nextTransition",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct IBellSwapLens.SwapStatus",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       }
     ],

@@ -148,7 +148,7 @@ export function IntegrationsPage() {
             <p className="lp-eyebrow">Source and behavior</p><h2 id="errors-title">Custom errors and deployed contracts</h2>
             <ul className="integrations__errors">{REASONS.map(([name, meaning]) => <li key={name}><code>{name}</code><span>{meaning}</span></li>)}</ul>
             <ul className="integrations__contracts">{CONTRACT_GROUPS.flatMap((group) => group.rows).map((contract) => <li key={contract.address}><span>{contract.name}</span><a href={`${EXPLORER}/address/${contract.address}${contract.verified ? '?tab=contract' : ''}`} target="_blank" rel="noreferrer">{contract.verified ? 'LIVE · source match' : 'LIVE · source status unverified'} <ArrowUpRight size={12} /></a></li>)}</ul>
-            <div className="integrations__footer"><Link href="/verify/">Four-step pool verification <ArrowUpRight size={13} /></Link><a href="https://github.com/belldex/bell/blob/main/docs/integrations/README.md" target="_blank" rel="noreferrer">Markdown integration pack <ArrowUpRight size={13} /></a><a href="https://github.com/belldex/bell/blob/main/output/pdf/bell-integration-pack.pdf" target="_blank" rel="noreferrer">PDF integration pack <ArrowUpRight size={13} /></a></div>
+            <div className="integrations__footer"><Link href="/verify/">Four-step pool verification <ArrowUpRight size={13} /></Link><a href="/integrations/integration-pack.md" target="_blank" rel="noreferrer">Markdown integration pack <ArrowUpRight size={13} /></a><a href="/integrations/bell-integration-pack.pdf" target="_blank" rel="noreferrer">PDF integration pack <ArrowUpRight size={13} /></a></div>
             {error && <span className="pf-badge" data-pass="0">Live data unavailable</span>}
           </section>
         </div>

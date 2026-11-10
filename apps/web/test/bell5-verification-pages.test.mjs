@@ -35,7 +35,8 @@ test('/verify teaches the four chain checks and links the public verifier', asyn
   assert.match(page, /TradeCapExceeded/);
   assert.match(page, /AuctionActive/);
   assert.match(page, /PolicyBlocked/);
-  assert.match(page, /scripts\/verify-bell\.ts/);
+  assert.match(page, /integrations\/verify-bell\.ts/);
+  assert.match(page, /integrations\/bell-verifier\.zip/);
 });
 
 test('/integrations uses the live pool endpoint and publishes the quote-before-route contract', async () => {

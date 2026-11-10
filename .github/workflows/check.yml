@@ -23,6 +23,11 @@ jobs:
         with:
           deno-version: 2.9.5
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # The deployment-plan hash test reads the actual Foundry artifact, not a fixture.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - run: forge build --root contracts --skip test --skip script --threads 2
       - run: pnpm run test:unit
       - run: pnpm run test:reference
       - run: pnpm run policy:check

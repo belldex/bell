@@ -10,6 +10,8 @@ const foundryIntegrationOnlyTests = new Set([
   'BaseHookCompatibilityHarness.sol',
   'PeripheryCompatibilityHarness.sol',
   'V4CoreCompatibility.t.sol',
+  // The Lens and its Foundry parity suite require the production via-IR profile.
+  'BellSwapLens.t.sol',
 ]);
 const pinnedDependencyRemappings = [
   ['@uniswap/v4-core/', 'contracts/lib/v4-core/'],
@@ -49,7 +51,9 @@ async function collectSources(directory) {
       Object.assign(sources, await collectSources(absolute));
     }
     else if (entry.isFile() && entry.name.endsWith('.sol')) {
-      if (directory.includes(`${sep}test`) && foundryIntegrationOnlyTests.has(entry.name)) continue;
+      // Foundry .t.sol suites use cheatcodes and the production via-IR profile; the
+      // standalone compiler covers source contracts and non-Foundry harnesses.
+      if (directory.includes(`${sep}test`) && (entry.name.endsWith('.t.sol') || foundryIntegrationOnlyTests.has(entry.name))) continue;
       const path = relative(projectRoot, absolute).replaceAll('\\', '/');
       sources[path] = { content: await readFile(absolute, 'utf8') };
     }
@@ -68,6 +72,9 @@ export async function compileProjectSolidity() {
     }
   }
   if (Object.keys(sources).length === 0) throw new Error('No Solidity sources found');
+  const lensPath = 'contracts/src/BellSwapLens.sol';
+  const lensSource = sources[lensPath];
+  delete sources[lensPath];
   const input = {
     language: 'Solidity',
     sources,
@@ -81,6 +88,19 @@ export async function compileProjectSolidity() {
   const output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
   const errors = (output.errors ?? []).filter(({ severity }) => severity === 'error');
   if (errors.length > 0) throw new Error(errors.map(({ formattedMessage }) => formattedMessage).join('\n'));
+  // Lens quote traversal exceeds the legacy code generator's stack limit. Compile it
+  // independently using the same via-IR settings as the deployable Foundry artifact.
+  if (lensSource) {
+    const lensInput = { language: 'Solidity', sources: { [lensPath]: lensSource }, settings: {
+      optimizer: { enabled: true, runs: 1 }, viaIR: true, evmVersion: 'cancun',
+      metadata: { bytecodeHash: 'none' },
+      outputSelection: { [lensPath]: { '*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object'] } },
+    } };
+    const lensOutput = JSON.parse(solc.compile(JSON.stringify(lensInput), { import: resolveImport }));
+    const lensErrors = (lensOutput.errors ?? []).filter(({ severity }) => severity === 'error');
+    if (lensErrors.length) throw new Error(lensErrors.map(({ formattedMessage }) => formattedMessage).join('\n'));
+    output.contracts[lensPath] = lensOutput.contracts[lensPath];
+  }
   return Object.freeze({
     ...output,
     compilerVersion: solc.version().split('+')[0],
