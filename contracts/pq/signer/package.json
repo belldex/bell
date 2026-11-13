@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@quip.network/hashsigs-wasm": "0.2.1",
+    "viem": "2.57.11"
+  }
+}

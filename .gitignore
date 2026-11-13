@@ -32,3 +32,8 @@ contracts/.verify/
 
 # Local Lens build artifacts and source-verification input
 contracts/out-lens-ipfs/
+contracts/pq/keys/
+contracts/pq/.env.local
+contracts/pq/deployments/*.local.json
+contracts/out-pq/
+contracts/cache-pq/

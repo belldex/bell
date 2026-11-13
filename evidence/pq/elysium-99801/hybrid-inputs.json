@@ -1,0 +1,157 @@
+{
+  "chainId": 99801,
+  "profile": "shrincs-256s-keccak-stateful",
+  "verifiedStateAt": "28321291",
+  "syntheticPriceNotice": "AAPL test value is deterministic test data, not a market quote.",
+  "inputs": {
+    "calendar": {
+      "root": "0x60aaa5b4acb910c201997119eb638512e172c0b95644ee4469d0bb687f694495",
+      "validFrom": "1794562154",
+      "validUntil": "1794648554",
+      "epoch": 1
+    },
+    "closeAnchor": {
+      "poolId": "0x383751cb3e34d0c263e5713612fb0d9423d7aeab1be1e9f852a0802a62e6ab9d",
+      "cycle": "1",
+      "anchor": "0x6da5fcf0d043e50d07284e86fd41c516f916418d8953c6c9a2ef03ab0fa0ddfc"
+    },
+    "price": {
+      "assetId": "0x3a54a9a690616fbc26cfc409bf11f89d51f1d57a4ab2791fb86026cee74ed2f3",
+      "value": "22735000000",
+      "observedAt": "1794562154",
+      "sequence": 1
+    }
+  },
+  "results": [
+    {
+      "label": "calendar-root",
+      "role": "GOVERNANCE",
+      "leafIndex": 1,
+      "rejected": {
+        "txHash": "0x935e123e249fe60d62fa3094de9e1a8fc2bdce099453d69a062b05fc16353ece",
+        "status": "reverted",
+        "gasUsed": "85329",
+        "block": "28319167"
+      },
+      "accepted": {
+        "txHash": "0xed149c5f89abf0f96bb25e85a15197a94e067a469638d631e09cf22bd1ae3361",
+        "status": "success",
+        "gasUsed": "324563",
+        "block": "28319171"
+      },
+      "digest": "0x294fd1275e2db0f8c22d8f28dfc9cae6d2c05e3a91ca7302c29e8ad1adc87d01"
+    },
+    {
+      "label": "close-anchor",
+      "role": "KEEPER",
+      "leafIndex": 1,
+      "rejected": {
+        "txHash": "0xad07b25e7eb5baec78a25e2e2355478a3d9fbe424e285021a9b7d0515798d7e2",
+        "status": "reverted",
+        "gasUsed": "87708",
+        "block": "28319180"
+      },
+      "accepted": {
+        "txHash": "0xfbd50be04b372be6e2962c4719f2d499aeb24ba0589d7a683795a99866bc6ad1",
+        "status": "success",
+        "gasUsed": "324662",
+        "block": "28319182"
+      },
+      "digest": "0x35adbe5db1f614c9cf49ab4c499de56663ad8fbeb84c958e2a013d96a3af6e2d"
+    },
+    {
+      "label": "price-attestation",
+      "role": "REPORTER",
+      "leafIndex": 1,
+      "rejected": {
+        "txHash": "0xa944ea905c840826dae7b58cc0ccbaca4df10d111eb14d45a81b4af2d5f7a0bd",
+        "status": "reverted",
+        "gasUsed": "87479",
+        "block": "28319191"
+      },
+      "accepted": {
+        "txHash": "0xe773b0a95ae0eb14fcbe655afb484777f0fc583ecfda1bf7e7fe4c43318671a8",
+        "status": "success",
+        "gasUsed": "302554",
+        "block": "28319193"
+      },
+      "digest": "0xc6c541011656a06d99ca4e68a4bf9d1324b871116a50ad27edff3103dcf526d2"
+    }
+  ],
+  "verified": {
+    "calendarRoot": "0x60aaa5b4acb910c201997119eb638512e172c0b95644ee4469d0bb687f694495",
+    "closeAnchor": "0x6da5fcf0d043e50d07284e86fd41c516f916418d8953c6c9a2ef03ab0fa0ddfc",
+    "closeCycle": "1",
+    "price": "22735000000",
+    "priceObservedAt": "1794562154",
+    "priceSequence": "1"
+  },
+  "negativeProofs": [
+    {
+      "label": "calendar-root",
+      "role": "GOVERNANCE",
+      "nonce": "1",
+      "expectedNextLeaf": 2,
+      "reusedLeaf": {
+        "leafIndex": 1,
+        "txHash": "0x3bcf5a7d9f0ef7b54ce3fba9efd26bde1d72a97fcc27fb55a5ea8e6d0f0ef30f",
+        "status": "reverted",
+        "gasUsed": "249535",
+        "block": "28321266",
+        "error": "LeafOutOfOrder"
+      },
+      "invalidPq": {
+        "leafIndex": 2,
+        "txHash": "0x6b4696d282be4ceb4e5597de7792808ea4bd84285d21f6c5a6890e41d0d75032",
+        "status": "reverted",
+        "gasUsed": "237294",
+        "block": "28321269",
+        "error": "InvalidPQSignature"
+      }
+    },
+    {
+      "label": "close-anchor",
+      "role": "KEEPER",
+      "nonce": "1",
+      "expectedNextLeaf": 2,
+      "reusedLeaf": {
+        "leafIndex": 1,
+        "txHash": "0xcf52f775c230cacbd9090273bbc98671a0e20ced34f9dc21c2ca0ec38c072efd",
+        "status": "reverted",
+        "gasUsed": "251928",
+        "block": "28321275",
+        "error": "LeafOutOfOrder"
+      },
+      "invalidPq": {
+        "leafIndex": 2,
+        "txHash": "0x9d779f13e686df89c34627000f05c84962246f7d44de95dc3c6ecc5d6d2c0405",
+        "status": "reverted",
+        "gasUsed": "252985",
+        "block": "28321281",
+        "error": "InvalidPQSignature"
+      }
+    },
+    {
+      "label": "price-attestation",
+      "role": "REPORTER",
+      "nonce": "1",
+      "expectedNextLeaf": 2,
+      "reusedLeaf": {
+        "leafIndex": 1,
+        "txHash": "0xf987fdd5f63c263c2e47094cbe014d7fc97ac8b18c443df7d0f82c7a1bdf2d0b",
+        "status": "reverted",
+        "gasUsed": "251734",
+        "block": "28321286",
+        "error": "LeafOutOfOrder"
+      },
+      "invalidPq": {
+        "leafIndex": 2,
+        "txHash": "0x1400b25d3b65cf24cbadd0b2931b052a30e110c8393f487fb8106e7b7a3f43e0",
+        "status": "reverted",
+        "gasUsed": "255442",
+        "block": "28321290",
+        "error": "InvalidPQSignature"
+      }
+    }
+  ]
+}

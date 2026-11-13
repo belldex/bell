@@ -73,6 +73,26 @@
 .quantum-evidence h2 { margin: 0 0 9px; font: 650 clamp(1.5rem,2.7vw,2rem)/1.12 var(--lp-font-display); letter-spacing: -.04em; }
 .quantum-evidence p:last-child { max-width: 650px; margin: 0; color: var(--lp-muted); font: 400 .84rem/1.7 var(--lp-font-ui); }
 .quantum-evidence__empty { padding: 13px; border: 1px dashed var(--q-line); color: var(--lp-dim); line-height: 1.9; text-align: center; }
+.quantum-evidence__body { min-width: 0; }
+.quantum-evidence__body > p:first-child { margin: 0 0 11px; color: var(--lp-accent-light); font: 500 .65rem/1.4 var(--lp-font-mono); letter-spacing: .1em; }
+.quantum-evidence__body > p:nth-of-type(2) { max-width: 850px; margin: 0 0 22px; color: var(--lp-muted); font: 400 .84rem/1.7 var(--lp-font-ui); }
+.quantum-evidence__body > p strong { color: var(--lp-white); }
+.quantum-evidence__body h3 { margin: 24px 0 9px; color: var(--lp-white); font: 600 .96rem/1.35 var(--lp-font-ui); }
+.quantum-contracts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); border-top: 1px solid var(--q-line); }
+.quantum-contracts a { display: grid; grid-template-columns: minmax(120px,.65fr) minmax(0,1.5fr) 14px; align-items: center; gap: 12px; min-width: 0; padding: 11px 8px; border-bottom: 1px solid var(--q-line); color: var(--lp-muted); text-decoration: none; }
+.quantum-contracts a:hover,.quantum-gas-table a:hover,.quantum-proof-links a:hover { color: var(--lp-white); }
+.quantum-contracts a span { font: 500 .75rem/1.4 var(--lp-font-ui); }
+.quantum-contracts code { overflow: hidden; color: var(--lp-dim); font: 400 .65rem/1.4 var(--lp-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.quantum-contracts svg { color: var(--lp-accent-light); }
+.quantum-gas-table { border-top: 1px solid var(--q-line); }
+.quantum-gas-table > div { display: grid; grid-template-columns: 1.2fr 1.1fr auto 35px; align-items: center; gap: 12px; padding: 11px 8px; border-bottom: 1px solid var(--q-line); font: 400 .75rem/1.4 var(--lp-font-ui); }
+.quantum-gas-table strong { color: var(--lp-white); font-weight: 500; }
+.quantum-gas-table span { color: var(--lp-muted); }
+.quantum-gas-table b { color: var(--lp-accent-light); font: 500 .7rem/1.4 var(--lp-font-mono); white-space: nowrap; }
+.quantum-gas-table a,.quantum-proof-links a,.quantum-evidence__explorer { color: var(--lp-accent-light); text-decoration: none; }
+.quantum-proof-links { display: grid; gap: 8px; margin: 0; padding-left: 19px; color: var(--lp-muted); font: 400 .78rem/1.6 var(--lp-font-ui); }
+.quantum-evidence__note { max-width: 850px; margin: 22px 0 0; padding-top: 13px; border-top: 1px solid var(--q-line); color: var(--lp-dim); font: 400 .74rem/1.65 var(--lp-font-ui); }
+.quantum-evidence__explorer { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font: 500 .62rem/1.4 var(--lp-font-mono); letter-spacing: .07em; }
 .quantum-section--name { margin-bottom: 36px; }
 .quantum-name-copy { margin-left: 32px; }
 .quantum-disclaimer { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; padding: 18px 0 0; border-top: 1px solid var(--q-line); }
@@ -109,6 +129,8 @@
   .quantum-phase .quantum-label { margin-top: 14px; }
   .quantum-evidence { grid-template-columns: 1fr; margin-bottom: 52px; }
   .quantum-evidence__empty { justify-self: start; }
+  .quantum-contracts { grid-template-columns: 1fr; }
+  .quantum-contracts a { grid-template-columns: minmax(110px,.65fr) minmax(0,1.5fr) 14px; }
   .quantum-disclaimer { grid-template-columns: 1fr; gap: 9px; }
 }
 @media (max-width: 480px) {
@@ -121,6 +143,10 @@
   .quantum-table-row > span { grid-column: 1 / -1; grid-row: 2; }
   .quantum-table-row b { grid-column: 2; grid-row: 1; }
   .quantum-flow { grid-template-columns: 1fr; }
+  .quantum-gas-table > div { grid-template-columns: 1fr auto; gap: 4px 8px; }
+  .quantum-gas-table span { grid-column: 1; grid-row: 2; }
+  .quantum-gas-table b { grid-column: 2; grid-row: 1; }
+  .quantum-gas-table a { grid-column: 2; grid-row: 2; text-align: right; }
   .quantum-flow__arrow { justify-self: center; transform: rotate(90deg); }
   .quantum-flow__arrow:nth-of-type(2) { display: block; }
   .quantum-flow__stack { grid-column: auto; }

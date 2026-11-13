@@ -6,8 +6,8 @@ import '@/components/proof/proof.css';
 import '@/components/quantum/quantum.css';
 import { QuantumPage } from '@/components/quantum/quantum-page';
 
-const title = 'Quantum security research';
-const description = 'BELL research into post-quantum signatures for protocol trust inputs. User wallets and LP exits remain outside this scope.';
+const title = 'Bell State Hooks | Hybrid Trust Inputs on Testnet';
+const description = 'BELL hybrid post-quantum trust-input signing is deployed on Elysium testnet. Mainnet hook integration is gated; user wallets and LP exits remain outside this scope.';
 
 export const metadata: Metadata = {
   title,

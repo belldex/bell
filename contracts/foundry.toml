@@ -17,7 +17,7 @@ optimizer_runs = 1
 via_ir = true
 evm_version = "cancun"
 bytecode_hash = "none"
-fs_permissions = [{ access = "read-write", path = "../evidence" }, { access = "read-write", path = "../deployments" }, { access = "read-write", path = "../research" }]
+fs_permissions = [{ access = "read-write", path = "../evidence" }, { access = "read-write", path = "../deployments" }, { access = "read-write", path = "../research" }, { access = "read-write", path = "pq/deployments" }]
 
 [fuzz]
 runs = 100000
@@ -32,3 +32,30 @@ fail_on_revert = true
 [profile.elysium_testnet]
 eth_rpc_url = "https://testnet-rpc.elysium.kinetiq.xyz"
 chain_id = 99801
+
+# Isolated Elysium PQ trust-input rehearsal. This profile compiles only the
+# new PQ package with the upstream verifier's required compiler, while
+# keeping the deployed Robinhood contracts on their existing compiler.
+[profile.pq_testnet]
+src = "pq/src"
+test = "pq/test"
+script = "pq/script"
+out = "out-pq"
+cache_path = "cache-pq"
+solc_version = "0.8.30"
+optimizer = true
+optimizer_runs = 1
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+cbor_metadata = false
+remappings = [
+  "@uniswap/v4-core/=lib/v4-core/",
+  "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+  "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+  "permit2/=lib/permit2/",
+  "solmate/=lib/solmate/",
+  "quip-hashsigs/=lib/hashsigs-solidity/",
+  "shrincs-profile/=lib/hashsigs-solidity/contracts/profiles/256s/",
+  "shrincs-hash/=lib/hashsigs-solidity/contracts/hash/keccak/"
+]

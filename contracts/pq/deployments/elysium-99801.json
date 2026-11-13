@@ -1,0 +1,111 @@
+{
+    "chainId":  99801,
+    "profile":  "shrincs-256s-keccak-stateful",
+    "leafBudget":  64,
+    "contracts":  {
+                      "shrincs":  "0x158895a1fbabfa91cae1264f1d959cbe6b7a4101",
+                      "hashSigVerifier":  "0x52f8e77aadfd1561fda0bc362805245ed57d7242",
+                      "pqKeyRegistry":  "0xb4c7cfb2f1b58afe602249e24ec0476e4f984a14",
+                      "hybridAuth":  "0xbc81138dfc3285287fa15745524ef2f5a9192dc6",
+                      "calendarRegistryV2":  "0x03c8354aaf83b394fa39ac74bf3340ed1c4cfbd4",
+                      "sessionRegistryV2":  "0x0f6573348c8ae4ff07542568e765d2e0dcf405bf",
+                      "priceAttestationAdapter":  "0x25fa61a31893c82b5a21bd70d3b2480133f2b019"
+                  },
+    "roles":  {
+                  "KEEPER":  "0x71a9859d7dd21b24504a6f306077ffc2d510b4d4b61128e931fe937441ad1836",
+                  "REPORTER":  "0xa129ef99cc9e633bb0f59b9cc64ea8b9fed36db75ab61585c09bc0cc55d16a0b",
+                  "GOVERNANCE":  "0x35a7846a2a701fff6f9d61a46ebff5da578c5dcee8bdf361c569f9ea4ee64771",
+                  "GUARDIAN":  "0x8b5b16d04624687fcf0d0228f19993c9157c1ed07b41d8d430fd9100eb099fe8"
+              },
+    "network":  "Elysium testnet",
+    "deployment":  {
+                       "firstBlock":  28317880,
+                       "lastBlock":  28317904,
+                       "contracts":  [
+                                         {
+                                             "name":  "BellSHRINCSStatefulVerifier",
+                                             "address":  "0x158895a1fbabfa91cae1264f1d959cbe6b7a4101",
+                                             "transactionHash":  "0xac8bf697863cc12bf1230c3f5653aa99cb55cc259be48398957037b6b7da2064",
+                                             "block":  28317880,
+                                             "gasUsed":  773518
+                                         },
+                                         {
+                                             "name":  "HashSigVerifier",
+                                             "address":  "0x52f8e77aadfd1561fda0bc362805245ed57d7242",
+                                             "transactionHash":  "0x20aba876ede9ed467a357ee8eb242b8939511157722577da006ba79cbdd3217f",
+                                             "block":  28317891,
+                                             "gasUsed":  332521
+                                         },
+                                         {
+                                             "name":  "PQKeyRegistry",
+                                             "address":  "0xb4c7cfb2f1b58afe602249e24ec0476e4f984a14",
+                                             "transactionHash":  "0x81b36377ce7b82c2af1f9ef016ebcada97ad70828179109a93be38dc672b4a3d",
+                                             "block":  28317891,
+                                             "gasUsed":  538081
+                                         },
+                                         {
+                                             "name":  "HybridAuth",
+                                             "address":  "0xbc81138dfc3285287fa15745524ef2f5a9192dc6",
+                                             "transactionHash":  "0x1efc9dc7a5bcd79ab042dd4f44b6ff0ca9b8dd699786e3e0b95d60bc6547fecd",
+                                             "block":  28317891,
+                                             "gasUsed":  758384
+                                         },
+                                         {
+                                             "name":  "CalendarRegistryV2",
+                                             "address":  "0x03c8354aaf83b394fa39ac74bf3340ed1c4cfbd4",
+                                             "transactionHash":  "0xfb1d76dc5dcf788ba611395ab2e79444ea4b745005f102414c2d8c7a32884a26",
+                                             "block":  28317895,
+                                             "gasUsed":  327048
+                                         },
+                                         {
+                                             "name":  "SessionRegistryV2",
+                                             "address":  "0x0f6573348c8ae4ff07542568e765d2e0dcf405bf",
+                                             "transactionHash":  "0xc0f27f9d4b4adf834d224115c9a917e27d7895a08dedbd4241d2b86032c186f0",
+                                             "block":  28317901,
+                                             "gasUsed":  298082
+                                         },
+                                         {
+                                             "name":  "PriceAttestationAdapter",
+                                             "address":  "0x25fa61a31893c82b5a21bd70d3b2480133f2b019",
+                                             "transactionHash":  "0x46ca6a2c6a3b2a1fe542ad972e046224bfa1c8bddfdc47656c22760c41e1f3e1",
+                                             "block":  28317904,
+                                             "gasUsed":  335946
+                                         }
+                                     ],
+                       "configurationTransactions":  [
+                                                         {
+                                                             "transactionHash":  "0x5d04956afb69b48bcb716072d3182a0467850d2d91b723852d95fe4a0137b285",
+                                                             "block":  28317909,
+                                                             "gasUsed":  117636
+                                                         },
+                                                         {
+                                                             "transactionHash":  "0xa54caba15ba1b1b39544dfa5c0ad48ede9ad4771c06e357af53472c5d52cb5e4",
+                                                             "block":  28317926,
+                                                             "gasUsed":  100524
+                                                         },
+                                                         {
+                                                             "transactionHash":  "0x95c7fe12b155dd415443a4a14435ed5c60dadecd98105fbe7deecb284eaa9bee",
+                                                             "block":  28317926,
+                                                             "gasUsed":  100536
+                                                         },
+                                                         {
+                                                             "transactionHash":  "0x578e11ef01cf98727b3981e6c8029b0c5ab5d3a687f989fefcd2f2683d1a7403",
+                                                             "block":  28317935,
+                                                             "gasUsed":  100524
+                                                         },
+                                                         {
+                                                             "transactionHash":  "0x043e99e201d5da0e72fc08fb288fa6ec03324994aa09c9f85f5a4f638497d7cb",
+                                                             "block":  28317935,
+                                                             "gasUsed":  44069
+                                                         },
+                                                         {
+                                                             "transactionHash":  "0xf2eee10165500ae56d0dd5e1445e9b8291953a06e5250a582d14db82a46c6589",
+                                                             "block":  28317935,
+                                                             "gasUsed":  29615
+                                                         }
+                                                     ],
+                       "sourceVerification":  "not verified",
+                       "upstreamSourceCommit":  "0e89278f573a29f8341e1f5697ea73e0f8988d51",
+                       "explorer":  "https://explorer-elysium-testnet.t.conduit.xyz"
+                   }
+}
