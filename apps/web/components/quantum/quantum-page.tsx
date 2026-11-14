@@ -21,7 +21,7 @@ const QUANTUM_SECTIONS = [
   { id: 'flow', label: 'Flow', desc: 'How hybrid authorization works on testnet.' },
   { id: 'roadmap', label: 'Roadmap', desc: 'The testnet and Mainnet gates.' },
   { id: 'evidence', label: 'Evidence', desc: 'Elysium testnet contracts, transactions and measured gas.' },
-  { id: 'name', label: 'Name', desc: 'Why this research is called Bell State Hooks.' },
+  { id: 'name', label: 'Name', desc: 'Why this research is called Einstein Hooks v2.' },
 ] as const;
 
 function SectionHeading({ index, label, title }: { index: string; label: string; title: string }) {
@@ -41,7 +41,7 @@ export function QuantumPage() {
       <main id="main" className="legal__main quantum-public__main">
       <div className="quantum-page">
       <header className="quantum-hero">
-        <div className="quantum-hero__topline"><span className="quantum-mark"><Waves size={15} aria-hidden="true" /> BELL STATE HOOKS</span><span className="quantum-status"><i /> TESTNET · PHASE 1</span></div>
+        <div className="quantum-hero__topline"><span className="quantum-mark"><Waves size={15} aria-hidden="true" /> EINSTEIN HOOKS V2</span><span className="quantum-status"><i /> TESTNET · PHASE 1</span></div>
         <p className="quantum-kicker">PROTOCOL SECURITY / TESTNET PHASE 1</p>
         <h1>Quantum-safe<br /><em>market structure.</em></h1>
         <p className="quantum-hero__lead">BELL’s trust inputs, signed for a post-quantum world.<br className="quantum-desktop-break" /> LP exits stay unconditional.</p>
@@ -136,8 +136,8 @@ export function QuantumPage() {
       </section>
 
       <section id="name" className="quantum-section quantum-section--name" aria-labelledby="quantum-name">
-        <SectionHeading index="05" label="THE NAME" title="Bell State Hooks." />
-        <p id="quantum-name" className="quantum-copy quantum-name-copy">“Bell State” nods to John Stewart Bell’s work on quantum theory and fits the BELL name. It is a project name, not a claim that BELL changes quantum mechanics or protects user wallets.</p>
+        <SectionHeading index="05" label="THE NAME" title="Einstein Hooks v2." />
+        <p id="quantum-name" className="quantum-copy quantum-name-copy">The name nods to Albert Einstein’s 1905 proposal that light comes in quanta. It is a project name. BELL is not affiliated with or endorsed by Albert Einstein’s estate, and the name is not a claim that BELL changes quantum mechanics or protects user wallets.</p>
       </section>
 
       <section className="quantum-disclaimer" aria-label="Research disclaimer"><span>TESTNET / UNAUDITED</span><p>This experiment does not make user wallets post-quantum secure, does not alter chain cryptography, and does not gate LP exits. It is not financial advice.</p><a href="https://csrc.nist.gov/pubs/fips/205/final" target="_blank" rel="noopener noreferrer">NIST FIPS 205: SLH-DSA <ArrowUpRight size={14} aria-hidden="true" /></a></section>

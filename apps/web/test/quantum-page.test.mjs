@@ -58,3 +58,14 @@ test('quantum layout has responsive and reduced-motion behavior', () => {
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /max-width:.{0,8}760px/);
 });
+
+test('the page is named Einstein Hooks v2 and /einstein is the canonical route', async () => {
+  const einstein = await read('../app/einstein/page.tsx');
+  assert.match(einstein, /QuantumPage/);
+  assert.match(einstein, /Einstein Hooks v2/);
+  assert.match(einstein, /canonical: '\/einstein\/'/);
+  assert.match(route, /canonical: '\/einstein\/'/);
+  assert.match(page, /EINSTEIN HOOKS V2/);
+  assert.match(page, /not affiliated with or endorsed by/);
+  assert.doesNotMatch(page + route + einstein, /Bell State|BELL STATE/);
+});
