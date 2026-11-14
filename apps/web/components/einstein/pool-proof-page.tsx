@@ -21,6 +21,7 @@ const claims = proof.claims as unknown as Claim[];
 const verdictOf = (c: Claim): Verdict => c.result?.verdict ?? "PENDING";
 const count = (v: Verdict) => claims.filter((c) => verdictOf(c) === v).length;
 const lastRun = (proof as { lastRun?: string }).lastRun;
+const pool = (proof as { pool?: { hook: string; pair: string } | null }).pool ?? null;
 
 export function PoolProofPage() {
   const gas = claims.find((c) => c.id === "P10")?.result?.gas ?? [];
@@ -37,9 +38,11 @@ export function PoolProofPage() {
               Every claim has a link. <em>Or it is marked pending.</em>
             </h1>
             <p className="ein-lede">
-              The first pool on an Einstein hook has not been created yet. This page lists what will be proven, checks what already can
-              be checked on Robinhood Chain, and says plainly what is still pending. Nothing here is typed by hand: it is generated from
-              one file, <a href="https://github.com/belldex/bell/blob/main/evidence/einstein/proof.json">proof.json</a>.
+              {pool
+                ? <>The first pool on an Einstein hook is live on Robinhood Chain: <a href={`${proof.chain.explorer}/address/${pool.hook}`} target="_blank" rel="noopener noreferrer">{pool.pair} at {pool.hook.slice(0, 8)}…{pool.hook.slice(-4)}</a>, seeded with about 1 USD.</>
+                : <>The first pool on an Einstein hook has not been created yet.</>}{" "}
+              This page lists what is proven, what is still pending, and the link behind every claim. Nothing here is typed by hand: it is
+              generated from one file, <a href="https://github.com/belldex/bell/blob/main/evidence/einstein/proof.json">proof.json</a>.
             </p>
             <p className="ein-fine">
               {count("PASS")} pass, {count("PARTIAL")} partial, {count("PENDING")} pending, {count("FAIL")} fail.
@@ -80,14 +83,14 @@ export function PoolProofPage() {
 
         <section id="fail" className="ein-section" data-reveal>
           <h2>What must fail</h2>
-          <p className="ein-ledger__lede">Each attempt has to revert with the named error. A reverted mainnet transaction is kept as the proof. None has been sent on mainnet yet.</p>
+          <p className="ein-ledger__lede">Each attempt has to revert with the named error. A reverted mainnet transaction is kept as the proof. A test marked pending has not been sent on mainnet yet.</p>
           <ul className="ein-status">
             {proof.negatives.map((n) => (
-              <li key={n.id} data-state="not-yet">
+              <li key={n.id} data-state={n.mainnetTx ? "live" : "not-yet"}>
                 <b>{n.id} {n.status}</b>
                 <div>
                   <strong>{n.attempt}</strong>
-                  <p>Must revert with {n.mustRevertWith}. {n.note}</p>
+                  <p>Must revert with {n.mustRevertWith}. {n.note}{n.mainnetTx && (<> <a href={`${proof.chain.explorer}/tx/${n.mainnetTx}`} target="_blank" rel="noopener noreferrer">The reverted transaction</a>.</>)}</p>
                 </div>
               </li>
             ))}

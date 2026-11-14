@@ -1,0 +1,13 @@
+[
+  {
+    "tx": "0x84e4fd2831689eb0caac3d720da2605dc522bd36fef95c280efc103f70524bc2",
+    "block": 114375151,
+    "timestamp": 1794682474,
+    "status": "success",
+    "percent": 20,
+    "liquidityBefore": "267828720760",
+    "liquidityAfter": "214262976608",
+    "hookEmittedLogs": false,
+    "gasUsed": 201277
+  }
+]

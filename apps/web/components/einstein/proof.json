@@ -27,7 +27,14 @@
     "poolFactory": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569",
     "swapLensRegistry": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5"
   },
-  "pool": null,
+  "pool": {
+    "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+    "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+    "positionId": "7",
+    "block": 114372026,
+    "createTx": "0x440c71e431304e72967d55d5bfcd6b6988e4f31726fcc0abfb25409bce465b63",
+    "pair": "NVDA/USDG"
+  },
   "claims": [
     {
       "id": "P1",
@@ -123,7 +130,7 @@
       "title": "Nothing here can be changed later",
       "question": "Can you change it later?",
       "passes": "The EIP-1967 implementation and admin slots are zero, and no function sets the calendar source, controller or fees.",
-      "passNote": "EIP-1967 slots are zero on all 15 deployed contracts. The first pool's hook is added to this check when it exists.",
+      "passNote": "EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.",
       "checks": [
         {
           "kind": "storageZero",
@@ -259,11 +266,20 @@
             "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
             "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
           ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "Einstein pool hook",
+          "address": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
         }
       ],
       "result": {
         "verdict": "PASS",
-        "note": "EIP-1967 slots are zero on all 15 deployed contracts. The first pool's hook is added to this check when it exists.",
+        "note": "EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.",
         "gas": []
       }
     },
@@ -272,11 +288,16 @@
       "title": "The hook has only the permissions we say",
       "question": "Which permissions does the hook really have?",
       "passes": "The hook address low 14 bits are 0x2CC0 and remove-liquidity bits 9, 8 and 0 are off.",
-      "pending": "No Einstein pool hook exists on mainnet yet.",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "hookBits",
+          "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0"
+        }
+      ],
+      "passNote": "The hook 0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
       "result": {
-        "verdict": "PENDING",
-        "note": "No Einstein pool hook exists on mainnet yet.",
+        "verdict": "PASS",
+        "note": "The hook 0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
         "gas": []
       }
     },
@@ -285,12 +306,32 @@
       "title": "The pool is real and holds liquidity",
       "question": "Is the pool real and live?",
       "passes": "Initialize and seed transactions exist, the pool id matches, the hook is the Einstein hook and liquidity is above zero.",
-      "pending": "No pool has been created yet.",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "txSuccess",
+          "label": "createAndSeed",
+          "tx": "0x440c71e431304e72967d55d5bfcd6b6988e4f31726fcc0abfb25409bce465b63",
+          "to": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569"
+        },
+        {
+          "kind": "callWordMin",
+          "label": "position liquidity",
+          "to": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
+          "data": "0x1efeed330000000000000000000000000000000000000000000000000000000000000007",
+          "word": 0,
+          "min": 1
+        }
+      ],
+      "passNote": "Pool created and seeded in one transaction at block 114372026; the 49 USDG service fee was paid, and position 7 holds liquidity.",
       "result": {
-        "verdict": "PENDING",
-        "note": "No pool has been created yet.",
-        "gas": []
+        "verdict": "PASS",
+        "note": "Pool created and seeded in one transaction at block 114372026; the 49 USDG service fee was paid, and position 7 holds liquidity.",
+        "gas": [
+          {
+            "label": "createAndSeed",
+            "gasUsed": 9092637
+          }
+        ]
       }
     },
     {
@@ -359,12 +400,25 @@
       "title": "Session fees apply",
       "question": "Do the session fees actually apply?",
       "passes": "One swap per session shows the matching fee in the PoolManager Swap event: 500, 3000 or 5000, and 10000 pips.",
-      "pending": "No pool, so no swaps. On a fork of mainnet the CLOSED session charged 10000 pips (not a mainnet proof).",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "swapFee",
+          "label": "CLOSED swap",
+          "tx": "0xa62e4bc910740910ba90dc4b6561edbbb03abd6bb49d9cc3455610635b95fbc5",
+          "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+          "expectedFee": 10000
+        }
+      ],
+      "partial": "The CLOSED session is proven on mainnet: a real swap shows 10000 pips in the Swap event. The REGULAR, PRE/POST and OVERNIGHT sessions are still pending.",
       "result": {
-        "verdict": "PENDING",
-        "note": "No pool, so no swaps. On a fork of mainnet the CLOSED session charged 10000 pips (not a mainnet proof).",
-        "gas": []
+        "verdict": "PARTIAL",
+        "note": "The CLOSED session is proven on mainnet: a real swap shows 10000 pips in the Swap event. The REGULAR, PRE/POST and OVERNIGHT sessions are still pending.",
+        "gas": [
+          {
+            "label": "CLOSED swap",
+            "gasUsed": 976305
+          }
+        ]
       }
     },
     {
@@ -372,11 +426,11 @@
       "title": "The auction works with real orders",
       "question": "Does the auction work with real orders?",
       "passes": "At least two orders on opposite sides fill at one uniform price.",
-      "pending": "No pool, so no auction.",
+      "pending": "The pool exists, but no Opening Bell Auction has run. It needs the next market open and a keeper that activates the session.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "No pool, so no auction.",
+        "note": "The pool exists, but no Opening Bell Auction has run. It needs the next market open and a keeper that activates the session.",
         "gas": []
       }
     },
@@ -385,12 +439,24 @@
       "title": "You can always get out",
       "question": "Can I always get out?",
       "passes": "Remove-liquidity succeeds during CLOSED and while paused, with no post-quantum signature.",
-      "pending": "No pool. On a fork of mainnet, a pool created through the live factory let its LP remove all liquidity (not a mainnet proof).",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "txSuccess",
+          "label": "remove liquidity (20%) during CLOSED",
+          "tx": "0x84e4fd2831689eb0caac3d720da2605dc522bd36fef95c280efc103f70524bc2",
+          "to": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d"
+        }
+      ],
+      "partial": "Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.",
       "result": {
-        "verdict": "PENDING",
-        "note": "No pool. On a fork of mainnet, a pool created through the live factory let its LP remove all liquidity (not a mainnet proof).",
-        "gas": []
+        "verdict": "PARTIAL",
+        "note": "Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.",
+        "gas": [
+          {
+            "label": "remove liquidity (20%) during CLOSED",
+            "gasUsed": 201277
+          }
+        ]
       }
     },
     {
@@ -398,11 +464,11 @@
       "title": "What fails, fails safely",
       "question": "What fails, and does it fail safely?",
       "passes": "Each negative test reverts on mainnet with the named error.",
-      "pending": "See N1 to N7 below; none has been run on mainnet.",
+      "pending": "N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "See N1 to N7 below; none has been run on mainnet.",
+        "note": "N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.",
         "gas": []
       }
     },
@@ -456,11 +522,11 @@
       "title": "Anyone can check all of this",
       "question": "Can I check all of this myself?",
       "passes": "verify-einstein-pool prints PASS for P2 to P9 from a clean clone against a public RPC.",
-      "pending": "The script exists and runs. P3 to P9 print PENDING until the pool exists.",
+      "pending": "The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "The script exists and runs. P3 to P9 print PENDING until the pool exists.",
+        "note": "The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.",
         "gas": []
       }
     }
@@ -472,7 +538,11 @@
       "mustRevertWith": "InvalidPQSignature",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     },
     {
       "id": "N2",
@@ -480,7 +550,11 @@
       "mustRevertWith": "InvalidPQSignature",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     },
     {
       "id": "N3",
@@ -488,7 +562,11 @@
       "mustRevertWith": "LeafOutOfOrder",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     },
     {
       "id": "N4",
@@ -496,15 +574,30 @@
       "mustRevertWith": "InvalidPQSignature",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     },
     {
       "id": "N5",
       "attempt": "Swap above the per-trade cap",
       "mustRevertWith": "TradeCapExceeded",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Reverted with TradeCapExceeded on a mainnet fork. Not yet sent on mainnet."
+      "mainnetTx": "0x1906cd4a73e21a038b5f0960bfcdebb41bf643686ed7989ff3cebfab19a5c8e3",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 114373334 with TradeCapExceeded.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N5",
+        "tx": "0x1906cd4a73e21a038b5f0960bfcdebb41bf643686ed7989ff3cebfab19a5c8e3",
+        "selector": "0xecb1f63f",
+        "error": "TradeCapExceeded"
+      },
+      "result": {
+        "verdict": "PASS",
+        "note": "N5: reverted, TradeCapExceeded selector found in the revert data"
+      }
     },
     {
       "id": "N6",
@@ -512,7 +605,11 @@
       "mustRevertWith": "AuctionActive",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     },
     {
       "id": "N7",
@@ -520,14 +617,18 @@
       "mustRevertWith": "PolicyBlocked",
       "mainnetTx": null,
       "status": "PENDING",
-      "note": "Not yet sent on mainnet."
+      "note": "Not yet sent on mainnet.",
+      "result": {
+        "verdict": "PENDING",
+        "note": "Not yet sent on mainnet."
+      }
     }
   ],
   "honestLimits": [
     "Wallets still sign with ECDSA. Only BELL's own governance and reporting calls use the post-quantum layer.",
     "No independent cryptographic review has been done.",
-    "No pool uses the Einstein hook yet.",
+    "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-14T18:04:55.184Z"
+  "lastRun": "2026-11-14T18:54:57.154Z"
 }

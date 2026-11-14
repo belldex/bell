@@ -155,8 +155,8 @@ contract EinsteinPoolRehearsal is MiniTest {
         int24 lower = tick - 3000;
         int24 upper = tick + 3000;
         uint160 sqrtP = TickMath.getSqrtPriceAtTick(tick);
-        uint128 amount0 = 2.5e6;    // 2.5 USDG
-        uint128 amount1 = 1.25e16;  // 0.0125 NVDA
+        uint128 amount0 = 1e6;      // 1 USDG
+        uint128 amount1 = 5e15;     // 0.005 NVDA
         uint128 liquidity = LiquidityAmounts.getLiquidityForAmounts(
             sqrtP, TickMath.getSqrtPriceAtTick(lower), TickMath.getSqrtPriceAtTick(upper), amount0, amount1
         );
@@ -215,7 +215,7 @@ contract EinsteinPoolRehearsal is MiniTest {
         assertEq(uint160(pool.hook) & 1, 0, "afterRemoveLiquidityReturnDelta");
         assertGt(pool.liquidity, 0, "liquidity");
         emitAddr("hook", pool.hook);
-        emitUint("service fee paid (raw USDG)", 100e6 - IERC20(USDG).balanceOf(creator) - 2.5e6);
+        emitUint("service fee paid (raw USDG)", 100e6 - IERC20(USDG).balanceOf(creator) - 1e6);
     }
 
     function test_P6_swapFeeInTheSwapEventForCurrentSession() external {
@@ -224,7 +224,7 @@ contract EinsteinPoolRehearsal is MiniTest {
         IERC20(USDG).approve(address(swapper), type(uint256).max);
         IERC20(NVDA).approve(address(swapper), type(uint256).max);
         vm.recordLogs();
-        swapper.swap(key, true, -int256(uint256(0.04e6))); // exact input 0.04 USDG, under the 0.05 USDG CLOSED-session cap
+        swapper.swap(key, true, -int256(uint256(0.015e6))); // exact input 0.015 USDG, under the 0.02 USDG CLOSED-session cap of a 1 USDG seed
         vm.stopPrank();
         Vm.Log[] memory logs = vm.getRecordedLogs();
         for (uint256 i; i < logs.length; ++i) {
@@ -241,8 +241,8 @@ contract EinsteinPoolRehearsal is MiniTest {
         _create();
         vm.startPrank(creator);
         IERC20(USDG).approve(address(swapper), type(uint256).max);
-        // 0.1 USDG is above the 0.05 USDG per-trade limit that applies in the CLOSED session.
-        try swapper.swap(key, true, -int256(uint256(0.1e6))) { revert("cap not enforced"); } catch (bytes memory reason) {
+        // 0.05 USDG is above the 0.02 USDG per-trade limit that applies in the CLOSED session for a 1 USDG seed.
+        try swapper.swap(key, true, -int256(uint256(0.05e6))) { revert("cap not enforced"); } catch (bytes memory reason) {
             bytes memory inner = abi.decode(_tail(reason), (bytes));
             require(bytes4(inner) == 0xecb1f63f, "expected TradeCapExceeded");
         }

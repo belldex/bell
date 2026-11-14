@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bell-keeper-pq",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-24",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "KEEPER_DO",
+        "class_name": "KeeperState"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "KeeperState"
+      ]
+    }
+  ],
+  "vars": {
+    "BELL_ORACLE_MODE": "chainlink",
+    "BELL_EXPECTED_CHAIN_ID": "4663",
+    "BELL_ASSET_REGISTRY": "0xb02cd68bcb8d3c624b7e3afd3a9f48a4c64d9b18",
+    "BELL_POOL_FACTORY": "0xf6b38e322ce6d8f9f836921278e13ae55f525569",
+    "BELL_POOL_SCAN_FROM_BLOCK": "113918086",
+    "BELL_POSITION_SCAN_FROM_BLOCK": "113918086",
+    "BELL_POSITION_MANAGER": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
+    "BELL_STOCK_ASSETS": "[{\"symbol\":\"AAPL\",\"assetId\":\"0x759a028b6eb3578ae6c3bb5968aa1ff01ef0e58bcdd934e09722de667b48a5dc\"},{\"symbol\":\"NVDA\",\"assetId\":\"0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7\"},{\"symbol\":\"TSLA\",\"assetId\":\"0xfa1e411618d628d1c27918cbc4c9bc30ce675c1f4bd777ace690d4c7ff07ddae\"}]",
+    "BELL_MAINNET_ASSETS": "{}",
+    "BELL_CALENDAR_REGISTRY": "0x77813f7a761bfa5722dc5ee1a6e5b4b849d49003",
+    "BELL_SESSION_REGISTRY": "0xc8e425140e0967aa07333946444c8a0611058ae8",
+    "BELL_CALENDAR_ROOTS": "{\"AAPL\":{\"root\":\"0x2b5277f474a8bf63bf5c05dc13846a51ae16dbbe77f05b60b3fbbab5707efd41\",\"year\":2026,\"coverageStart\":1794633339,\"coverageEnd\":1798761600,\"capabilityMask\":30},\"NVDA\":{\"root\":\"0x3d8a6bad26d975ac2725b862c4e8e626f8588dc825864e0ad7f2fee1be6dacf7\",\"year\":2026,\"coverageStart\":1794633363,\"coverageEnd\":1798761600,\"capabilityMask\":30},\"TSLA\":{\"root\":\"0x7f4235e061168e8fd4b9fda899d88683cc3747e64b1fb9bf9cb78ead2d86c5ac\",\"year\":2026,\"coverageStart\":1794633381,\"coverageEnd\":1798761600,\"capabilityMask\":30}}",
+    "BELL_AUCTION_REGISTRY": "0xe2ce18362eec0a6f9166348aebff06182a183e6a",
+    "BELL_SWAP_LENS_REGISTRY": "0xdbf6f9299ed0186c0b4a53f66ca251872afd1dc5",
+    "BELL_SWAP_LENS_MAP": "{}"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

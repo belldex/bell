@@ -6,8 +6,8 @@
  *
  *   node scripts/einstein/build-proof.mjs [--run --rpc <url>]
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { runProof, rpcFactory } from './verify-einstein-pool.mjs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { runProof, runNegatives, rpcFactory } from './verify-einstein-pool.mjs';
 
 const read = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const manifest = read('evidence/deploy/pq-hooks-mainnet.json');
@@ -89,19 +89,79 @@ const negatives = [
     : 'Not yet sent on mainnet.',
 }));
 
+// Evidence written by create-first-pool.mjs, swap-first-pool.mjs (swaps.json, negatives.json). Absent until the pool exists.
+const readOptional = (path) => { try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; } };
+const firstPoolFile = readdirSync('evidence/einstein').filter((f) => f.startsWith('first-pool-')).sort().pop();
+const firstPool = firstPoolFile ? readOptional(`evidence/einstein/${firstPoolFile}`) : null;
+const swaps = readOptional('evidence/einstein/swaps.json') ?? [];
+const negativeTxs = readOptional('evidence/einstein/negatives.json') ?? [];
+const exits = readOptional('evidence/einstein/exits.json') ?? [];
+const poolManager = read('evidence/deploy/mainnet-4663.json').poolManager;
+const positionManager = read('evidence/deploy/mainnet-4663.json').positionManager;
+const ERRORS = { N5: ['TradeCapExceeded', '0xecb1f63f'] };
+
+if (firstPool?.status === 'success') {
+  const set = (id, patch) => Object.assign(claims.find((c) => c.id === id), patch);
+  const tokenIdWord = BigInt(firstPool.tokenId).toString(16).padStart(64, '0');
+  set('P3', {
+    pending: undefined,
+    passNote: `The hook ${firstPool.hook} has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.`,
+    checks: [{ kind: 'hookBits', hook: firstPool.hook }],
+  });
+  set('P4', {
+    pending: undefined,
+    passNote: `Pool created and seeded in one transaction at block ${firstPool.block}; the 49 USDG service fee was paid, and position ${firstPool.tokenId} holds liquidity.`,
+    checks: [
+      { kind: 'txSuccess', label: 'createAndSeed', tx: firstPool.txs.createAndSeed, to: manifest.contracts.poolFactory },
+      { kind: 'callWordMin', label: 'position liquidity', to: positionManager, data: `0x1efeed33${tokenIdWord}`, word: 0, min: 1 },
+    ],
+  });
+  const p2 = claims.find((c) => c.id === 'P2');
+  p2.checks.push({ kind: 'storageZero', label: 'Einstein pool hook', address: firstPool.hook, slots: EIP1967 });
+  p2.passNote = 'EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.';
+  set('P7', { pending: 'The pool exists, but no Opening Bell Auction has run. It needs the next market open and a keeper that activates the session.' });
+  set('P8', { pending: 'The pool exists, but no exit has been sent on mainnet yet. On a fork of mainnet its LP removed all liquidity without touching the hook (not a mainnet proof).' });
+  if (exits.length) {
+    set('P8', {
+      pending: undefined,
+      partial: 'Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.',
+      checks: exits.map((e) => ({ kind: 'txSuccess', label: 'remove liquidity (' + e.percent + '%) during CLOSED', tx: e.tx, to: positionManager })),
+    });
+  }
+  set('P9', { pending: 'N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.' });
+  set('P11', { pending: 'The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.' });
+  const closed = swaps.filter((s) => s.feePips === 10000);
+  if (closed.length) {
+    set('P6', {
+      pending: undefined,
+      partial: 'The CLOSED session is proven on mainnet: a real swap shows 10000 pips in the Swap event. The REGULAR, PRE/POST and OVERNIGHT sessions are still pending.',
+      checks: closed.map((s) => ({ kind: 'swapFee', label: 'CLOSED swap', tx: s.tx, poolManager, expectedFee: 10000 })),
+    });
+  }
+}
+for (const n of negatives) {
+  const done = negativeTxs.find((x) => x.id === n.id);
+  const [error, selector] = ERRORS[n.id] ?? [];
+  if (done && selector) {
+    n.mainnetTx = done.tx; n.status = 'PROVEN'; n.note = `Reverted on mainnet in block ${done.block} with ${error}.`;
+    n.check = { kind: 'revertReason', label: n.id, tx: done.tx, selector, error };
+  }
+}
+const poolLimit = firstPool?.status === 'success' ? 'Only one pool uses the Einstein hook, and it is seeded with about 1 USD.' : 'No pool uses the Einstein hook yet.';
+
 const proof = {
   schema: 1,
   title: 'Einstein Hooks v2: first pool, proof package',
   chain: { id: 4663, name: 'Robinhood Chain', explorer: 'https://robinhoodchain.blockscout.com' },
   generatedFrom: ['evidence/deploy/pq-hooks-mainnet.json', 'evidence/deploy/pq-hooks-mainnet-calendar-state-*.json'],
   contracts: manifest.contracts,
-  pool: null,
+  pool: firstPool?.status === 'success' ? { hook: firstPool.hook, poolId: firstPool.poolId, positionId: firstPool.tokenId, block: firstPool.block, createTx: firstPool.txs.createAndSeed, pair: 'NVDA/USDG' } : null,
   claims,
   negatives,
   honestLimits: [
     "Wallets still sign with ECDSA. Only BELL's own governance and reporting calls use the post-quantum layer.",
     'No independent cryptographic review has been done.',
-    'No pool uses the Einstein hook yet.',
+    poolLimit,
     'The five post-quantum contracts are a Sourcify match, not an exact match.',
   ],
 };
@@ -113,6 +173,7 @@ if (process.argv.includes('--run')) {
   for (const r of results) {
     proof.claims.find((c) => c.id === r.id).result = { verdict: r.verdict, note: r.note, gas: r.gas };
   }
+  for (const r of await runNegatives(proof, rpc)) proof.negatives.find((n) => n.id === r.id).result = { verdict: r.verdict, note: r.note };
   proof.lastRun = new Date().toISOString();
 }
 mkdirSync('evidence/einstein', { recursive: true });

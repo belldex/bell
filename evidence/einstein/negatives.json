@@ -1,0 +1,12 @@
+[
+  {
+    "id": "N5",
+    "tx": "0x1906cd4a73e21a038b5f0960bfcdebb41bf643686ed7989ff3cebfab19a5c8e3",
+    "block": 114373334,
+    "status": "reverted",
+    "selector": "0xecb1f63f",
+    "gasUsed": 950216,
+    "amountInRaw": "50000",
+    "direction": "usdg"
+  }
+]

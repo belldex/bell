@@ -22,7 +22,7 @@ export async function rpcFactory(url) {
     const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: ++id, method, params }) });
     if (!res.ok) throw new Error(`RPC ${method} returned HTTP ${res.status}`);
     const body = await res.json();
-    if (body.error) throw new Error(`RPC ${method}: ${body.error.message}`);
+    if (body.error) { const e = new Error(`RPC ${method}: ${body.error.message}`); e.data = typeof body.error.data === 'string' ? body.error.data : ''; throw e; }
     return body.result;
   };
 }
@@ -59,6 +59,40 @@ async function runCheck(check, rpc, proof) {
       const out = await rpc('eth_call', [{ to: check.to, data: check.data }, 'latest']);
       const got = BigInt(word(out, check.word));
       return { ok: got === BigInt(check.equals), note: `${check.label}: ${got}` };
+    }
+    case 'callWordMin': {
+      const out = await rpc('eth_call', [{ to: check.to, data: check.data }, 'latest']);
+      const got = BigInt(word(out, check.word));
+      return { ok: got >= BigInt(check.min), note: `${check.label}: ${got}` };
+    }
+    case 'callAddress': {
+      const out = await rpc('eth_call', [{ to: check.to, data: check.data }, 'latest']);
+      const got = `0x${word(out, check.word).slice(26)}`;
+      return { ok: lower(got) === lower(check.equals), note: `${check.label}: ${got}` };
+    }
+    case 'swapFee': {
+      // The PoolManager Swap event carries the fee the hook set for this swap, in pips.
+      const r = await rpc('eth_getTransactionReceipt', [check.tx]);
+      if (!r || r.status !== '0x1') return { ok: false, note: `swap tx ${check.tx.slice(0, 10)} is missing or failed` };
+      const SWAP = '0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f';
+      const ev = r.logs.find((l) => lower(l.address) === lower(check.poolManager) && l.topics[0] === SWAP);
+      if (!ev) return { ok: false, note: 'no PoolManager Swap event in the receipt' };
+      const fee = parseInt(word(ev.data, 5), 16);
+      return { ok: fee === check.expectedFee, note: `${check.label}: fee ${fee} pips`, gasUsed: parseInt(r.gasUsed, 16) };
+    }
+    case 'revertReason': {
+      // Replays the reverted transaction one block earlier and looks for the named error selector in the revert data.
+      const r = await rpc('eth_getTransactionReceipt', [check.tx]);
+      if (!r || r.status !== '0x0') return { ok: false, note: `tx ${check.tx.slice(0, 10)} did not revert on chain` };
+      const t = await rpc('eth_getTransactionByHash', [check.tx]);
+      const before = `0x${(parseInt(r.blockNumber, 16) - 1).toString(16)}`;
+      try {
+        await rpc('eth_call', [{ from: t.from, to: t.to, data: t.input }, before]);
+        return { ok: false, note: `replay of ${check.tx.slice(0, 10)} did not revert` };
+      } catch (e) {
+        const data = lower(e.data ?? '');
+        return { ok: data.includes(check.selector.slice(2)), note: `${check.label}: reverted, ${check.error} selector ${data.includes(check.selector.slice(2)) ? 'found' : 'not found'} in the revert data` };
+      }
     }
     case 'hookBits': {
       const bits = Number(BigInt(check.hook) & 0x3fffn);
@@ -97,6 +131,16 @@ export async function runProof(proof, rpc) {
   return results;
 }
 
+export async function runNegatives(proof, rpc) {
+  const out = [];
+  for (const n of proof.negatives) {
+    if (!n.check) { out.push({ id: n.id, verdict: 'PENDING', note: n.note }); continue; }
+    try { const r = await runCheck(n.check, rpc, proof); out.push({ id: n.id, verdict: r.ok ? 'PASS' : 'FAIL', note: r.note }); }
+    catch (e) { out.push({ id: n.id, verdict: 'FAIL', note: e.message }); }
+  }
+  return out;
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
   const proof = JSON.parse(readFileSync(arg('proof', 'evidence/einstein/proof.json'), 'utf8'));
@@ -106,7 +150,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const chainId = parseInt(await rpc('eth_chainId', []), 16);
   if (chainId !== proof.chain.id) { console.error(`RPC is chain ${chainId}, expected ${proof.chain.id}`); process.exit(2); }
   const results = await runProof(proof, rpc);
-  for (const r of results) console.log(`${r.id.padEnd(4)} ${r.verdict.padEnd(7)} ${r.note}`);
+  const negatives = await runNegatives(proof, rpc);
+  for (const r of [...results, ...negatives]) console.log(`${r.id.padEnd(4)} ${r.verdict.padEnd(7)} ${r.note}`);
+  results.push(...negatives);
   const count = (v) => results.filter((r) => r.verdict === v).length;
   console.log(`\n${count('PASS')} PASS, ${count('PARTIAL')} PARTIAL, ${count('PENDING')} PENDING, ${count('FAIL')} FAIL`);
   process.exit(count('FAIL') ? 1 : 0);

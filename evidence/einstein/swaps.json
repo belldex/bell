@@ -1,0 +1,13 @@
+[
+  {
+    "tx": "0xa62e4bc910740910ba90dc4b6561edbbb03abd6bb49d9cc3455610635b95fbc5",
+    "block": 114372860,
+    "timestamp": 1794682232,
+    "status": "success",
+    "swapper": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "direction": "usdg",
+    "amountInRaw": "10000",
+    "feePips": 10000,
+    "gasUsed": 976305
+  }
+]
