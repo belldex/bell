@@ -93,13 +93,73 @@
       "checkedAt": "2026-11-14T05:03:26.584Z",
       "scope": "Bytecode present at all 15 addresses; PQKeyRegistry bootstrap finalized with 4 roles matching contracts/pq/deployments/robinhood-4663-keys.json (budget 4096, leaf 1, key version 1); HybridAuth, HashSigVerifier, SafetyControllerV2, HookDeployerV3 and Lens registry wiring; four genesis asset descriptor ids; factory profileHash.",
       "notVerified": [
-        "Sourcify exact-match source verification",
         "independent cryptographic review",
-        "calendar roots and intervals (not published or activated)",
         "Worker configuration",
-        "any pool"
+        "any pool",
+        "intervals after the first one are not activated by any keeper yet (the first ends 2026-11-16T01:00:00Z)",
+        "Sourcify exact_match (not reachable with this build configuration)"
       ],
-      "timing": "governanceDelaySeconds=0 and calendarPublicationLeadSeconds=0 are immutable in this SafetyControllerV2"
+      "timing": "governanceDelaySeconds=0 and calendarPublicationLeadSeconds=0 are immutable in this SafetyControllerV2",
+      "sourcify": {
+        "checkedAt": "2026-11-14T05:18:43.148Z",
+        "verified": 15,
+        "of": 15,
+        "level": "match (creation match, runtime match)",
+        "exactMatch": false,
+        "reason": "bytecode_hash = none and cbor_metadata = false, so no metadata hash is embedded in the bytecode",
+        "chainId": 4663
+      }
+    }
+  },
+  "calendar": {
+    "activatedAt": "2026-11-14",
+    "governanceRole": "GOVERNANCE (ECDSA + SHRINCS, PQ leaves 1 to 3 used)",
+    "assets": {
+      "AAPL": {
+        "assetId": "0x759a028b6eb3578ae6c3bb5968aa1ff01ef0e58bcdd934e09722de667b48a5dc",
+        "root": "0x2b5277f474a8bf63bf5c05dc13846a51ae16dbbe77f05b60b3fbbab5707efd41",
+        "leafCount": 136,
+        "coverageStart": 1794633339,
+        "coverageEnd": 1798761600,
+        "governanceOperationId": "0x8b3db184e589bae88375db7719b29985df3a58fcc89a522c5b845c50659c67f9",
+        "governanceQueuedTx": "0x4db79658537836856024d8a189ef227e027b14c7203f7ca116f4925b8c491351",
+        "rootQueuedTx": "0xefaac3a8d48794801db88acfe7f334a183995a4024f15afd203adb183dc933a1",
+        "activateRootTx": "0x9546acbd330c0ac8a77b9d51e630f992f28db338f150c1f7520a2f4028336cc6",
+        "activateIntervalTx": "0xd770fbfc30776e5992d3be4dc150bb1262e15501dc5ba97c651230fa7c7f2a3b",
+        "stage": "INTERVAL_ACTIVE",
+        "activePhaseAtActivation": 5,
+        "firstIntervalEnds": "2026-11-16T01:00:00Z"
+      },
+      "NVDA": {
+        "assetId": "0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7",
+        "root": "0x3d8a6bad26d975ac2725b862c4e8e626f8588dc825864e0ad7f2fee1be6dacf7",
+        "leafCount": 136,
+        "coverageStart": 1794633363,
+        "coverageEnd": 1798761600,
+        "governanceOperationId": "0x9541069dabf3a8b7270a799f45c43f6930eb2766e1e85c22c754038629cca90b",
+        "governanceQueuedTx": "0x26363ed094c325ac5721f12c5697191069fdbb466e0ad822cc9746e7e552dcc3",
+        "rootQueuedTx": "0x6f99fc55be28a70ee2f99ae0ea16971bccf9b793d1fea603e54ea212167dace8",
+        "activateRootTx": "0xb39feddc4a556354b4e5fa997688f2bcc943f768b44d87df72ea383f586205d4",
+        "activateIntervalTx": "0x14e1259131f0ed2519f64f1e48ffb75cbfb9c144e1ff05e5166e4b0d40e305cb",
+        "stage": "INTERVAL_ACTIVE",
+        "activePhaseAtActivation": 5,
+        "firstIntervalEnds": "2026-11-16T01:00:00Z"
+      },
+      "TSLA": {
+        "assetId": "0xfa1e411618d628d1c27918cbc4c9bc30ce675c1f4bd777ace690d4c7ff07ddae",
+        "root": "0x7f4235e061168e8fd4b9fda899d88683cc3747e64b1fb9bf9cb78ead2d86c5ac",
+        "leafCount": 136,
+        "coverageStart": 1794633381,
+        "coverageEnd": 1798761600,
+        "governanceOperationId": "0x855587b2b963bb2296e9e4e20c204b0af21959dcf9adf59d640a9f271e8d29de",
+        "governanceQueuedTx": "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd",
+        "rootQueuedTx": "0xb45900d499c0a1f2cb41903a7d0138c2ee1ba8841d5868fefb4506b85c5d24d7",
+        "activateRootTx": "0xb99ae9eecdd0065fbb6ae851442a5926273b40086082c68504ea5016bdefcc67",
+        "activateIntervalTx": "0xd3e7bc9f9493d2638b6c7bd6ade95a2f094faf774cfcf8d6cf4491e58c192231",
+        "stage": "INTERVAL_ACTIVE",
+        "activePhaseAtActivation": 5,
+        "firstIntervalEnds": "2026-11-16T01:00:00Z"
+      }
     }
   }
 }

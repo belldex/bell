@@ -7,8 +7,8 @@ import '@/components/quantum/quantum.css';
 import { QuantumPage } from '@/components/quantum/quantum-page';
 
 // /quantum is the earlier address of the same page. /einstein is the canonical one; this route keeps old links working.
-const title = 'Einstein Hooks v2 | Hybrid Trust Inputs on Testnet';
-const description = 'BELL hybrid post-quantum trust-input signing is deployed on Elysium testnet. Mainnet hook integration is gated; user wallets and LP exits remain outside this scope.';
+const title = 'Einstein Hooks v2 | Post-Quantum Trust Inputs';
+const description = 'BELL post-quantum trust-input contracts are deployed on Robinhood Chain Mainnet without a pool yet, with the signing path exercised on Elysium testnet. User wallets and LP exits remain outside this scope.';
 
 export const metadata: Metadata = {
   title,

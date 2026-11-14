@@ -21,7 +21,7 @@ const [route, page, shell, styles] = await Promise.all([
 test('quantum research route explains the protections and their limits', () => {
   assert.match(route, /QuantumPage/);
   assert.match(page, /Quantum-safe<br \/><em>market structure/);
-  assert.match(page, /TESTNET.{0,4}PHASE 1/);
+  assert.match(page, /MAINNET CONTRACTS LIVE/);
   assert.match(page, /User wallets|user wallets/i);
   assert.match(page, /LP exits stay unconditional|never guards your exit/i);
   assert.match(page, /BellSHRINCSStatefulVerifier/);
@@ -68,4 +68,18 @@ test('the page is named Einstein Hooks v2 and /einstein is the canonical route',
   assert.match(page, /EINSTEIN HOOKS V2/);
   assert.match(page, /not affiliated with or endorsed by/);
   assert.doesNotMatch(page + route + einstein, /Bell State|BELL STATE/);
+});
+
+test('the page states what is live on Mainnet and what is not', () => {
+  assert.match(page, /const mainnetContracts = \[/);
+  for (const address of ['0x190ca8f13e381d1E58211cc821226EF9161d3a57', '0xF6b38e322Ce6d8F9F836921278e13aE55F525569', '0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d']) {
+    assert.match(page, new RegExp(address, 'i'));
+  }
+  assert.match(page, /No pool uses them yet/);
+  assert.match(page, /no timelock delay|timelock delay of zero/i);
+  assert.match(page, /No independent cryptographic review/);
+  assert.match(page, /verified on Sourcify with a creation and runtime/);
+  assert.match(page, /not an “exact match”/);
+  assert.doesNotMatch(page, /Mainnet deployment, Sourcify exact match|remain gated/);
+  assert.doesNotMatch(page, /Mainnet hook integration remains gated|Mainnet deployment yet/);
 });
