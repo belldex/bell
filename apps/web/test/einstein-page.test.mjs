@@ -108,3 +108,15 @@ test('the leaf field says what a square is and names the first leaves', () => {
   assert.match(field, /The first four squares, enlarged/);
   for (const asset of ['AAPL', 'NVDA', 'TSLA']) assert.match(data, new RegExp('asset: "' + asset + '"'));
 });
+
+test('the share banner is wired into both routes and is a 1200 by 630 image', async () => {
+  for (const route of [einstein, quantum]) {
+    assert.match(route, /images: \[\{ url: '\/og\/einstein\.png', width: 1200, height: 630/);
+    assert.match(route, /card: 'summary_large_image'/);
+  }
+  const png = await readFile(new URL('../public/og/einstein.png', import.meta.url));
+  assert.equal(png.subarray(1, 4).toString(), 'PNG');
+  assert.equal(png.readUInt32BE(16), 1200);
+  assert.equal(png.readUInt32BE(20), 630);
+  assert.ok(png.length < 600_000, 'small enough for every share preview');
+});
