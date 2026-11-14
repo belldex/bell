@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import '@/components/landing/gyevo/landing.css';
 import '@/components/landing/gyevo/bell-control-room.css';
 import '@/components/legal/legal.css';
-import '@/components/proof/proof.css';
-import '@/components/quantum/quantum.css';
-import { QuantumPage } from '@/components/quantum/quantum-page';
+import '@/components/einstein/einstein.css';
+import { EinsteinPage } from '@/components/einstein/einstein-page';
 
 const title = 'Einstein Hooks v2 | Post-Quantum Trust Inputs';
 const description = 'BELL post-quantum trust-input contracts are deployed on Robinhood Chain Mainnet without a pool yet, with the signing path exercised on Elysium testnet. User wallets and LP exits remain outside this scope.';
@@ -18,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <QuantumPage />;
+  return <EinsteinPage />;
 }

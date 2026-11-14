@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import '@/components/landing/gyevo/landing.css';
 import '@/components/landing/gyevo/bell-control-room.css';
 import '@/components/legal/legal.css';
-import '@/components/proof/proof.css';
-import '@/components/quantum/quantum.css';
-import { QuantumPage } from '@/components/quantum/quantum-page';
+import '@/components/einstein/einstein.css';
+import { EinsteinPage } from '@/components/einstein/einstein-page';
 
 // /quantum is the earlier address of the same page. /einstein is the canonical one; this route keeps old links working.
 const title = 'Einstein Hooks v2 | Post-Quantum Trust Inputs';
@@ -19,5 +18,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <QuantumPage />;
+  return <EinsteinPage />;
 }
