@@ -42,7 +42,7 @@ test('a claim with no on-chain evidence can never read PASS', () => {
 
 test('the page makes no claim beyond the proof file', () => {
   assert.doesNotMatch(page, /exact match on|quantum-safe|guarantee|fully audited/i);
-  assert.match(page, /Or it is marked pending/);
+  assert.match(page, /Or it says pending/);
   const last = proof.claims.filter((c) => c.result).map((c) => c.result.verdict);
   assert.ok(!last.includes('FAIL'), 'the last replay had a failing check');
 });
