@@ -286,3 +286,20 @@
   .ein *, .ein *::before, .ein *::after { animation: none !important; transition: none !important; }
   .ein-wire--ok { stroke-dasharray: none; }
 }
+
+/* First pool proof page */
+.ein-claims li { grid-template-columns: 10.5rem minmax(0, 1fr); }
+.ein-claims li[data-verdict="pass"] b { color: var(--lp-white); }
+.ein-claims li[data-verdict="partial"] b { color: var(--lp-accent-light); }
+.ein-claims li[data-verdict="pending"] b { color: var(--lp-muted); }
+.ein-claims li[data-verdict="fail"] b { color: var(--lp-accent); }
+.ein-claims__bar { color: var(--lp-dim, var(--lp-muted)); font-size: 0.85rem; }
+.ein-claims__h { margin: 2.4rem 0 0.8rem; color: var(--lp-white); font: 600 1.05rem/1.3 var(--lp-font-ui); }
+.ein-claims__gas { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; max-width: 40rem; }
+.ein-claims__gas li { display: flex; justify-content: space-between; gap: 1.5rem; padding: 0.7rem 0; border-top: 1px solid var(--lp-line); color: var(--lp-muted); font: 400 0.95rem/1.4 var(--lp-font-ui); }
+.ein-claims__gas b { color: var(--lp-white); font: 500 0.9rem/1.4 var(--lp-font-mono); }
+.ein-claims__limits { max-width: 44rem; margin: 1.6rem 0 0; padding-left: 1.1rem; color: var(--lp-muted); font: 400 1rem/1.7 var(--lp-font-ui); }
+.ein-cmd { max-width: 46rem; margin: 1.4rem 0 0; padding: 1.1rem 1.2rem; overflow-x: auto; background: var(--lp-surface, rgba(238, 236, 229, 0.04)); border: 1px solid var(--lp-line); color: var(--lp-white); font: 400 0.85rem/1.7 var(--lp-font-mono); }
+@media (max-width: 760px) {
+  .ein-claims li { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+}

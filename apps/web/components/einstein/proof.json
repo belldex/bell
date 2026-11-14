@@ -1,0 +1,533 @@
+{
+  "schema": 1,
+  "title": "Einstein Hooks v2: first pool, proof package",
+  "chain": {
+    "id": 4663,
+    "name": "Robinhood Chain",
+    "explorer": "https://robinhoodchain.blockscout.com"
+  },
+  "generatedFrom": [
+    "evidence/deploy/pq-hooks-mainnet.json",
+    "evidence/deploy/pq-hooks-mainnet-calendar-state-*.json"
+  ],
+  "contracts": {
+    "shrincsVerifier": "0x0491db4e64856e94E1aD3c33f49C351530B83107",
+    "hashSigVerifier": "0x0A02a186b905C9905DbA5Bba53882199821F794e",
+    "pqKeyRegistry": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
+    "hybridAuth": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+    "safetyController": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d",
+    "assetRegistry": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18",
+    "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+    "sessionRegistry": "0xC8E425140e0967AA07333946444C8A0611058Ae8",
+    "policyOracle": "0xCeE966D7172Cabde8356be41620c6Cf0086c92df",
+    "modeEvaluator": "0x9DBF787172DFBC4eAa4593768ddFD32F84C45882",
+    "auctionRegistry": "0xE2CE18362eEC0a6f9166348aEbfF06182a183E6a",
+    "auctionFactoryModule": "0xC2f0A0231a62B8BF9d679696ebD5806A76063b9d",
+    "hookDeployer": "0xe95e9A0eb5cc6ef7CF20e80d4bdB51538A79102D",
+    "poolFactory": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569",
+    "swapLensRegistry": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5"
+  },
+  "pool": null,
+  "claims": [
+    {
+      "id": "P1",
+      "title": "The code is what we say it is",
+      "question": "Is the code what you say it is?",
+      "passes": "Sourcify shows exact_match for every contract and the tagged commit builds to the same bytecode.",
+      "partial": "Sourcify shows match, not exact_match, on all 15 contracts. The build embeds no metadata hash, so exact_match is not reachable for these. The hook and Lens for the first pool are not deployed yet.",
+      "checks": [
+        {
+          "kind": "sourcify",
+          "label": "shrincsVerifier",
+          "address": "0x0491db4e64856e94E1aD3c33f49C351530B83107"
+        },
+        {
+          "kind": "sourcify",
+          "label": "hashSigVerifier",
+          "address": "0x0A02a186b905C9905DbA5Bba53882199821F794e"
+        },
+        {
+          "kind": "sourcify",
+          "label": "pqKeyRegistry",
+          "address": "0x190ca8f13e381d1E58211cc821226EF9161d3a57"
+        },
+        {
+          "kind": "sourcify",
+          "label": "hybridAuth",
+          "address": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7"
+        },
+        {
+          "kind": "sourcify",
+          "label": "safetyController",
+          "address": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "sourcify",
+          "label": "assetRegistry",
+          "address": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18"
+        },
+        {
+          "kind": "sourcify",
+          "label": "calendarRegistry",
+          "address": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003"
+        },
+        {
+          "kind": "sourcify",
+          "label": "sessionRegistry",
+          "address": "0xC8E425140e0967AA07333946444C8A0611058Ae8"
+        },
+        {
+          "kind": "sourcify",
+          "label": "policyOracle",
+          "address": "0xCeE966D7172Cabde8356be41620c6Cf0086c92df"
+        },
+        {
+          "kind": "sourcify",
+          "label": "modeEvaluator",
+          "address": "0x9DBF787172DFBC4eAa4593768ddFD32F84C45882"
+        },
+        {
+          "kind": "sourcify",
+          "label": "auctionRegistry",
+          "address": "0xE2CE18362eEC0a6f9166348aEbfF06182a183E6a"
+        },
+        {
+          "kind": "sourcify",
+          "label": "auctionFactoryModule",
+          "address": "0xC2f0A0231a62B8BF9d679696ebD5806A76063b9d"
+        },
+        {
+          "kind": "sourcify",
+          "label": "hookDeployer",
+          "address": "0xe95e9A0eb5cc6ef7CF20e80d4bdB51538A79102D"
+        },
+        {
+          "kind": "sourcify",
+          "label": "poolFactory",
+          "address": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569"
+        },
+        {
+          "kind": "sourcify",
+          "label": "swapLensRegistry",
+          "address": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5"
+        }
+      ],
+      "result": {
+        "verdict": "PARTIAL",
+        "note": "Sourcify shows match, not exact_match, on every contract checked",
+        "gas": []
+      }
+    },
+    {
+      "id": "P2",
+      "title": "Nothing here can be changed later",
+      "question": "Can you change it later?",
+      "passes": "The EIP-1967 implementation and admin slots are zero, and no function sets the calendar source, controller or fees.",
+      "passNote": "EIP-1967 slots are zero on all 15 deployed contracts. The first pool's hook is added to this check when it exists.",
+      "checks": [
+        {
+          "kind": "storageZero",
+          "label": "shrincsVerifier",
+          "address": "0x0491db4e64856e94E1aD3c33f49C351530B83107",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "hashSigVerifier",
+          "address": "0x0A02a186b905C9905DbA5Bba53882199821F794e",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "pqKeyRegistry",
+          "address": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "hybridAuth",
+          "address": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "safetyController",
+          "address": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "assetRegistry",
+          "address": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "calendarRegistry",
+          "address": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "sessionRegistry",
+          "address": "0xC8E425140e0967AA07333946444C8A0611058Ae8",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "policyOracle",
+          "address": "0xCeE966D7172Cabde8356be41620c6Cf0086c92df",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "modeEvaluator",
+          "address": "0x9DBF787172DFBC4eAa4593768ddFD32F84C45882",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "auctionRegistry",
+          "address": "0xE2CE18362eEC0a6f9166348aEbfF06182a183E6a",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "auctionFactoryModule",
+          "address": "0xC2f0A0231a62B8BF9d679696ebD5806A76063b9d",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "hookDeployer",
+          "address": "0xe95e9A0eb5cc6ef7CF20e80d4bdB51538A79102D",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "poolFactory",
+          "address": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "swapLensRegistry",
+          "address": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        }
+      ],
+      "result": {
+        "verdict": "PASS",
+        "note": "EIP-1967 slots are zero on all 15 deployed contracts. The first pool's hook is added to this check when it exists.",
+        "gas": []
+      }
+    },
+    {
+      "id": "P3",
+      "title": "The hook has only the permissions we say",
+      "question": "Which permissions does the hook really have?",
+      "passes": "The hook address low 14 bits are 0x2CC0 and remove-liquidity bits 9, 8 and 0 are off.",
+      "pending": "No Einstein pool hook exists on mainnet yet.",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "No Einstein pool hook exists on mainnet yet.",
+        "gas": []
+      }
+    },
+    {
+      "id": "P4",
+      "title": "The pool is real and holds liquidity",
+      "question": "Is the pool real and live?",
+      "passes": "Initialize and seed transactions exist, the pool id matches, the hook is the Einstein hook and liquidity is above zero.",
+      "pending": "No pool has been created yet.",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "No pool has been created yet.",
+        "gas": []
+      }
+    },
+    {
+      "id": "P5",
+      "title": "The calendars were signed post-quantum",
+      "question": "Was the calendar really signed post-quantum?",
+      "passes": "Each calendar root went through HybridAuth with ECDSA and SHRINCS, and the signing role's leaf counter moved.",
+      "passNote": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter reads 4 (leaves 1 to 3 spent). Roots are queued by the GOVERNANCE role, not REPORTER.",
+      "checks": [
+        {
+          "kind": "txSuccess",
+          "label": "AAPL calendar root queued",
+          "tx": "0x4db79658537836856024d8a189ef227e027b14c7203f7ca116f4925b8c491351",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "NVDA calendar root queued",
+          "tx": "0x26363ed094c325ac5721f12c5697191069fdbb466e0ad822cc9746e7e552dcc3",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "TSLA calendar root queued",
+          "tx": "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "callWord",
+          "label": "GOVERNANCE next leaf",
+          "to": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
+          "data": "0xa657a47e35a7846a2a701fff6f9d61a46ebff5da578c5dcee8bdf361c569f9ea4ee64771",
+          "word": 3,
+          "equals": 4
+        },
+        {
+          "kind": "callWord",
+          "label": "GOVERNANCE leaf budget",
+          "to": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
+          "data": "0xa657a47e35a7846a2a701fff6f9d61a46ebff5da578c5dcee8bdf361c569f9ea4ee64771",
+          "word": 2,
+          "equals": 4096
+        }
+      ],
+      "result": {
+        "verdict": "PASS",
+        "note": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter reads 4 (leaves 1 to 3 spent). Roots are queued by the GOVERNANCE role, not REPORTER.",
+        "gas": [
+          {
+            "label": "AAPL calendar root queued",
+            "gasUsed": 622899
+          },
+          {
+            "label": "NVDA calendar root queued",
+            "gasUsed": 589764
+          },
+          {
+            "label": "TSLA calendar root queued",
+            "gasUsed": 590742
+          }
+        ]
+      }
+    },
+    {
+      "id": "P6",
+      "title": "Session fees apply",
+      "question": "Do the session fees actually apply?",
+      "passes": "One swap per session shows the matching fee in the PoolManager Swap event: 500, 3000 or 5000, and 10000 pips.",
+      "pending": "No pool, so no swaps. On a fork of mainnet the CLOSED session charged 10000 pips (not a mainnet proof).",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "No pool, so no swaps. On a fork of mainnet the CLOSED session charged 10000 pips (not a mainnet proof).",
+        "gas": []
+      }
+    },
+    {
+      "id": "P7",
+      "title": "The auction works with real orders",
+      "question": "Does the auction work with real orders?",
+      "passes": "At least two orders on opposite sides fill at one uniform price.",
+      "pending": "No pool, so no auction.",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "No pool, so no auction.",
+        "gas": []
+      }
+    },
+    {
+      "id": "P8",
+      "title": "You can always get out",
+      "question": "Can I always get out?",
+      "passes": "Remove-liquidity succeeds during CLOSED and while paused, with no post-quantum signature.",
+      "pending": "No pool. On a fork of mainnet, a pool created through the live factory let its LP remove all liquidity (not a mainnet proof).",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "No pool. On a fork of mainnet, a pool created through the live factory let its LP remove all liquidity (not a mainnet proof).",
+        "gas": []
+      }
+    },
+    {
+      "id": "P9",
+      "title": "What fails, fails safely",
+      "question": "What fails, and does it fail safely?",
+      "passes": "Each negative test reverts on mainnet with the named error.",
+      "pending": "See N1 to N7 below; none has been run on mainnet.",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "See N1 to N7 below; none has been run on mainnet.",
+        "gas": []
+      }
+    },
+    {
+      "id": "P10",
+      "title": "What post-quantum verification costs",
+      "question": "What does PQ verification cost?",
+      "passes": "Gas for the calendar submit transaction, compared with an ECDSA-only submit.",
+      "partial": "Mainnet gas for the three hybrid-signed calendar submissions is published below. The ECDSA-only baseline has not been measured.",
+      "checks": [
+        {
+          "kind": "txSuccess",
+          "label": "AAPL hybrid-signed governance queue",
+          "tx": "0x4db79658537836856024d8a189ef227e027b14c7203f7ca116f4925b8c491351",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "NVDA hybrid-signed governance queue",
+          "tx": "0x26363ed094c325ac5721f12c5697191069fdbb466e0ad822cc9746e7e552dcc3",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "TSLA hybrid-signed governance queue",
+          "tx": "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        }
+      ],
+      "result": {
+        "verdict": "PARTIAL",
+        "note": "Mainnet gas for the three hybrid-signed calendar submissions is published below. The ECDSA-only baseline has not been measured.",
+        "gas": [
+          {
+            "label": "AAPL hybrid-signed governance queue",
+            "gasUsed": 622899
+          },
+          {
+            "label": "NVDA hybrid-signed governance queue",
+            "gasUsed": 589764
+          },
+          {
+            "label": "TSLA hybrid-signed governance queue",
+            "gasUsed": 590742
+          }
+        ]
+      }
+    },
+    {
+      "id": "P11",
+      "title": "Anyone can check all of this",
+      "question": "Can I check all of this myself?",
+      "passes": "verify-einstein-pool prints PASS for P2 to P9 from a clean clone against a public RPC.",
+      "pending": "The script exists and runs. P3 to P9 print PENDING until the pool exists.",
+      "checks": [],
+      "result": {
+        "verdict": "PENDING",
+        "note": "The script exists and runs. P3 to P9 print PENDING until the pool exists.",
+        "gas": []
+      }
+    }
+  ],
+  "negatives": [
+    {
+      "id": "N1",
+      "attempt": "Calendar root signed with ECDSA only",
+      "mustRevertWith": "InvalidPQSignature",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    },
+    {
+      "id": "N2",
+      "attempt": "Valid ECDSA with a SHRINCS signature from the wrong key",
+      "mustRevertWith": "InvalidPQSignature",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    },
+    {
+      "id": "N3",
+      "attempt": "Reuse a SHRINCS leaf that was already spent",
+      "mustRevertWith": "LeafOutOfOrder",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    },
+    {
+      "id": "N4",
+      "attempt": "Pause through SafetyControllerV2 with ECDSA only",
+      "mustRevertWith": "InvalidPQSignature",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    },
+    {
+      "id": "N5",
+      "attempt": "Swap above the per-trade cap",
+      "mustRevertWith": "TradeCapExceeded",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Reverted with TradeCapExceeded on a mainnet fork. Not yet sent on mainnet."
+    },
+    {
+      "id": "N6",
+      "attempt": "Ordinary swap during the auction window",
+      "mustRevertWith": "AuctionActive",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    },
+    {
+      "id": "N7",
+      "attempt": "Swap with no valid session for the timestamp",
+      "mustRevertWith": "PolicyBlocked",
+      "mainnetTx": null,
+      "status": "PENDING",
+      "note": "Not yet sent on mainnet."
+    }
+  ],
+  "honestLimits": [
+    "Wallets still sign with ECDSA. Only BELL's own governance and reporting calls use the post-quantum layer.",
+    "No independent cryptographic review has been done.",
+    "No pool uses the Einstein hook yet.",
+    "The five post-quantum contracts are a Sourcify match, not an exact match."
+  ],
+  "lastRun": "2026-11-14T18:04:55.184Z"
+}
