@@ -3,10 +3,12 @@ import { open, readFile, rename, unlink, writeFile, mkdir } from 'node:fs/promis
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadHashSigs, shrincsKeysToSecretBytes } from '@quip.network/hashsigs-wasm/256s-keccak';
+import { resolveKeyProfile } from './key-profile.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const keyDir = path.resolve(here, '..', 'keys', 'elysium-99801');
 const localEnv = path.resolve(here, '..', '.env.local');
+const profileName = process.env.BELL_PQ_KEY_PROFILE || 'elysium-99801';
+const { keyDir, encryptionEnv } = resolveKeyProfile(profileName, here);
 
 function parseEnv(source) {
   return Object.fromEntries(source.split(/\r?\n/).map((line) => {
@@ -18,11 +20,11 @@ function parseEnv(source) {
 async function encryptionKey(create = false) {
   let values = {};
   try { values = parseEnv(await readFile(localEnv, 'utf8')); } catch {}
-  let secret = process.env.BELL_PQ_ENCRYPTION_KEY || values.BELL_PQ_ENCRYPTION_KEY;
+  let secret = process.env[encryptionEnv] || values[encryptionEnv];
   if (!secret && create) {
     secret = randomBytes(32).toString('hex');
     await mkdir(path.dirname(localEnv), { recursive: true });
-    await writeFile(localEnv, `BELL_PQ_ENCRYPTION_KEY=${secret}\n`, { flag: 'wx', mode: 0o600 });
+    await writeFile(localEnv, `${encryptionEnv}=${secret}\n`, { flag: 'a', mode: 0o600 });
   }
   if (!secret || !/^[0-9a-fA-F]{64}$/.test(secret)) throw new Error('PQ signer encryption key is missing or malformed.');
   return Buffer.from(secret, 'hex');

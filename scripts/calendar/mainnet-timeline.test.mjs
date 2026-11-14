@@ -6,6 +6,7 @@ import {
   MAINNET_GOVERNANCE_OPERATION_EXPIRY_SECONDS,
   planMainnetCalendarTimeline,
   planCalendarCoverageStart,
+  coverageEndWithinUtcYear,
 } from './mainnet-timeline.mjs';
 
 const DAY = 86_400;
@@ -98,4 +99,16 @@ test('nonzero publication lead remains the lower bound for the coverage start', 
   const now = Date.UTC(2026, 2, 1, 13, 0, 0) / 1000;
   const start = planCalendarCoverageStart({ now, noticeSeconds: 600, activationBufferSeconds: 300 });
   assert.equal(start, now + 600);
+});
+
+test('calendar coverage ends exactly at the UTC year boundary when the requested duration crosses it', () => {
+  const november = Date.UTC(2026, 10, 14, 3, 27) / 1000;
+  assert.equal(coverageEndWithinUtcYear({ coverageStart: november, requestedDays: 60 }), Date.UTC(2027, 0, 1, 0, 0) / 1000);
+  const january = Date.UTC(2026, 0, 1, 0, 0) / 1000;
+  assert.equal(coverageEndWithinUtcYear({ coverageStart: january, requestedDays: 400 }), Date.UTC(2027, 0, 1, 0, 0) / 1000);
+});
+
+test('rejects a calendar start with no whole day left in its UTC year', () => {
+  const lastSecond = Date.UTC(2026, 11, 31, 23, 59, 59) / 1000;
+  assert.throws(() => coverageEndWithinUtcYear({ coverageStart: lastSecond, requestedDays: 60 }), /UTC year/);
 });

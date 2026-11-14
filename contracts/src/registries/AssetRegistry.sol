@@ -68,9 +68,9 @@ contract AssetRegistry is IBellEvents, IBellErrors {
 
     ISafetyController public immutable safetyController;
     uint64 private _operationNonce;
-    mapping(bytes32 descriptorId => AssetDescriptor descriptor) private _descriptors;
-    mapping(bytes32 descriptorId => bytes sourceConfig) private _sourceConfigs;
-    mapping(address token => bytes32 descriptorId) private _descriptorByToken;
+    mapping(bytes32 descriptorId => AssetDescriptor descriptor) internal _descriptors;
+    mapping(bytes32 descriptorId => bytes sourceConfig) internal _sourceConfigs;
+    mapping(address token => bytes32 descriptorId) internal _descriptorByToken;
     mapping(address token => bool pending) private _pendingToken;
     mapping(bytes32 operationId => PendingAsset operation) private _pending;
     mapping(bytes32 operationId => bytes) private _operationPayload;
@@ -96,9 +96,11 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         }
         if (descriptor_.token.codehash != descriptor_.expectedCodeHash) revert BadConfig(ERR_TOKEN_CODEHASH);
         if (_readDecimals(descriptor_.token) != descriptor_.decimals) revert BadConfig(ERR_TOKEN_DECIMALS);
-        _validateAdapters(descriptor_);
-        bytes32 sourceConfigHash = _validateSourceConfig(descriptor_, sourceConfig_);
-        bytes32 descriptorId = _descriptorId(descriptor_, sourceConfigHash);
+        AssetDescriptor memory descriptorMemory = descriptor_;
+        bytes memory sourceConfigMemory = sourceConfig_;
+        _validateAdapters(descriptorMemory);
+        bytes32 sourceConfigHash = _validateSourceConfig(descriptorMemory, sourceConfigMemory);
+        bytes32 descriptorId = _descriptorId(descriptorMemory, sourceConfigHash);
         bytes32 payloadHash = keccak256(abi.encode(descriptorId, sourceConfigHash, descriptor_.evidenceHash));
         uint256 eta256 = block.timestamp + safetyController.governanceDelaySeconds();
         uint256 expiry256 = eta256 + safetyController.operationExpirySeconds();
@@ -176,6 +178,27 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         return (1, pending.payloadHash, pending.eta, pending.expiry, pending.status);
     }
 
+    /// @dev One-time constructor-only genesis seeding for the derived HybridAssetRegistry.
+    /// Runtime additions continue through queueAsset and the SafetyController timelock.
+    function _bootstrapAsset(AssetDescriptor memory descriptor_, bytes memory sourceConfig_)
+        internal returns (bytes32 descriptorId)
+    {
+        if (descriptor_.id != ZERO32 || descriptor_.token == address(0) || descriptor_.token.code.length == 0
+            || descriptor_.decimals > PolicyConstants.MAX_TOKEN_DECIMALS || descriptor_.evidenceHash == ZERO32
+            || descriptor_.expectedCodeHash == ZERO32 || descriptor_.implementationFingerprint == ZERO32
+            || _descriptorByToken[descriptor_.token] != ZERO32) revert BadConfig(ERR_ASSET_DESCRIPTOR);
+        if (descriptor_.token.codehash != descriptor_.expectedCodeHash) revert BadConfig(ERR_TOKEN_CODEHASH);
+        if (_readDecimals(descriptor_.token) != descriptor_.decimals) revert BadConfig(ERR_TOKEN_DECIMALS);
+        _validateAdapters(descriptor_);
+        bytes32 configHash = _validateSourceConfig(descriptor_, sourceConfig_);
+        descriptorId = _descriptorId(descriptor_, configHash);
+        descriptor_.id = descriptorId;
+        _descriptors[descriptorId] = descriptor_;
+        _sourceConfigs[descriptorId] = sourceConfig_;
+        _descriptorByToken[descriptor_.token] = descriptorId;
+        emit AssetActivated(descriptorId, descriptor_.evidenceHash);
+    }
+
     function _readDecimals(address token) private view returns (uint8 decimals_) {
         (bool ok, bytes memory data) = token.staticcall{gas: PolicyConstants.MAX_STATIC_CALL_GAS}(
             abi.encodeCall(IERC20Decimals.decimals, ())
@@ -188,7 +211,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         decimals_ = uint8(decoded);
     }
 
-    function _validateAdapters(AssetDescriptor calldata descriptor_) private view {
+    function _validateAdapters(AssetDescriptor memory descriptor_) internal view {
         address[5] memory adapters = [
             descriptor_.tokenPriceAdapter,
             descriptor_.regularAdapter,
@@ -212,8 +235,8 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         if (descriptor_.capabilityMask & ~uint8(0x1e) != 0) revert BadConfig(ERR_CAPABILITY_MASK);
     }
 
-    function _validateSourceConfig(AssetDescriptor calldata descriptor_, bytes calldata encoded)
-        private view returns (bytes32 sourceHash)
+    function _validateSourceConfig(AssetDescriptor memory descriptor_, bytes memory encoded)
+        internal view returns (bytes32 sourceHash)
     {
         if (encoded.length == 0) {
             if (descriptor_.isStock || descriptor_.tokenPriceAdapter != address(0) || descriptor_.regularAdapter != address(0)
@@ -277,7 +300,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         return keccak256(encoded);
     }
 
-    function _assertAdapterBinding(AssetDescriptor calldata descriptor_, SourceWire memory wire) private view {
+    function _assertAdapterBinding(AssetDescriptor memory descriptor_, SourceWire memory wire) internal view {
         address adapter;
         if (wire.kind == 1 || wire.kind == 2) adapter = descriptor_.tokenPriceAdapter;
         else if ((wire.kind == 3 || wire.kind == SOURCE_CHAINLINK_SESSION) && wire.phaseScope == 1) adapter = descriptor_.regularAdapter;
@@ -297,7 +320,7 @@ contract AssetRegistry is IBellEvents, IBellErrors {
         }
     }
 
-    function _descriptorId(AssetDescriptor calldata d, bytes32 sourceHash) private view returns (bytes32) {
+    function _descriptorId(AssetDescriptor memory d, bytes32 sourceHash) internal view returns (bytes32) {
         return keccak256(abi.encode(
             block.chainid,
             d.token,

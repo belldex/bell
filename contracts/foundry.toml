@@ -17,7 +17,7 @@ optimizer_runs = 1
 via_ir = true
 evm_version = "cancun"
 bytecode_hash = "none"
-fs_permissions = [{ access = "read-write", path = "../evidence" }, { access = "read-write", path = "../deployments" }, { access = "read-write", path = "../research" }, { access = "read-write", path = "pq/deployments" }]
+fs_permissions = [{ access = "read-write", path = "../evidence" }, { access = "read-write", path = "../deployments" }, { access = "read-write", path = "../research" }, { access = "read-write", path = "pq/deployments" }, { access = "read", path = "out-pq-mainnet" }]
 
 [fuzz]
 runs = 100000
@@ -49,6 +49,33 @@ via_ir = true
 evm_version = "cancun"
 bytecode_hash = "none"
 cbor_metadata = false
+remappings = [
+  "@uniswap/v4-core/=lib/v4-core/",
+  "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+  "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+  "permit2/=lib/permit2/",
+  "solmate/=lib/solmate/",
+  "quip-hashsigs/=lib/hashsigs-solidity/",
+  "shrincs-profile/=lib/hashsigs-solidity/contracts/profiles/256s/",
+  "shrincs-hash/=lib/hashsigs-solidity/contracts/hash/keccak/"
+]
+
+# Isolated production profile for the PQ 0.8.30 package. The BELL V3 contracts
+# keep their existing 0.8.26 build profile; outputs never mix with either one.
+[profile.pq_mainnet]
+src = "pq/src"
+test = "pq/test"
+script = "pq/script"
+out = "out-pq-mainnet"
+cache_path = "cache-pq-mainnet"
+solc_version = "0.8.30"
+optimizer = true
+optimizer_runs = 1
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+cbor_metadata = false
+chain_id = 4663
 remappings = [
   "@uniswap/v4-core/=lib/v4-core/",
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",

@@ -142,7 +142,10 @@ export function buildMainnetChainlinkKeeperVars({ manifest, verification, adapte
     stockAssets.push({ symbol, assetId: asset.descriptorId });
     roots[symbol] = { root, year, coverageStart, coverageEnd, capabilityMask: Number(asset.capabilityMask ?? 0b11110) };
   }
-  const counterassetId = requireBytes32(assets.weth?.descriptorId, 'WETH descriptorId');
+  const counterassetId = requireBytes32(
+    assets.usdg?.descriptorId ?? assets.weth?.descriptorId,
+    assets.usdg?.descriptorId ? 'USDG descriptorId' : 'WETH descriptorId',
+  );
   const auctionRegistry = manifest.auctionRegistry
     ? requireAddress(manifest.auctionRegistry, 'BellAuctionRegistry')
     : null;

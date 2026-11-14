@@ -1,0 +1,23 @@
+{
+  "chainId": 4663,
+  "scheme": "shrincs-256s-keccak-stateful",
+  "maxStatefulSignatures": 4096,
+  "roles": {
+    "KEEPER": {
+      "ecdsaSigner": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+      "publicKeyCommitment": "0xfb7f4d2bd549c145832cca3f8df853783c56f26b86f8b27ddd0698434980b6f1"
+    },
+    "REPORTER": {
+      "ecdsaSigner": "0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a",
+      "publicKeyCommitment": "0xf221c425822bcf139643bd6c40c0f1504f772b62b6abf689e96a54df1670c25e"
+    },
+    "GOVERNANCE": {
+      "ecdsaSigner": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+      "publicKeyCommitment": "0x98c3d63d44fc085ec232cdc58d16bd43f55e4c11a95eb4036809fe21eb094b7c"
+    },
+    "GUARDIAN": {
+      "ecdsaSigner": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+      "publicKeyCommitment": "0x752b6371bb71ca67560b5af4eaa0af44b6b6480cdd65374880bc1b371ad16f86"
+    }
+  }
+}

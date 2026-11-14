@@ -14,6 +14,8 @@ contract StatefulSHRINCSVerifierHarness is SHRINCSVerifier {
 }
 
 contract RealSHRINCSAdapterTest {
+    event VerifierGasUsed(uint256 gasUsed);
+
     function testRealStatefulSignatureIsVerifiedAndLeafIsExtracted() public {
         StatefulSHRINCSVerifierHarness verifier = new StatefulSHRINCSVerifierHarness();
         HashSigVerifier adapter = new HashSigVerifier(address(verifier));
@@ -29,7 +31,9 @@ contract RealSHRINCSAdapterTest {
             SHRINCSTestSigner.signStatefulRawAtLeaf(signingKey, 1, rawMessage);
         require(signed, "sign failed");
         bytes memory envelope = SHRINCSTestCodec.encodeStatefulEnvelope(publicKey, signature);
+        uint256 gasBefore = gasleft();
         (bool valid, uint32 leaf) = adapter.verify(commitment, actionDigest, envelope);
+        emit VerifierGasUsed(gasBefore - gasleft());
         require(valid && leaf == 1, "valid stateful SHRINCS signature rejected");
         (valid,) = adapter.verify(commitment, keccak256("wrong action"), envelope);
         require(!valid, "signature accepted for another action");

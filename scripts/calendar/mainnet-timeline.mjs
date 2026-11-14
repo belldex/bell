@@ -22,6 +22,17 @@ export const MAINNET_GOVERNANCE_MINIMUM_DELAY_SECONDS = 172_800;
 /** Mirrors PolicyConstants.GOVERNANCE_OPERATION_EXPIRY_SECONDS. */
 export const MAINNET_GOVERNANCE_OPERATION_EXPIRY_SECONDS = 604_800;
 
+/** Return the earliest of the requested duration and the next UTC year boundary. */
+export function coverageEndWithinUtcYear({ coverageStart, requestedDays } = {}) {
+  if (!Number.isSafeInteger(coverageStart) || coverageStart < 0) throw new RangeError('coverageStart must be a non-negative safe integer');
+  if (!Number.isInteger(requestedDays) || requestedDays < 1) throw new RangeError('requestedDays must be a positive whole number');
+  const year = new Date(coverageStart * 1000).getUTCFullYear();
+  const yearEnd = Date.UTC(year + 1, 0, 1) / 1000;
+  const coverageEnd = Math.min(coverageStart + requestedDays * DAY_SECONDS, yearEnd);
+  if (coverageEnd - coverageStart < DAY_SECONDS) throw new RangeError('coverageStart leaves less than one day in the UTC year');
+  return coverageEnd;
+}
+
 /** Choose a coverage start that leaves enough time to queue/activate the root without rounding to midnight. */
 export function planCalendarCoverageStart({ now, noticeSeconds, activationBufferSeconds = 300 } = {}) {
   for (const [name, value] of Object.entries({ now, noticeSeconds, activationBufferSeconds })) {
@@ -164,7 +175,10 @@ export function planMainnetCalendarTimeline(input) {
   // coverageStart implies, and a late activation is unrecoverable because the slot is single-use.
   const expiryBindsWindow = operationExpiry < coverageStart;
 
-  const coverageEnd = coverageStart + coverageDays * DAY_SECONDS;
+  const coverageEnd = input.coverageEnd ?? coverageStart + coverageDays * DAY_SECONDS;
+  if (!Number.isSafeInteger(coverageEnd) || coverageEnd <= coverageStart) {
+    throw new RangeError('coverageEnd must be a safe integer after coverageStart');
+  }
   if (utcYear(coverageStart) !== utcYear(coverageEnd - 1)) {
     violations.push(
       'coverage crosses a UTC year boundary, but a root is single-slot per (asset, year); '

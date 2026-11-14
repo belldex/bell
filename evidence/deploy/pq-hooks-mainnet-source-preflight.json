@@ -1,0 +1,179 @@
+{
+  "chainId": 4663,
+  "checkedAt": "2026-11-14T04:46:25.557Z",
+  "commonBlock": "113910205",
+  "providers": [
+    {
+      "name": "primary",
+      "latestBlock": "113910205"
+    },
+    {
+      "name": "secondary",
+      "latestBlock": "113910216"
+    },
+    {
+      "name": "archive",
+      "latestBlock": "113910216"
+    }
+  ],
+  "checks": [
+    {
+      "rpc": "primary",
+      "symbol": "AAPL",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      }
+    },
+    {
+      "rpc": "secondary",
+      "symbol": "AAPL",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      }
+    },
+    {
+      "rpc": "archive",
+      "symbol": "AAPL",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xBb11A21267cFDb63d4935d99a499133DD1744ACb",
+        "implementationCodeHash": "0x8d603ff54c7390a585c030bc99478883228dba663256fa6e22d1145c03359dfd"
+      }
+    },
+    {
+      "rpc": "primary",
+      "symbol": "NVDA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      }
+    },
+    {
+      "rpc": "secondary",
+      "symbol": "NVDA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      }
+    },
+    {
+      "rpc": "archive",
+      "symbol": "NVDA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0xC9d16E4f2569b9E3ea0468fD85844953713DC2a2",
+        "implementationCodeHash": "0x86c40717eec9baaca05681fa740851a8780f155d7b748a6a33a859ae67717d8a"
+      }
+    },
+    {
+      "rpc": "primary",
+      "symbol": "TSLA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      }
+    },
+    {
+      "rpc": "secondary",
+      "symbol": "TSLA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      }
+    },
+    {
+      "rpc": "archive",
+      "symbol": "TSLA",
+      "matches": true,
+      "expected": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      },
+      "observed": {
+        "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+        "proxyCodeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2",
+        "implementation": "0x7A6b81ba7FbCB90104d8C496158Cf383cD7233b1",
+        "implementationCodeHash": "0x0bccab7aa5d9d0a467ae9959e9cb6273963b91b69ca2170ebd112c9e29cc57e2"
+      }
+    }
+  ],
+  "result": "PASS_CODE_AND_PROXY_IDENTITY_ONLY",
+  "limitations": [
+    "Does not validate quote freshness, Yahoo data rights, or offchain reporter operation.",
+    "Does not deploy or broadcast transactions."
+  ]
+}

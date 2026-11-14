@@ -1,0 +1,105 @@
+{
+  "chainId": 4663,
+  "status": "BROADCASTED_AND_LIVE_CODE_VERIFIED",
+  "sourceMode": "existing-onchain-chainlink",
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "contracts": {
+    "shrincsVerifier": "0x0491db4e64856e94E1aD3c33f49C351530B83107",
+    "hashSigVerifier": "0x0A02a186b905C9905DbA5Bba53882199821F794e",
+    "pqKeyRegistry": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
+    "hybridAuth": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+    "safetyController": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d",
+    "assetRegistry": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18",
+    "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+    "sessionRegistry": "0xC8E425140e0967AA07333946444C8A0611058Ae8",
+    "policyOracle": "0xCeE966D7172Cabde8356be41620c6Cf0086c92df",
+    "modeEvaluator": "0x9DBF787172DFBC4eAa4593768ddFD32F84C45882",
+    "auctionRegistry": "0xE2CE18362eEC0a6f9166348aEbfF06182a183E6a",
+    "auctionFactoryModule": "0xC2f0A0231a62B8BF9d679696ebD5806A76063b9d",
+    "hookDeployer": "0xe95e9A0eb5cc6ef7CF20e80d4bdB51538A79102D",
+    "poolFactory": "0xF6b38e322Ce6d8F9F836921278e13aE55F525569",
+    "swapLensRegistry": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5"
+  },
+  "profileHash": "0xffcda7c3df14004a3abf7feb5b392abe29859d7dadfdcd33b7f42430f0f2f301",
+  "assetIds": [
+    "0x759a028b6eb3578ae6c3bb5968aa1ff01ef0e58bcdd934e09722de667b48a5dc",
+    "0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7",
+    "0xfa1e411618d628d1c27918cbc4c9bc30ce675c1f4bd777ace690d4c7ff07ddae",
+    "0xa10e095b46e9d8b30cd832fb710af91b7a265dcdf04d4e719938d33122c7b9f7"
+  ],
+  "assetDescriptors": {
+    "AAPL": {
+      "descriptorId": "0x759a028b6eb3578ae6c3bb5968aa1ff01ef0e58bcdd934e09722de667b48a5dc",
+      "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9"
+    },
+    "NVDA": {
+      "descriptorId": "0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7",
+      "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+    },
+    "TSLA": {
+      "descriptorId": "0xfa1e411618d628d1c27918cbc4c9bc30ce675c1f4bd777ace690d4c7ff07ddae",
+      "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d"
+    },
+    "USDG": {
+      "descriptorId": "0xa10e095b46e9d8b30cd832fb710af91b7a265dcdf04d4e719938d33122c7b9f7",
+      "token": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+    }
+  },
+  "roles": {
+    "KEEPER": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+    "REPORTER": "0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a",
+    "GOVERNANCE": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "GUARDIAN": "0x072f9d4165DccBD9172023601d07bCE2FCF37072"
+  },
+  "timing": {
+    "governanceDelaySeconds": 0,
+    "calendarPublicationLeadSeconds": 0,
+    "operationExpirySeconds": 604800
+  },
+  "deployment": {
+    "broadcastAt": "2026-11-14T05:01:07.510Z",
+    "script": "contracts/script/DeployPQHooksMainnet.s.sol",
+    "transactions": 21,
+    "allSucceeded": true,
+    "firstBlock": 113918086,
+    "lastBlock": 113918228,
+    "txHashes": [
+      "0x5972e9deef030d5b33a24bbed63bdee5e2a7ca589f9af0d7e06c0bc8b5f6268a",
+      "0x7e2a41ab661531c76bc882e8da323c02e599e263b638c0b35295f1b895f78903",
+      "0xa2253975b65181f27ad1aabd0e2ab300274770f3ef57f371ab3fdec151ea57b8",
+      "0x16f0c665759f86896b8b3422da2d4abd26f9c46c386d9386d63b35983b6cb878",
+      "0x27fdb3de25001516c8de6c1b28c4539a09dad9615b57cdeff7b6096055a9b9e8",
+      "0x7927f2711d21792879c73b5bf59edd05dc99ac809e7f06a2ed3f38d041590d7e",
+      "0xa33c3bcfd3ec1373644002599dec4fea2f937c746814f55487eff7bd5588c42a",
+      "0x5d9ba27e22b95ec819dc567c0a3c19e850807a2bc7eefd9cf8917d464fa31c30",
+      "0x2d89a25e1a38df50024e272dc8cb2713b1ea645705f358a1dd2423beabbc8cba",
+      "0x23f456e131dae971569759d58b56d7e682be7f999672348d7c9a6e632a418a97",
+      "0xeb034ebd625742edb5a9dc1f76c2dbeabcce5996daf90e769bb36bf323a526a3",
+      "0xff4ae4f09750027d4ce8e1de689b0848766e34229f9035829055e266a2961df0",
+      "0xd24a1102ddbc7eaed8469b6497932594509b21fc35e1593b2dffdde197cdad71",
+      "0x50eff9e734b282c533efa9fd5c34114f9b66e92d946bbf31dae2de692e0c2b37",
+      "0x3e583c48a6cb7316bacf0ab2f1b9cf92f2e1282cc9c27f6fbad328bcc9513321",
+      "0xab3537cbb318fd7ac5b3ae246102d3ebe730aff9c59acf29aea67f457a88159d",
+      "0xe9fb1773e57e95a2675f13bf23c8e1d9aa9e8cc3757336b51b1f5b6df6e7deb2",
+      "0x562686ae0b7b98e003d8033aed59399287e147e796bcdfc98e80073624e3ab84",
+      "0x94c156a49ae5ae6a8655e709ffa0941b78a2cd7013010fd8ab69d1befb21791e",
+      "0xc59241de44a490cc1193efbc96fd64b23f6e61bc72f93c270c057f686c99f21d",
+      "0x2f00e7d06185638471797b789e67fa6ba69f84983c308ab4ae56f898556c299c"
+    ],
+    "gasUsed": "49293796",
+    "costWei": "986935427828000",
+    "costEth": 0.000986935427828,
+    "verification": {
+      "checkedAt": "2026-11-14T05:03:26.584Z",
+      "scope": "Bytecode present at all 15 addresses; PQKeyRegistry bootstrap finalized with 4 roles matching contracts/pq/deployments/robinhood-4663-keys.json (budget 4096, leaf 1, key version 1); HybridAuth, HashSigVerifier, SafetyControllerV2, HookDeployerV3 and Lens registry wiring; four genesis asset descriptor ids; factory profileHash.",
+      "notVerified": [
+        "Sourcify exact-match source verification",
+        "independent cryptographic review",
+        "calendar roots and intervals (not published or activated)",
+        "Worker configuration",
+        "any pool"
+      ],
+      "timing": "governanceDelaySeconds=0 and calendarPublicationLeadSeconds=0 are immutable in this SafetyControllerV2"
+    }
+  }
+}

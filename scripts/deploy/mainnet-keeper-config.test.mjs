@@ -90,6 +90,7 @@ test('builds the production keeper vars from active Chainlink assets and publish
   const assets = {
     chainId: 4663,
     activationPending: false,
+    usdg: { descriptorId: b32('72') },
     weth: { descriptorId: b32('70') },
     counterassets: { MEME: { active: true, descriptorId: b32('71') } },
     stocks: { AAPL: { symbol: 'AAPL', descriptorId: b32('61') } },
@@ -128,7 +129,7 @@ test('builds the production keeper vars from active Chainlink assets and publish
   assert.equal(vars.BELL_POOL_FACTORY, manifest.poolFactory);
   assert.equal(vars.BELL_ASSET_REGISTRY, manifest.assetRegistry);
   assert.equal(vars.BELL_POSITION_MANAGER, manifest.positionManager);
-  assert.equal(vars.BELL_CALENDAR_COUNTER_ASSET_ID, assets.weth.descriptorId);
+  assert.equal(vars.BELL_CALENDAR_COUNTER_ASSET_ID, assets.usdg.descriptorId);
   assert.equal(vars.BELL_MAINNET_ASSETS, '{}');
   assert.equal('BELL_AUCTION_REGISTRY' in vars, false);
   assert.equal('YAHOO_SOURCE_VERIFIER_ADDRESS' in vars, false);

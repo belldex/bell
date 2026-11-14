@@ -296,9 +296,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         external
     {
         if (msg.sender != _factory) revert Unauthorized();
-        if (_state.lifecycle != uint8(Lifecycle.DEPLOYED) || _seed.requestHash != bytes32(0)
-            || requestHash == bytes32(0) || liquidity == 0 || tickLower >= tickUpper
-            || tickLower % _tickSpacing != 0 || tickUpper % _tickSpacing != 0) revert BadSeed();
+        if (
+            _state.lifecycle != uint8(Lifecycle.DEPLOYED) || _seed.requestHash != bytes32(0)
+                || requestHash == bytes32(0) || liquidity == 0 || tickLower >= tickUpper
+                || tickLower % _tickSpacing != 0 || tickUpper % _tickSpacing != 0
+        ) revert BadSeed();
         _seed.requestHash = requestHash;
         _seed.tickLower = tickLower;
         _seed.tickUpper = tickUpper;
@@ -318,12 +320,12 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         return IHooks.beforeInitialize.selector;
     }
 
-    function _beforeAddLiquidity(address sender, PoolKey calldata key, ModifyLiquidityParams calldata params, bytes calldata hookData)
-        internal
-        virtual
-        override
-        returns (bytes4)
-    {
+    function _beforeAddLiquidity(
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) internal virtual override returns (bytes4) {
         _requireBoundKey(key);
         if (_state.lifecycle == uint8(Lifecycle.LIVE) || _state.lifecycle == uint8(Lifecycle.STAGED)) {
             _validatePublicIncrease(sender, hookData);
@@ -361,10 +363,12 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     }
 
     function _validateSeedModification(address sender, ModifyLiquidityParams calldata params) private view {
-        if (_state.lifecycle != uint8(Lifecycle.SEEDING) || !_seed.initialized || _seed.captured
-            || !_trustedSeedProvider(sender) || params.liquidityDelta <= 0
-            || params.liquidityDelta != int256(uint256(_seed.liquidity)) || params.tickLower != _seed.tickLower
-            || params.tickUpper != _seed.tickUpper || params.salt != _seed.salt) revert BadSeed();
+        if (
+            _state.lifecycle != uint8(Lifecycle.SEEDING) || !_seed.initialized || _seed.captured
+                || !_trustedSeedProvider(sender) || params.liquidityDelta <= 0
+                || params.liquidityDelta != int256(uint256(_seed.liquidity)) || params.tickLower != _seed.tickLower
+                || params.tickUpper != _seed.tickUpper || params.salt != _seed.salt
+        ) revert BadSeed();
     }
 
     function _trustedSeedProvider(address sender) private view returns (bool) {
@@ -378,13 +382,13 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// hookData cannot impersonate any of them. New explicit mints are legitimate PUBLIC deposits too.
     /// Never re-enter seed accounting, read oracle policy or modify activation/caps on this path.
     /// TREASURY_ONLY stays closed here pending M06-03's separately reviewed adapter integration.
-    function _validatePublicIncrease(address sender, bytes calldata hookData)
-        private view
-    {
+    function _validatePublicIncrease(address sender, bytes calldata hookData) private view {
         // LIVE is reachable only through successful one-shot activation. Core invokes beforeAdd only
         // for positive liquidity; the pinned PM validates the position and its uint128 liquidity bounds.
-        if (hookData.length != 0 || _liquidityMode != uint8(LiquidityMode.PUBLIC) || sender != _positionManager
-            || _positionManagerCaller() == address(0)) revert Unauthorized();
+        if (
+            hookData.length != 0 || _liquidityMode != uint8(LiquidityMode.PUBLIC) || sender != _positionManager
+                || _positionManagerCaller() == address(0)
+        ) revert Unauthorized();
     }
 
     function _positionManagerCaller() private view returns (address initiator) {
@@ -452,7 +456,9 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     }
 
     function _swapContextHash(address sender, PoolKey calldata key, SwapParams calldata params, bytes calldata hookData)
-        private pure returns (bytes32)
+        private
+        pure
+        returns (bytes32)
     {
         return keccak256(abi.encode(sender, key, params, keccak256(hookData)));
     }
@@ -551,6 +557,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         return _seed.principal;
     }
 
+    /// @notice Position NFT ID minted for the atomic pool seed; zero for treasury-only pools.
+    function seedPositionId() external view returns (uint256) {
+        return uint256(_seed.salt);
+    }
+
     function seedCaptured() external view returns (bool) {
         return _seed.captured;
     }
@@ -559,12 +570,16 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     /// owner/liquidity or treasury receipt after settlement, then calling this once with its bound request hash.
     function activatePool(bytes32 requestHash, uint256 tokenId) external override {
         if (msg.sender != _factory) revert Unauthorized();
-        if (_state.lifecycle != uint8(Lifecycle.SEEDING) || !_seed.initialized || !_seed.captured || _seed.activated
-            || _seed.modificationPending || requestHash == bytes32(0) || requestHash != _seed.requestHash) {
+        if (
+            _state.lifecycle != uint8(Lifecycle.SEEDING) || !_seed.initialized || !_seed.captured || _seed.activated
+                || _seed.modificationPending || requestHash == bytes32(0) || requestHash != _seed.requestHash
+        ) {
             revert BadSeed();
         }
-        if ((_liquidityMode == uint8(LiquidityMode.PUBLIC) && tokenId == 0)
-            || (_liquidityMode == uint8(LiquidityMode.TREASURY_ONLY) && tokenId != 0)) revert BadSeed();
+        if (
+            (_liquidityMode == uint8(LiquidityMode.PUBLIC) && tokenId == 0)
+                || (_liquidityMode == uint8(LiquidityMode.TREASURY_ONLY) && tokenId != 0)
+        ) revert BadSeed();
 
         uint128[2] memory tradeCaps = [_tradeCap0, _tradeCap1];
         uint128[2] memory windowCaps = [_windowCap0, _windowCap1];
@@ -574,8 +589,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         if (block.timestamp > type(uint64).max || block.timestamp < PolicyConstants.REOPEN_MINIMUM_SEPARATION_SECONDS) {
             revert BadSeed();
         }
-        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) =
-            _activationStatus();
+        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) = _activationStatus();
         if (activationStatus == 0) revert BadSeed();
 
         _seed.activated = true;
@@ -624,12 +638,13 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
     }
 
     function _activateStagedPool() private returns (bool activated, PolicyView memory policy) {
-        if (_state.lifecycle != uint8(Lifecycle.STAGED) || !_seed.activated || !_seed.captured
-            || _seed.modificationPending || block.timestamp > type(uint64).max) {
+        if (
+            _state.lifecycle != uint8(Lifecycle.STAGED) || !_seed.activated || !_seed.captured
+                || _seed.modificationPending || block.timestamp > type(uint64).max
+        ) {
             return (false, _evaluatePolicy(false).policy);
         }
-        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) =
-            _activationStatus();
+        (uint8 activationStatus, uint64 validUntil, uint64[2] memory observations) = _activationStatus();
         if (activationStatus != 1 && activationStatus != 2) return (false, _evaluatePolicy(false).policy);
         _state.lifecycle = uint8(Lifecycle.LIVE);
         _state.bellStart = uint64(block.timestamp);
@@ -650,9 +665,7 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
 
     /// @notice Apply a complete pool stock update set and commit the ordinary policy/recovery checkpoint.
     /// This persists the first recovery observation even when a swap would still be blocked.
-    function prepareOracleUpdates(OraclePullUpdate[] calldata)
-        external override returns (PolicyView memory)
-    {
+    function prepareOracleUpdates(OraclePullUpdate[] calldata) external override returns (PolicyView memory) {
         _applyEncodedOracleUpdates(msg.data[4:], false);
         return _checkpointPolicy();
     }
@@ -687,10 +700,8 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         evaluation.beginLatch = o.beginLatch;
         evaluation.releaseLatch = o.releaseLatch;
         evaluation.nextState = _projectState(snapshot, o);
-        evaluation.policy.stateHash = _stateHash(
-            _hashState(snapshot, evaluation.nextState, o, evaluation.policy, checkpoint),
-            o.dependencyHash
-        );
+        evaluation.policy.stateHash =
+            _stateHash(_hashState(snapshot, evaluation.nextState, o, evaluation.policy, checkpoint), o.dependencyHash);
         if (checkpoint) evaluation.policy.closureNonce = evaluation.nextState.closureNonce;
     }
 
@@ -733,10 +744,11 @@ contract BellHook is BaseHook, IBellHook, IBellEvents, IBellErrors {
         policy.configHash = o.configHash;
     }
 
-    function _projectState(
-        PoolState memory snapshot,
-        BellPolicyOracle.Output memory o
-    ) private pure returns (PoolState memory nextState) {
+    function _projectState(PoolState memory snapshot, BellPolicyOracle.Output memory o)
+        private
+        pure
+        returns (PoolState memory nextState)
+    {
         // Build a fresh state rather than copying and then overwriting the recovery fields.
         // The pre-checkpoint snapshot must remain intact for view-only release hashing.
         nextState.lifecycle = snapshot.lifecycle;

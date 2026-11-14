@@ -3,7 +3,7 @@
  * Mainnet calendar root lifecycle: queue, wait, activate root, activate interval.
  *
  * This is not a copy of the testnet script with a different chain id. On mainnet the registry
- * enforces a 7-day publication notice and a 48-hour governance delay, and `activateRoot` is only
+ * reads the configured governance delay and publication lead from the deployed controller, and
  * valid inside a half-open window. Missing that window burns the single-slot `(asset, year)` root
  * for that asset identity forever, so each step is a separate, resumable invocation that re-reads
  * chain state instead of assuming the previous run finished.
@@ -17,13 +17,17 @@
  * Every write is simulated before it is broadcast, and nothing is published on a phase guess.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { createPublicClient, createWalletClient, http, keccak256, parseAbi, parseEventLogs, stringToHex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { fileURLToPath } from 'node:url';
 import { hashCalendarLeaf, verifyMerkleProof } from '../../packages/protocol/src/calendar.mjs';
 import { buildCalendarDataset } from '../calendar/calendar-builder.mjs';
 import { buildEtMarketIntervals } from '../calendar/et-market-calendar.mjs';
-import { planCalendarCoverageStart, planMainnetCalendarTimeline } from '../calendar/mainnet-timeline.mjs';
+import { coverageEndWithinUtcYear, planCalendarCoverageStart, planMainnetCalendarTimeline } from '../calendar/mainnet-timeline.mjs';
 import { loadEnvFile } from './env-loader.mjs';
+import { buildCalendarRootGovernanceCall } from './mainnet-calendar-hybrid-lib.mjs';
+import { assertPQManifestBroadcastable, buildPQMainnetAssetQueue } from './pq-mainnet-assets.mjs';
 
 const MAINNET_CHAIN_ID = 4663;
 const ZERO32 = `0x${'0'.repeat(64)}`;
@@ -59,16 +63,28 @@ const deployerPk = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_K
 if (!rpcUrl) throw new Error('RH_MAINNET_RPC_PRIMARY is required');
 if (!deployerPk) throw new Error('RH_MAINNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required');
 
-if (!existsSync('evidence/deploy/mainnet-4663.json')) {
-  throw new Error('mainnet deployment manifest is missing: evidence/deploy/mainnet-4663.json; run the mainnet deploy first');
+const deploymentManifestPath = env.BELL_MAINNET_MANIFEST || 'evidence/deploy/mainnet-4663.json';
+if (!existsSync(deploymentManifestPath)) {
+  throw new Error(`deployment manifest is missing: ${deploymentManifestPath}; run and verify the Mainnet deployment first`);
 }
-const manifest = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8'));
+const deploymentManifest = JSON.parse(readFileSync(deploymentManifestPath, 'utf8'));
+const manifest = { ...deploymentManifest, ...(deploymentManifest.contracts ?? {}) };
+const broadcastRequested = process.argv.includes('--broadcast');
+const authorizeSpend = process.argv.includes('--i-authorize-spend');
+assertPQManifestBroadcastable(deploymentManifest, broadcastRequested);
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
   throw new Error(`manifest chainId is ${manifest.chainId}, expected ${MAINNET_CHAIN_ID}`);
 }
-const assetQueue = existsSync('evidence/deploy/mainnet-4663-asset-queue.json')
-  ? JSON.parse(readFileSync('evidence/deploy/mainnet-4663-asset-queue.json', 'utf8'))
+const assetQueuePath = env.BELL_MAINNET_ASSET_QUEUE || 'evidence/deploy/mainnet-4663-asset-queue.json';
+const legacyAssetQueue = existsSync(assetQueuePath)
+  ? JSON.parse(readFileSync(assetQueuePath, 'utf8'))
   : null;
+const assetQueue = deploymentManifest.sourceMode === 'existing-onchain-chainlink'
+  ? buildPQMainnetAssetQueue({
+    manifest: deploymentManifest,
+    adapters: JSON.parse(readFileSync('evidence/deploy/mainnet-4663-chainlink-session-adapters.json', 'utf8')),
+  })
+  : legacyAssetQueue;
 // Multi-asset: resolve the target asset via --asset=<descriptorId|SYMBOL> falling back to the
 // first stock in the queue evidence. Each asset owns its own calendar root/state file.
 const ASSET_ARG = process.argv.find((a) => a.startsWith('--asset='))?.slice('--asset='.length) ?? null;
@@ -85,8 +101,6 @@ const calendarRegistry = manifest.calendarRegistry;
 const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `0x${deployerPk}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
 const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
-const broadcastRequested = process.argv.includes('--broadcast');
-const authorizeSpend = process.argv.includes('--i-authorize-spend');
 if (broadcastRequested && !authorizeSpend) throw new Error('calendar writes require --broadcast --i-authorize-spend');
 
 const chainId = await publicClient.getChainId();
@@ -98,12 +112,31 @@ const SAFETY_ABI = parseAbi([
   'function governanceDelaySeconds() view returns (uint32)',
   'function calendarPublicationLeadSeconds() view returns (uint32)',
   'function operationExpirySeconds() view returns (uint32)',
+  'function hybridAuth() view returns (address)',
+]);
+const SAFETY_HYBRID_ABI = parseAbi([
+  'function queueGovernanceCall(address target,bytes callData,uint256 deadline,bytes ecdsaSignature,bytes pqSignature) returns (bytes32 operationId)',
+  'function executeGovernanceCall(bytes32 operationId) returns (bytes returnData)',
+  'function operation(bytes32 operationId) view returns (uint8 kind,bytes32 payloadHash,uint64 eta,uint64 expiry,uint8 status)',
+  'event GovernanceCallQueued(bytes32 indexed operationId,address indexed target,bytes32 payloadHash,uint64 eta)',
+]);
+const HYBRID_AUTH_ABI = parseAbi([
+  'function registry() view returns (address)',
+  'function nonce(bytes32 role) view returns (uint256)',
+  'function actionDigest(bytes32 role,address target,bytes32 action,bytes32 payloadHash,uint256 actionNonce,uint32 keyVersion,uint256 deadline) view returns (bytes32)',
+]);
+const PQ_REGISTRY_ABI = parseAbi([
+  'function roleKey(bytes32 role) view returns ((address ecdsaSigner,bytes32 publicKeyCommitment,uint32 maxStatefulSignatures,uint32 nextStatefulLeaf,uint32 keyVersion,bool installed))',
 ]);
 const [governanceDelaySeconds, calendarLeadSeconds, operationExpirySeconds] = await Promise.all([
   publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'governanceDelaySeconds' }),
   publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'calendarPublicationLeadSeconds' }),
   publicClient.readContract({ address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'operationExpirySeconds' }),
 ]);
+const hybridAuthAddress = await publicClient.readContract({
+  address: manifest.safetyController, abi: SAFETY_ABI, functionName: 'hybridAuth',
+}).catch(() => null);
+const hybridGovernance = Boolean(hybridAuthAddress && !/^0x0{40}$/i.test(hybridAuthAddress));
 const latency = {
   governanceDelaySeconds: Number(governanceDelaySeconds),
   calendarLeadSeconds: Number(calendarLeadSeconds),
@@ -123,6 +156,61 @@ async function simulateAndSend(request, label) {
   return { hash, receipt };
 }
 
+function localPqSignature(command, digest, expectedLeaf) {
+  const signerPath = fileURLToPath(new URL('../../contracts/pq/signer/signer.mjs', import.meta.url));
+  const child = spawnSync(process.execPath, [signerPath, command, 'governance', digest], {
+    encoding: 'utf8',
+    env: { ...process.env, BELL_PQ_KEY_PROFILE: 'robinhood-4663' },
+  });
+  if (child.status !== 0) throw new Error(`local Mainnet governance PQ ${command} failed: ${child.stderr.trim()}`);
+  const result = JSON.parse(child.stdout);
+  if (Number(result.leafIndex) !== Number(expectedLeaf)) {
+    throw new Error(`local governance signer is at leaf ${result.leafIndex}, onchain role expects ${expectedLeaf}`);
+  }
+  return result.signature;
+}
+
+async function queueHybridGovernanceCall(call) {
+  const auth = hybridAuthAddress;
+  const keyRegistry = await publicClient.readContract({ address: auth, abi: HYBRID_AUTH_ABI, functionName: 'registry' });
+  const [nonce, roleKey] = await Promise.all([
+    publicClient.readContract({ address: auth, abi: HYBRID_AUTH_ABI, functionName: 'nonce', args: [call.role] }),
+    publicClient.readContract({ address: keyRegistry, abi: PQ_REGISTRY_ABI, functionName: 'roleKey', args: [call.role] }),
+  ]);
+  if (roleKey.ecdsaSigner.toLowerCase() !== account.address.toLowerCase()) {
+    throw new Error(`deployer wallet ${account.address} does not match the Mainnet governance signer`);
+  }
+  const deadline = BigInt(now + 3600);
+  const digest = await publicClient.readContract({
+    address: auth, abi: HYBRID_AUTH_ABI, functionName: 'actionDigest',
+    args: [call.role, manifest.safetyController, call.action, call.payloadHash, nonce, roleKey.keyVersion, deadline],
+  });
+  const ecdsaSignature = await account.sign({ hash: digest });
+  const previewSignature = localPqSignature('preview', digest, roleKey.nextStatefulLeaf);
+  const request = {
+    address: manifest.safetyController,
+    abi: SAFETY_HYBRID_ABI,
+    functionName: 'queueGovernanceCall',
+    args: [call.target, call.callData, deadline, ecdsaSignature, previewSignature],
+    account,
+  };
+  await publicClient.simulateContract(request);
+  console.log(`Hybrid governance queue simulation passed (nonce ${nonce}, PQ leaf ${roleKey.nextStatefulLeaf}).`);
+  if (!broadcastRequested || !authorizeSpend) return { status: 'SIMULATED', digest, deadline };
+
+  const pqSignature = localPqSignature('sign', digest, roleKey.nextStatefulLeaf);
+  const broadcastRequest = { ...request, args: [call.target, call.callData, deadline, ecdsaSignature, pqSignature] };
+  await publicClient.simulateContract(broadcastRequest);
+  const hash = await walletClient.writeContract(broadcastRequest);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== 'success') throw new Error(`queueGovernanceCall reverted: ${hash}`);
+  const event = parseEventLogs({ abi: SAFETY_HYBRID_ABI, logs: receipt.logs, eventName: 'GovernanceCallQueued' })
+    .find((entry) => entry.args.target.toLowerCase() === call.target.toLowerCase());
+  if (!event) throw new Error('GovernanceCallQueued event missing from receipt');
+  console.log(`Hybrid governance call queued: ${event.args.operationId} ETA ${new Date(Number(event.args.eta) * 1000).toISOString()}`);
+  return { status: 'QUEUED', hash, receipt, operationId: event.args.operationId, eta: Number(event.args.eta), digest };
+}
+
 async function currentIntervalState() {
   const [interval, nextInterval] = await Promise.all([
     publicClient.readContract({ address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [assetId] }),
@@ -134,19 +222,32 @@ async function currentIntervalState() {
   return { interval, hasCurrent, nextInterval };
 }
 
+function activeRootCoverageEnd(state) {
+  return state && ['ROOT_ACTIVE', 'INTERVAL_ACTIVE'].includes(state.stage)
+    ? Number(state.coverageEnd || 0)
+    : 0;
+}
+
 const command = process.argv[2] ?? 'status';
 
 if (command === 'plan') {
-  const coverageDays = Number(env.BELL_CALENDAR_DAYS || 60);
+  const previous = readState();
   // Leave only the configured notice or a short activation buffer. Do not round to midnight:
   // same-day activation is valid and avoids an unnecessary multi-hour idle period.
-  const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
+  const effectiveNotice = latency.calendarLeadSeconds + (hybridGovernance ? latency.governanceDelaySeconds : 0);
+  const coverageStart = Math.max(
+    planCalendarCoverageStart({ now, noticeSeconds: effectiveNotice }),
+    activeRootCoverageEnd(previous),
+  );
+  const coverageDays = Number(env.BELL_CALENDAR_DAYS || 60);
+  const coverageEnd = coverageEndWithinUtcYear({ coverageStart, requestedDays: coverageDays });
   const plan = planMainnetCalendarTimeline({
     now,
     coverageStart,
     coverageDays,
+    coverageEnd,
     noticeSeconds: latency.calendarLeadSeconds,
-    etaDelaySeconds: latency.governanceDelaySeconds,
+    etaDelaySeconds: latency.governanceDelaySeconds * (hybridGovernance ? 2 : 1),
     expirySeconds: latency.operationExpirySeconds,
   });
   console.log(JSON.stringify({
@@ -155,6 +256,8 @@ if (command === 'plan') {
     assetId,
     assetAdmitted: Boolean(assetId),
     deployedLatency: latency,
+    previousRootCoverageEnd: activeRootCoverageEnd(previous) || null,
+    requestedCoverageDays: Number(env.BELL_CALENDAR_DAYS || 60),
     ...plan,
     queueAtIso: new Date(plan.queueAt * 1000).toISOString(),
     coverageStartIso: new Date(plan.coverageStart * 1000).toISOString(),
@@ -173,21 +276,28 @@ if (command === 'plan') {
     throw new Error('no admitted stock asset; run mainnet-admit-assets.mjs queue and activate first');
   }
   const existing = readState();
-  if (existing?.rootOperationId) {
+  if (existing?.stage === 'GOVERNANCE_QUEUED' || existing?.stage === 'QUEUED'
+    || (existing?.rootOperationId && !['ROOT_ACTIVE', 'INTERVAL_ACTIVE'].includes(existing.stage))) {
     console.log(`A root operation is already recorded: ${existing.rootOperationId}`);
-    console.log('Refusing to queue a second root; the slot is single-use. Inspect status first.');
+    console.log('A root operation is still pending. Finish or inspect its lifecycle before queueing another.');
     process.exit(1);
   }
 
+  const previousCoverageEnd = activeRootCoverageEnd(existing);
+  const effectiveNotice = latency.calendarLeadSeconds + (hybridGovernance ? latency.governanceDelaySeconds : 0);
+  const coverageStart = Math.max(
+    planCalendarCoverageStart({ now, noticeSeconds: effectiveNotice }),
+    previousCoverageEnd,
+  );
   const coverageDays = Number(env.BELL_CALENDAR_DAYS || 60);
-  const coverageStart = planCalendarCoverageStart({ now, noticeSeconds: latency.calendarLeadSeconds });
-  const coverageEnd = coverageStart + coverageDays * DAY;
+  const coverageEnd = coverageEndWithinUtcYear({ coverageStart, requestedDays: coverageDays });
   const plan = planMainnetCalendarTimeline({
     now,
     coverageStart,
     coverageDays,
+    coverageEnd,
     noticeSeconds: latency.calendarLeadSeconds,
-    etaDelaySeconds: latency.governanceDelaySeconds,
+    etaDelaySeconds: latency.governanceDelaySeconds * (hybridGovernance ? 2 : 1),
     expirySeconds: latency.operationExpirySeconds,
   });
   if (!plan.ok) {
@@ -226,19 +336,39 @@ if (command === 'plan') {
   console.log(`Calendar: ${dataset.leafCount} leaves, ${new Date(coverageStart * 1000).toISOString()} .. ${new Date(coverageEnd * 1000).toISOString()}`);
   console.log(`Root: ${dataset.merkleRoot}`);
 
+  const metadata = {
+    root: dataset.merkleRoot,
+    leafCount: dataset.leafCount,
+    coverageStart: BigInt(coverageStart),
+    coverageEnd: BigInt(coverageEnd),
+    queuedAt: 0n,
+    executableAt: 0n,
+    datasetHash: dataset.datasetHash,
+  };
+
+  if (hybridGovernance) {
+    const call = buildCalendarRootGovernanceCall({ calendarRegistry, assetId, metadata });
+    const queued = await queueHybridGovernanceCall(call);
+    if (queued.status === 'SIMULATED') {
+      console.log('No transaction sent. Add --broadcast --i-authorize-spend to queue the signed governance call.');
+      process.exit(0);
+    }
+    writeState({
+      chainId, assetId, calendarRegistry, governanceOperationId: queued.operationId,
+      governanceQueuedTxHash: queued.hash, governanceEta: queued.eta,
+      root: dataset.merkleRoot, datasetHash: dataset.datasetHash, leafCount: dataset.leafCount,
+      year, coverageStart, coverageEnd, queuedAt: now, stage: 'GOVERNANCE_QUEUED',
+      sourceMode: 'HybridAuth-SafetyControllerV2',
+    });
+    console.log('After the governance ETA, run `mainnet-calendar.mjs execute-governance` to queue the root.');
+    process.exit(0);
+  }
+
   const { hash, receipt } = await simulateAndSend({
     address: calendarRegistry,
     abi: CALENDAR_ABI,
     functionName: 'queueRoot',
-    args: [assetId, {
-      root: dataset.merkleRoot,
-      leafCount: dataset.leafCount,
-      coverageStart: BigInt(coverageStart),
-      coverageEnd: BigInt(coverageEnd),
-      queuedAt: 0n,
-      executableAt: 0n,
-      datasetHash: dataset.datasetHash,
-    }],
+    args: [assetId, metadata],
   }, 'queueRoot');
 
   const events = parseEventLogs({ abi: CALENDAR_ABI, logs: receipt.logs, eventName: 'RootQueued' });
@@ -265,6 +395,35 @@ if (command === 'plan') {
   });
   console.log(`Root queued. Activate at or after ${new Date(plan.rootEta * 1000).toISOString()}`);
   console.log(`Deadline: before ${new Date(plan.activateRootLatest * 1000).toISOString()}`);
+} else if (command === 'execute-governance') {
+  const state = readState();
+  if (!state?.governanceOperationId) throw new Error('no pending governance call in state; run `queue` first');
+  if (!hybridGovernance) throw new Error('deployment does not expose SafetyControllerV2 governance execution');
+  const [kind, , eta, expiry, status] = await publicClient.readContract({
+    address: manifest.safetyController, abi: SAFETY_HYBRID_ABI,
+    functionName: 'operation', args: [state.governanceOperationId],
+  });
+  console.log(`governance operation kind=${kind} eta=${eta} expiry=${expiry} status=${status}`);
+  if (Number(status) !== 1) throw new Error(`governance operation status is ${status}, expected QUEUED`);
+  if (BigInt(now) < BigInt(eta)) throw new Error(`Too early: execute after ${new Date(Number(eta) * 1000).toISOString()}`);
+  if (BigInt(now) > BigInt(expiry)) throw new Error('governance operation expired; re-plan the calendar root');
+
+  const { hash, receipt } = await simulateAndSend({
+    address: manifest.safetyController, abi: SAFETY_HYBRID_ABI,
+    functionName: 'executeGovernanceCall', args: [state.governanceOperationId],
+  }, 'executeGovernanceCall');
+  const rootEvent = parseEventLogs({ abi: CALENDAR_ABI, logs: receipt.logs, eventName: 'RootQueued' })
+    .find((entry) => entry.args.assetId.toLowerCase() === assetId.toLowerCase());
+  if (!rootEvent) throw new Error('CalendarRegistry RootQueued event missing from governance execution receipt');
+  const [, , rootEta, rootExpiry, rootStatus] = await publicClient.readContract({
+    address: calendarRegistry, abi: CALENDAR_ABI, functionName: 'operation', args: [rootEvent.args.operationId],
+  });
+  writeState({
+    ...state, rootOperationId: rootEvent.args.operationId,
+    rootQueuedTxHash: hash, rootEta: Number(rootEta), rootExpiry: Number(rootExpiry),
+    stage: Number(rootStatus) === 2 ? 'ROOT_ACTIVE' : 'QUEUED',
+  });
+  console.log(`Calendar root queued: ${rootEvent.args.operationId}; eta ${new Date(Number(rootEta) * 1000).toISOString()}`);
 } else if (command === 'activate-root') {
   const state = readState();
   if (!state?.rootOperationId) throw new Error('no queued root in state; run `queue` first');
@@ -392,6 +551,6 @@ if (command === 'plan') {
       : null,
   }, null, 2));
 } else {
-  console.error(`Unknown command "${command}". Use plan | queue | activate-root | activate-interval | status`);
+  console.error(`Unknown command "${command}". Use plan | queue | execute-governance | activate-root | activate-interval | status`);
   process.exit(1);
 }
