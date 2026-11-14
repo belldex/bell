@@ -121,6 +121,7 @@ export function LeafField() {
 
   return (
     <div className="ein-field">
+      <p className="ein-field__caption">Each square is one signature this key can ever make.</p>
       <div
         ref={wrap}
         className="ein-field__grid"
@@ -134,7 +135,15 @@ export function LeafField() {
         onKeyDown={onKey}
       >
         <canvas ref={canvas} aria-hidden="true" />
-        <span className="ein-field__callout" aria-hidden="true">The three calendar roots</span>
+      </div>
+      <div className="ein-zoom">
+        <p>The first four squares, enlarged</p>
+        <ol>
+          {SPENT_LEAVES.map((s) => (
+            <li key={s.leaf} className="is-spent"><strong>{s.asset}</strong><span>calendar root signed</span></li>
+          ))}
+          <li className="is-next"><strong>Next</strong><span>not signed yet</span></li>
+        </ol>
       </div>
       <div className="ein-field__read">
         <p className="ein-field__count">

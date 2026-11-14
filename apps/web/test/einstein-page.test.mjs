@@ -94,3 +94,17 @@ test('layout is responsive and motion respects the reader', () => {
   assert.match(motion, /prefers-reduced-motion/);
   assert.match(styles, /overflow-x: auto/);
 });
+
+test('the content width follows the navbar, which spans the viewport with the site gutter', () => {
+  const main = styles.match(/\.ein__main \{[^}]*\}/)?.[0] ?? '';
+  assert.ok(main.length > 0, 'the .ein__main rule exists');
+  assert.doesNotMatch(main, /max-width/);
+  assert.match(main, /var\(--lp-gutter\)/);
+  assert.match(styles, /\.ein \.legal__foot \.lp-wrap \{ max-width: none; \}/);
+});
+
+test('the leaf field says what a square is and names the first leaves', () => {
+  assert.match(field, /Each square is one signature this key can ever make/);
+  assert.match(field, /The first four squares, enlarged/);
+  for (const asset of ['AAPL', 'NVDA', 'TSLA']) assert.match(data, new RegExp('asset: "' + asset + '"'));
+});

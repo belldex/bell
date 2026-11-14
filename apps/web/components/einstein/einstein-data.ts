@@ -13,9 +13,9 @@ export const testnetAddress = (address: string) => `${TESTNET_EXPLORER}/address/
 /** The governance key holds 4,096 one-time leaves. Three were spent on 14 November 2026, one per calendar root. */
 export const LEAF_BUDGET = 4096;
 export const SPENT_LEAVES = [
-  { leaf: 1, what: "the AAPL calendar root", tx: "0x4db79658537836856024d8a189ef227e027b14c7203f7ca116f4925b8c491351" },
-  { leaf: 2, what: "the NVDA calendar root", tx: "0x26363ed094c325ac5721f12c5697191069fdbb466e0ad822cc9746e7e552dcc3" },
-  { leaf: 3, what: "the TSLA calendar root", tx: "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd" },
+  { leaf: 1, asset: "AAPL", what: "the AAPL calendar root", tx: "0x4db79658537836856024d8a189ef227e027b14c7203f7ca116f4925b8c491351" },
+  { leaf: 2, asset: "NVDA", what: "the NVDA calendar root", tx: "0x26363ed094c325ac5721f12c5697191069fdbb466e0ad822cc9746e7e552dcc3" },
+  { leaf: 3, asset: "TSLA", what: "the TSLA calendar root", tx: "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd" },
 ] as const;
 export const NEXT_LEAF = SPENT_LEAVES.length + 1;
 
