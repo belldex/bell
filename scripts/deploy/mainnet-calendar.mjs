@@ -95,7 +95,9 @@ const resolvedStock = ASSET_ARG
   : stockEntries[0] ?? null;
 const assetId = resolvedStock?.[1]?.descriptorId ?? null;
 const assetLabel = resolvedStock?.[0] ?? 'asset';
-const STATE_PATH_ASSET = `evidence/deploy/mainnet-4663-calendar-state-${assetLabel}.json`;
+// The PQ stack keeps its own state files (BELL_CALENDAR_STATE_PREFIX=evidence/deploy/pq-hooks-mainnet-calendar-state) so a run
+// against it can never overwrite the production calendar state that the production keeper config reads.
+const STATE_PATH_ASSET = `${env.BELL_CALENDAR_STATE_PREFIX || 'evidence/deploy/mainnet-4663-calendar-state'}-${assetLabel}.json`;
 const calendarRegistry = manifest.calendarRegistry;
 
 const account = privateKeyToAccount(deployerPk.startsWith('0x') ? deployerPk : `0x${deployerPk}`);
