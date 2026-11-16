@@ -128,7 +128,7 @@ if (firstPool?.status === 'success') {
   if (lens) p2.checks.push({ kind: 'storageZero', label: 'BellSwapLens (first pool)', address: lens.lens, slots: EIP1967 });
   p2.checks.push({ kind: 'storageZero', label: 'Einstein pool hook', address: firstPool.hook, slots: EIP1967 });
   p2.passNote = 'EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.';
-  set('P7', { pending: 'The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.' });
+  set('P7', { pending: 'The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC. The same auction code ran a full cycle on the Elysium testnet on 7 November (not a mainnet proof): a sell and a buy order, settle in transaction 0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda, one clearing price of 99 USDG per stock, and an ordinary swap during the window reverted (transaction 0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80). Evidence: evidence/deploy/elysium-testnet-tests.json.' });
   set('P8', { pending: 'The pool exists, but no exit has been sent on mainnet yet. On a fork of mainnet its LP removed all liquidity without touching the hook (not a mainnet proof).' });
   if (exits.length) {
     const duringOf = (e) => e.during === 'a session' || !e.during ? 'CLOSED' : e.during;

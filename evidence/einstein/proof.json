@@ -460,11 +460,11 @@
       "title": "The auction works with real orders",
       "question": "Does the auction work with real orders?",
       "passes": "At least two orders on opposite sides fill at one uniform price.",
-      "pending": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.",
+      "pending": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC. The same auction code ran a full cycle on the Elysium testnet on 7 November (not a mainnet proof): a sell and a buy order, settle in transaction 0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda, one clearing price of 99 USDG per stock, and an ordinary swap during the window reverted (transaction 0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80). Evidence: evidence/deploy/elysium-testnet-tests.json.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.",
+        "note": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC. The same auction code ran a full cycle on the Elysium testnet on 7 November (not a mainnet proof): a sell and a buy order, settle in transaction 0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda, one clearing price of 99 USDG per stock, and an ordinary swap during the window reverted (transaction 0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80). Evidence: evidence/deploy/elysium-testnet-tests.json.",
         "gas": []
       }
     },
@@ -774,5 +774,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-16T03:39:34.641Z"
+  "lastRun": "2026-11-16T06:51:02.879Z"
 }
