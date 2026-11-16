@@ -42,5 +42,16 @@
     "amountInRaw": "10000",
     "feePips": 3000,
     "gasUsed": 945429
+  },
+  {
+    "tx": "0x8d0b130ef896ba95a79cb591569eadafe903dbeeb87ebfdc133d8a553d3b53db",
+    "block": 115840626,
+    "timestamp": 1794840306,
+    "status": "success",
+    "swapper": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "direction": "usdg",
+    "amountInRaw": "10000",
+    "feePips": 500,
+    "gasUsed": 932430
   }
 ]

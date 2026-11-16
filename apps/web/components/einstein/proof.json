@@ -443,13 +443,19 @@
           "tx": "0xc777a11989dc6d59933440ee81f25f854da2ae3aa9555e13628f95cb2f3b9891",
           "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
           "expectedFee": 3000
+        },
+        {
+          "kind": "swapFee",
+          "label": "REGULAR swap",
+          "tx": "0x8d0b130ef896ba95a79cb591569eadafe903dbeeb87ebfdc133d8a553d3b53db",
+          "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+          "expectedFee": 500
         }
       ],
-      "partial": "Proven on mainnet for CLOSED and OVERNIGHT and PRE or POST: a real swap shows the matching fee in the Swap event. Still pending: REGULAR.",
-      "passNote": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE or POST.",
+      "passNote": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE or POST, REGULAR.",
       "result": {
-        "verdict": "PARTIAL",
-        "note": "Proven on mainnet for CLOSED and OVERNIGHT and PRE or POST: a real swap shows the matching fee in the Swap event. Still pending: REGULAR.",
+        "verdict": "PASS",
+        "note": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE or POST, REGULAR.",
         "gas": [
           {
             "label": "CLOSED swap",
@@ -462,6 +468,10 @@
           {
             "label": "PRE or POST swap",
             "gasUsed": 964832
+          },
+          {
+            "label": "REGULAR swap",
+            "gasUsed": 932430
           }
         ]
       }
@@ -785,5 +795,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-16T13:45:47.843Z"
+  "lastRun": "2026-11-16T15:02:07.391Z"
 }
