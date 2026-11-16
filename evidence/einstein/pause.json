@@ -1,0 +1,18 @@
+{
+  "pause": {
+    "tx": "0x4bb89d316f4799fa0f6bbb606eb37d1f97c2c12aebb2f527f8cdc3779ab059c2",
+    "block": 115434842,
+    "role": "GUARDIAN",
+    "leaf": 1,
+    "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0"
+  },
+  "resume": {
+    "role": "GOVERNANCE",
+    "leaf": 4,
+    "queueTx": "0x9abb07387a412f36df277435bfec91142cbb181949189aeda451b9dad8fa3eb1",
+    "queueBlock": 115435273,
+    "executeTx": "0xd7523b58ece7b5bf2499dcd06b2ff130e3dd1007ae54dad2f6dc97d6e112f6f6",
+    "executeBlock": 115435611,
+    "pausedAfter": false
+  }
+}

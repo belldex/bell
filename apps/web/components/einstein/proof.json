@@ -339,7 +339,7 @@
       "title": "The calendars were signed post-quantum",
       "question": "Was the calendar really signed post-quantum?",
       "passes": "Each calendar root went through HybridAuth with ECDSA and SHRINCS, and the signing role's leaf counter moved.",
-      "passNote": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter reads 4 (leaves 1 to 3 spent). Roots are queued by the GOVERNANCE role, not REPORTER.",
+      "passNote": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter is past 3 (leaves 1 to 3 spent on the calendars; later leaves were spent on a pool resume). Roots are queued by the GOVERNANCE role, not REPORTER.",
       "checks": [
         {
           "kind": "txSuccess",
@@ -360,12 +360,12 @@
           "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
         },
         {
-          "kind": "callWord",
+          "kind": "callWordMin",
           "label": "GOVERNANCE next leaf",
           "to": "0x190ca8f13e381d1E58211cc821226EF9161d3a57",
           "data": "0xa657a47e35a7846a2a701fff6f9d61a46ebff5da578c5dcee8bdf361c569f9ea4ee64771",
           "word": 3,
-          "equals": 4
+          "min": 4
         },
         {
           "kind": "callWord",
@@ -378,7 +378,7 @@
       ],
       "result": {
         "verdict": "PASS",
-        "note": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter reads 4 (leaves 1 to 3 spent). Roots are queued by the GOVERNANCE role, not REPORTER.",
+        "note": "Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter is past 3 (leaves 1 to 3 spent on the calendars; later leaves were spent on a pool resume). Roots are queued by the GOVERNANCE role, not REPORTER.",
         "gas": [
           {
             "label": "AAPL calendar root queued",
@@ -454,19 +454,39 @@
       "checks": [
         {
           "kind": "txSuccess",
-          "label": "remove liquidity (20%) during CLOSED",
+          "label": "pool paused with both signatures",
+          "tx": "0x4bb89d316f4799fa0f6bbb606eb37d1f97c2c12aebb2f527f8cdc3779ab059c2",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "remove liquidity during CLOSED",
           "tx": "0x84e4fd2831689eb0caac3d720da2605dc522bd36fef95c280efc103f70524bc2",
+          "to": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "remove liquidity while paused",
+          "tx": "0xc8c753c04ab12464fc7d21179f7361befb1f1a18d6fab81484f2224bae7bf57d",
           "to": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d"
         }
       ],
-      "partial": "Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.",
+      "passNote": "The LP removed part of the position through the PositionManager both during CLOSED and while the pool was paused with both signatures. Neither exit called the hook or needed a post-quantum signature.",
       "result": {
-        "verdict": "PARTIAL",
-        "note": "Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.",
+        "verdict": "PASS",
+        "note": "The LP removed part of the position through the PositionManager both during CLOSED and while the pool was paused with both signatures. Neither exit called the hook or needed a post-quantum signature.",
         "gas": [
           {
-            "label": "remove liquidity (20%) during CLOSED",
+            "label": "pool paused with both signatures",
+            "gasUsed": 323735
+          },
+          {
+            "label": "remove liquidity during CLOSED",
             "gasUsed": 201277
+          },
+          {
+            "label": "remove liquidity while paused",
+            "gasUsed": 184177
           }
         ]
       }
@@ -476,11 +496,55 @@
       "title": "What fails, fails safely",
       "question": "What fails, and does it fail safely?",
       "passes": "Each negative test reverts on mainnet with the named error.",
-      "pending": "N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "revertReason",
+          "label": "N1",
+          "tx": "0x9d4daa92e5091f9c26e283dbbc837308d97017d157bb15d5c8bcd52137f5ea8c",
+          "selector": "0x7fd2fae9",
+          "error": "InvalidPQSignature"
+        },
+        {
+          "kind": "revertReason",
+          "label": "N2",
+          "tx": "0xcf75e672fa62da1f9901e0a55d1fcd5c0579f9cb037b5b60de24664f08d8187b",
+          "selector": "0x7fd2fae9",
+          "error": "InvalidPQSignature"
+        },
+        {
+          "kind": "revertReason",
+          "label": "N3",
+          "tx": "0x5aecdd5299b893928ef3204ebb45bc94f3dcfb1eb7e76b9585b4a853c176998f",
+          "selector": "0x0c0f81b3",
+          "error": "LeafOutOfOrder"
+        },
+        {
+          "kind": "revertReason",
+          "label": "N4",
+          "tx": "0x52b0da8ca84b26c2b31d1935f7cc0da0d692ad01c7f47afa00ee487b51d8160d",
+          "selector": "0x7fd2fae9",
+          "error": "InvalidPQSignature"
+        },
+        {
+          "kind": "revertReason",
+          "label": "N5",
+          "tx": "0x1906cd4a73e21a038b5f0960bfcdebb41bf643686ed7989ff3cebfab19a5c8e3",
+          "selector": "0xecb1f63f",
+          "error": "TradeCapExceeded"
+        },
+        {
+          "kind": "revertReason",
+          "label": "N7",
+          "tx": "0xd7241ddb0c63eaf717456af14b6551929ce1e003d6171f8aab866d23c1a29ae1",
+          "selector": "0x8b60127a",
+          "error": "PolicyBlocked"
+        }
+      ],
+      "partial": "Reverted on mainnet with the named error: N1, N2, N3, N4, N5, N7. Not yet sent: N6.",
+      "passNote": "Every negative test reverted on mainnet with the named error.",
       "result": {
-        "verdict": "PENDING",
-        "note": "N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.",
+        "verdict": "PARTIAL",
+        "note": "Reverted on mainnet with the named error: N1, N2, N3, N4, N5, N7. Not yet sent: N6.",
         "gas": []
       }
     },
@@ -548,48 +612,76 @@
       "id": "N1",
       "attempt": "Calendar root signed with ECDSA only",
       "mustRevertWith": "InvalidPQSignature",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0x9d4daa92e5091f9c26e283dbbc837308d97017d157bb15d5c8bcd52137f5ea8c",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 115434030 with InvalidPQSignature.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N1",
+        "tx": "0x9d4daa92e5091f9c26e283dbbc837308d97017d157bb15d5c8bcd52137f5ea8c",
+        "selector": "0x7fd2fae9",
+        "error": "InvalidPQSignature"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N1: reverted, InvalidPQSignature selector found in the revert data"
       }
     },
     {
       "id": "N2",
       "attempt": "Valid ECDSA with a SHRINCS signature from the wrong key",
       "mustRevertWith": "InvalidPQSignature",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0xcf75e672fa62da1f9901e0a55d1fcd5c0579f9cb037b5b60de24664f08d8187b",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 115434075 with InvalidPQSignature.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N2",
+        "tx": "0xcf75e672fa62da1f9901e0a55d1fcd5c0579f9cb037b5b60de24664f08d8187b",
+        "selector": "0x7fd2fae9",
+        "error": "InvalidPQSignature"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N2: reverted, InvalidPQSignature selector found in the revert data"
       }
     },
     {
       "id": "N3",
       "attempt": "Reuse a SHRINCS leaf that was already spent",
       "mustRevertWith": "LeafOutOfOrder",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0x5aecdd5299b893928ef3204ebb45bc94f3dcfb1eb7e76b9585b4a853c176998f",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 115434125 with LeafOutOfOrder.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N3",
+        "tx": "0x5aecdd5299b893928ef3204ebb45bc94f3dcfb1eb7e76b9585b4a853c176998f",
+        "selector": "0x0c0f81b3",
+        "error": "LeafOutOfOrder"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N3: reverted, LeafOutOfOrder selector found in the revert data"
       }
     },
     {
       "id": "N4",
       "attempt": "Pause through SafetyControllerV2 with ECDSA only",
       "mustRevertWith": "InvalidPQSignature",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0x52b0da8ca84b26c2b31d1935f7cc0da0d692ad01c7f47afa00ee487b51d8160d",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 115434151 with InvalidPQSignature.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N4",
+        "tx": "0x52b0da8ca84b26c2b31d1935f7cc0da0d692ad01c7f47afa00ee487b51d8160d",
+        "selector": "0x7fd2fae9",
+        "error": "InvalidPQSignature"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N4: reverted, InvalidPQSignature selector found in the revert data"
       }
     },
     {
@@ -627,20 +719,28 @@
       "id": "N7",
       "attempt": "Swap with no valid session for the timestamp",
       "mustRevertWith": "PolicyBlocked",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0xd7241ddb0c63eaf717456af14b6551929ce1e003d6171f8aab866d23c1a29ae1",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 115434947 with PolicyBlocked.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N7",
+        "tx": "0xd7241ddb0c63eaf717456af14b6551929ce1e003d6171f8aab866d23c1a29ae1",
+        "selector": "0x8b60127a",
+        "error": "PolicyBlocked"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N7: reverted, PolicyBlocked selector found in the revert data"
       }
     }
   ],
   "honestLimits": [
     "Wallets still sign with ECDSA. Only BELL's own governance and reporting calls use the post-quantum layer.",
     "No independent cryptographic review has been done.",
+    "A pause and a resume were exercised on mainnet: one GUARDIAN leaf and one GOVERNANCE leaf were spent, and the pool trades again.",
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-16T02:41:10.573Z"
+  "lastRun": "2026-11-16T02:49:37.307Z"
 }

@@ -9,5 +9,17 @@
     "liquidityAfter": "214262976608",
     "hookEmittedLogs": false,
     "gasUsed": 201277
+  },
+  {
+    "tx": "0xc8c753c04ab12464fc7d21179f7361befb1f1a18d6fab81484f2224bae7bf57d",
+    "block": 115434976,
+    "timestamp": 1794797254,
+    "status": "success",
+    "percent": 20,
+    "during": "paused",
+    "liquidityBefore": "214262976608",
+    "liquidityAfter": "171410381287",
+    "hookEmittedLogs": false,
+    "gasUsed": 184177
   }
 ]

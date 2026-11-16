@@ -46,10 +46,10 @@ const claims = [
   {
     id: 'P5', title: 'The calendars were signed post-quantum', question: 'Was the calendar really signed post-quantum?',
     passes: "Each calendar root went through HybridAuth with ECDSA and SHRINCS, and the signing role's leaf counter moved.",
-    passNote: 'Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter reads 4 (leaves 1 to 3 spent). Roots are queued by the GOVERNANCE role, not REPORTER.',
+    passNote: 'Three governance calls succeeded on SafetyControllerV2, and the GOVERNANCE leaf counter is past 3 (leaves 1 to 3 spent on the calendars; later leaves were spent on a pool resume). Roots are queued by the GOVERNANCE role, not REPORTER.',
     checks: [
       ...assets.map((a) => ({ kind: 'txSuccess', label: `${a} calendar root queued`, tx: state[a].governanceQueuedTxHash, to: sc })),
-      { kind: 'callWord', label: 'GOVERNANCE next leaf', to: registry, data: GOVERNANCE_CALL, word: 3, equals: 4 },
+      { kind: 'callWordMin', label: 'GOVERNANCE next leaf', to: registry, data: GOVERNANCE_CALL, word: 3, min: 4 },
       { kind: 'callWord', label: 'GOVERNANCE leaf budget', to: registry, data: GOVERNANCE_CALL, word: 2, equals: 4096 },
     ],
   },
@@ -98,7 +98,8 @@ const negativeTxs = readOptional('evidence/einstein/negatives.json') ?? [];
 const exits = readOptional('evidence/einstein/exits.json') ?? [];
 const poolManager = read('evidence/deploy/mainnet-4663.json').poolManager;
 const positionManager = read('evidence/deploy/mainnet-4663.json').positionManager;
-const ERRORS = { N5: ['TradeCapExceeded', '0xecb1f63f'] };
+const ERRORS = { N5: ['TradeCapExceeded', '0xecb1f63f'], N7: ['PolicyBlocked', '0x8b60127a'] };
+const pauseEvidence = readOptional('evidence/einstein/pause.json');
 
 if (firstPool?.status === 'success') {
   const set = (id, patch) => Object.assign(claims.find((c) => c.id === id), patch);
@@ -122,13 +123,22 @@ if (firstPool?.status === 'success') {
   set('P7', { pending: 'The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.' });
   set('P8', { pending: 'The pool exists, but no exit has been sent on mainnet yet. On a fork of mainnet its LP removed all liquidity without touching the hook (not a mainnet proof).' });
   if (exits.length) {
+    const duringOf = (e) => e.during === 'a session' || !e.during ? 'CLOSED' : e.during;
+    const closedExit = exits.find((e) => duringOf(e) === 'CLOSED');
+    const pausedExit = exits.find((e) => duringOf(e) === 'paused');
+    const checks = [];
+    if (pauseEvidence?.pause) checks.push({ kind: 'txSuccess', label: 'pool paused with both signatures', tx: pauseEvidence.pause.tx, to: manifest.contracts.safetyController });
+    for (const [label, e] of [['remove liquidity during CLOSED', closedExit], ['remove liquidity while paused', pausedExit]]) {
+      if (e) checks.push({ kind: 'txSuccess', label, tx: e.tx, to: positionManager });
+    }
     set('P8', {
       pending: undefined,
-      partial: 'Removing liquidity during CLOSED is proven on mainnet: the LP took out part of the position through the PositionManager, with no hook call and no post-quantum signature. Removing liquidity while the pool is paused is still pending.',
-      checks: exits.map((e) => ({ kind: 'txSuccess', label: 'remove liquidity (' + e.percent + '%) during CLOSED', tx: e.tx, to: positionManager })),
+      partial: closedExit && pausedExit ? undefined : 'Removing liquidity during CLOSED is proven on mainnet. Removing it while the pool is paused is still pending.',
+      passNote: 'The LP removed part of the position through the PositionManager both during CLOSED and while the pool was paused with both signatures. Neither exit called the hook or needed a post-quantum signature.',
+      checks,
     });
   }
-  set('P9', { pending: 'N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.' });
+
   set('P11', { pending: 'The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.' });
   const SESSION_BY_FEE = { 10000: 'CLOSED', 5000: 'OVERNIGHT', 3000: 'PRE or POST', 500: 'REGULAR' };
   const proven = new Map();
@@ -148,10 +158,22 @@ if (firstPool?.status === 'success') {
 }
 for (const n of negatives) {
   const done = negativeTxs.find((x) => x.id === n.id);
-  const [error, selector] = ERRORS[n.id] ?? [];
+  const [error, selector] = ERRORS[n.id] ?? [done?.error, done?.selector];
   if (done && selector) {
     n.mainnetTx = done.tx; n.status = 'PROVEN'; n.note = `Reverted on mainnet in block ${done.block} with ${error}.`;
     n.check = { kind: 'revertReason', label: n.id, tx: done.tx, selector, error };
+  }
+}
+{
+  const provenNegatives = negatives.filter((n) => n.check);
+  if (provenNegatives.length) {
+    const open = negatives.filter((n) => !n.check).map((n) => n.id);
+    Object.assign(claims.find((c) => c.id === 'P9'), {
+      pending: undefined,
+      partial: open.length ? 'Reverted on mainnet with the named error: ' + provenNegatives.map((n) => n.id).join(', ') + '. Not yet sent: ' + open.join(', ') + '.' : undefined,
+      passNote: 'Every negative test reverted on mainnet with the named error.',
+      checks: provenNegatives.map((n) => n.check),
+    });
   }
 }
 const poolLimit = firstPool?.status === 'success' ? 'Only one pool uses the Einstein hook, and it is seeded with about 1 USD.' : 'No pool uses the Einstein hook yet.';
@@ -168,6 +190,7 @@ const proof = {
   honestLimits: [
     "Wallets still sign with ECDSA. Only BELL's own governance and reporting calls use the post-quantum layer.",
     'No independent cryptographic review has been done.',
+    ...(pauseEvidence?.resume ? ['A pause and a resume were exercised on mainnet: one GUARDIAN leaf and one GOVERNANCE leaf were spent, and the pool trades again.'] : []),
     poolLimit,
     'The five post-quantum contracts are a Sourcify match, not an exact match.',
   ],

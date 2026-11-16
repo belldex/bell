@@ -8,5 +8,51 @@
     "gasUsed": 950216,
     "amountInRaw": "50000",
     "direction": "usdg"
+  },
+  {
+    "id": "N1",
+    "tx": "0x9d4daa92e5091f9c26e283dbbc837308d97017d157bb15d5c8bcd52137f5ea8c",
+    "block": 115434030,
+    "status": "reverted",
+    "error": "InvalidPQSignature",
+    "selector": "0x7fd2fae9",
+    "gasUsed": 55203
+  },
+  {
+    "id": "N2",
+    "tx": "0xcf75e672fa62da1f9901e0a55d1fcd5c0579f9cb037b5b60de24664f08d8187b",
+    "block": 115434075,
+    "status": "reverted",
+    "error": "InvalidPQSignature",
+    "selector": "0x7fd2fae9",
+    "gasUsed": 102673
+  },
+  {
+    "id": "N3",
+    "tx": "0x5aecdd5299b893928ef3204ebb45bc94f3dcfb1eb7e76b9585b4a853c176998f",
+    "block": 115434125,
+    "status": "reverted",
+    "error": "LeafOutOfOrder",
+    "selector": "0x0c0f81b3",
+    "gasUsed": 255193
+  },
+  {
+    "id": "N4",
+    "tx": "0x52b0da8ca84b26c2b31d1935f7cc0da0d692ad01c7f47afa00ee487b51d8160d",
+    "block": 115434151,
+    "status": "reverted",
+    "error": "InvalidPQSignature",
+    "selector": "0x7fd2fae9",
+    "gasUsed": 48736
+  },
+  {
+    "id": "N7",
+    "tx": "0xd7241ddb0c63eaf717456af14b6551929ce1e003d6171f8aab866d23c1a29ae1",
+    "block": 115434947,
+    "status": "reverted",
+    "selector": "0x8b60127a",
+    "gasUsed": 524641,
+    "amountInRaw": "10000",
+    "direction": "usdg"
   }
 ]

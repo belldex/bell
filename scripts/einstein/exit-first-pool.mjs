@@ -66,7 +66,7 @@ const receipt = await publicClient.waitForTransactionReceipt({ hash });
 const block = await publicClient.getBlock({ blockNumber: receipt.blockNumber });
 const after = await publicClient.readContract({ address: positionManager, abi: pm, functionName: 'getPositionLiquidity', args: [tokenId], blockNumber: receipt.blockNumber });
 const hookTouched = receipt.logs.some((l) => l.address.toLowerCase() === pool.hook.toLowerCase());
-const entry = { tx: hash, block: Number(receipt.blockNumber), timestamp: Number(block.timestamp), status: receipt.status, percent: Number(percent), liquidityBefore: String(liquidity), liquidityAfter: String(after), hookEmittedLogs: hookTouched, gasUsed: Number(receipt.gasUsed) };
+const entry = { tx: hash, block: Number(receipt.blockNumber), timestamp: Number(block.timestamp), status: receipt.status, percent: Number(percent), during: arg('during', 'a session'), liquidityBefore: String(liquidity), liquidityAfter: String(after), hookEmittedLogs: hookTouched, gasUsed: Number(receipt.gasUsed) };
 const out = `${dir}/exits.json`;
 let all = []; try { all = JSON.parse(readFileSync(out, 'utf8')); } catch { /* first exit */ }
 all.push(entry);
