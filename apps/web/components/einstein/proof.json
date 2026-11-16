@@ -6,6 +6,12 @@
     "name": "Robinhood Chain",
     "explorer": "https://robinhoodchain.blockscout.com"
   },
+  "gasBaseline": {
+    "ecdsaOnly": 70433,
+    "hybrid": 323735,
+    "hybridTx": "0x4bb89d316f4799fa0f6bbb606eb37d1f97c2c12aebb2f527f8cdc3779ab059c2",
+    "ecdsaOnlyHow": "pausePool(address) on the production SafetyController 0x7243cf13f0308edd4a0397551042fea3cf9da179, sent by its guardian on a local fork of Robinhood Chain mainnet. A fork transaction has no public hash."
+  },
   "generatedFrom": [
     "evidence/deploy/pq-hooks-mainnet.json",
     "evidence/deploy/pq-hooks-mainnet-calendar-state-*.json"
@@ -33,7 +39,9 @@
     "positionId": "7",
     "block": 114372026,
     "createTx": "0x440c71e431304e72967d55d5bfcd6b6988e4f31726fcc0abfb25409bce465b63",
-    "pair": "NVDA/USDG"
+    "pair": "NVDA/USDG",
+    "lens": "0x6b983bd596feda2ab9a2ac40c72cffa0b2879435",
+    "lensTx": "0x475e0b4f68dc6d0056bfac18c1449afd19104f57fcfb551f326c450676b5640b"
   },
   "claims": [
     {
@@ -41,7 +49,7 @@
       "title": "The code is what we say it is",
       "question": "Is the code what you say it is?",
       "passes": "Sourcify shows exact_match for every contract and the tagged commit builds to the same bytecode.",
-      "partial": "Sourcify shows match, not exact_match, on all 15 contracts. The build embeds no metadata hash, so exact_match is not reachable for these. The hook and Lens for the first pool are not deployed yet.",
+      "partial": "Sourcify shows match, not exact_match, on all 15 contracts of the stack, because their build embeds no metadata hash. The Lens of the first pool was built with the metadata hash and is an exact match. The pool hook is created from the deployer bytecode and stays a match.",
       "checks": [
         {
           "kind": "sourcify",
@@ -117,11 +125,16 @@
           "kind": "sourcify",
           "label": "swapLensRegistry",
           "address": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5"
+        },
+        {
+          "kind": "sourcify",
+          "label": "BellSwapLens (first pool)",
+          "address": "0x6b983bd596feda2ab9a2ac40c72cffa0b2879435"
         }
       ],
       "result": {
         "verdict": "PARTIAL",
-        "note": "Sourcify shows match, not exact_match, on every contract checked",
+        "note": "1 of 16 contracts are an exact match on Sourcify, and the other 15 are a match",
         "gas": []
       }
     },
@@ -262,6 +275,15 @@
           "kind": "storageZero",
           "label": "swapLensRegistry",
           "address": "0xdbF6f9299Ed0186C0B4a53F66ca251872aFd1dC5",
+          "slots": [
+            "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+            "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
+          ]
+        },
+        {
+          "kind": "storageZero",
+          "label": "BellSwapLens (first pool)",
+          "address": "0x6b983bd596feda2ab9a2ac40c72cffa0b2879435",
           "slots": [
             "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
             "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103"
@@ -553,7 +575,6 @@
       "title": "What post-quantum verification costs",
       "question": "What does PQ verification cost?",
       "passes": "Gas for the calendar submit transaction, compared with an ECDSA-only submit.",
-      "partial": "Mainnet gas for the three hybrid-signed calendar submissions is published below. The ECDSA-only baseline has not been measured.",
       "checks": [
         {
           "kind": "txSuccess",
@@ -572,11 +593,18 @@
           "label": "TSLA hybrid-signed governance queue",
           "tx": "0x4eb08e8d739bfea14a43adf35b430daa48ffeb30940c86c7a1048605a53851dd",
           "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "hybrid-signed pause (GUARDIAN)",
+          "tx": "0x4bb89d316f4799fa0f6bbb606eb37d1f97c2c12aebb2f527f8cdc3779ab059c2",
+          "to": "0x5518541aA2D4b45531d7a2506FA81FFdFb4d505d"
         }
       ],
+      "passNote": "The same pause costs 323,735 gas with both signatures on mainnet and 70,433 gas with ECDSA only on a fork of mainnet, about 4.6 times more.",
       "result": {
-        "verdict": "PARTIAL",
-        "note": "Mainnet gas for the three hybrid-signed calendar submissions is published below. The ECDSA-only baseline has not been measured.",
+        "verdict": "PASS",
+        "note": "The same pause costs 323,735 gas with both signatures on mainnet and 70,433 gas with ECDSA only on a fork of mainnet, about 4.6 times more.",
         "gas": [
           {
             "label": "AAPL hybrid-signed governance queue",
@@ -589,6 +617,10 @@
           {
             "label": "TSLA hybrid-signed governance queue",
             "gasUsed": 590742
+          },
+          {
+            "label": "hybrid-signed pause (GUARDIAN)",
+            "gasUsed": 323735
           }
         ]
       }
@@ -598,11 +630,11 @@
       "title": "Anyone can check all of this",
       "question": "Can I check all of this myself?",
       "passes": "verify-einstein-pool prints PASS for P2 to P9 from a clean clone against a public RPC.",
-      "pending": "The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.",
+      "pending": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.",
+        "note": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.",
         "gas": []
       }
     }
@@ -742,5 +774,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-16T02:49:37.307Z"
+  "lastRun": "2026-11-16T03:39:34.641Z"
 }

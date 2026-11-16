@@ -1,0 +1,10 @@
+{
+  "chainId": 4663,
+  "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+  "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+  "lens": "0x6b983bd596feda2ab9a2ac40c72cffa0b2879435",
+  "tx": "0x475e0b4f68dc6d0056bfac18c1449afd19104f57fcfb551f326c450676b5640b",
+  "block": 115459590,
+  "gasUsed": 4574477,
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399"
+}

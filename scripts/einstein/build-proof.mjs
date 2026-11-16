@@ -96,6 +96,8 @@ const firstPool = firstPoolFile ? readOptional(`evidence/einstein/${firstPoolFil
 const swaps = readOptional('evidence/einstein/swaps.json') ?? [];
 const negativeTxs = readOptional('evidence/einstein/negatives.json') ?? [];
 const exits = readOptional('evidence/einstein/exits.json') ?? [];
+const lens = readOptional('evidence/einstein/lens.json');
+const gasBaseline = readOptional('evidence/einstein/gas-baseline.json');
 const poolManager = read('evidence/deploy/mainnet-4663.json').poolManager;
 const positionManager = read('evidence/deploy/mainnet-4663.json').positionManager;
 const ERRORS = { N5: ['TradeCapExceeded', '0xecb1f63f'], N7: ['PolicyBlocked', '0x8b60127a'] };
@@ -117,7 +119,13 @@ if (firstPool?.status === 'success') {
       { kind: 'callWordMin', label: 'position liquidity', to: positionManager, data: `0x1efeed33${tokenIdWord}`, word: 0, min: 1 },
     ],
   });
+  const p1 = claims.find((c) => c.id === 'P1');
+  if (lens) {
+    p1.checks.push({ kind: 'sourcify', label: 'BellSwapLens (first pool)', address: lens.lens });
+    p1.partial = 'Sourcify shows match, not exact_match, on all 15 contracts of the stack, because their build embeds no metadata hash. The Lens of the first pool was built with the metadata hash and is an exact match. The pool hook is created from the deployer bytecode and stays a match.';
+  }
   const p2 = claims.find((c) => c.id === 'P2');
+  if (lens) p2.checks.push({ kind: 'storageZero', label: 'BellSwapLens (first pool)', address: lens.lens, slots: EIP1967 });
   p2.checks.push({ kind: 'storageZero', label: 'Einstein pool hook', address: firstPool.hook, slots: EIP1967 });
   p2.passNote = 'EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.';
   set('P7', { pending: 'The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.' });
@@ -139,7 +147,7 @@ if (firstPool?.status === 'success') {
     });
   }
 
-  set('P11', { pending: 'The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.' });
+  set('P11', { pending: 'The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.' });
   const SESSION_BY_FEE = { 10000: 'CLOSED', 5000: 'OVERNIGHT', 3000: 'PRE or POST', 500: 'REGULAR' };
   const proven = new Map();
   for (const s of swaps) if (SESSION_BY_FEE[s.feePips] && !proven.has(s.feePips)) proven.set(s.feePips, s);
@@ -176,15 +184,23 @@ for (const n of negatives) {
     });
   }
 }
+if (gasBaseline) {
+  const p10 = claims.find((c) => c.id === 'P10');
+  const ratio = (gasBaseline.hybrid.gasUsed / gasBaseline.ecdsaOnly.gasUsed).toFixed(1);
+  p10.checks.push({ kind: 'txSuccess', label: 'hybrid-signed pause (GUARDIAN)', tx: gasBaseline.hybrid.tx, to: manifest.contracts.safetyController });
+  p10.partial = undefined;
+  p10.passNote = 'The same pause costs ' + gasBaseline.hybrid.gasUsed.toLocaleString('en-US') + ' gas with both signatures on mainnet and ' + gasBaseline.ecdsaOnly.gasUsed.toLocaleString('en-US') + ' gas with ECDSA only on a fork of mainnet, about ' + ratio + ' times more.';
+}
 const poolLimit = firstPool?.status === 'success' ? 'Only one pool uses the Einstein hook, and it is seeded with about 1 USD.' : 'No pool uses the Einstein hook yet.';
 
 const proof = {
   schema: 1,
   title: 'Einstein Hooks v2: first pool, proof package',
   chain: { id: 4663, name: 'Robinhood Chain', explorer: 'https://robinhoodchain.blockscout.com' },
+  gasBaseline: gasBaseline ? { ecdsaOnly: gasBaseline.ecdsaOnly.gasUsed, hybrid: gasBaseline.hybrid.gasUsed, hybridTx: gasBaseline.hybrid.tx, ecdsaOnlyHow: gasBaseline.ecdsaOnly.how } : null,
   generatedFrom: ['evidence/deploy/pq-hooks-mainnet.json', 'evidence/deploy/pq-hooks-mainnet-calendar-state-*.json'],
   contracts: manifest.contracts,
-  pool: firstPool?.status === 'success' ? { hook: firstPool.hook, poolId: firstPool.poolId, positionId: firstPool.tokenId, block: firstPool.block, createTx: firstPool.txs.createAndSeed, pair: 'NVDA/USDG' } : null,
+  pool: firstPool?.status === 'success' ? { hook: firstPool.hook, poolId: firstPool.poolId, positionId: firstPool.tokenId, block: firstPool.block, createTx: firstPool.txs.createAndSeed, pair: 'NVDA/USDG', lens: lens?.lens ?? null, lensTx: lens?.tx ?? null } : null,
   claims,
   negatives,
   honestLimits: [

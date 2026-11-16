@@ -100,7 +100,7 @@ async function runCheck(check, rpc, proof) {
       return { ok: bits === 0x2cc0 && off, note: `hook low 14 bits 0x${bits.toString(16)}, remove-liquidity bits off: ${off}` };
     }
     case 'sourcify': {
-      const res = await fetch(`https://sourcify.dev/server/v2/contract/${proof.chain.id}/${check.address}`);
+      const res = await fetch(`https://sourcify.dev/server/v2/contract/${proof.chain.id}/${check.address}?fields=all`);
       if (!res.ok) return { ok: false, note: `${check.label} is not on Sourcify (HTTP ${res.status})` };
       const body = await res.json();
       const m = body.match ?? body.creationMatch ?? 'none';
@@ -115,15 +115,16 @@ export async function runProof(proof, rpc) {
   const results = [];
   for (const claim of proof.claims) {
     if (!claim.checks?.length) { results.push({ id: claim.id, verdict: 'PENDING', note: claim.pending ?? 'no on-chain evidence yet', gas: [] }); continue; }
-    let failed = null; let partial = null; const gas = [];
+    let failed = null; let partial = null; const gas = []; let sourcifyTotal = 0; let sourcifyExact = 0;
     for (const check of claim.checks) {
       try {
         const r = await runCheck(check, rpc, proof);
         if (r.gasUsed) gas.push({ label: check.label, gasUsed: r.gasUsed });
         if (!r.ok) { failed = r.note; break; }
-        if (check.kind === 'sourcify' && !r.exact && !partial) partial = 'Sourcify shows match, not exact_match, on every contract checked';
+        if (check.kind === 'sourcify') { sourcifyTotal += 1; if (r.exact) sourcifyExact += 1; }
       } catch (e) { failed = `${check.kind}: ${e.message}`; break; }
     }
+    if (sourcifyTotal && sourcifyExact < sourcifyTotal) partial = `${sourcifyExact} of ${sourcifyTotal} contracts are an exact match on Sourcify, and the other ${sourcifyTotal - sourcifyExact} are a match`;
     if (failed) results.push({ id: claim.id, verdict: 'FAIL', note: failed, gas });
     else if (partial || claim.partial) results.push({ id: claim.id, verdict: 'PARTIAL', note: partial ?? claim.partial, gas });
     else results.push({ id: claim.id, verdict: 'PASS', note: claim.passNote ?? 'all checks held', gas });

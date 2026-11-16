@@ -23,13 +23,14 @@ type Claim = {
   result?: { verdict: Verdict; note: string; gas?: { label: string; gasUsed: number }[] };
 };
 type Negative = { id: string; attempt: string; mustRevertWith: string; mainnetTx: string | null; status: string; note: string };
-type Pool = { hook: string; poolId: string; positionId: string; block: number; createTx: string; pair: string };
+type Pool = { hook: string; poolId: string; positionId: string; block: number; createTx: string; pair: string; lens?: string | null; lensTx?: string | null };
 
 const explorer = proof.chain.explorer;
 const claims = proof.claims as unknown as Claim[];
 const negatives = proof.negatives as unknown as Negative[];
 const pool = ((proof as { pool?: Pool | null }).pool ?? null) as Pool | null;
 const lastRun = (proof as { lastRun?: string }).lastRun;
+const baseline = (proof as { gasBaseline?: { ecdsaOnly: number; hybrid: number; hybridTx: string; ecdsaOnlyHow: string } | null }).gasBaseline ?? null;
 const verdictOf = (c: Claim): Verdict => c.result?.verdict ?? "PENDING";
 const count = (v: Verdict) => claims.filter((c) => verdictOf(c) === v).length;
 const short = (h: string, a = 8, b = 6) => `${h.slice(0, a)}…${h.slice(-b)}`;
@@ -132,6 +133,7 @@ export function PoolProofPage() {
               <div><dt>Creation transaction</dt><dd><a href={`${explorer}/tx/${pool.createTx}`} target="_blank" rel="noopener noreferrer">{short(pool.createTx, 10, 8)}</a></dd></div>
               <div><dt>Position</dt><dd>#{pool.positionId}</dd></div>
               <div><dt>Service fee</dt><dd>49 USDG, paid at creation</dd></div>
+              {pool.lens && <div><dt>Swap Lens, exact match</dt><dd><a href={`${explorer}/address/${pool.lens}`} target="_blank" rel="noopener noreferrer">{short(pool.lens, 10, 8)}</a></dd></div>}
             </dl>
           </section>
         )}
@@ -190,6 +192,12 @@ export function PoolProofPage() {
                   <li key={g.label}><span>{g.label}</span><b>{g.gasUsed.toLocaleString("en-US")} gas</b></li>
                 ))}
               </ul>
+              {baseline && (
+                <p className="pp-gas__note">
+                  The same pause with ECDSA only costs {baseline.ecdsaOnly.toLocaleString("en-US")} gas, measured on a fork of mainnet, and with both signatures it costs{" "}
+                  <a href={`${explorer}/tx/${baseline.hybridTx}`} target="_blank" rel="noopener noreferrer">{baseline.hybrid.toLocaleString("en-US")} gas on mainnet</a>.
+                </p>
+              )}
             </div>
           )}
         </section>

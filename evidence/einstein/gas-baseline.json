@@ -1,0 +1,13 @@
+{
+  "what": "The same action, pausing a pool, with ECDSA only and with ECDSA plus SHRINCS",
+  "ecdsaOnly": {
+    "gasUsed": 70433,
+    "how": "pausePool(address) on the production SafetyController 0x7243cf13f0308edd4a0397551042fea3cf9da179, sent by its guardian on a local fork of Robinhood Chain mainnet. A fork transaction has no public hash.",
+    "measuredAt": "2026-11-16"
+  },
+  "hybrid": {
+    "gasUsed": 323735,
+    "tx": "0x4bb89d316f4799fa0f6bbb606eb37d1f97c2c12aebb2f527f8cdc3779ab059c2",
+    "how": "pausePoolHybrid on SafetyControllerV2 0x5518541aa2d4b45531d7a2506fa81ffdfb4d505d, mainnet transaction"
+  }
+}

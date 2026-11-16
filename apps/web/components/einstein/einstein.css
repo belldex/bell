@@ -403,3 +403,6 @@
   .pp-bits { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem 0.4rem; }
   .pp-bits span { font-size: 0.56rem; }
 }
+
+.pp-gas__note { margin: 1rem 0 0; color: var(--lp-muted); font: 400 0.92rem/1.6 var(--lp-font-ui); }
+.pp-gas__note a { color: var(--lp-white); text-underline-offset: 0.25em; text-decoration-color: var(--lp-accent); }
