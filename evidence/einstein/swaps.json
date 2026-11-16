@@ -20,5 +20,27 @@
     "amountInRaw": "10000",
     "feePips": 5000,
     "gasUsed": 926604
+  },
+  {
+    "tx": "0xc777a11989dc6d59933440ee81f25f854da2ae3aa9555e13628f95cb2f3b9891",
+    "block": 115804502,
+    "timestamp": 1794836580,
+    "status": "success",
+    "swapper": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "direction": "usdg",
+    "amountInRaw": "10000",
+    "feePips": 3000,
+    "gasUsed": 964832
+  },
+  {
+    "tx": "0xfbce7e4b504723ce32bac06cc00f6d42865ad0b3b2bdfb8b48001ce91774df24",
+    "block": 115805327,
+    "timestamp": 1794836664,
+    "status": "success",
+    "swapper": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "direction": "usdg",
+    "amountInRaw": "10000",
+    "feePips": 3000,
+    "gasUsed": 945429
   }
 ]
