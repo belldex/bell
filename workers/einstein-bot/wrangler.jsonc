@@ -1,0 +1,44 @@
+{
+  "$schema": "../keeper-b/node_modules/wrangler/config-schema.json",
+  "name": "bell-einstein-bot",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-24",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BOT_DO",
+        "class_name": "BotState"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "BotState"
+      ]
+    }
+  ],
+  "vars": {
+    "HOOK": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+    "POOL_ID": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+    "ROUTER": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+    "POOL_MANAGER": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+    "AUCTION": "0xE24092Ed409DfE4edA17c80801f989f2c5D4Ac17",
+    "USDG": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+    "NVDA": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+    "NVDA_ASSET_ID": "0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7",
+    "CALENDAR_REGISTRY": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

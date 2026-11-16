@@ -1,0 +1,196 @@
+[
+ {
+  "type": "function",
+  "name": "nonces",
+  "inputs": [
+   {
+    "name": "",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "swap",
+  "inputs": [
+   {
+    "name": "request",
+    "type": "tuple",
+    "internalType": "struct SwapRequest",
+    "components": [
+     {
+      "name": "hook",
+      "type": "address",
+      "internalType": "address"
+     },
+     {
+      "name": "zeroForOne",
+      "type": "bool",
+      "internalType": "bool"
+     },
+     {
+      "name": "exactInput",
+      "type": "bool",
+      "internalType": "bool"
+     },
+     {
+      "name": "amountSpecified",
+      "type": "uint128",
+      "internalType": "uint128"
+     },
+     {
+      "name": "limitAmount",
+      "type": "uint128",
+      "internalType": "uint128"
+     },
+     {
+      "name": "sqrtPriceLimitX96",
+      "type": "uint160",
+      "internalType": "uint160"
+     },
+     {
+      "name": "recipient",
+      "type": "address",
+      "internalType": "address"
+     },
+     {
+      "name": "nonce",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "deadline",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "expectedConfigHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "wrapInput",
+      "type": "bool",
+      "internalType": "bool"
+     },
+     {
+      "name": "unwrapOutput",
+      "type": "bool",
+      "internalType": "bool"
+     },
+     {
+      "name": "unwrapRefund",
+      "type": "bool",
+      "internalType": "bool"
+     },
+     {
+      "name": "oracleUpdates",
+      "type": "tuple[]",
+      "internalType": "struct OraclePullUpdate[]",
+      "components": [
+       {
+        "name": "assetId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+       },
+       {
+        "name": "directSample",
+        "type": "tuple",
+        "internalType": "struct SourceSample",
+        "components": [
+         {
+          "name": "descriptorId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+         },
+         {
+          "name": "feedId",
+          "type": "bytes32",
+          "internalType": "bytes32"
+         },
+         {
+          "name": "phase",
+          "type": "uint8",
+          "internalType": "uint8"
+         },
+         {
+          "name": "price18",
+          "type": "uint128",
+          "internalType": "uint128"
+         },
+         {
+          "name": "observedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+         },
+         {
+          "name": "inputAt",
+          "type": "uint64",
+          "internalType": "uint64"
+         },
+         {
+          "name": "validFrom",
+          "type": "uint64",
+          "internalType": "uint64"
+         },
+         {
+          "name": "expiresAt",
+          "type": "uint64",
+          "internalType": "uint64"
+         },
+         {
+          "name": "validUntil",
+          "type": "uint64",
+          "internalType": "uint64"
+         },
+         {
+          "name": "reportHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+         }
+        ]
+       },
+       {
+        "name": "directSignature",
+        "type": "bytes",
+        "internalType": "bytes"
+       },
+       {
+        "name": "reports",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
+       },
+       {
+        "name": "closeBoundaryHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "amountIn",
+    "type": "uint128",
+    "internalType": "uint128"
+   },
+   {
+    "name": "amountOut",
+    "type": "uint128",
+    "internalType": "uint128"
+   }
+  ],
+  "stateMutability": "payable"
+ }
+]
