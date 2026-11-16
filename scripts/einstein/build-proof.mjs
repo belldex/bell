@@ -119,7 +119,7 @@ if (firstPool?.status === 'success') {
   const p2 = claims.find((c) => c.id === 'P2');
   p2.checks.push({ kind: 'storageZero', label: 'Einstein pool hook', address: firstPool.hook, slots: EIP1967 });
   p2.passNote = 'EIP-1967 slots are zero on all 15 deployed contracts and on the first pool hook.';
-  set('P7', { pending: 'The pool exists, but no Opening Bell Auction has run. It needs the next market open and a keeper that activates the session.' });
+  set('P7', { pending: 'The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC.' });
   set('P8', { pending: 'The pool exists, but no exit has been sent on mainnet yet. On a fork of mainnet its LP removed all liquidity without touching the hook (not a mainnet proof).' });
   if (exits.length) {
     set('P8', {
@@ -130,12 +130,19 @@ if (firstPool?.status === 'success') {
   }
   set('P9', { pending: 'N5 is proven on mainnet. N1 to N4, N6 and N7 have not been sent yet.' });
   set('P11', { pending: 'The script exists and runs against mainnet. It prints PENDING for the claims that have no mainnet transaction yet.' });
-  const closed = swaps.filter((s) => s.feePips === 10000);
-  if (closed.length) {
+  const SESSION_BY_FEE = { 10000: 'CLOSED', 5000: 'OVERNIGHT', 3000: 'PRE or POST', 500: 'REGULAR' };
+  const proven = new Map();
+  for (const s of swaps) if (SESSION_BY_FEE[s.feePips] && !proven.has(s.feePips)) proven.set(s.feePips, s);
+  if (proven.size) {
+    const names = [...proven.keys()].map((f) => SESSION_BY_FEE[f]);
+    const missing = Object.entries(SESSION_BY_FEE).filter(([f]) => !proven.has(Number(f))).map(([, n]) => n);
     set('P6', {
       pending: undefined,
-      partial: 'The CLOSED session is proven on mainnet: a real swap shows 10000 pips in the Swap event. The REGULAR, PRE/POST and OVERNIGHT sessions are still pending.',
-      checks: closed.map((s) => ({ kind: 'swapFee', label: 'CLOSED swap', tx: s.tx, poolManager, expectedFee: 10000 })),
+      partial: missing.length
+        ? 'Proven on mainnet for ' + names.join(' and ') + ': a real swap shows the matching fee in the Swap event. Still pending: ' + missing.join(', ') + '.'
+        : undefined,
+      passNote: 'A real swap in each session shows the matching fee in the Swap event: ' + names.join(', ') + '.',
+      checks: [...proven].map(([fee, s]) => ({ kind: 'swapFee', label: SESSION_BY_FEE[fee] + ' swap', tx: s.tx, poolManager, expectedFee: Number(fee) })),
     });
   }
 }

@@ -217,10 +217,10 @@ export function PoolProofPage() {
         <section id="clock" className="ein-section pp-clock" data-reveal>
           <h2>Next on the clock</h2>
           <div className="pp-clock__grid">
-            <AuctionClock opensAt="2026-11-16T00:50:00Z" closesAt="2026-11-16T01:00:00Z" />
+            <AuctionClock opensAt="2026-11-23T00:50:00Z" closesAt="2026-11-23T01:00:00Z" />
             <ul className="pp-clock__list">
-              <li><b>Opening Bell Auction</b><span>A buyer and a seller, from two different wallets, put orders in during the ten minutes before the market opens. The orders clear at one price.</span></li>
-              <li><b>Sessions that open</b><span>Regular, pre, post and overnight swaps need a keeper to activate each session. A keeper for this stack is deployed and has not been tested at a session boundary yet.</span></li>
+              <li><b>Opening Bell Auction</b><span>The first cycle, on 16 November, closed with no orders because the script that places them started after the ten-minute window. The next one is the weekend close ending 23 November. A buyer and a seller, from two different wallets, put orders in during the ten minutes before the market opens, and the orders clear at one price.</span></li>
+              <li><b>Sessions that open</b><span>Regular, pre, post and overnight swaps need a keeper to activate each session. The keeper for this stack activated the overnight session on 16 November, and the pool swapped in it.</span></li>
               <li><b>Exit while paused</b><span>Needs a pause signed with both keys, so it spends one signing leaf.</span></li>
             </ul>
           </div>

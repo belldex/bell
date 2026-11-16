@@ -35,7 +35,7 @@ export function AuctionClock({ opensAt, closesAt }: { opensAt: string; closesAt:
           <span><b>{now === null ? "--" : two(s)}</b>s</span>
         </p>
       )}
-      <p className="pp-clockface__when">{state === "wait" ? `${local}, for ten minutes, 00:50 to 01:00 UTC` : "00:50 to 01:00 UTC on 16 November 2026"}</p>
+      <p className="pp-clockface__when">{state === "wait" ? `${local}, for ten minutes, 00:50 to 01:00 UTC` : `00:50 to 01:00 UTC on ${new Date(close).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}`}</p>
     </div>
   );
 }

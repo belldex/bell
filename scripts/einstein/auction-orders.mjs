@@ -39,7 +39,7 @@ const registry = parseAbi(['function auctionFor(bytes32) view returns (address)'
 const auctionAbi = parseAbi([
   'function currentStage() view returns (uint8)', 'function cycleId() view returns (uint64)', 'function openTime() view returns (uint64)',
   'function submitOrder(bool isBuyer, uint128 amountIn, uint160 limitPriceX96) returns (uint32)',
-  'function settle()', 'function claimUnfilled(uint64 cycle, uint32 id)',
+  'function settle()', 'function claimUnfilled(uint64 cycle, uint32 id)', 'function armNext() returns (bool)',
   'function indicativeClearing() view returns (uint160 priceX96, uint128 matchedBase)',
   'function cycleSummary(uint64) view returns (uint64 cycleOpenTime, uint64 deadline, uint8 cycleStage, uint160 priceX96, uint128 matchedBase, bool finalized)',
   'event OrderSubmitted(uint64 indexed cycleId, uint32 indexed orderId, address indexed owner, bool isBuyer, uint128 amountIn, uint160 limitPriceX96)',
@@ -86,6 +86,11 @@ if (command === 'status') {
   if (broadcast) for (const [label, fn] of plan) { await fn(); log('done:', label); }
 } else if (command === 'run') {
   log(`waiting for the order window of auction ${auction}`);
+  // A finished cycle has to be armed for the next CLOSED to open transition. Anyone may call armNext, and it does nothing outside CLOSED.
+  for (let i = 0; i < 2000 && [0, 4, 5].includes(await stage()); i += 1) {
+    try { const t = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'armNext' }); log('armNext sent', t.hash); } catch (e) { /* not armable yet */ }
+    if ([0, 4, 5].includes(await stage())) await new Promise((r) => setTimeout(r, 60_000)); else break;
+  }
   while ((await stage()) !== 2) {
     const s = await stage();
     if (s > 2) throw new Error(`the order window has passed (stage ${STAGES[s]})`);
