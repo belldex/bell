@@ -221,7 +221,7 @@ export function PoolProofPage() {
             <ul className="pp-clock__list">
               <li><b>Opening Bell Auction</b><span>The first cycle, on 16 November, closed with no orders because the script that places them started after the ten-minute window. The next one is the weekend close ending 23 November. A buyer and a seller, from two different wallets, put orders in during the ten minutes before the market opens, and the orders clear at one price.</span></li>
               <li><b>Sessions that open</b><span>Regular, pre, post and overnight swaps need a keeper to activate each session. The keeper for this stack activated the overnight session on 16 November, and the pool swapped in it.</span></li>
-              <li><b>Exit while paused</b><span>Needs a pause signed with both keys, so it spends one signing leaf.</span></li>
+              <li><b>Pre and regular session swaps</b><span>The pool opens its pre session at 09:00 UTC and its regular session at 14:30 UTC on 16 November. A swap is queued for each, and the fee in the Swap event is what counts.</span></li>
             </ul>
           </div>
         </section>
