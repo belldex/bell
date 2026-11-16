@@ -157,6 +157,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/run' && request.method === 'POST') {
+      if (!env.BOT_TOKEN || request.headers.get('x-bot-token') !== env.BOT_TOKEN) return new Response('forbidden', { status: 403 });
       try { return Response.json(await run(env, Math.floor(Date.now() / 1000))); } catch (e) { return Response.json({ failure: String(e?.message ?? e).slice(0, 400) }, { status: 500 }); }
     }
     if (url.pathname === '/state') return env.BOT_DO.get(env.BOT_DO.idFromName('einstein-bot')).fetch('https://do/state');
