@@ -84,3 +84,37 @@ test('v3 Evolve proof covers E1 to E9 and a run that has not started carries no 
   }
   assert.ok(v3.limits.some((l) => /BELL loses a run/.test(l)), 'the limits must say a loss is shown as a loss');
 });
+
+import { decideArb, humanState } from '../../../scripts/einstein/v3-evolve/arb.mjs';
+
+test('the bot buys until the price after the trade, with the fee on top, reaches the reference', () => {
+  const L = 5_000; // human liquidity
+  const d = decideArb({ price: 160, liquidity: L, feePips: 3000, ref: 165, maxUsdg: 1e9, minUsdg: 0.01 });
+  assert.equal(d.side, 'buyNvda');
+  const f = 0.003;
+  const newSqrt = Math.sqrt(160) + (d.amountIn * (1 - f)) / L;
+  assert.ok(Math.abs(newSqrt ** 2 / (1 - f) - 165) < 1e-6, `ended at ${newSqrt ** 2 / (1 - f)}`);
+});
+
+test('the bot sells when the pool is dearer than the reference, and does nothing inside the fee band', () => {
+  const sell = decideArb({ price: 170, liquidity: 5000, feePips: 3000, ref: 165, maxUsdg: 1e9 });
+  assert.equal(sell.side, 'sellNvda');
+  assert.equal(sell.token, 'NVDA');
+  assert.equal(decideArb({ price: 165.2, liquidity: 5000, feePips: 3000, ref: 165, maxUsdg: 1e9 }).side, 'none');
+});
+
+test('the same rule gives each pool its own trade only because their fees differ, and the cap is the same', () => {
+  const state = { price: 160, liquidity: 5000, ref: 166, maxUsdg: 50 };
+  const bellClosed = decideArb({ ...state, feePips: 10000 });
+  const control = decideArb({ ...state, feePips: 3000 });
+  assert.ok(bellClosed.amountIn <= 50 && control.amountIn <= 50);
+  assert.ok(control.amountIn >= bellClosed.amountIn, 'a higher fee never makes the bot trade more');
+  assert.equal(decideArb({ ...state, ref: 160.5, feePips: 10000 }).side, 'none', 'the 1% CLOSED fee turns this small gap away');
+});
+
+test('raw pool state converts to a price and liquidity in human units', () => {
+  const sqrt = BigInt(Math.round(Math.sqrt((1 / 160) * 1e12) * 2 ** 96)); // NVDA raw per USDG raw at 160 USDG per NVDA
+  const h = humanState({ sqrtPriceX96: sqrt, liquidity: 267828720760n, usdgIsCurrency0: true });
+  assert.ok(Math.abs(h.price - 160) < 1e-6);
+  assert.ok(h.liquidity > 0);
+});
