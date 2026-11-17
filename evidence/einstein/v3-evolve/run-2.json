@@ -1,0 +1,7 @@
+{
+  "run": 2,
+  "label": "Thanksgiving 25 to 30 November",
+  "status": "scheduled",
+  "window": { "startTs": 1795640400, "endTs": 1796050800 },
+  "note": "Starts after Run 1 is published."
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Einstein Hooks v3 Evolve",
+  "subtitle": "LP economics, tested on mainnet",
+  "lockedBeforeRun": true,
+  "question": "Over a real weekend, does an LP in a BELL pool end up with more value than an LP in a plain Uniswap v4 pool with the same capital and range?",
+  "design": {
+    "pair": "NVDA/USDG",
+    "bell": { "hook": "Einstein hook", "fee": "session based: 5, 30, 50 and 100 bps" },
+    "control": { "hook": "none (plain Uniswap v4)", "fee": "fixed 30 bps" },
+    "capital": "the same USD amount in both pools, same ticks, seeded in the same block or the next",
+    "flow": ["organic: swaps from outside wallets, counted as they come", "controlled: one public bot trades both pools toward the same reference price with the same logic and the same maximum size"]
+  },
+  "windows": [
+    { "run": 1, "label": "Weekend 20 to 23 November", "startTs": 1795208400, "endTs": 1795446000, "from": "Fri 20 Nov 16:00 ET", "to": "Mon 23 Nov 10:00 ET" },
+    { "run": 2, "label": "Thanksgiving 25 to 30 November", "startTs": 1795640400, "endTs": 1796050800, "from": "Wed 25 Nov 16:00 ET", "to": "Mon 30 Nov 10:00 ET" }
+  ],
+  "referencePrice": {
+    "source": "Chainlink NVDA feed on Robinhood Chain (latestRoundData)",
+    "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+    "perSwap": "The live feed round when it is at most 6 hours old at the swap. Otherwise the first round the feed publishes after the swap, which is the reopen price. The feed holds its last price over a weekend, so a stale read is never used as if it were fresh.",
+    "start": "The feed at the window start block.",
+    "end": "The feed at the last block at or before Monday 10:00 ET. It must be a fresh round, or claim E3 does not pass."
+  },
+  "metrics": {
+    "feesEarned": "For every Swap event: input amount times the event fee, times the position's share of pool liquidity (zero when the pool tick is outside its range). Fees paid in NVDA are valued at the end reference price.",
+    "lvr": "For every Swap event: (reference price minus execution price, with the fee taken out) times the NVDA the swapper received, times the position's share. A negative number means the LP gained.",
+    "valueVsHold": "Position value at the end price, plus fees earned, minus the starting tokens valued at the end price. Position value is the liquidity's token amounts at the last Swap event's price.",
+    "netLpResult": "valueVsHold, in bps of starting capital. The headline is BELL minus control, in bps of capital.",
+    "blockedFlow": "Swaps the BELL pool refused, each linked to its reverted transaction with the error name."
+  },
+  "notAllowed": ["picking a sub-window", "changing the reference price after the fact", "leaving out a session that looks bad", "deleting a run"],
+  "limits": [
+    "One asset and one weekend per run. Not a guarantee for every market or every weekend.",
+    "Part of the flow comes from a controlled bot, labelled separately from organic flow.",
+    "The control is one fixed fee tier (30 bps). Other tiers could do better or worse.",
+    "If BELL loses a run, the page says so in the verdict line.",
+    "Not an audit and not financial advice."
+  ]
+}

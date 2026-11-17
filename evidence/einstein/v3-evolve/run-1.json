@@ -1,0 +1,7 @@
+{
+  "run": 1,
+  "label": "Weekend 20 to 23 November",
+  "status": "scheduled",
+  "window": { "startTs": 1795208400, "endTs": 1795446000 },
+  "note": "Pools are not seeded yet. This file is filled in with the pool ids, positions and bot address when they are."
+}

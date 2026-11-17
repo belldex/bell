@@ -270,6 +270,7 @@ export function PoolProofPage() {
           </p>
           <nav aria-label="Related">
             <a href="/einstein/">Einstein Hooks v2</a>
+            <a href="/einstein/v3-evolve/">v3 Evolve: LP economics</a>
             <a href="/proof/">Exit proof</a>
             <a href="/">Home</a>
           </nav>
