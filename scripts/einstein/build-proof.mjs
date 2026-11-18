@@ -147,7 +147,7 @@ if (firstPool?.status === 'success') {
     });
   }
 
-  set('P11', { pending: 'The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.' });
+  set('P11', { pending: 'The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.' });
   const SESSION_BY_FEE = { 10000: 'CLOSED', 5000: 'OVERNIGHT', 3000: 'PRE or POST', 500: 'REGULAR' };
   const proven = new Map();
   for (const s of swaps) if (SESSION_BY_FEE[s.feePips] && !proven.has(s.feePips)) proven.set(s.feePips, s);

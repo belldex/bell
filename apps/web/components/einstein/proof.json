@@ -651,11 +651,11 @@
       "title": "Anyone can check all of this",
       "question": "Can I check all of this myself?",
       "passes": "verify-einstein-pool prints PASS for P2 to P9 from a clean clone against a public RPC.",
-      "pending": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.",
+      "pending": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.",
       "checks": [],
       "result": {
         "verdict": "PENDING",
-        "note": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November. It will print PASS for P2 to P9 once the pre and regular session swaps and the auction are on chain.",
+        "note": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.",
         "gas": []
       }
     }
@@ -795,5 +795,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-16T15:02:07.391Z"
+  "lastRun": "2026-11-18T04:30:41.254Z"
 }
