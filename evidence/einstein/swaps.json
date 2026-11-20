@@ -8,7 +8,9 @@
     "direction": "usdg",
     "amountInRaw": "10000",
     "feePips": 10000,
-    "gasUsed": 976305
+    "gasUsed": 976305,
+    "ts": 1794682232,
+    "session": "CLOSED"
   },
   {
     "tx": "0x665f73809e5f445b5c77001793c5790d12354a24b17c73f53692d83255f64e47",
@@ -19,7 +21,9 @@
     "direction": "usdg",
     "amountInRaw": "10000",
     "feePips": 5000,
-    "gasUsed": 926604
+    "gasUsed": 926604,
+    "ts": 1794796817,
+    "session": "OVERNIGHT"
   },
   {
     "tx": "0xc777a11989dc6d59933440ee81f25f854da2ae3aa9555e13628f95cb2f3b9891",
@@ -30,7 +34,9 @@
     "direction": "usdg",
     "amountInRaw": "10000",
     "feePips": 3000,
-    "gasUsed": 964832
+    "gasUsed": 964832,
+    "ts": 1794836580,
+    "session": "PRE"
   },
   {
     "tx": "0xfbce7e4b504723ce32bac06cc00f6d42865ad0b3b2bdfb8b48001ce91774df24",
@@ -41,7 +47,9 @@
     "direction": "usdg",
     "amountInRaw": "10000",
     "feePips": 3000,
-    "gasUsed": 945429
+    "gasUsed": 945429,
+    "ts": 1794836664,
+    "session": "PRE"
   },
   {
     "tx": "0x8d0b130ef896ba95a79cb591569eadafe903dbeeb87ebfdc133d8a553d3b53db",
@@ -52,6 +60,21 @@
     "direction": "usdg",
     "amountInRaw": "10000",
     "feePips": 500,
-    "gasUsed": 932430
+    "gasUsed": 932430,
+    "ts": 1794840306,
+    "session": "REGULAR"
+  },
+  {
+    "tx": "0x9c73bce50356c0b79f9f8a368dbcab95704847b556426c693b24db9fb1381dfe",
+    "block": 118528153,
+    "timestamp": 1795122907,
+    "status": "success",
+    "swapper": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "direction": "usdg",
+    "amountInRaw": "10000",
+    "feePips": 3000,
+    "gasUsed": 944619,
+    "ts": 1795122907,
+    "session": "POST"
   }
 ]

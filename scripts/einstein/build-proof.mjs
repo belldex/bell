@@ -148,19 +148,20 @@ if (firstPool?.status === 'success') {
   }
 
   set('P11', { pending: 'The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.' });
-  const SESSION_BY_FEE = { 10000: 'CLOSED', 5000: 'OVERNIGHT', 3000: 'PRE or POST', 500: 'REGULAR' };
+  // A swap's session comes from the calendar at its block time (the session field of swaps.json), not from its fee: PRE and POST both charge 3000.
+  const FEE_OF = { CLOSED: 10000, OVERNIGHT: 5000, PRE: 3000, POST: 3000, REGULAR: 500 };
   const proven = new Map();
-  for (const s of swaps) if (SESSION_BY_FEE[s.feePips] && !proven.has(s.feePips)) proven.set(s.feePips, s);
+  for (const s of swaps) if (FEE_OF[s.session] === Number(s.feePips) && !proven.has(s.session)) proven.set(s.session, s);
   if (proven.size) {
-    const names = [...proven.keys()].map((f) => SESSION_BY_FEE[f]);
-    const missing = Object.entries(SESSION_BY_FEE).filter(([f]) => !proven.has(Number(f))).map(([, n]) => n);
+    const names = [...proven.keys()];
+    const missing = Object.keys(FEE_OF).filter((n) => !proven.has(n));
     set('P6', {
       pending: undefined,
       partial: missing.length
         ? 'Proven on mainnet for ' + names.join(' and ') + ': a real swap shows the matching fee in the Swap event. Still pending: ' + missing.join(', ') + '.'
         : undefined,
       passNote: 'A real swap in each session shows the matching fee in the Swap event: ' + names.join(', ') + '.',
-      checks: [...proven].map(([fee, s]) => ({ kind: 'swapFee', label: SESSION_BY_FEE[fee] + ' swap', tx: s.tx, poolManager, expectedFee: Number(fee) })),
+      checks: [...proven].map(([session, s]) => ({ kind: 'swapFee', label: session + ' swap', tx: s.tx, poolManager, expectedFee: FEE_OF[session] })),
     });
   }
 }

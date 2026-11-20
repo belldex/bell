@@ -439,7 +439,7 @@
         },
         {
           "kind": "swapFee",
-          "label": "PRE or POST swap",
+          "label": "PRE swap",
           "tx": "0xc777a11989dc6d59933440ee81f25f854da2ae3aa9555e13628f95cb2f3b9891",
           "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
           "expectedFee": 3000
@@ -450,12 +450,19 @@
           "tx": "0x8d0b130ef896ba95a79cb591569eadafe903dbeeb87ebfdc133d8a553d3b53db",
           "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
           "expectedFee": 500
+        },
+        {
+          "kind": "swapFee",
+          "label": "POST swap",
+          "tx": "0x9c73bce50356c0b79f9f8a368dbcab95704847b556426c693b24db9fb1381dfe",
+          "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+          "expectedFee": 3000
         }
       ],
-      "passNote": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE or POST, REGULAR.",
+      "passNote": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE, REGULAR, POST.",
       "result": {
         "verdict": "PASS",
-        "note": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE or POST, REGULAR.",
+        "note": "A real swap in each session shows the matching fee in the Swap event: CLOSED, OVERNIGHT, PRE, REGULAR, POST.",
         "gas": [
           {
             "label": "CLOSED swap",
@@ -466,12 +473,16 @@
             "gasUsed": 926604
           },
           {
-            "label": "PRE or POST swap",
+            "label": "PRE swap",
             "gasUsed": 964832
           },
           {
             "label": "REGULAR swap",
             "gasUsed": 932430
+          },
+          {
+            "label": "POST swap",
+            "gasUsed": 944619
           }
         ]
       }
@@ -795,5 +806,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-18T04:30:41.254Z"
+  "lastRun": "2026-11-20T02:13:05.153Z"
 }
