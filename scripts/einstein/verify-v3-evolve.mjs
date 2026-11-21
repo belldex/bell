@@ -11,7 +11,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { rpcFactory, runProof } from './verify-einstein-pool.mjs';
-import { buildRun, feedAt } from './v3-evolve/chain.mjs';
+import { buildRun, feedAt, blockTime } from './v3-evolve/chain.mjs';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 const INITIALIZE = '0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438';
@@ -35,10 +35,16 @@ export async function verifyRun(run, rpc, root = '.') {
 
   const sameTicks = bell.tickLower === control.tickLower && bell.tickUpper === control.tickUpper;
   const capitalGap = Math.abs(b.startCapital - c.startCapital);
+  // Seeded close together in time with no swap on either pool in between, so both start from the same state. (Blocks here are a fraction
+  // of a second, so "within 2 blocks" cannot be met by two separate transactions; the test is the state, not the block count.)
   const seedGap = Math.abs(bell.seedBlock - control.seedBlock);
-  out.E1 = capitalGap <= 1 && sameTicks && seedGap <= 2
-    ? { verdict: 'PASS', note: `capital ${b.startCapital} and ${c.startCapital} USDG (gap ${capitalGap.toFixed(4)}), same ticks, seeded ${seedGap} blocks apart` }
-    : { verdict: 'FAIL', note: `capital gap ${capitalGap.toFixed(4)} USDG, same ticks ${sameTicks}, seed gap ${seedGap} blocks` };
+  const seedSeconds = Math.abs(await blockTime(rpc, bell.seedBlock) - await blockTime(rpc, control.seedBlock));
+  const lastSeed = Math.max(bell.seedBlock, control.seedBlock);
+  const firstSwap = Math.min(...[...b.rows, ...c.rows].map((x) => x.block), Infinity);
+  const quiet = firstSwap > lastSeed;
+  out.E1 = capitalGap <= 1 && sameTicks && seedSeconds <= 120 && quiet
+    ? { verdict: 'PASS', note: `capital ${b.startCapital} and ${c.startCapital} USDG (gap ${capitalGap.toFixed(4)}), same ticks, seeded ${seedGap} blocks (${seedSeconds} s) apart, and no swap on either pool before both were seeded` }
+    : { verdict: 'FAIL', note: `capital gap ${capitalGap.toFixed(4)} USDG, same ticks ${sameTicks}, seed gap ${seedSeconds} s, no swap before both seeded ${quiet}` };
 
   const hooks = [await initializedWith(rpc, cfg, bell), await initializedWith(rpc, cfg, control)];
   out.E2 = hooks[1] === ZERO && hooks[0] === bell.hook.toLowerCase()
@@ -47,7 +53,9 @@ export async function verifyRun(run, rpc, root = '.') {
 
   const end = await feedAt(rpc, cfg.chain.feed, run.result.blocks.end);
   const r = run.result.reference.end;
-  out.E3 = r.fresh && end.roundId === r.roundId && near(end.price, r.price)
+  const ended = Date.now() / 1000 > run.window.endTs;
+  out.E3 = !ended && run.status === 'live' ? { verdict: 'PENDING', note: 'The reference price is fixed when the run ends.' }
+    : r.fresh && end.roundId === r.roundId && near(end.price, r.price)
     ? { verdict: 'PASS', note: `feed round ${end.roundId} at ${end.price} read again at block ${run.result.blocks.end}, published ${end.updatedAt}` }
     : { verdict: 'FAIL', note: `end round fresh ${r.fresh}, replay read ${end.roundId} at ${end.price}` };
 
@@ -57,17 +65,18 @@ export async function verifyRun(run, rpc, root = '.') {
   };
   cmp('E4', 'feesEarned', 'fees earned'); cmp('E5', 'lvr', 'LVR'); cmp('E6', 'netBps', 'net LP result in bps');
 
-  const src = cfg.bot?.sourceFile && existsSync(`${root}/${cfg.bot.sourceFile}`) ? createHash('sha256').update(readFileSync(`${root}/${cfg.bot.sourceFile}`)).digest('hex') : null;
+  const src = cfg.bot?.sourceFile && existsSync(`${root}/${cfg.bot.sourceFile}`) ? createHash('sha256').update(readFileSync(`${root}/${cfg.bot.sourceFile}`, 'utf8').replaceAll('\r\n', '\n')).digest('hex') : null;
   const botRows = [...b.rows, ...c.rows].filter((x) => x.kind === 'bot');
   const tooBig = botRows.filter((x) => x.inToken === 'USDG' && x.in > cfg.bot.maxUsdg + 1e-9);
   const botSides = [b, c].map((p) => p.rows.filter((x) => x.kind === 'bot').length);
-  out.E7 = src && src === cfg.bot.sourceSha256 && !tooBig.length && botSides[0] > 0 && botSides[1] > 0
+  out.E7 = botSides[0] + botSides[1] === 0 && run.status === 'live' ? { verdict: 'PENDING', note: 'The bot has not traded yet.' }
+    : src && src === cfg.bot.sourceSha256 && !tooBig.length && botSides[0] > 0 && botSides[1] > 0
     ? { verdict: 'PASS', note: `bot source matches ${cfg.bot.sourceSha256.slice(0, 12)}…, ${botSides[0]} bot swaps on BELL and ${botSides[1]} on the control, none above ${cfg.bot.maxUsdg} USDG` }
     : { verdict: 'FAIL', note: `source hash ${src ? src.slice(0, 12) : 'missing'} vs ${cfg.bot?.sourceSha256?.slice(0, 12)}, over-size ${tooBig.length}, bot swaps ${botSides.join(' and ')}` };
 
   if (!cfg.blocked?.length) out.E8 = { verdict: 'PENDING', note: 'No refused swap is on record for this run.' };
   else {
-    const res = await runProof({ chain: { id: 4663 }, claims: [{ id: 'E8', checks: cfg.blocked.map((x) => ({ kind: 'revertReason', tx: x.tx, selector: x.selector, error: x.error, label: x.error })) }] }, rpc);
+    const res = await runProof({ chain: { id: cfg.chain?.id ?? 4663 }, claims: [{ id: 'E8', checks: cfg.blocked.map((x) => ({ kind: 'revertReason', tx: x.tx, selector: x.selector, error: x.error, label: x.error })) }] }, rpc);
     out.E8 = { verdict: res[0].verdict === 'PASS' ? 'PASS' : 'FAIL', note: res[0].note };
   }
   const all = ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'];
@@ -83,9 +92,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (!url) { console.error('usage: verify-v3-evolve.mjs --rpc <public RPC url> --run 1'); process.exit(2); }
   const rpc = await rpcFactory(url);
   const chainId = parseInt(await rpc('eth_chainId', []), 16);
-  if (chainId !== proof.chain.id) { console.error(`RPC is chain ${chainId}, expected ${proof.chain.id}`); process.exit(2); }
   const run = proof.runs.find((x) => x.id === Number(arg('run', '1')));
   if (!run) { console.error('no such run in proof.json'); process.exit(2); }
+  const expectedChain = run.config?.chain?.id ?? proof.chain.id;
+  if (chainId !== expectedChain) { console.error(`RPC is chain ${chainId}, expected ${expectedChain} for run ${run.id}`); process.exit(2); }
   const res = await verifyRun(run, rpc);
   for (const [id, r] of Object.entries(res)) console.log(`${id.padEnd(3)} ${r.verdict.padEnd(7)} ${r.note}`);
   const vals = Object.values(res);

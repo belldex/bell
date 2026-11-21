@@ -23,7 +23,7 @@ const rpc = rpcUrl ? await rpcFactory(rpcUrl) : null;
 const doRun = process.argv.includes('--run');
 
 const CLAIMS = [
-  ['E1', 'Both pools are set up the same way', 'Initialize and seed transactions for both, position ids, ticks and amounts.', 'Capital within 1 USDG, same ticks, seeded within 2 blocks.'],
+  ['E1', 'Both pools are set up the same way', 'Initialize and seed transactions for both, position ids, ticks and amounts.', 'Capital within 1 USDG, same ticks, both seeded within 120 seconds and no swap on either pool before both were seeded.'],
   ['E2', 'The control pool has no hook', 'The control pool key, read from its Initialize event.', 'Hook address is the zero address.'],
   ['E3', 'The reference price is fixed and public', 'The Chainlink round id and price at Monday 10:00 ET, recorded in proof.json.', 'The replay reads the same round, and it is fresh.'],
   ['E4', 'Fees are counted correctly', 'Every Swap event of both pools in the window.', 'The replay total equals the page total.'],
@@ -38,7 +38,7 @@ const files = readdirSync(dir).filter((f) => /^run-\d+\.json$/.test(f)).sort((a,
 const runs = [];
 for (const f of files) {
   const run = read(f);
-  const entry = { id: run.run, label: run.label, status: run.status, window: run.window, note: run.note ?? null, postponed: run.postponed ?? false };
+  const entry = { id: run.run, label: run.label, status: run.status, window: run.window, note: run.note ?? null, postponed: run.postponed ?? false, network: run.network ?? 'mainnet', methodCommit: run.methodCommit ?? null };
   if (run.config) {
     entry.config = run.config;
     if (rpc) { entry.result = await buildRun(run.config, rpc); entry.generatedAt = new Date().toISOString(); }

@@ -33,15 +33,16 @@ type Result = {
 };
 type PoolCfg = { poolId: string; hook: string; positionId: string; tickLower: number; tickUpper: number; seedTx: string; seedBlock: number; seed: { usdg: string; nvda: string } };
 type Run = {
-  id: number; label: string; postponed?: boolean; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
+  id: number; label: string; network?: "mainnet" | "testnet"; methodCommit?: string | null; postponed?: boolean; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
   generatedAt?: string; result?: Result;
-  config?: { pools: { bell: PoolCfg; control: PoolCfg }; bot: { addresses: string[]; sourceFile: string; sourceUrl?: string; sourceSha256: string; maxUsdg: number }; blocked?: { tx: string; error: string }[] };
+  config?: { chain?: { id: number; name: string; explorer: string; publicRpc: string; feedKind?: string }; pools: { bell: PoolCfg; control: PoolCfg }; bot: { addresses: string[]; sourceFile: string; sourceUrl?: string; sourceSha256: string; maxUsdg: number }; blocked?: { tx: string; error: string }[] };
   replay?: Record<string, { verdict: Verdict; note: string }>;
 };
 
 const runs = proof.runs as unknown as Run[];
-const explorer = proof.chain.explorer;
 const current = [...runs].reverse().find((r) => r.status !== "scheduled") ?? runs[0];
+const explorer = current.config?.chain?.explorer ?? proof.chain.explorer;
+const testnet = current.network === "testnet";
 const short = (h: string, a = 8, b = 6) => `${h.slice(0, a)}…${h.slice(-b)}`;
 const bps = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(1)} bps`;
 const usd = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(n).toFixed(Math.abs(n) < 1 ? 4 : 2)}`;
@@ -134,7 +135,7 @@ export function V3EvolvePage() {
       <main id="main" className="legal__main ein__main">
         <header className="ein-hero pp-hero">
           <div className="ein-hero__copy">
-            <p className="ein-tag"><span>Einstein Hooks v3 Evolve</span><b>LP economics, tested on mainnet</b></p>
+            <p className="ein-tag"><span>Einstein Hooks v3 Evolve</span><b>{testnet ? "LP economics, tested on Robinhood testnet" : "LP economics, tested on mainnet"}</b></p>
             <h1>Does the LP end up <em>better off?</em></h1>
             <p className="ein-lede">{proof.question}</p>
           </div>
@@ -143,6 +144,7 @@ export function V3EvolvePage() {
         <section id="verdict" className="ein-section ve-verdict" data-reveal data-status={current.status}>
           <p className="ve-verdict__status">{current.postponed && current.status === "scheduled" ? "Postponed" : current.status === "scheduled" ? "Scheduled" : current.status === "live" ? "Run in progress" : "Result"}</p>
           <p className="ve-verdict__line">{verdictLine(current)}</p>
+          {testnet && <p className="ein-fine"><b>Testnet run.</b> Test tokens, a fixture price feed that follows a published seeded path, and the Einstein stack redeployed on Robinhood testnet. It tests the machinery. It is not a mainnet result, and the mainnet Run 1 is still postponed until the pools are funded.</p>}
           {r && r.pendingReferences > 0 && <p className="ein-fine">{r.pendingReferences} swap(s) are left out of LVR until the feed publishes its next round.</p>}
         </section>
 
@@ -192,7 +194,9 @@ export function V3EvolvePage() {
           {current.config ? (
             <dl className="pp-facts">
               <div><dt>BELL pool</dt><dd>{link(`address/${current.config.pools.bell.hook}`, short(current.config.pools.bell.hook, 10, 8))}</dd></div>
-              <div><dt>Hook contract</dt><dd>Einstein v2, as deployed. This is not a new hook contract.</dd></div>
+              <div><dt>Hook contract</dt><dd>{testnet ? "Einstein v2 hook, the same source as mainnet, deployed on Robinhood testnet." : "Einstein v2, as deployed. This is not a new hook contract."}</dd></div>
+              <div><dt>Reference price</dt><dd>{testnet ? <>A fixture feed that follows a seeded random path, published in <code>testnet-run-config.json</code>. Every price change is a PriceSet event on chain.</> : "Chainlink NVDA feed"}</dd></div>
+              <div><dt>Method</dt><dd>Formulas, window and bot code are committed in {current.methodCommit ? <a href={`https://github.com/belldex/bell/commit/${current.methodCommit}`} target="_blank" rel="noopener noreferrer">{String(current.methodCommit).slice(0, 8)}</a> : "a commit linked here"}, after the pools were seeded and before the first trade.</dd></div>
               <div><dt>Control pool hook</dt><dd>None (zero address)</dd></div>
               <div><dt>Range</dt><dd>ticks {current.config.pools.bell.tickLower} to {current.config.pools.bell.tickUpper}, both pools</dd></div>
               <div><dt>Seed transactions</dt><dd>{link(`tx/${current.config.pools.bell.seedTx}`, "BELL")} and {link(`tx/${current.config.pools.control.seedTx}`, "control")}</dd></div>
@@ -211,7 +215,7 @@ export function V3EvolvePage() {
         <section id="check" className="ein-section" data-reveal>
           <h2>Check it yourself</h2>
           <p className="ein-ledger__lede">Every number comes from Swap events. One script rebuilds the run from a public RPC and compares it with this page. Claims E1 to E9:</p>
-          <CopyCommand command={`git clone https://github.com/belldex/bell && cd bell\nnode scripts/einstein/verify-v3-evolve.mjs --rpc https://rpc.mainnet.chain.robinhood.com --run ${current.id}`} />
+          <CopyCommand command={`git clone https://github.com/belldex/bell && cd bell\nnode scripts/einstein/verify-v3-evolve.mjs --rpc ${current.config?.chain?.publicRpc ?? "https://rpc.mainnet.chain.robinhood.com"} --run ${current.id}`} />
           <ol className="pp-ledger">
             {proof.claims.map((c) => {
               const v = (current.replay?.[c.id]?.verdict ?? "PENDING") as Verdict;
@@ -240,7 +244,7 @@ export function V3EvolvePage() {
           <ol className="ve-history">
             {runs.map((run) => (
               <li key={run.id} data-status={run.status}>
-                <b>Run {run.id}</b><span>{run.label}</span>
+                <b>Run {run.id}</b><span>{run.label}{run.network === "testnet" ? " (testnet)" : ""}</span>
                 <span>{run.postponed && run.status === "scheduled" ? "postponed, not started" : run.status === "scheduled" ? "scheduled" : run.result ? `${run.status}, gap ${bps(run.result.verdict.gapBps)}` : run.status}</span>
               </li>
             ))}
