@@ -226,8 +226,8 @@
       "result": {
         "blocks": {
           "start": 156136089,
-          "end": 156137663,
-          "head": 156137663
+          "end": 156146389,
+          "head": 156146389
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -238,10 +238,10 @@
             "updatedAt": 1795236143
           },
           "end": {
-            "block": 156137663,
-            "roundId": "3",
-            "price": 129.99568929,
-            "updatedAt": 1795236484,
+            "block": 156146389,
+            "roundId": "9",
+            "price": 129.18760833,
+            "updatedAt": 1795238312,
             "fresh": false
           }
         },
@@ -254,8 +254,8 @@
           "lvr": 0,
           "valueVsHold": 0,
           "netBps": 0,
-          "positionValueEnd": 5979.719485,
-          "holdValueEnd": 5979.719485,
+          "positionValueEnd": 5961.196913,
+          "holdValueEnd": 5961.196913,
           "swaps": 0,
           "volume": 0,
           "organicSwaps": 0,
@@ -268,23 +268,53 @@
           "role": "control",
           "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
           "startCapital": 5979.719485,
-          "feesEarned": 0,
-          "lvr": 0,
-          "valueVsHold": 0,
-          "netBps": 0,
-          "positionValueEnd": 5979.719485,
-          "holdValueEnd": 5979.719485,
-          "swaps": 0,
-          "volume": 0,
+          "feesEarned": 0.071735,
+          "lvr": 0.121561,
+          "valueVsHold": -0.028186,
+          "netBps": -0.047136,
+          "positionValueEnd": 5961.168727,
+          "holdValueEnd": 5961.196913,
+          "swaps": 1,
+          "volume": 23.939907,
           "organicSwaps": 0,
-          "botSwaps": 0,
-          "sessions": {},
-          "series": [],
-          "rows": []
+          "botSwaps": 1,
+          "sessions": {
+            "CLOSED": {
+              "swaps": 1,
+              "volume": 23.939907,
+              "fees": 0.07167,
+              "lvr": 0.121561,
+              "organicSwaps": 0,
+              "botSwaps": 1
+            }
+          },
+          "series": [
+            {
+              "ts": 1795237768,
+              "net": -0.049892
+            }
+          ],
+          "rows": [
+            {
+              "tx": "0xd947f40f64ddc536eeb313b7aa6be31b0c81ba860b0751fbbe63edd3bc8f077c",
+              "block": 156143517,
+              "ts": 1795237768,
+              "session": "CLOSED",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.185093,
+              "execPrice": 129.72907,
+              "ref": 129.070338,
+              "lvr": 0.121561,
+              "fee": 0.07167
+            }
+          ]
         },
         "verdict": {
-          "gapBps": 0,
-          "winner": "TIE"
+          "gapBps": 0.047136,
+          "winner": "BELL"
         },
         "bands": [
           {
@@ -309,7 +339,7 @@
           }
         ]
       },
-      "generatedAt": "2026-11-21T04:48:13.700Z",
+      "generatedAt": "2026-11-21T05:18:42.794Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -325,30 +355,30 @@
         },
         "E4": {
           "verdict": "PASS",
-          "note": "fees earned: BELL 0, control 0 (matches the page)"
+          "note": "fees earned: BELL 0, control 0.071735 (matches the page)"
         },
         "E5": {
           "verdict": "PASS",
-          "note": "LVR: BELL 0, control 0 (matches the page)"
+          "note": "LVR: BELL 0, control 0.121561 (matches the page)"
         },
         "E6": {
           "verdict": "PASS",
-          "note": "net LP result in bps: BELL 0, control 0 (matches the page)"
+          "note": "net LP result in bps: BELL 0, control -0.047136 (matches the page)"
         },
         "E7": {
-          "verdict": "PENDING",
-          "note": "The bot has not traded yet."
+          "verdict": "FAIL",
+          "note": "source hash d6e42f47fa18 vs d6e42f47fa18, over-size 0, bot swaps 0 and 1"
         },
         "E8": {
           "verdict": "PENDING",
           "note": "No refused swap is on record for this run."
         },
         "E9": {
-          "verdict": "PARTIAL",
+          "verdict": "FAIL",
           "note": "Not every one of E1 to E8 passes yet."
         }
       }
     }
   ],
-  "lastBuild": "2026-11-21T04:48:16.985Z"
+  "lastBuild": "2026-11-21T05:18:46.276Z"
 }

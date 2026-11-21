@@ -4,3 +4,21 @@
 {"at":"2026-11-21T04:44:16.951Z","pool":"feed","action":"setPrice","step":0,"price":129.99568929,"tx":"0x97d08b5dca4ca059bae29e4f05f4e4c6a88537f976cc195e2730cf4e9cdaf597"}
 {"at":"2026-11-21T04:44:17.408Z","pool":"bell","action":"none","price":129.99999999956665,"ref":129.99568929,"feePips":10000,"reason":"price is inside the fee band around the reference"}
 {"at":"2026-11-21T04:44:17.593Z","pool":"control","action":"none","price":129.99999999956665,"ref":129.99568929,"feePips":3000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:49:18.811Z","pool":"feed","action":"setPrice","step":1,"price":129.7148879664622,"tx":"0xb9bce90e53551d3c9dd1678f2b120c8cec5e11ecf0ac89e9ef3ef9ede2aa8d26"}
+{"at":"2026-11-21T04:49:19.550Z","pool":"bell","action":"none","price":129.99999999956665,"ref":129.7148879664622,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:49:19.712Z","pool":"control","action":"none","price":129.99999999956665,"ref":129.7148879664622,"feePips":3000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:54:20.552Z","pool":"feed","action":"setPrice","step":2,"price":130.09307124199412,"tx":"0x38015e7167b3cc268ddcbed4212e6a536824fe33b434ef05565a00e4878b73c4"}
+{"at":"2026-11-21T04:54:20.962Z","pool":"bell","action":"none","price":129.99999999956665,"ref":130.09307124199412,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:54:21.090Z","pool":"control","action":"none","price":129.99999999956665,"ref":130.09307124199412,"feePips":3000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:59:21.774Z","pool":"feed","action":"setPrice","step":3,"price":130.1229603970117,"tx":"0xec8e27343413da7f3d654b004d624f241e05d3ceedef9dc557682794021adb51"}
+{"at":"2026-11-21T04:59:22.283Z","pool":"bell","action":"none","price":129.99999999956665,"ref":130.1229603970117,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T04:59:22.392Z","pool":"control","action":"none","price":129.99999999956665,"ref":130.1229603970117,"feePips":3000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T05:04:23.348Z","pool":"feed","action":"setPrice","step":4,"price":129.75099739609746,"tx":"0x4c0ca66f15277237f55aeaa9bf4aafe23f030cbbdf7a96220234830b65769498"}
+{"at":"2026-11-21T05:04:23.953Z","pool":"bell","action":"none","price":129.99999999956665,"ref":129.75099739609746,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T05:04:24.062Z","pool":"control","action":"none","price":129.99999999956665,"ref":129.75099739609746,"feePips":3000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T05:09:24.973Z","pool":"feed","action":"setPrice","step":5,"price":129.0703375246449,"tx":"0x5b7e7ee00d5966e28d55552f212ff3724db1620138048fcff058d2b6059ee379"}
+{"at":"2026-11-21T05:09:25.523Z","pool":"bell","action":"none","price":129.99999999956665,"ref":129.0703375246449,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T05:09:26.315Z","pool":"control","action":"sellNvda","amountIn":0.18509316127294378,"token":"NVDA","price":129.99999999956665,"ref":129.0703375246449,"feePips":3000,"simulated":true,"tx":"0xd947f40f64ddc536eeb313b7aa6be31b0c81ba860b0751fbbe63edd3bc8f077c","status":"success","error":null}
+{"at":"2026-11-21T05:14:27.527Z","pool":"feed","action":"setPrice","step":6,"price":129.18760833004845,"tx":"0x433856e7cfd64e753a3f77769799ce6bf1c2c01e0e66d8397eb2352e90943e5e"}
+{"at":"2026-11-21T05:14:28.017Z","pool":"bell","action":"none","price":129.99999999956665,"ref":129.18760833004845,"feePips":10000,"reason":"price is inside the fee band around the reference"}
+{"at":"2026-11-21T05:14:28.127Z","pool":"control","action":"none","price":129.4587141357946,"ref":129.18760833004845,"feePips":3000,"reason":"price is inside the fee band around the reference"}
