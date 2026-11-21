@@ -38,7 +38,7 @@ const files = readdirSync(dir).filter((f) => /^run-\d+\.json$/.test(f)).sort((a,
 const runs = [];
 for (const f of files) {
   const run = read(f);
-  const entry = { id: run.run, label: run.label, status: run.status, window: run.window, note: run.note ?? null };
+  const entry = { id: run.run, label: run.label, status: run.status, window: run.window, note: run.note ?? null, postponed: run.postponed ?? false };
   if (run.config) {
     entry.config = run.config;
     if (rpc) { entry.result = await buildRun(run.config, rpc); entry.generatedAt = new Date().toISOString(); }

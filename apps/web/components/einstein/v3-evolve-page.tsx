@@ -33,7 +33,7 @@ type Result = {
 };
 type PoolCfg = { poolId: string; hook: string; positionId: string; tickLower: number; tickUpper: number; seedTx: string; seedBlock: number; seed: { usdg: string; nvda: string } };
 type Run = {
-  id: number; label: string; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
+  id: number; label: string; postponed?: boolean; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
   generatedAt?: string; result?: Result;
   config?: { pools: { bell: PoolCfg; control: PoolCfg }; bot: { addresses: string[]; sourceFile: string; sourceUrl?: string; sourceSha256: string; maxUsdg: number }; blocked?: { tx: string; error: string }[] };
   replay?: Record<string, { verdict: Verdict; note: string }>;
@@ -49,6 +49,7 @@ const day = (ts: number) => new Date(ts * 1000).toLocaleString("en-US", { timeZo
 const link = (path: string, text: string) => <a href={`${explorer}/${path}`} target="_blank" rel="noopener noreferrer">{text}</a>;
 
 function verdictLine(run: Run) {
+  if (run.postponed && !run.result) return <>Run {run.id} did not start on {day(run.window.startTs)} ET. The pools were not funded in time, so nothing was seeded or measured. New dates are set before any pool is seeded.</>;
   if (run.status === "scheduled" || !run.result) return <>Run {run.id} starts {day(run.window.startTs)} ET. Nothing is measured yet, so there is no result to show.</>;
   const g = run.result.verdict.gapBps;
   const live = run.status === "live";
@@ -140,7 +141,7 @@ export function V3EvolvePage() {
         </header>
 
         <section id="verdict" className="ein-section ve-verdict" data-reveal data-status={current.status}>
-          <p className="ve-verdict__status">{current.status === "scheduled" ? "Scheduled" : current.status === "live" ? "Run in progress" : "Result"}</p>
+          <p className="ve-verdict__status">{current.postponed && current.status === "scheduled" ? "Postponed" : current.status === "scheduled" ? "Scheduled" : current.status === "live" ? "Run in progress" : "Result"}</p>
           <p className="ve-verdict__line">{verdictLine(current)}</p>
           {r && r.pendingReferences > 0 && <p className="ein-fine">{r.pendingReferences} swap(s) are left out of LVR until the feed publishes its next round.</p>}
         </section>
@@ -172,10 +173,10 @@ export function V3EvolvePage() {
             <dl className="pp-facts">
               <div><dt>BELL pool</dt><dd>NVDA/USDG, Einstein hook, session fees 0.05 to 1%</dd></div>
               <div><dt>Control pool</dt><dd>NVDA/USDG, no hook, fixed 0.30%</dd></div>
-              <div><dt>Window</dt><dd>{day(current.window.startTs)} to {day(current.window.endTs)} ET</dd></div>
+              <div><dt>Window</dt><dd>{current.postponed ? "New dates, set before the seed" : <>{day(current.window.startTs)} to {day(current.window.endTs)} ET</>}</dd></div>
               <div><dt>Reference price</dt><dd>Chainlink NVDA feed, rule fixed in advance</dd></div>
             </dl>
-            <p className="ein-fine">The charts and cards fill in when Run {current.id} starts. They read one file, and no number on this page is typed by hand.</p>
+            <p className="ein-fine">The charts and cards fill in when a run starts. They read one file, and no number on this page is typed by hand.</p>
           </section>
         )}
 
@@ -240,7 +241,7 @@ export function V3EvolvePage() {
             {runs.map((run) => (
               <li key={run.id} data-status={run.status}>
                 <b>Run {run.id}</b><span>{run.label}</span>
-                <span>{run.status === "scheduled" ? "scheduled" : run.result ? `${run.status}, gap ${bps(run.result.verdict.gapBps)}` : run.status}</span>
+                <span>{run.postponed && run.status === "scheduled" ? "postponed, not started" : run.status === "scheduled" ? "scheduled" : run.result ? `${run.status}, gap ${bps(run.result.verdict.gapBps)}` : run.status}</span>
               </li>
             ))}
           </ol>

@@ -2,6 +2,7 @@
   "run": 1,
   "label": "Weekend 20 to 23 November",
   "status": "scheduled",
+  "postponed": true,
   "window": { "startTs": 1795208400, "endTs": 1795446000 },
-  "note": "Pools are not seeded yet. This file is filled in with the pool ids, positions and bot address when they are."
+  "note": "Run 1 did not start on 20 November: the pools were not funded in time, so nothing was seeded and nothing was measured. The next window is set before any pool is seeded, and the method is committed first."
 }

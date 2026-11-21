@@ -116,7 +116,8 @@
         "startTs": 1795208400,
         "endTs": 1795446000
       },
-      "note": "Pools are not seeded yet. This file is filled in with the pool ids, positions and bot address when they are."
+      "note": "Run 1 did not start on 20 November: the pools were not funded in time, so nothing was seeded and nothing was measured. The next window is set before any pool is seeded, and the method is committed first.",
+      "postponed": true
     },
     {
       "id": 2,
@@ -126,8 +127,9 @@
         "startTs": 1795640400,
         "endTs": 1796050800
       },
-      "note": "Starts after Run 1 is published."
+      "note": "Starts after Run 1 is published.",
+      "postponed": false
     }
   ],
-  "lastBuild": "2026-11-17T15:03:26.978Z"
+  "lastBuild": "2026-11-21T01:45:09.431Z"
 }
