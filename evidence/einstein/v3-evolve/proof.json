@@ -56,7 +56,7 @@
       "id": "E1",
       "title": "Both pools are set up the same way",
       "proof": "Initialize and seed transactions for both, position ids, ticks and amounts.",
-      "passes": "Capital within 1 USDG, same ticks, seeded within 2 blocks."
+      "passes": "Capital within 1 USDG, same ticks, both seeded within 120 seconds and no swap on either pool before both were seeded."
     },
     {
       "id": "E2",
@@ -117,7 +117,9 @@
         "endTs": 1795446000
       },
       "note": "Run 1 did not start on 20 November: the pools were not funded in time, so nothing was seeded and nothing was measured. The next window is set before any pool is seeded, and the method is committed first.",
-      "postponed": true
+      "postponed": true,
+      "network": "mainnet",
+      "methodCommit": null
     },
     {
       "id": 2,
@@ -128,8 +130,225 @@
         "endTs": 1796050800
       },
       "note": "Starts after Run 1 is published.",
-      "postponed": false
+      "postponed": false,
+      "network": "mainnet",
+      "methodCommit": null
+    },
+    {
+      "id": 3,
+      "label": "Testnet run, 21 to 23 November",
+      "status": "live",
+      "window": {
+        "startTs": 1795236143,
+        "endTs": 1795446000
+      },
+      "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.",
+      "postponed": false,
+      "network": "testnet",
+      "methodCommit": "ef75480",
+      "config": {
+        "chain": {
+          "id": 46630,
+          "name": "Robinhood Chain testnet",
+          "explorer": "https://explorer.testnet.chain.robinhood.com",
+          "publicRpc": "https://rpc.testnet.chain.robinhood.com",
+          "poolManager": "0xc353daf2a37aca96ea468239d973a76020dea059",
+          "feed": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+          "feedKind": "fixture"
+        },
+        "decimals": {
+          "usdg": 6,
+          "nvda": 18
+        },
+        "window": {
+          "startTs": 1795236143,
+          "endTs": 1795446000
+        },
+        "blocks": {
+          "start": 156136089
+        },
+        "pools": {
+          "bell": {
+            "poolId": "0x9ca2b8a2b612ffda9da7121c4fe02de50b60fc3cf6e81b8d44d22be0cb63b0ed",
+            "hook": "0xb4213Cca3cE02179489b1923276110F696faECc0",
+            "positionId": "5",
+            "tickLower": -233700,
+            "tickUpper": -221640,
+            "liquidity": "1007499131878521",
+            "seed": {
+              "usdg": "3000000000",
+              "nvda": "22921679183366200000"
+            },
+            "usdgIsCurrency0": false,
+            "initSqrtPriceX96": "903340038743743729272652",
+            "seedTx": "0x98c25a9e54e7a39a75195134af6c6fd5bb0975f0a62a9563ab99d00981802f5d",
+            "seedBlock": 156136051
+          },
+          "control": {
+            "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
+            "hook": "0x0000000000000000000000000000000000000000",
+            "positionId": "see seed tx",
+            "tickLower": -233700,
+            "tickUpper": -221640,
+            "liquidity": "1007499131878521",
+            "seed": {
+              "usdg": "3000000000",
+              "nvda": "22921679183366200000"
+            },
+            "usdgIsCurrency0": false,
+            "initSqrtPriceX96": "903340038743743729272652",
+            "seedTx": "0x7d82029ba18e6d925d4783d4d9d6a52ce54a2bece5ff63686d28c361e059eebd",
+            "seedBlock": 156136089
+          }
+        },
+        "path": {
+          "seed": 20261121,
+          "sigmaDay": 0.04,
+          "stepSeconds": 300,
+          "startPrice": 129.99568929,
+          "jump": {
+            "atTs": 1795444200,
+            "pct": -2.5,
+            "note": "a gap at the Monday 09:30 ET open"
+          }
+        },
+        "bot": {
+          "addresses": [
+            "0xf3784048450e72596cd18bF079aED441894176e4"
+          ],
+          "sourceFile": "scripts/einstein/v3-evolve/testnet-bot.mjs",
+          "sourceUrl": "https://github.com/belldex/bell/blob/main/scripts/einstein/v3-evolve/testnet-bot.mjs",
+          "sourceSha256": "d6e42f47fa1875a5ffd526cb7c506615279b4f05833d61656a88aa1142e5217d",
+          "maxUsdg": 100
+        },
+        "blocked": []
+      },
+      "result": {
+        "blocks": {
+          "start": 156136089,
+          "end": 156137663,
+          "head": 156137663
+        },
+        "reference": {
+          "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
+          "start": {
+            "block": 156136089,
+            "roundId": "1",
+            "price": 129.99568929,
+            "updatedAt": 1795236143
+          },
+          "end": {
+            "block": 156137663,
+            "roundId": "3",
+            "price": 129.99568929,
+            "updatedAt": 1795236484,
+            "fresh": false
+          }
+        },
+        "pendingReferences": 0,
+        "bell": {
+          "role": "bell",
+          "poolId": "0x9ca2b8a2b612ffda9da7121c4fe02de50b60fc3cf6e81b8d44d22be0cb63b0ed",
+          "startCapital": 5979.719485,
+          "feesEarned": 0,
+          "lvr": 0,
+          "valueVsHold": 0,
+          "netBps": 0,
+          "positionValueEnd": 5979.719485,
+          "holdValueEnd": 5979.719485,
+          "swaps": 0,
+          "volume": 0,
+          "organicSwaps": 0,
+          "botSwaps": 0,
+          "sessions": {},
+          "series": [],
+          "rows": []
+        },
+        "control": {
+          "role": "control",
+          "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
+          "startCapital": 5979.719485,
+          "feesEarned": 0,
+          "lvr": 0,
+          "valueVsHold": 0,
+          "netBps": 0,
+          "positionValueEnd": 5979.719485,
+          "holdValueEnd": 5979.719485,
+          "swaps": 0,
+          "volume": 0,
+          "organicSwaps": 0,
+          "botSwaps": 0,
+          "sessions": {},
+          "series": [],
+          "rows": []
+        },
+        "verdict": {
+          "gapBps": 0,
+          "winner": "TIE"
+        },
+        "bands": [
+          {
+            "phase": "CLOSED",
+            "start": 1795236143,
+            "end": 1795395600
+          },
+          {
+            "phase": "OVERNIGHT",
+            "start": 1795395600,
+            "end": 1795424400
+          },
+          {
+            "phase": "PRE",
+            "start": 1795424400,
+            "end": 1795444200
+          },
+          {
+            "phase": "REGULAR",
+            "start": 1795444200,
+            "end": 1795446000
+          }
+        ]
+      },
+      "generatedAt": "2026-11-21T04:48:13.700Z",
+      "replay": {
+        "E1": {
+          "verdict": "PASS",
+          "note": "capital 5979.719485 and 5979.719485 USDG (gap 0.0000), same ticks, seeded 38 blocks (7 s) apart, and no swap on either pool before both were seeded"
+        },
+        "E2": {
+          "verdict": "PASS",
+          "note": "control pool hook is the zero address, BELL pool hook is 0xb4213Cca3cE02179489b1923276110F696faECc0"
+        },
+        "E3": {
+          "verdict": "PENDING",
+          "note": "The reference price is fixed when the run ends."
+        },
+        "E4": {
+          "verdict": "PASS",
+          "note": "fees earned: BELL 0, control 0 (matches the page)"
+        },
+        "E5": {
+          "verdict": "PASS",
+          "note": "LVR: BELL 0, control 0 (matches the page)"
+        },
+        "E6": {
+          "verdict": "PASS",
+          "note": "net LP result in bps: BELL 0, control 0 (matches the page)"
+        },
+        "E7": {
+          "verdict": "PENDING",
+          "note": "The bot has not traded yet."
+        },
+        "E8": {
+          "verdict": "PENDING",
+          "note": "No refused swap is on record for this run."
+        },
+        "E9": {
+          "verdict": "PARTIAL",
+          "note": "Not every one of E1 to E8 passes yet."
+        }
+      }
     }
   ],
-  "lastBuild": "2026-11-21T01:45:09.431Z"
+  "lastBuild": "2026-11-21T04:48:16.985Z"
 }
