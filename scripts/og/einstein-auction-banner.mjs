@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Draws the Opening Bell Auction countdown (1200 by 675). The cycle number, the stage and the open time are read from the auction
- * contract on mainnet when the image is made, and the hours left are computed from that open time. Nothing is typed by hand.
+ * contract on mainnet when the image is made. There is no countdown, so the image does not go stale. Nothing is typed by hand.
  *
  *   RH_MAINNET_RPC_SECONDARY=<rpc> node scripts/og/einstein-auction-banner.mjs
  */
@@ -33,6 +33,7 @@ const hoursLeft = Math.max(0, (openTs - Date.now() / 1000) / 3600);
 const hh = String(Math.floor(hoursLeft)).padStart(2, '0'); const mm = String(Math.floor((hoursLeft % 1) * 60)).padStart(2, '0');
 const utc = (ts) => new Date(ts * 1000).toISOString().slice(11, 16);
 const wib = (ts) => new Date((ts + 7 * 3600) * 1000).toISOString().slice(11, 16);
+const dayShort = new Date(openTs * 1000).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
 const date = new Date(openTs * 1000).toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric' });
 
 // Timeline from open - 20 minutes to open + 20 minutes; the order window is [open - lead, open), settlement can follow until open + timeout.
@@ -47,7 +48,7 @@ ${font('Geist Mono', 'geist-mono-v4.woff2', '400 600')}
 html,body{width:1200px;height:675px;background:#171717;color:#EEECE5;font-family:"Instrument Sans",system-ui,sans-serif;overflow:hidden;position:relative}
 .tag{position:absolute;left:68px;top:48px;display:flex;gap:14px;align-items:center;font:500 15px/1 "Geist Mono",monospace;letter-spacing:.16em;text-transform:uppercase;color:#B7B4AD}
 .tag b{padding:9px 13px;border:2px solid #C7444F;color:#E27478;font-weight:500}
-.big{position:absolute;left:62px;top:96px;font:650 190px/1 "Instrument Sans",sans-serif;letter-spacing:-.06em;color:#EEECE5}
+.big{position:absolute;left:62px;top:100px;font:650 150px/1 "Instrument Sans",sans-serif;letter-spacing:-.06em;color:#EEECE5}
 .big small{font:500 22px/1 "Geist Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:#858177;margin-left:18px;letter-spacing:.1em}
 .line{position:absolute;left:68px;top:300px;width:1064px;font:650 34px/1.12 "Instrument Sans",sans-serif;letter-spacing:-.03em}
 .line em{color:#E27478;font-style:normal}
@@ -60,8 +61,8 @@ svg{position:absolute;left:0;top:0}
 </style></head><body>
 <div class="tag"><b>Einstein Hooks v2</b><span>Opening Bell Auction</span></div>
 <div class="chips"><span class="on">Cycle ${cycle} ${stageName}</span><span>Read from chain</span></div>
-<p class="big">${hh}:${mm}<small>hours to the open</small></p>
-<p class="line">${date}. Orders go in for ten minutes, then <em>one price</em> for everyone.</p>
+<p class="big">${dayShort}<small>the market reopens</small></p>
+<p class="line">Orders go in for ten minutes, then <em>one price</em> for everyone.</p>
 <svg width="1200" height="675" viewBox="0 0 1200 675">
   <rect x="${X0}" y="410" width="${X1 - X0}" height="14" fill="#2a2927"/>
   <rect x="${x(openTs - Number(lead))}" y="396" width="${x(openTs) - x(openTs - Number(lead))}" height="42" fill="#C7444F"/>
@@ -83,5 +84,5 @@ const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Pro
 if (!chrome) { console.error('no Chrome or Edge found'); process.exit(1); }
 const r = spawnSync(chrome, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1', '--window-size=1200,675', '--virtual-time-budget=4000', `--screenshot=${out}`, pathToFileURL(htmlPath).href], { encoding: 'utf8' });
 if (r.status !== 0 || !existsSync(out)) { console.error('render failed', r.stderr?.slice(0, 200)); process.exit(1); }
-console.log(`cycle ${cycle} ${stageName}, opens ${new Date(openTs * 1000).toISOString()}, ${hh}:${mm} left`);
+console.log(`cycle ${cycle} ${stageName}, opens ${new Date(openTs * 1000).toISOString()}`);
 console.log(`wrote ${path.relative(root, out)} (${statSync(out).size} bytes)`);
