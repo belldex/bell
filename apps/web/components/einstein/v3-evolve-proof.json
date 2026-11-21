@@ -226,8 +226,8 @@
       "result": {
         "blocks": {
           "start": 156136089,
-          "end": 156146389,
-          "head": 156146389
+          "end": 156164396,
+          "head": 156164396
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -238,10 +238,10 @@
             "updatedAt": 1795236143
           },
           "end": {
-            "block": 156146389,
-            "roundId": "9",
-            "price": 129.18760833,
-            "updatedAt": 1795238312,
+            "block": 156164396,
+            "roundId": "21",
+            "price": 128.64425969,
+            "updatedAt": 1795241912,
             "fresh": false
           }
         },
@@ -250,48 +250,113 @@
           "role": "bell",
           "poolId": "0x9ca2b8a2b612ffda9da7121c4fe02de50b60fc3cf6e81b8d44d22be0cb63b0ed",
           "startCapital": 5979.719485,
-          "feesEarned": 0,
-          "lvr": 0,
-          "valueVsHold": 0,
-          "netBps": 0,
-          "positionValueEnd": 5961.196913,
-          "holdValueEnd": 5961.196913,
-          "swaps": 0,
-          "volume": 0,
+          "feesEarned": 0.232243,
+          "lvr": 0.255184,
+          "valueVsHold": 0.036836,
+          "netBps": 0.061602,
+          "positionValueEnd": 5948.779286,
+          "holdValueEnd": 5948.742449,
+          "swaps": 2,
+          "volume": 23.18744,
           "organicSwaps": 0,
-          "botSwaps": 0,
-          "sessions": {},
-          "series": [],
-          "rows": []
+          "botSwaps": 2,
+          "sessions": {
+            "CLOSED": {
+              "swaps": 2,
+              "volume": 23.18744,
+              "fees": 0.231639,
+              "lvr": 0.255184,
+              "organicSwaps": 0,
+              "botSwaps": 2
+            }
+          },
+          "series": [
+            {
+              "ts": 1795238976,
+              "net": -0.013531
+            },
+            {
+              "ts": 1795239279,
+              "net": -0.046805
+            }
+          ],
+          "rows": [
+            {
+              "tx": "0xe0ea9cdf7fc56fe618aaafe5db053418a7bdac24a12dee8e06676298952801c9",
+              "block": 156149860,
+              "ts": 1795238976,
+              "session": "CLOSED",
+              "feePips": 10000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.096975,
+              "execPrice": 129.858909,
+              "ref": 128.420796,
+              "lvr": 0.138066,
+              "fee": 0.124536
+            },
+            {
+              "tx": "0x6faadaef4769815318e466b96a40aed37a24b7d13f476e87ba3a1e55865fa4ba",
+              "block": 156151383,
+              "ts": 1795239279,
+              "session": "CLOSED",
+              "feePips": 10000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.083556,
+              "execPrice": 129.596784,
+              "ref": 128.180954,
+              "lvr": 0.117118,
+              "fee": 0.107103
+            }
+          ]
         },
         "control": {
           "role": "control",
           "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
           "startCapital": 5979.719485,
-          "feesEarned": 0.071735,
-          "lvr": 0.121561,
-          "valueVsHold": -0.028186,
-          "netBps": -0.047136,
-          "positionValueEnd": 5961.168727,
-          "holdValueEnd": 5961.196913,
-          "swaps": 1,
-          "volume": 23.939907,
+          "feesEarned": 0.208204,
+          "lvr": 0.307922,
+          "valueVsHold": -0.1052,
+          "netBps": -0.175928,
+          "positionValueEnd": 5948.637249,
+          "holdValueEnd": 5948.742449,
+          "swaps": 5,
+          "volume": 69.524209,
           "organicSwaps": 0,
-          "botSwaps": 1,
+          "botSwaps": 5,
           "sessions": {
             "CLOSED": {
-              "swaps": 1,
-              "volume": 23.939907,
-              "fees": 0.07167,
-              "lvr": 0.121561,
+              "swaps": 5,
+              "volume": 69.524209,
+              "fees": 0.208283,
+              "lvr": 0.307922,
               "organicSwaps": 0,
-              "botSwaps": 1
+              "botSwaps": 5
             }
           },
           "series": [
             {
               "ts": 1795237768,
               "net": -0.049892
+            },
+            {
+              "ts": 1795238372,
+              "net": -0.121195
+            },
+            {
+              "ts": 1795238976,
+              "net": -0.24288
+            },
+            {
+              "ts": 1795239279,
+              "net": -0.351056
+            },
+            {
+              "ts": 1795241394,
+              "net": 0.093193
             }
           ],
           "rows": [
@@ -309,11 +374,71 @@
               "ref": 129.070338,
               "lvr": 0.121561,
               "fee": 0.07167
+            },
+            {
+              "tx": "0x432e8df4df0179eb430c9db4a1c562da0f111294808ebf53d0a0d86ac97c8125",
+              "block": 156146710,
+              "ts": 1795238372,
+              "session": "CLOSED",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.103726,
+              "execPrice": 129.307692,
+              "ref": 128.769385,
+              "lvr": 0.055669,
+              "fee": 0.04007
+            },
+            {
+              "tx": "0x7b1b111a363942c82a701d3db1e8c249577986b399e72af5750803555f570124",
+              "block": 156149865,
+              "ts": 1795238976,
+              "session": "CLOSED",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.120599,
+              "execPrice": 128.981918,
+              "ref": 128.420796,
+              "lvr": 0.067468,
+              "fee": 0.046462
+            },
+            {
+              "tx": "0x1cdecbf975c21faee772377f7933094bf05f8fcdfa7b8f58fab536182c6693ea",
+              "block": 156151388,
+              "ts": 1795239279,
+              "session": "CLOSED",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "NVDA",
+              "in": 0.083262,
+              "execPrice": 128.68687,
+              "ref": 128.180954,
+              "lvr": 0.041997,
+              "fee": 0.032018
+            },
+            {
+              "tx": "0xed836224a8f370efde3cf17e08f0449e2e0c82c633a6bf83329e37109e2bd5f2",
+              "block": 156161730,
+              "ts": 1795241394,
+              "session": "CLOSED",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "USDG",
+              "in": 6.020963,
+              "execPrice": 128.634216,
+              "ref": 129.089075,
+              "lvr": 0.021227,
+              "fee": 0.018063
             }
           ]
         },
         "verdict": {
-          "gapBps": 0.047136,
+          "gapBps": 0.23753,
           "winner": "BELL"
         },
         "bands": [
@@ -339,7 +464,7 @@
           }
         ]
       },
-      "generatedAt": "2026-11-21T05:18:42.794Z",
+      "generatedAt": "2026-11-21T06:18:44.892Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -355,30 +480,30 @@
         },
         "E4": {
           "verdict": "PASS",
-          "note": "fees earned: BELL 0, control 0.071735 (matches the page)"
+          "note": "fees earned: BELL 0.232243, control 0.208204 (matches the page)"
         },
         "E5": {
           "verdict": "PASS",
-          "note": "LVR: BELL 0, control 0.121561 (matches the page)"
+          "note": "LVR: BELL 0.255184, control 0.307922 (matches the page)"
         },
         "E6": {
           "verdict": "PASS",
-          "note": "net LP result in bps: BELL 0, control -0.047136 (matches the page)"
+          "note": "net LP result in bps: BELL 0.061602, control -0.175928 (matches the page)"
         },
         "E7": {
-          "verdict": "FAIL",
-          "note": "source hash d6e42f47fa18 vs d6e42f47fa18, over-size 0, bot swaps 0 and 1"
+          "verdict": "PASS",
+          "note": "bot source matches d6e42f47fa18…, 2 bot swaps on BELL and 5 on the control, none above 100 USDG"
         },
         "E8": {
           "verdict": "PENDING",
           "note": "No refused swap is on record for this run."
         },
         "E9": {
-          "verdict": "FAIL",
+          "verdict": "PARTIAL",
           "note": "Not every one of E1 to E8 passes yet."
         }
       }
     }
   ],
-  "lastBuild": "2026-11-21T05:18:46.276Z"
+  "lastBuild": "2026-11-21T06:18:52.573Z"
 }
