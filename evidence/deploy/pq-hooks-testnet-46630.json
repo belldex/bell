@@ -1,0 +1,50 @@
+{
+  "chainId": 46630,
+  "status": "BROADCASTED_AND_LIVE_CODE_VERIFIED",
+  "sourceMode": "testnet-fixture-feed",
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "contracts": {
+    "shrincsVerifier": "0xA5B3d599dB1Dae73E67cb78F69bF35b55AD080C5",
+    "hashSigVerifier": "0x9777863315a2c30474C273116443C15d99D573Fc",
+    "pqKeyRegistry": "0xe2d4b96aB395f8c30e4cbF5e1506F9F1395A7CE5",
+    "hybridAuth": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+    "safetyController": "0xBd86061560f1437EAb0a2Bb3038978D17528849A",
+    "assetRegistry": "0x21067581C7DA90485E7D1C73348962563B972d39",
+    "calendarRegistry": "0xA302D824Ee304444510a27DbC35Db86eEfB95f1C",
+    "sessionRegistry": "0x797F8911EDEb9e67Df4D66079a160191ebb4E05b",
+    "policyOracle": "0x1Ca35a43bE5924e3d908471fC93f3C1106b71353",
+    "modeEvaluator": "0x59eFa72Ce95241afe9643e318618eafE64B21eDa",
+    "auctionRegistry": "0xdfeb7976eAdB5bB1dd027d38eD445afb3b7af1a0",
+    "auctionFactoryModule": "0x3F10a67d695F5dfd41687cd6D78780AAecC15661",
+    "hookDeployer": "0x8780d42C6311A13c8618024F8d6BD1E732Ef2F8A",
+    "poolFactory": "0xbD3CB6B27625b9BA13eF66D05828A210116C9c3f",
+    "swapLensRegistry": "0x92070b0274a5C1C040d27A878D36d156015424d7"
+  },
+  "profileHash": "0x41beb003f811626c5c55c5efc47ad4b9bed3120760644f02dd623702d061c93c",
+  "assetIds": [
+    "0xd5dd65180db8d1e66f419b9dab7f6400da918ce80fbbdd6ae862ebf7ab305d1a",
+    "0x1b5b17740533a887c8c8fbc9391b24ef405cc7416a8588a45c738354a92c5838"
+  ],
+  "assetDescriptors": {
+    "NVDA": {
+      "descriptorId": "0xd5dd65180db8d1e66f419b9dab7f6400da918ce80fbbdd6ae862ebf7ab305d1a",
+      "token": "0xc392ddB15eC4350d02f92254cE28619d7435D671"
+    },
+    "USDG": {
+      "descriptorId": "0x1b5b17740533a887c8c8fbc9391b24ef405cc7416a8588a45c738354a92c5838",
+      "token": "0xCDE91d2b3295894D5594878405970DE2ca59E5ab"
+    }
+  },
+  "roles": {
+    "KEEPER": "0x072f9d4165DccBD9172023601d07bCE2FCF37072",
+    "REPORTER": "0x6C8bAF28eA08DD00A1A64EE350167A70A7b3E98a",
+    "GOVERNANCE": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "GUARDIAN": "0x072f9d4165DccBD9172023601d07bCE2FCF37072"
+  },
+  "timing": {
+    "governanceDelaySeconds": 0,
+    "calendarPublicationLeadSeconds": 0,
+    "operationExpirySeconds": 604800
+  },
+  "verifiedAt": "2026-11-21T04:36:35.662Z"
+}

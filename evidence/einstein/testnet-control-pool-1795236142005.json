@@ -1,0 +1,30 @@
+{
+  "createdAt": "2026-11-21T04:42:18.126Z",
+  "txs": {
+    "executor": "0x0d9c53cde2bba2945b391473697e238aa1a37b8686e0ae44df7e4b6d28111e37",
+    "initialize": "0xa403f18a865bb7558c0f70fe9b104ce5fe44f245a9630845e152d7f9dc1544c6",
+    "seed": "0x7d82029ba18e6d925d4783d4d9d6a52ce54a2bece5ff63686d28c361e059eebd"
+  },
+  "executor": "0x4a1d93728ccfdd518be8256e25e8a9a898bdfb9b",
+  "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
+  "initializeBlock": 156136072,
+  "seedBlock": 156136089,
+  "positionTokenId": "6",
+  "key": {
+    "currency0": "0xc392ddB15eC4350d02f92254cE28619d7435D671",
+    "currency1": "0xCDE91d2b3295894D5594878405970DE2ca59E5ab",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  "request": {
+    "sqrtPriceX96": "903340038743743729272652",
+    "tickLower": -233700,
+    "tickUpper": -221640,
+    "liquidity": "1007499131878521",
+    "seedUsdg": 3000,
+    "nvdaUsd": 130
+  },
+  "poolManager": "0xc353daf2a37aca96ea468239d973a76020dea059",
+  "positionManager": "0x9116ff2aa7a41b60b478ae3ecd8b9b0466a97874"
+}

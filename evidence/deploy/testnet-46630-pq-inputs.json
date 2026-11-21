@@ -1,0 +1,9 @@
+{
+  "chainId": 46630,
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "poolManager": "0xc353daf2a37aca96ea468239d973a76020dea059",
+  "positionManager": "0x9116ff2aa7a41b60b478ae3ecd8b9b0466a97874",
+  "permit2": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+  "feeToken": "0xcde91d2b3295894d5594878405970de2ca59e5ab",
+  "serviceRecipient": "0x58Cd82a008cB9a6c0c605991b40a09BD6aa1a6fC"
+}

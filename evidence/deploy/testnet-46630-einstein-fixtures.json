@@ -1,0 +1,21 @@
+{
+  "chainId": 46630,
+  "note": "Testnet fixtures. Not real assets and not a real price feed.",
+  "capturedAt": "2026-11-21T04:28:59.802Z",
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "tUSDG": {
+    "address": "0xcde91d2b3295894d5594878405970de2ca59e5ab",
+    "tx": "0x6a3cfd042835b52aecfed3b7ffa2e83ec86b69feeae25b2f630b09e95f4f2b8d"
+  },
+  "tNVDA": {
+    "address": "0xc392ddb15ec4350d02f92254ce28619d7435d671",
+    "tx": "0x5dff20f1d607b6cc41223a93d5b39116dbaa3afa155ef1239a24cd70ad383e1c"
+  },
+  "feed": {
+    "address": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+    "tx": "0x840f54401e856181ea8ab602a4d6accc92d40a52d4e6d7becd92e1d79f96a1ad",
+    "decimals": 8,
+    "initialPriceE8": "12999568929",
+    "kind": "MockChainlinkFeed"
+  }
+}

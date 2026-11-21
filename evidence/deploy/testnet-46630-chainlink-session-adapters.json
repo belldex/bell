@@ -1,0 +1,78 @@
+{
+  "chainId": 46630,
+  "source": "BELL testnet fixture feed (MockChainlinkFeed)",
+  "capturedAt": "2026-11-21T04:28:59.806Z",
+  "rightsVerified": false,
+  "assets": {
+    "NVDA": {
+      "symbol": "NVDA",
+      "stockToken": "0xc392ddb15ec4350d02f92254ce28619d7435d671",
+      "capabilityMask": 30,
+      "directAdapter": "0x772978bc1690c690dd42f48a8eef27af7bba1e34",
+      "regularAdapter": "0xace957a8e7f4dd0b20056ce60416b99441390b4a",
+      "extendedAdapter": "0xbbc89463628525d638da3b2b3e62c396c352fb7b",
+      "overnightAdapter": "0xedda2f7b528966c62ffef5bfcf245d8b659a4d3d",
+      "directWire": {
+        "kind": 1,
+        "phaseScope": 0,
+        "endpoint": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "feedId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "schema": 0,
+        "decimals": 8,
+        "priceBasis": 2,
+        "heartbeatSec": 86400,
+        "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+        "expectedImplementation": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "canonicalTokenId": "0x8c68c1652dfa583e5b50eca22f2de26eb462b0ffdd793696c838c1c3b60e8271"
+      },
+      "directWireHash": "0x5d899409c4abb6479a295624f3d6a13c35685f7a62c74f81f82934ff0e8c41f4",
+      "regularWire": {
+        "kind": 5,
+        "phaseScope": 1,
+        "endpoint": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "feedId": "0x3e88fad25a802a9372baa5591a08a62064de3f8a5b5b1be84cff994c09d73911",
+        "schema": 1,
+        "decimals": 8,
+        "priceBasis": 1,
+        "heartbeatSec": 86400,
+        "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+        "expectedImplementation": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "canonicalTokenId": "0x8c68c1652dfa583e5b50eca22f2de26eb462b0ffdd793696c838c1c3b60e8271"
+      },
+      "regularWireHash": "0xa2802fd42067272c388bbe086c7a9b6c43233704d1ded9e2425e8a046ec3bf0a",
+      "extendedWire": {
+        "kind": 5,
+        "phaseScope": 2,
+        "endpoint": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "feedId": "0xcdbe323e40ce5b0a78f832ef9f0cfe545e497accb707c5881d4411c51f53108c",
+        "schema": 1,
+        "decimals": 8,
+        "priceBasis": 1,
+        "heartbeatSec": 86400,
+        "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+        "expectedImplementation": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "canonicalTokenId": "0x8c68c1652dfa583e5b50eca22f2de26eb462b0ffdd793696c838c1c3b60e8271"
+      },
+      "extendedWireHash": "0x5c01375bce34f46c033278bea53b497071a17d23ac7a0736bc393da63e3844fb",
+      "overnightWire": {
+        "kind": 5,
+        "phaseScope": 3,
+        "endpoint": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "feedId": "0xfd3dc3fe68223a3d7c3073f9a38967b8d8d429a82b3d46eca4c56a8974250b03",
+        "schema": 1,
+        "decimals": 8,
+        "priceBasis": 1,
+        "heartbeatSec": 86400,
+        "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+        "expectedImplementation": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+        "canonicalTokenId": "0x8c68c1652dfa583e5b50eca22f2de26eb462b0ffdd793696c838c1c3b60e8271"
+      },
+      "overnightWireHash": "0x9805fc928a53f79606b9b2fd24f9f2294d8e299531a321993684829899e2957a",
+      "feed": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+      "proxyCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+      "tokenCodeHash": "0x9a2eb788117404a498e33ee4115c0599b76b399abac41077b7b8dba887341d07",
+      "implementation": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
+      "implementationCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df"
+    }
+  }
+}
