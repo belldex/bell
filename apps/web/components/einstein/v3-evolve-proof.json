@@ -226,8 +226,8 @@
       "result": {
         "blocks": {
           "start": 156136089,
-          "end": 156784947,
-          "head": 156784947
+          "end": 156794982,
+          "head": 156794982
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -238,10 +238,10 @@
             "updatedAt": 1795236143
           },
           "end": {
-            "block": 156784947,
+            "block": 156794982,
             "roundId": "41",
             "price": 129.20058717,
-            "updatedAt": 1795385913,
+            "updatedAt": 1795389512,
             "fresh": false
           }
         },
@@ -597,7 +597,7 @@
           }
         ]
       },
-      "generatedAt": "2026-11-22T22:19:16.102Z",
+      "generatedAt": "2026-11-22T23:18:53.166Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -638,5 +638,5 @@
       }
     }
   ],
-  "lastBuild": "2026-11-22T22:19:38.008Z"
+  "lastBuild": "2026-11-22T23:19:07.252Z"
 }
