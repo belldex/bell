@@ -172,7 +172,11 @@ contract BellOpeningAuction {
                 || (next.phase != PHASE_PRE && next.phase != PHASE_OVERNIGHT)
                 || block.timestamp < current.start || block.timestamp >= current.end
         ) return false;
-        bytes32 transitionHash = keccak256(abi.encode(_hashLeaf(current), _hashLeaf(next)));
+        return _arm(keccak256(abi.encode(_hashLeaf(current), _hashLeaf(next))), _hashLeaf(current), _hashLeaf(next), next.start);
+    }
+
+    /// @dev Shared tail of every arming path: the calendar path above and, in BellOpeningAuctionV2, the halt-resume path.
+    function _arm(bytes32 transitionHash, bytes32 closedHash, bytes32 openHash, uint64 openAt) internal returns (bool armed) {
         if (transitionHash == lastArmedTransitionHash) return false;
         if (cycleId >= auctionMaximumCycles) return false;
         if (cycleId != 0 && !_finalized[cycleId]) {
@@ -181,15 +185,15 @@ contract BellOpeningAuction {
             _finalized[cycleId] = true;
             emit CycleRefunded(cycleId);
         }
-        if (next.start <= block.timestamp) return false;
+        if (openAt <= block.timestamp) return false;
 
         cycleId += 1;
-        openTime = next.start;
-        cycleOpenTimeById[cycleId] = next.start;
-        cycleDeadline = next.start + settleTimeout;
-        cycleDeadlineById[cycleId] = next.start + settleTimeout;
-        closedLeafHash = _hashLeaf(current);
-        openLeafHash = _hashLeaf(next);
+        openTime = openAt;
+        cycleOpenTimeById[cycleId] = openAt;
+        cycleDeadline = openAt + settleTimeout;
+        cycleDeadlineById[cycleId] = openAt + settleTimeout;
+        closedLeafHash = closedHash;
+        openLeafHash = openHash;
         lastArmedTransitionHash = transitionHash;
         clearingPriceX96 = 0;
         stage = uint8(Stage.ARMED);

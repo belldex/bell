@@ -1,6 +1,6 @@
 # Einstein Hooks v3: halt and event windows (design and status)
 
-Status: **the halt registry and the halt-aware policy oracle are built and tested; the resume auction and an event-window test are not.** Nothing here is deployed.
+Status: **the halt registry, the halt-aware policy oracle and the resume auction are built and tested, including on a mainnet fork with the whole v3 stack deployed; the event-window test, the real deploy script and an independent review are not done.** Nothing here is deployed.
 
 ## Naming
 `BellHookV3` already exists: it is the PQ Hooks v2 template deployed on mainnet in 1fb9b06. The brief's "Einstein Hooks v3" therefore needs new contract names (`BellHookV4` and its factory), or the page and posts will describe two different things as v3.
@@ -18,8 +18,16 @@ The first design assumed the hook needed a new branch. It does not. `BellPolicyO
 - A halt on another asset does not touch the pool. A halt that expires moves the pool through the existing recovery (RECOVERING, then ACTIVE after the usual separation and fresh observations), not straight to ACTIVE.
 - `refreshState` is permissionless and must be called after a halt begins or ends; a swap before that reverts with `PolicyBlocked(RECOVERY_PENDING)`. A keeper (ANT's publisher already runs one) should call it.
 - A failed registry read counts as "not halted", so a broken registry cannot freeze the pool.
-- Interim: the five minute resume window is priced as CLOSED. The resume auction (`AuctionActive`, V2 at swap level) is **not** wired.
+- The five minute resume window is priced as CLOSED by the oracle and blocked by the resume auction (see below).
 - Not changed: a new pool still needs the V3 oracle in its hook, so ANT's current pool cannot adopt halts without a new pool.
+
+## Built: resume auction (BellOpeningAuctionV2, BellAuctionFactoryModuleV2, 7 tests)
+The pool-to-auction registry holds one auction per pool, and the hook already asks it `blocksSwaps` before every swap, so the resume auction lives in the same contract as the opening auction instead of a second one.
+- `BellOpeningAuction` had its arming tail moved into an internal `_arm` (no behaviour change; its 20 tests still pass). `BellOpeningAuctionV2` adds `armResume()`: when the registry shows RESUME_AUCTION it arms a cycle that opens for orders at once and locks five minutes later. Escrow, uniform-price clearing and refunds are the inherited code. While OPEN or LOCKED the hook reverts swaps with `AuctionActive` (V2).
+- After the window the registry is NORMAL, the oracle stops pricing the pool as halted, and the pool goes through the ordinary closure recovery. `settle` waits for the hook to report `canSwap`; a cycle that cannot settle by its deadline is refunded, like an opening cycle.
+- `BellAuctionFactoryModuleV2` is the existing module with V2 auctions bound to a halt registry; the lead must be at least the five minute window.
+- Fork proof, no etched code: `test/fork/EinsteinHaltStackRehearsal.t.sol` deploys HaltRegistry, BellPolicyOracleV3, the auction registry, the V2 module, a `BellHookDeployerV3` and a `BellPoolFactoryV3` over the real mainnet pool manager, session registry, calendar and asset registry; creates a pool through them; halts it (Swap event fee 10,000 pips), resumes it, arms the auction and gets `AuctionActive` on the next swap.
+- Not shown on the fork: the swap after the window and settlement, because warping a fork makes the live session reports stale. The unit tests cover clearing and refund.
 
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
@@ -27,7 +35,7 @@ These are read from the current contracts, not assumed.
 1. **An unplanned CLOSED is a block today, not a priced state.** `ModePolicy` maps an unexpected CLOSED phase to `Mode.HALTED` with `canSwap = false`. The brief wants swaps priced at the CLOSED fee (10,000 pips) and CLOSED caps while halted. So a halt cannot be injected by making the calendar overlay report CLOSED: that would block swaps instead of pricing them. The new hook needs a distinct decision branch (halted: priced, CLOSED fee and caps) in `ModePolicy`.
 2. **The calendar registry address is part of the pool config.** A calendar overlay that wraps `CalendarRegistry` would be a new pool, not a swap-in. That is acceptable (v3 is new contracts) but it means ANT's current pool cannot adopt halts without migrating liquidity.
 3. **Event windows can reuse the calendar.** A CLOSED interval inside a trading day is already a valid leaf (`phase` 1 to 5). The fee and caps override the brief suggests (CLOSED level) is what the CLOSED phase already applies. The closure latch and anchor logic still have to be checked for an interval that opens and closes within one day; that is the open risk for V5.
-4. **Resume auction.** The auction runs from the hook's bell start. It needs a trigger from the halt registry's `RESUME_AUCTION` state, with the same escrow and clearing rules. This is the largest piece and the part most likely to need a new auction hook entry.
+4. ~~Resume auction~~ Built, see above.
 5. **Contract size.** The comments in `BellPolicyOracle` say `BellHook` was five bytes under EIP-170 before logic moved to the oracle. New branches belong in the oracle and `ModePolicy`, and the hook size has to be measured after each change.
 
 ## Order of work
