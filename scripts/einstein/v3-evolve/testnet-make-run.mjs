@@ -7,7 +7,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { createPublicClient, http, decodeErrorResult } from 'viem';
+import { createPublicClient, http, decodeErrorResult, decodeAbiParameters } from 'viem';
 import { positionAmounts } from './lib.mjs';
 import HookArtifact from '../../../contracts/out/BellHookV3.sol/BellHookV3.json' with { type: 'json' };
 import ExecutorArtifact from '../../../contracts/out/TestnetSwapExecutor.sol/TestnetSwapExecutor.json' with { type: 'json' };
@@ -35,6 +35,15 @@ for (const r of reverted) {
   try { await pc.call({ to: tx.to, data: tx.input, account: tx.from, blockNumber: tx.blockNumber - 1n }); } catch (e) { let c = e; while (c && !data) { data = typeof c.data === 'string' && c.data.startsWith('0x') ? c.data : null; c = c.cause; } }
   let error = r.error ?? 'reverted'; let selector = data ? data.slice(0, 10) : '0x00000000';
   try { if (data) error = decodeErrorResult({ abi: [...HookArtifact.abi, ...ExecutorArtifact.abi], data }).errorName; } catch { /* keep the logged text */ }
+  // The v4 PoolManager wraps a hook revert as WrappedError(hook, selector, reason, details). Unwrap it to name the hook's own error.
+  if (data && data.startsWith('0x90bfb865')) {
+    try {
+      const [hook, , reason] = decodeAbiParameters([{ type: 'address' }, { type: 'bytes4' }, { type: 'bytes' }, { type: 'bytes' }], `0x${data.slice(10)}`);
+      let inner = null;
+      try { inner = decodeErrorResult({ abi: HookArtifact.abi, data: reason }).errorName; } catch { inner = `selector ${String(reason).slice(0, 10)}`; }
+      error = `${inner} (raised by the hook ${hook.slice(0, 8)}…, wrapped by the PoolManager)`;
+    } catch { error = 'hook revert (wrapped by the PoolManager)'; }
+  }
   blocked.push({ tx: r.tx, error, selector, at: r.at });
 }
 
