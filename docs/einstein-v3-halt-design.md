@@ -43,6 +43,11 @@ Deploys HaltRegistry, BellPolicyOracleV3, an auction registry, BellAuctionFactor
 - Not done, on purpose: no broadcast. Per the design notes, mainnet waits for an independent review, and a testnet run of the same script (chain 46630) is the step before it.
 - After a broadcast the manifest status reads BROADCAST (it reads SIMULATED_NOT_DEPLOYED otherwise); verification on the explorer, the halt reporter and the keeper that calls `refreshState` and `armResume` are separate pieces of work.
 
+## Deployed on Robinhood testnet (46630), 23 Nov 2026
+The deploy script was broadcast to testnet only (manifest: `evidence/deploy/halt-stack-testnet-46630.json`, transactions: `contracts/broadcast/DeployHaltStack.s.sol/46630/run-latest.json`). Cost about 0.00024 ETH. The script's own read-back checks passed, and the bindings were read again with `cast`: oracle to HaltRegistry, deployer to the V3 oracle and the new factory, auction registry to the V2 module, module to HaltRegistry, HaltRegistry to the testnet HybridAuth with the REPORTER role.
+- HaltRegistry `0xFE42C91Dd28a0501512717bC4541FCaa21458138`, BellPolicyOracleV3 `0xba229B3B018f2deEC5b3D813a466E8c24EBe6eFe`, BellPoolFactoryV3 `0x4C7E5dEc779217B3ADF7EE4E95E9665342D0008a`, BellHookDeployerV3 `0x4D69e4Ca36066C1d375DF40DA00C5cb55221CDb4`, auction registry `0x457462262a9D9be6dEE745CE4B4B786f187231A1`, module V2 `0x548B5F2dfd0F3bA0D0e4F022b8a1239FE241F6A4`.
+- Not done on testnet yet: a pool through the new factory, a real hybrid-signed `halt` and `resume` (the REPORTER key needs PQ leaves on the testnet profile), a swap during the halt and the `AuctionActive` refusal. Source verification on the testnet explorer is not done either. Nothing on mainnet changed.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 
