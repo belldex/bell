@@ -56,6 +56,18 @@ if (online) {
       : { verdict: 'PENDING', note: `Chainlink's Robinhood mainnet directory has ${feeds.length} feeds and none for ANT, so BELL cannot admit ANT yet.` };
   } catch (e) { out.B1 = { verdict: 'PENDING', note: `could not read Chainlink's feed directory: ${String(e.cause?.code ?? e.message).slice(0, 80)}` }; }
 }
+// Mainnet admission: the registry names the descriptor for ANT, every adapter has code, and every recorded transaction succeeded.
+if (proof.mainnet) {
+  const m = proof.mainnet;
+  const REG = parseAbi(['function descriptorIdForToken(address token) view returns (bytes32)']);
+  const onchain = await pc.readContract({ address: m.assetRegistry, abi: REG, functionName: 'descriptorIdForToken', args: [getAddress(m.token)] });
+  const codes = await Promise.all(m.adapters.map(async (a) => ({ name: a.name, ok: Boolean(await codeHash(getAddress(a.address))) })));
+  const txs = [...m.governance, ...m.adapters.map((a) => a.deployTx)];
+  const rcs = await Promise.all(txs.map(async (t) => { try { return (await pc.getTransactionReceipt({ hash: t.tx })).status; } catch { return 'missing'; } }));
+  const ok = onchain.toLowerCase() === m.descriptorId.toLowerCase() && codes.every((x) => x.ok) && rcs.every((x) => x === 'success');
+  out.M1 = ok ? { verdict: 'PASS', note: `AssetRegistry ${m.assetRegistry} names descriptor ${onchain.slice(0, 12)}… for ANT, the ${codes.length} delegated adapters have code, and ${rcs.length} transactions succeeded.` }
+    : { verdict: 'FAIL', note: `descriptor on chain ${onchain}, adapters with code ${codes.filter((x) => x.ok).length}/${codes.length}, successful transactions ${rcs.filter((x) => x === 'success').length}/${rcs.length}` };
+}
 // The testnet rehearsal, when a testnet RPC is given: every linked transaction must be a successful receipt, and the Swap event and the revert are read again.
 const testnetRpc = arg('testnet-rpc', process.env.TESTNET_RPC_URL);
 if (proof.rehearsals?.length && testnetRpc) {

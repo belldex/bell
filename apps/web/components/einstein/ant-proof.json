@@ -6,8 +6,8 @@
     "name": "Robinhood Chain",
     "explorer": "https://robinhoodchain.blockscout.com"
   },
-  "status": "blocked",
-  "statusNote": "ANT is not live on mainnet yet. Chainlink has no ANT feed, and BELL's asset registry refuses a stock token without a price source, so BELL built its own: a delegated-attestation source, rehearsed end to end on testnet below. The mainnet steps are next.",
+  "status": "admitted",
+  "statusNote": "ANT is admitted on BELL mainnet with a delegated price source. There is no pool yet and no delegate is authorized, so nothing trades and no price is published.",
   "a1": {
     "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
     "referenceTokens": [
@@ -368,11 +368,68 @@
       ]
     }
   ],
-  "lastRun": "2026-11-23T03:52:12.512Z",
+  "mainnet": {
+    "title": "Admitted on mainnet",
+    "assetRegistry": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18",
+    "token": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
+    "descriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+    "adapters": [
+      {
+        "name": "tokenPriceAdapter",
+        "address": "0xcc73fc8265630a7b7873028f77584037273d70c2",
+        "deployTx": {
+          "tx": "0x8e08a0d60bcae1c6deb26c45d8a8575cd1cd61db9d20d2ccd801971e60775406",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x8e08a0d60bcae1c6deb26c45d8a8575cd1cd61db9d20d2ccd801971e60775406"
+        }
+      },
+      {
+        "name": "regularAdapter",
+        "address": "0x3b71543bd71b9d4c9678216d338611236a37b380",
+        "deployTx": {
+          "tx": "0x55a67e2056cbde40f46fb5d86e475c3744a50150382eabbefe57c63d1992517a",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x55a67e2056cbde40f46fb5d86e475c3744a50150382eabbefe57c63d1992517a"
+        }
+      },
+      {
+        "name": "extendedAdapter",
+        "address": "0x0c7a4044f2caf793b2062920c12baf8b33641e9c",
+        "deployTx": {
+          "tx": "0x807227a7ab9af0b2a38cd6af08e2645cdf1359c535836b49f40a9c44d56141bf",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x807227a7ab9af0b2a38cd6af08e2645cdf1359c535836b49f40a9c44d56141bf"
+        }
+      },
+      {
+        "name": "overnightAdapter",
+        "address": "0x1de6199618ddb2b5fdb869113e4b906628db168e",
+        "deployTx": {
+          "tx": "0xa297643caf8759e38c2c54a17d8f82f5a3a9752354f51dcdfb911f00c1a48ed5",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xa297643caf8759e38c2c54a17d8f82f5a3a9752354f51dcdfb911f00c1a48ed5"
+        }
+      }
+    ],
+    "governance": [
+      {
+        "tx": "0x5f4c6e8e904d31f459155f2a82da77fa4cebd859edf277e8ebac43c27047a4ec",
+        "url": "https://robinhoodchain.blockscout.com/tx/0x5f4c6e8e904d31f459155f2a82da77fa4cebd859edf277e8ebac43c27047a4ec"
+      },
+      {
+        "tx": "0xc00bdfda70d4dd950bf286a4cbc1b480659e76f9431e75c167bae4337e91ce88",
+        "url": "https://robinhoodchain.blockscout.com/tx/0xc00bdfda70d4dd950bf286a4cbc1b480659e76f9431e75c167bae4337e91ce88"
+      },
+      {
+        "tx": "0x7f25d12c2be56eef38f6ab94d257fd72806133076954e59061d094794eab1aa3",
+        "url": "https://robinhoodchain.blockscout.com/tx/0x7f25d12c2be56eef38f6ab94d257fd72806133076954e59061d094794eab1aa3"
+      }
+    ],
+    "pqLeafUsed": 5,
+    "note": "Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf 5). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published."
+  },
+  "lastRun": "2026-11-23T03:57:31.147Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
     "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
+    "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
     "R:fixture:R1 PASS    Admitted after genesis through hybrid governance: 0x9fb37736… success, 0xa4efa329… success, 0x9cce07fb… success",
     "R:fixture:A2 PASS    The calendar root was signed post-quantum: 0x7cc147bf… success, 0x48963efa… success",
     "R:fixture:A3 PASS    The pool is real: 0x0fcffa65… success",

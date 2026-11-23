@@ -1,0 +1,85 @@
+{
+  "chainId": 4663,
+  "note": "ANT on Robinhood mainnet with the delegated-attestation price source.",
+  "txs": {
+    "tokenPriceAdapter": "0x8e08a0d60bcae1c6deb26c45d8a8575cd1cd61db9d20d2ccd801971e60775406",
+    "regularAdapter": "0x55a67e2056cbde40f46fb5d86e475c3744a50150382eabbefe57c63d1992517a",
+    "extendedAdapter": "0x807227a7ab9af0b2a38cd6af08e2645cdf1359c535836b49f40a9c44d56141bf",
+    "overnightAdapter": "0xa297643caf8759e38c2c54a17d8f82f5a3a9752354f51dcdfb911f00c1a48ed5",
+    "queueGovernanceCall": "0x5f4c6e8e904d31f459155f2a82da77fa4cebd859edf277e8ebac43c27047a4ec",
+    "executeGovernanceCall": "0xc00bdfda70d4dd950bf286a4cbc1b480659e76f9431e75c167bae4337e91ce88",
+    "activateAsset": "0x7f25d12c2be56eef38f6ab94d257fd72806133076954e59061d094794eab1aa3"
+  },
+  "token": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
+  "tokenCodeHash": "0x6c1fdd40002dcb440c7fff6a84171404d279ccb057803b65826f7546acd65630",
+  "wires": [
+    {
+      "kind": 1,
+      "phaseScope": 0,
+      "endpoint": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "feedId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "schema": 0,
+      "decimals": 18,
+      "priceBasis": 2,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0x39e05a14ad3bd60af22f68b923a61f85100e6c290dc9183d37516c14973bf53d",
+      "expectedImplementation": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "canonicalTokenId": "0xb632bf519d40d89bc7c31da13ee2ac41d40f1151c744d95ba70aab8f954b0216"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 1,
+      "endpoint": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "feedId": "0xb6d2605e0f21326c04c9c7192830effc9912bfd22f670643b0b43997f63e2783",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0x39e05a14ad3bd60af22f68b923a61f85100e6c290dc9183d37516c14973bf53d",
+      "expectedImplementation": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "canonicalTokenId": "0xb632bf519d40d89bc7c31da13ee2ac41d40f1151c744d95ba70aab8f954b0216"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 2,
+      "endpoint": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "feedId": "0xc0c107055e65f876cc521581fa0f63edc9e374e46979fd2be1494e028c57e82f",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0x39e05a14ad3bd60af22f68b923a61f85100e6c290dc9183d37516c14973bf53d",
+      "expectedImplementation": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "canonicalTokenId": "0xb632bf519d40d89bc7c31da13ee2ac41d40f1151c744d95ba70aab8f954b0216"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 3,
+      "endpoint": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "feedId": "0x45562e7b101b811811419495dd663f68ec4051fa0e8e6f738b3623795df788db",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0x39e05a14ad3bd60af22f68b923a61f85100e6c290dc9183d37516c14973bf53d",
+      "expectedImplementation": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+      "canonicalTokenId": "0xb632bf519d40d89bc7c31da13ee2ac41d40f1151c744d95ba70aab8f954b0216"
+    }
+  ],
+  "adapters": {
+    "tokenPriceAdapter": "0xcc73fc8265630a7b7873028f77584037273d70c2",
+    "regularAdapter": "0x3b71543bd71b9d4c9678216d338611236a37b380",
+    "extendedAdapter": "0x0c7a4044f2caf793b2062920c12baf8b33641e9c",
+    "overnightAdapter": "0x1de6199618ddb2b5fdb869113e4b906628db168e"
+  },
+  "delegatedBands": {
+    "maxStepBps": 300,
+    "maxGapBps": 2500
+  },
+  "feed": null,
+  "governanceOperation": "0x02368560f355586a4748502fd664b890bea640231bafd7ff2a1ce3292c7e8e5c",
+  "pqLeafUsed": 5,
+  "assetOperation": "0x39cb7e26cc5fe5a4705b9cb1e07293dd4e48eee821677cbc3cf6e95390fab5d8",
+  "descriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+  "admittedDescriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea"
+}

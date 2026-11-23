@@ -16,8 +16,8 @@ test('claims A1 to A7 are all there, and every claim but A1 says what it waits f
 });
 
 test('the status never says ANT is live while a blocker is recorded', () => {
-  assert.equal(proof.status, 'blocked');
-  assert.match(proof.statusNote, /not live on mainnet yet/);
+  assert.ok(['blocked', 'admitted'].includes(proof.status));
+  assert.match(proof.statusNote, /not live on mainnet yet|no pool yet/);
   assert.doesNotMatch(page, /ANT is live/i);
   assert.equal(proof.blocker.id, 'B1');
   assert.ok(proof.blocker.why.length >= 2);
@@ -71,7 +71,13 @@ test('the delegated source is described with its trust cost, not only its benefi
   assert.match(text, /Robinhood's own REST pricing API/);
 });
 
-test('mainnet claims stay pending while the rehearsal passes', () => {
-  assert.equal(proof.status, 'blocked');
+test('pool claims stay pending on mainnet until a pool exists, and the mainnet admission is proven only by its replay line', () => {
+  assert.ok(['blocked', 'admitted'].includes(proof.status));
+  if (proof.mainnet) {
+    const line = (proof.replay ?? []).find((l) => l.startsWith('M1 '));
+    assert.ok(line && /\sPASS\s/.test(line), 'mainnet admission shown without a PASS replay');
+    assert.equal(proof.mainnet.adapters.length, 4);
+    assert.ok(proof.mainnet.governance.every((t) => t.url.startsWith(proof.chain.explorer)));
+  }
   assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)));
 });

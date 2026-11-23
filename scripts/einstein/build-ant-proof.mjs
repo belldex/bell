@@ -114,12 +114,29 @@ if (existsSync('evidence/deploy/testnet-46630-ant-delegated.json') && existsSync
       ...(published ? [{ id: 'D2', title: 'A delegate-signed report was accepted and the asset read healthy', note: `A direct price and a session report signed by the delegate were submitted to the SessionRegistry. Health reason bits after the report: ${published[2]}.`, txs: [tx(published[3])], verdict: published[2] === '0' ? 'PASS' : 'FAIL' }] : []),
     ]));
 }
+// Mainnet: the asset admission is a fact on chain once the evidence file has a descriptor id.
+if (existsSync('evidence/deploy/mainnet-4663-ant.json')) {
+  const m = j('evidence/deploy/mainnet-4663-ant.json');
+  const pqm = j('evidence/deploy/pq-hooks-mainnet.json');
+  if (m.admittedDescriptorId) {
+    const mtx = (h) => ({ tx: h, url: `${proof.chain.explorer}/tx/${h}` });
+    proof.mainnet = {
+      title: 'Admitted on mainnet', assetRegistry: pqm.contracts.assetRegistry, token: m.token, descriptorId: m.admittedDescriptorId,
+      adapters: Object.entries(m.adapters).map(([name, address]) => ({ name, address, deployTx: mtx(m.txs[name]) })),
+      governance: [mtx(m.txs.queueGovernanceCall), mtx(m.txs.executeGovernanceCall), mtx(m.txs.activateAsset)],
+      pqLeafUsed: m.pqLeafUsed,
+      note: `Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf ${m.pqLeafUsed}). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published.`,
+    };
+    proof.status = 'admitted';
+    proof.statusNote = 'ANT is admitted on BELL mainnet with a delegated price source. There is no pool yet and no delegate is authorized, so nothing trades and no price is published.';
+  }
+}
 const out = `${dir}/proof.json`;
 if (arg('rpc')) {
   let r = '';
   try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online', ...(arg('testnet-rpc') ? ['--testnet-rpc', arg('testnet-rpc')] : [])], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
   proof.lastRun = new Date().toISOString();
-  proof.replay = r.split('\n').filter((l) => /^[AB]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
+  proof.replay = r.split('\n').filter((l) => /^[ABM]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
 }
 writeFileSync(out, `${JSON.stringify(proof, null, 2)}\n`);
 copyFileSync(out, 'apps/web/components/einstein/ant-proof.json');

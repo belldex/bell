@@ -7,6 +7,7 @@ import proof from "./ant-proof.json";
 
 const SECTIONS = [
   { id: "status", label: "Status", desc: "Where ANT stands." },
+  { id: "mainnet", label: "On mainnet", desc: "What is on chain." },
   { id: "token", label: "The token", desc: "Which contract is Robinhood's ANT." },
   { id: "blocker", label: "What blocks it", desc: "Why ANT is not live." },
   { id: "rehearsal", label: "Testnet rehearsal", desc: "The path, run end to end." },
@@ -18,6 +19,8 @@ const SECTIONS = [
 type Verdict = "PASS" | "PENDING" | "FAIL";
 type Rehearsal = { key: string; title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
 const rehearsals = ((proof as { rehearsals?: Rehearsal[] }).rehearsals ?? []);
+type Mainnet = { title: string; note: string; assetRegistry: string; token: string; descriptorId: string; governance: { tx: string; url: string }[]; adapters: { name: string; address: string; deployTx: { tx: string; url: string } }[] };
+const mainnet = (proof as { mainnet?: Mainnet }).mainnet;
 type Solution = { title: string; points: string[]; contract: string; tests: string };
 const solution = (proof.blocker as { solution?: Solution }).solution;
 const replay = (proof as { replay?: string[] }).replay ?? [];
@@ -41,15 +44,28 @@ export function AntPage() {
         <header className="ein-hero pp-hero">
           <div className="ein-hero__copy">
             <p className="ein-tag"><span>Einstein Hooks</span><b>ANT, Robinhood&apos;s Anthropic stock token</b></p>
-            <h1>ANT is not live on BELL <em>yet.</em></h1>
+            <h1>ANT is not trading on BELL <em>yet.</em></h1>
             <p className="ein-lede">{proof.subtitle}</p>
           </div>
         </header>
 
         <section id="status" className="ein-section ve-verdict" data-reveal data-status="scheduled">
-          <p className="ve-verdict__status">Blocked</p>
+          <p className="ve-verdict__status">{proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
           <p className="ve-verdict__line">{proof.statusNote}</p>
         </section>
+
+        {mainnet && (
+          <section id="mainnet" className="ein-section" data-reveal>
+            <h2>{mainnet.title}</h2>
+            <p className="ein-ledger__lede">{mainnet.note}</p>
+            <dl className="pp-facts">
+              <div><dt>Check M1</dt><dd>{(replay.find((l) => l.startsWith("M1 ")) ?? "").includes(" PASS ") ? "Proven: the registry names the descriptor, the adapters have code and every transaction succeeded" : "Not replayed yet"}</dd></div>
+              <div><dt>Asset descriptor</dt><dd><code>{short(mainnet.descriptorId, 12, 8)}</code> in {addr(mainnet.assetRegistry)}</dd></div>
+              <div><dt>Governance</dt><dd>{mainnet.governance.map((t) => <a key={t.tx} href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)} </a>)}</dd></div>
+              <div><dt>Adapters</dt><dd>{mainnet.adapters.map((a) => <span key={a.address}>{a.name}: {addr(a.address)} (<a href={a.deployTx.url} target="_blank" rel="noopener noreferrer">deploy</a>); </span>)}</dd></div>
+            </dl>
+          </section>
+        )}
 
         <section id="token" className="ein-section" data-reveal>
           <h2>Which contract is ANT</h2>
