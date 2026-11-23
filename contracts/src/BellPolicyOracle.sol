@@ -111,28 +111,33 @@ contract BellPolicyOracle {
         // recorded fallback condition or blocking reason, never a revert of the whole evaluate.
         (uint128[2] memory referencePrices, uint256 referenceReasons) = _referencePrices(input, deps);
         bool priceProtectionFallback = _priceProtectionFallback(input, deps, referenceReasons, false);
+        // A recorded trading halt (Einstein Hooks v3) is priced as a planned CLOSED: swaps run at the CLOSED fee and the closure
+        // budget, not blocked. The base oracle has no halt source, so this is false for every pool that uses it.
+        uint64 haltUntil = _haltedUntil(input);
+        bool halted = haltUntil > input.nowTime && input.state.lifecycle == uint8(Lifecycle.LIVE) && input.state.bellStart != 0;
+        if (halted) priceProtectionFallback = true;
         uint256 blockingReasons = deps.reasons | referenceReasons;
 
         ModePolicy.Context memory context;
         context.lifecycle = input.state.lifecycle;
         context.previousMode = input.state.mode;
         context.activationCommitted = input.state.bellStart != 0;
-        context.phase = deps.phase;
-        context.phaseSet = deps.phaseSet;
+        context.phase = halted ? PolicyConstants.PHASE_CLOSED : deps.phase;
+        context.phaseSet = halted || deps.phaseSet;
         context.closedLatched = input.state.closedLatched;
         context.closureNonce = input.state.closureNonce;
         context.reopenCandidateAt = input.state.reopenCandidateAt;
         context.oldValidUntil = input.state.oldValidUntil;
         context.reopenBaseObservations = input.state.reopenBaseObservations;
         context.lastOpenObservations = input.state.lastOpenObservations;
-        context.anyPlannedClosed = priceProtectionFallback && deps.phase == PolicyConstants.PHASE_CLOSED
+        context.anyPlannedClosed = priceProtectionFallback && context.phase == PolicyConstants.PHASE_CLOSED
             ? true : deps.anyPlannedClosed;
         context.allLegsHealthy = priceProtectionFallback || deps.allLegsHealthy;
-        context.closureContextValid = priceProtectionFallback && deps.phase == PolicyConstants.PHASE_CLOSED
+        context.closureContextValid = priceProtectionFallback && context.phase == PolicyConstants.PHASE_CLOSED
             ? true : deps.closureContextValid;
         context.unexpectedClosed = priceProtectionFallback ? false : deps.unexpectedClosed;
         context.dependencyReasons = priceProtectionFallback ? 0 : blockingReasons;
-        context.validUntil = priceProtectionFallback ? deps.fallbackValidUntil : deps.validUntil;
+        context.validUntil = halted ? haltUntil : priceProtectionFallback ? deps.fallbackValidUntil : deps.validUntil;
         context.priceProtectionFallback = priceProtectionFallback;
         context.observations = deps.observations;
         if (priceProtectionFallback) {
@@ -164,7 +169,7 @@ contract BellPolicyOracle {
 
         // A pre-live pool has no actionable phase. Report the session phase only once LIVE so callers cannot
         // mistake a SETUP view for a tradable session.
-        output.phase = input.state.lifecycle == uint8(Lifecycle.LIVE) && deps.phaseSet ? deps.phase : PolicyConstants.PHASE_UNKNOWN;
+        output.phase = input.state.lifecycle == uint8(Lifecycle.LIVE) && context.phaseSet ? context.phase : PolicyConstants.PHASE_UNKNOWN;
         output.flags = input.state.lifecycle != uint8(Lifecycle.LIVE) ? 0
             : input.poolClass == uint8(PoolClass.SESSION_ONLY)
                 ? PolicyFlags.PRICE_PROTECTION_NOT_APPLICABLE
@@ -175,7 +180,7 @@ contract BellPolicyOracle {
         output.effectiveWindowCap = [_windowCap(input, 0), _windowCap(input, 1)];
         if (priceProtectionFallback) {
             output.lpFeeUnits = PolicyConstants.FEE_CLOSED;
-            (output.effectiveTradeCap, output.effectiveWindowCap) = _fallbackLimits(input, deps.phase);
+            (output.effectiveTradeCap, output.effectiveWindowCap) = _fallbackLimits(input, context.phase);
         }
         output.rollingRemaining = [
             _rollingRemaining(output.effectiveWindowCap[0], currentGross[0], previousGross[0]),
@@ -193,6 +198,11 @@ contract BellPolicyOracle {
         output.pauseNonce = deps.poolPauseNonce;
         output.poolPauseOk = deps.poolPauseOk;
         output.dependencyHash = deps.dependencyHash;
+    }
+
+    /// @dev Hook for Einstein Hooks v3: the time until which the pool's stock is halted, or 0. The base oracle never reports a halt.
+    function _haltedUntil(Input calldata) internal view virtual returns (uint64) {
+        return 0;
     }
 
     function _tradeCap(Input calldata input, uint256 i) private pure returns (uint128) {

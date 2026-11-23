@@ -1,6 +1,6 @@
 # Einstein Hooks v3: halt and event windows (design and status)
 
-Status: **the halt registry is built and tested; the hook integration is designed and not started.** Nothing here is deployed.
+Status: **the halt registry and the halt-aware policy oracle are built and tested; the resume auction and an event-window test are not.** Nothing here is deployed.
 
 ## Naming
 `BellHookV3` already exists: it is the PQ Hooks v2 template deployed on mainnet in 1fb9b06. The brief's "Einstein Hooks v3" therefore needs new contract names (`BellHookV4` and its factory), or the page and posts will describe two different things as v3.
@@ -11,6 +11,15 @@ Status: **the halt registry is built and tested; the hook integration is designe
 - Fail-safe: a halt lapses two hours after it was recorded or renewed; a lapsed halt cannot be renewed (a new halt is a new id). Resume opens a five minute RESUME_AUCTION window.
 - Known gap, kept on chain: the registry stores the exchange's `startTs` and its own `recordedAt`; `reportDelay` is their difference, to publish per halt.
 - Proof items it covers at contract level: V1 (state), V2 (window), V3 (ECDSA-only reverts), V4 (self-expiry). The swap behaviour inside those states needs the hook integration below.
+
+## Built: halt-aware policy (BellPolicyOracleV3, 5 hook tests, full suite 590 passed)
+The first design assumed the hook needed a new branch. It does not. `BellPolicyOracle` already had a priced "planned closed" path (used by price-protection fallback), so the oracle gained one virtual hook, `_haltedUntil`, that returns 0 in the base contract (no behaviour change; every existing test still passes). `BellPolicyOracleV3` overrides it to read `HaltRegistry.haltedUntil` for the pool's two assets.
+- While halted the pool is `Mode.CLOSED`, phase CLOSED, fee 10,000 pips, closure caps, `canSwap` true after the closure is checkpointed (V1 at policy level). `BellHook` is unchanged (23,250 bytes, mask 0x2CC0), so no new hook contract, no size risk, and exits still never call the hook (V6 by construction, not yet asserted by a swap test).
+- A halt on another asset does not touch the pool. A halt that expires moves the pool through the existing recovery (RECOVERING, then ACTIVE after the usual separation and fresh observations), not straight to ACTIVE.
+- `refreshState` is permissionless and must be called after a halt begins or ends; a swap before that reverts with `PolicyBlocked(RECOVERY_PENDING)`. A keeper (ANT's publisher already runs one) should call it.
+- A failed registry read counts as "not halted", so a broken registry cannot freeze the pool.
+- Interim: the five minute resume window is priced as CLOSED. The resume auction (`AuctionActive`, V2 at swap level) is **not** wired.
+- Not changed: a new pool still needs the V3 oracle in its hook, so ANT's current pool cannot adopt halts without a new pool.
 
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
@@ -23,8 +32,8 @@ These are read from the current contracts, not assumed.
 
 ## Order of work
 1. Done: `HaltRegistry` with tests.
-2. `ModePolicy` halted-priced branch plus oracle input, with unit tests for the matrix (halted, resume auction, expiry, closure latch).
-3. `BellHookV4`, its deployer and factory; exit path unchanged (mask 0x2CC0), proving V6 by test.
+2. Done: halt-aware oracle V3 (no ModePolicy change was needed).
+3. Factory and deployer that build pools with the V3 oracle, plus a swap-level test of V1 and V6 against a real pool manager.
 4. Event-window leaf test through `CalendarRegistry` (V5), including the one-day interval case.
 5. Fork rehearsal on Robinhood testnet, then an independent review before any mainnet deploy. V7 (Sourcify exact match) has the same limit as v2: the factory builds hooks without a metadata hash.
 

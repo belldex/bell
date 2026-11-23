@@ -128,6 +128,15 @@ contract HaltRegistry {
         return block.timestamp < h.expiresAt ? Phase.HALTED : Phase.NORMAL;
     }
 
+    /// @notice When the current HALTED or RESUME_AUCTION state ends, or 0 when the asset is NORMAL. A priced-as-closed policy uses this as its expiry.
+    function haltedUntil(bytes32 assetId) external view returns (uint64) {
+        Halt storage h = _halts[assetId];
+        Phase p = phase(assetId);
+        if (p == Phase.HALTED) return h.expiresAt;
+        if (p == Phase.RESUME_AUCTION) return h.resumedAt + RESUME_AUCTION_SECONDS;
+        return 0;
+    }
+
     function current(bytes32 assetId) external view returns (Halt memory) {
         return _halts[assetId];
     }
