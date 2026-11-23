@@ -879,6 +879,25 @@ contract SessionRegistryTest {
         })), "noncanonical boundary");
     }
 
+    /// @dev Einstein Hooks v3 event windows: an earnings window is a CLOSED leaf carved out of a trading interval, so the capture has to work for a
+    ///      CLOSED leaf that starts mid-session and lasts hours, not only for the overnight or weekend closes.
+    function testCaptureCloseWorksForATwoHourEventWindowInsideTheSession() external {
+        (SessionRegistry registry, MockSessionCalendar calendar,,, bytes32 ordinary) = _prepareCloseCapture(1_000, 100);
+        CalendarLeaf memory window = CalendarLeaf({
+            assetId: ASSET, year: 2026, index: 2, start: 1_100, end: 1_100 + 2 hours,
+            phase: 5, provenanceHash: keccak256("EVENT:earnings")
+        });
+        calendar.setNextInterval(window);
+        bytes32 boundary = CalendarProof.hashLeaf(block.chainid, address(calendar), window);
+        require(boundary != ordinary, "window has the ordinary boundary");
+        Anchor memory captured = registry.captureClose(ASSET, boundary);
+        require(captured.boundaryHash == boundary && captured.closureStart == 1_100, "anchor not bound to the window");
+        require(captured.price18 == 100e18 && captured.sourceHash != bytes32(0), "anchor price or source");
+        require(keccak256(abi.encode(registry.closeAnchor(ASSET, boundary))) == keccak256(abi.encode(captured)), "anchor not stored");
+        (, bool valid,,) = registry.anchorStatus(ASSET, boundary);
+        require(valid, "anchor of the event window is not valid");
+    }
+
     function testCaptureCloseRejectsBoundaryWindowAndClosedCalendarFailures() external {
         (SessionRegistry registry, MockSessionCalendar calendar,,, bytes32 boundary) = _prepareCloseCapture(1_000, 100);
         (bool ok,) = address(registry).call(abi.encodeCall(registry.captureClose, (ASSET, bytes32(uint256(7)))));
