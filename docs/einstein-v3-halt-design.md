@@ -1,6 +1,6 @@
 # Einstein Hooks v3: halt and event windows (design and status)
 
-Status: **the halt registry, the halt-aware policy oracle and the resume auction are built and tested, including on a mainnet fork with the whole v3 stack deployed; the event-window test, the real deploy script and an independent review are not done.** Nothing here is deployed.
+Status: **the halt registry, the halt-aware policy oracle and the resume auction are built and tested, including on a mainnet fork with the whole v3 stack deployed; event windows are built at calendar and hook level; the real deploy script, a close-capture run on an intraday window and an independent review are not done.** Nothing here is deployed.
 
 ## Naming
 `BellHookV3` already exists: it is the PQ Hooks v2 template deployed on mainnet in 1fb9b06. The brief's "Einstein Hooks v3" therefore needs new contract names (`BellHookV4` and its factory), or the page and posts will describe two different things as v3.
@@ -29,6 +29,13 @@ The pool-to-auction registry holds one auction per pool, and the hook already as
 - Fork proof, no etched code: `test/fork/EinsteinHaltStackRehearsal.t.sol` deploys HaltRegistry, BellPolicyOracleV3, the auction registry, the V2 module, a `BellHookDeployerV3` and a `BellPoolFactoryV3` over the real mainnet pool manager, session registry, calendar and asset registry; creates a pool through them; halts it (Swap event fee 10,000 pips), resumes it, arms the auction and gets `AuctionActive` on the next swap.
 - Not shown on the fork: the swap after the window and settlement, because warping a fork makes the live session reports stale. The unit tests cover clearing and refund.
 
+## Built: event windows (scripts/calendar/event-windows.mjs, 7 node tests, 2 hook tests)
+An earnings window needs no new contract. It is a CLOSED leaf with its own provenance hash, carved out of the interval it overlaps, so the hook, the registry and the close-anchor capture treat it like any planned closure. `carveEventWindows` splits the source intervals, merges a window that crosses several into one leaf, and refuses overlapping, reversed or out-of-coverage windows. The carved calendar still builds a valid partition with valid Merkle proofs. If a date moves, rebuild and sign a new root; old roots stay visible.
+- Hook level (V5): a two hour CLOSED leaf latches the closure with the closure budget and no blocking reason, then after the window the pool goes RECOVERING and, after a fresh observation and sixty seconds, ACTIVE. A CLOSED leaf with no captured anchor blocks instead of pricing, as for any closure.
+- Override: the brief suggests a fee and caps override set in the leaf. Not built: the window uses the CLOSED fee and caps, which is the brief's own suggested value. A different override would need a new leaf field and a registry change.
+- Auction at the end of a window: the opening auction arms only for CLOSED followed by PRE or OVERNIGHT. A window that ends into REGULAR or POST reopens through the closure recovery, without an auction.
+- Not run: `SessionRegistry.captureClose` on an intraday window. From the code its conditions (open phase before, CLOSED after, capture within the capture window before the start) allow it, but it was read, not executed. The fee of 10,000 pips in a planned CLOSED comes from the earlier fork run in a closed session, not from a swap inside a carved window.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 
@@ -42,7 +49,7 @@ These are read from the current contracts, not assumed.
 1. Done: `HaltRegistry` with tests.
 2. Done: halt-aware oracle V3 (no ModePolicy change was needed).
 3. Done at fork level: `test/fork/EinsteinHaltRehearsal.t.sol` creates a real pool through the mainnet factory on a fork, gives the deployer's oracle address the V3 runtime code and applies a halt: the pool is ACTIVE before (mode 1), the Swap event fee during the halt is 10,000 pips (V1), and an exit during the halt works without the hook (V6). Run it with `forge test --match-contract EinsteinHaltRehearsal --match-test test_V --fork-url $RH_MAINNET_RPC_SECONDARY`. Left: a deploy script for the real stack. No new factory or deployer code is needed: `BellHookDeployerV3` already takes any `BellPolicyOracleV2`, and V3 extends it, so the stack is HaltRegistry, BellPolicyOracleV3, a new BellHookDeployerV3 pointing at it, and a new BellPoolFactoryV3. The fork test etches the code instead of deploying, so deployment wiring itself is not yet exercised.
-4. Event-window leaf test through `CalendarRegistry` (V5), including the one-day interval case.
+4. Done at calendar and hook level (V5). Left: run `captureClose` and a swap inside a carved window on a fork.
 5. Fork rehearsal on Robinhood testnet, then an independent review before any mainnet deploy. V7 (Sourcify exact match) has the same limit as v2: the factory builds hooks without a metadata hash.
 
 ## Open questions from the brief, still open

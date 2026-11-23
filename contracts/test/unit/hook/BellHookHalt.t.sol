@@ -402,7 +402,7 @@ contract BellHookHaltTest {
         require(!after_.canSwap, "swaps open before recovery finished");
     }
 
-    function testTheResumeWindowStaysPricedAsClosedUntilTheAuctionIsWired() external {
+    function testTheResumeWindowIsPricedAsClosedByTheOracle() external {
         _live();
         _halt(asset0);
         uint64 id = haltReg.lastHaltId(asset0);
@@ -415,5 +415,49 @@ contract BellHookHaltTest {
         PolicyView memory p = hook.refreshState();
         require(p.mode == uint8(Mode.CLOSED) && p.lpFeeUnits == PolicyConstants.FEE_CLOSED, "resume window not priced as closed");
         require(p.validUntil == t + 5 minutes, "window end");
+    }
+
+    /// @dev V5: an earnings window is a CLOSED leaf carved out of a trading interval (scripts/calendar/event-windows.mjs). The hook treats it as
+    ///      any planned closure: latched at its start with the closure budget, then the ordinary recovery on the reopen.
+    function testV5_AnEarningsWindowInsideTheDayIsAPlannedClosureThenRecoversToActive() external {
+        _live();
+        uint64 t0 = uint64(block.timestamp);
+        PolicyView memory before_ = hook.refreshState();
+        require(before_.mode == uint8(Mode.ACTIVE) && before_.canSwap, "not active before the window");
+
+        // The calendar interval is REGULAR until the window starts, then a two hour CLOSED leaf, then REGULAR again.
+        bytes32 boundary = _setClosedContext(asset0, t0, t0 + 2 hours, t0 - 10);
+        require(boundary != bytes32(0), "no boundary");
+        PolicyView memory inWindow = hook.refreshState();
+        require(inWindow.mode == uint8(Mode.CLOSED), "window is not a closure");
+        require(inWindow.phase == PolicyConstants.PHASE_CLOSED, "phase is not CLOSED");
+        require(inWindow.canSwap && inWindow.reasonBits == 0, "closure is blocking, not priced");
+        require(inWindow.closureNonce == 1 && hook.state().closedLatched, "closure not latched");
+
+        // The window ends and the calendar returns to REGULAR: recovery first needs a fresh observation and sixty seconds.
+        uint64 t = t0 + 2 hours + 1;
+        vm.warp(t);
+        _setActiveContext(asset0, t, t + 5000);
+        _setQuoteHealthy();
+        PolicyView memory candidate = hook.refreshState();
+        require(candidate.mode == uint8(Mode.RECOVERING) && !candidate.canSwap, "no recovery after the window");
+
+        vm.warp(t + 61);
+        _setActiveContext(asset0, t + 61, t + 5061);
+        _setQuoteHealthy();
+        PolicyView memory reopened = hook.refreshState();
+        require(reopened.mode == uint8(Mode.ACTIVE) && reopened.canSwap, "pool did not reopen after the window");
+        require(!hook.state().closedLatched && hook.state().closureNonce == 1, "closure not released");
+    }
+
+    function testV5_AnEarningsWindowWithoutACapturedAnchorBlocksInsteadOfPricing() external {
+        _live();
+        uint64 t0 = uint64(block.timestamp);
+        // A CLOSED leaf with no captured anchor is not a proven closure: it blocks instead of pricing.
+        calendar.setCurrent(_closedLeaf(asset0, t0, t0 + 2 hours));
+        calendar.setNext(_activeLeaf(asset0, PolicyConstants.PHASE_REGULAR, t0 + 2 hours, t0 + 3 hours));
+        PolicyView memory p = hook.refreshState();
+        require(!p.canSwap, "unanchored window priced as a closure");
+        require(p.mode != uint8(Mode.CLOSED), "unanchored window became CLOSED");
     }
 }
