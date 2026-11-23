@@ -28,10 +28,12 @@ import { coverageEndWithinUtcYear, planCalendarCoverageStart, planMainnetCalenda
 import { loadEnvFile } from './env-loader.mjs';
 import { buildCalendarRootGovernanceCall } from './mainnet-calendar-hybrid-lib.mjs';
 
-const MAINNET_CHAIN_ID = 46630; // Robinhood testnet; name kept so the rest of the script reads the same
+// EINSTEIN_NETWORK=mainnet points this script at Robinhood mainnet (4663) and the mainnet Einstein stack; the default is testnet (46630).
+const IS_MAINNET = process.env.EINSTEIN_NETWORK === 'mainnet';
+const MAINNET_CHAIN_ID = IS_MAINNET ? 4663 : 46630; // name kept so the rest of the script reads the same
 const ZERO32 = `0x${'0'.repeat(64)}`;
 const DAY = 86_400;
-const STATE_PATH = 'evidence/deploy/testnet-46630-calendar-state.json';
+const STATE_PATH = IS_MAINNET ? 'evidence/deploy/pq-hooks-mainnet-calendar-state.json' : 'evidence/deploy/testnet-46630-calendar-state.json';
 
 import CalendarArtifact from '../../contracts/out/CalendarRegistry.sol/CalendarRegistry.json' with { type: 'json' };
 
@@ -57,12 +59,12 @@ const env = loadEnvFile();
 for (const name of ['BELL_MAINNET_GAS_RESERVE_WEI', 'BELL_CALENDAR_DAYS', 'BELL_CAPABILITY_MASK']) {
   if (process.env[name] !== undefined) env[name] = process.env[name];
 }
-const rpcUrl = env.RH_TESTNET_RPC_PRIMARY;
-const deployerPk = env.DEPLOYER_PRIVATE_KEY;
-if (!rpcUrl) throw new Error('RH_TESTNET_RPC_PRIMARY is required');
+const rpcUrl = IS_MAINNET ? (env.RH_MAINNET_RPC_PRIMARY || env.RH_MAINNET_RPC_SECONDARY) : env.RH_TESTNET_RPC_PRIMARY;
+const deployerPk = IS_MAINNET ? (env.RH_MAINNET_DEPLOYER_PRIVATE_KEY || env.DEPLOYER_PRIVATE_KEY) : env.DEPLOYER_PRIVATE_KEY;
+if (!rpcUrl) throw new Error('an RPC URL is required for the chosen network');
 if (!deployerPk) throw new Error('RH_MAINNET_DEPLOYER_PRIVATE_KEY (or DEPLOYER_PRIVATE_KEY) is required');
 
-const deploymentManifestPath = 'evidence/deploy/pq-hooks-testnet-46630.json';
+const deploymentManifestPath = IS_MAINNET ? 'evidence/deploy/pq-hooks-mainnet.json' : 'evidence/deploy/pq-hooks-testnet-46630.json';
 if (!existsSync(deploymentManifestPath)) {
   throw new Error(`deployment manifest is missing: ${deploymentManifestPath}; run and verify the Mainnet deployment first`);
 }
@@ -74,9 +76,9 @@ if (broadcastRequested && deploymentManifest.status !== 'BROADCASTED_AND_LIVE_CO
 if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
   throw new Error(`manifest chainId is ${manifest.chainId}, expected ${MAINNET_CHAIN_ID}`);
 }
-const testnetAdapters = JSON.parse(readFileSync('evidence/deploy/testnet-46630-chainlink-session-adapters.json', 'utf8'));
-const assetQueue = { chainId: 46630, stocks: { NVDA: { symbol: 'NVDA', token: testnetAdapters.assets.NVDA.stockToken, descriptorId: deploymentManifest.assetDescriptors.NVDA.descriptorId, isStock: true, capabilityMask: 30 } } };
-const ANT_STATE = process.env.ANT_STATE || 'evidence/deploy/testnet-46630-ant.json'; // ANT_STATE=evidence/deploy/testnet-46630-ant-delegated.json selects the delegated-source rehearsal
+const testnetAdapters = IS_MAINNET ? null : JSON.parse(readFileSync('evidence/deploy/testnet-46630-chainlink-session-adapters.json', 'utf8'));
+const assetQueue = IS_MAINNET ? { chainId: 4663, stocks: {} } : { chainId: 46630, stocks: { NVDA: { symbol: 'NVDA', token: testnetAdapters.assets.NVDA.stockToken, descriptorId: deploymentManifest.assetDescriptors.NVDA.descriptorId, isStock: true, capabilityMask: 30 } } };
+const ANT_STATE = process.env.ANT_STATE || (IS_MAINNET ? 'evidence/deploy/mainnet-4663-ant.json' : 'evidence/deploy/testnet-46630-ant.json'); // ANT_STATE=evidence/deploy/testnet-46630-ant-delegated.json selects the delegated-source rehearsal
 if (existsSync(ANT_STATE)) { const ant = JSON.parse(readFileSync(ANT_STATE, 'utf8')); if (ant.admittedDescriptorId) assetQueue.stocks.ANT = { symbol: 'ANT', token: ant.token, descriptorId: ant.admittedDescriptorId, isStock: true, capabilityMask: 30 }; }
 // Multi-asset: resolve the target asset via --asset=<descriptorId|SYMBOL> falling back to the
 // first stock in the queue evidence. Each asset owns its own calendar root/state file.
@@ -155,7 +157,7 @@ function localPqSignature(command, digest, expectedLeaf) {
   const signerPath = fileURLToPath(new URL('../../contracts/pq/signer/signer.mjs', import.meta.url));
   const child = spawnSync(process.execPath, [signerPath, command, 'governance', digest], {
     encoding: 'utf8',
-    env: { ...process.env, BELL_PQ_KEY_PROFILE: 'robinhood-46630' },
+    env: { ...process.env, BELL_PQ_KEY_PROFILE: IS_MAINNET ? 'robinhood-4663' : 'robinhood-46630' },
   });
   if (child.status !== 0) throw new Error(`local Mainnet governance PQ ${command} failed: ${child.stderr.trim()}`);
   const result = JSON.parse(child.stdout);

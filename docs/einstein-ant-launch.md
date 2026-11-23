@@ -16,20 +16,19 @@ The price comes from Robinhood's own REST pricing API, `GET https://api.robinhoo
 Rehearsal 2 on `/einstein/ant` (token without a feed): admit after genesis through hybrid governance, four delegate authorizations (4 REPORTER leaves), a delegate-signed report that read healthy, the calendar root signed post-quantum, the pool, a session fee of 5000 pips in OVERNIGHT, and a swap above the cap refused with `TradeCapExceeded`. Rehearsal 1 did the same with a fixture feed. Every transaction is linked and `verify-einstein-ant.mjs --testnet-rpc` replays them.
 
 ## The mainnet sequence
-Admission already supports mainnet, read-only until told otherwise:
+Done on 23 Nov 2026, replayed by `verify-einstein-ant.mjs` as M1 and M2:
 
-```powershell
-node scripts/einstein/ant-testnet-admit.mjs plan --source delegated --network mainnet
-```
+1. Four delegated adapters deployed against Robinhood's ANT and the asset admitted through a hybrid-signed governance call (`ant-testnet-admit.mjs run --source delegated --network mainnet`). Governance leaf 5.
+2. The ANT calendar root, 114 intervals to 1 Jan 2027, signed post-quantum and activated, then the first interval (`EINSTEIN_NETWORK=mainnet node scripts/deploy/testnet-einstein-calendar.mjs queue|execute-governance|activate-root|activate-interval --asset=ANT`). Governance leaf 6.
 
-That prints the four adapters' gas (about 0.00016 ETH at 0.02 gwei) against the deployer's balance. The steps, in order, each one irreversible once sent:
+Still to do, in this order:
 
-1. `ant-testnet-admit.mjs run --source delegated --network mainnet --broadcast --i-authorize-spend` deploys the four adapters against the real ANT and the mainnet HybridAuth, then queues, executes and activates the asset through a hybrid-signed governance call (GOVERNANCE role, profile `robinhood-4663`, one governance leaf).
-2. `ant-publish.mjs authorize --network mainnet --state evidence/deploy/mainnet-4663-ant.json --hours 24 --broadcast` authorizes the delegate (four REPORTER leaves).
-3. The calendar root for ANT: the same hybrid-signed queue, execute, activate-root, activate-interval sequence as NVDA. `scripts/deploy/testnet-einstein-calendar.mjs` is the testnet version; the mainnet one needs the same constants as `mainnet-calendar.mjs` and the ANT asset id from step 1. Not written yet.
-4. `ant-publish.mjs loop --network mainnet` every 45 seconds while a session is open. Needs a machine or Worker that stays up; the loop is 20 transactions a minute at most, a few cents a day.
-5. The pool: `scripts/einstein/create-first-pool.mjs` generalized to ANT, opening at the live quote and with caps at half of NVDA's for 30 days. Pays 49 USDG plus the seed from the creator wallet. Not written yet.
-6. A5 to A7 as sessions occur, then the page moves from Blocked to live.
+3. **Funds.** The pool needs the seed on both sides plus the 49 USDG service fee from the creator wallet (`LP_TEST`). At a 20 USDG seed that is about 69 USDG and about 0.23 ANT tokens, plus gas. ANT tokens are minted only by Robinhood's authorized participants, so the creator has to buy them on a Robinhood Chain market. Check with the dry run, which prints the exact shortfall:
+   `node scripts/einstein/create-ant-pool.mjs --network mainnet --asset ANT --ant-usd live --usdg 20 --caps-factor 0.5`
+4. **The delegate.** `ant-publish.mjs authorize --network mainnet --state evidence/deploy/mainnet-4663-ant.json --hours 24 --broadcast` (four REPORTER leaves). Do it just before the publisher starts: an authorized delegate that is not used wastes leaves and leaves a hot key open for a day.
+5. **The publisher**, every 45 seconds while a session is open: `ant-publish.mjs loop --network mainnet --state evidence/deploy/mainnet-4663-ant.json --broadcast`. It reads Robinhood's pricing API, signs with the delegate, submits `refreshStockWithReports`, and activates each new calendar interval, so it is also the ANT interval keeper. It needs a machine or Worker that stays up, and the delegation must be renewed daily (one hybrid-signed call per adapter).
+6. **The pool**, with `--broadcast --i-authorize-spend` once the dry run passes and the publisher is running (a pool whose price reports lapse blocks swaps).
+7. A5 to A7 as sessions occur, then the page moves from admitted to live. The calendar ends 1 Jan 2027; a new root is needed before then.
 
 ## What the rehearsals showed
 - Adding a stock token after genesis through hybrid governance works: queue, execute, activate.

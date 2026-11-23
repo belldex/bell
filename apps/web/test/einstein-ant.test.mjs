@@ -77,6 +77,10 @@ test('pool claims stay pending on mainnet until a pool exists, and the mainnet a
     const line = (proof.replay ?? []).find((l) => l.startsWith('M1 '));
     assert.ok(line && /\sPASS\s/.test(line), 'mainnet admission shown without a PASS replay');
     assert.equal(proof.mainnet.adapters.length, 4);
+    if (proof.mainnet.calendar) {
+      const l2 = (proof.replay ?? []).find((l) => l.startsWith('M2 '));
+      assert.ok(l2 && /\sPASS\s/.test(l2), 'mainnet calendar shown without a PASS replay');
+    }
     assert.ok(proof.mainnet.governance.every((t) => t.url.startsWith(proof.chain.explorer)));
   }
   assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)));

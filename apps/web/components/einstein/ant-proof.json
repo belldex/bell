@@ -422,14 +422,31 @@
       }
     ],
     "pqLeafUsed": 5,
-    "note": "Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf 5). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published."
+    "note": "Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf 5). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published. The calendar root for ANT was signed with ECDSA and SHRINCS and activated, so the first session interval is active.",
+    "calendar": {
+      "root": "0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d",
+      "coverageStart": 1795407371,
+      "coverageEnd": 1798761600,
+      "leafCount": 114,
+      "txs": [
+        {
+          "tx": "0xd4ab96e671a348ca815ff6f93869dfd1a9ccc2011edfcec3611f16e33b82bab4",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xd4ab96e671a348ca815ff6f93869dfd1a9ccc2011edfcec3611f16e33b82bab4"
+        },
+        {
+          "tx": "0x2b45e947ca3cb26294b80ab3684664399441664b28238f416f2a37c113a32075",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x2b45e947ca3cb26294b80ab3684664399441664b28238f416f2a37c113a32075"
+        }
+      ]
+    }
   },
-  "lastRun": "2026-11-23T03:57:31.147Z",
+  "lastRun": "2026-11-23T04:17:24.919Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
     "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
     "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
+    "M2  PASS    The ANT calendar root 0xe0d59218fd… (114 intervals, 2026-11-23 to 2027-01-01) was queued through a hybrid-signed governance call and activated: 2 transactions succeeded.",
     "R:fixture:R1 PASS    Admitted after genesis through hybrid governance: 0x9fb37736… success, 0xa4efa329… success, 0x9cce07fb… success",
     "R:fixture:A2 PASS    The calendar root was signed post-quantum: 0x7cc147bf… success, 0x48963efa… success",
     "R:fixture:A3 PASS    The pool is real: 0x0fcffa65… success",

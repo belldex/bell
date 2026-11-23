@@ -127,6 +127,13 @@ if (existsSync('evidence/deploy/mainnet-4663-ant.json')) {
       pqLeafUsed: m.pqLeafUsed,
       note: `Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf ${m.pqLeafUsed}). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published.`,
     };
+    if (existsSync('evidence/deploy/pq-hooks-mainnet-calendar-state-ANT.json')) {
+      const cal = j('evidence/deploy/pq-hooks-mainnet-calendar-state-ANT.json');
+      if (cal.stage === 'INTERVAL_ACTIVE') {
+        proof.mainnet.calendar = { root: cal.root, coverageStart: cal.coverageStart, coverageEnd: cal.coverageEnd, leafCount: cal.leafCount, txs: [mtx(cal.governanceQueuedTxHash), mtx(cal.rootQueuedTxHash)] };
+        proof.mainnet.note += ' The calendar root for ANT was signed with ECDSA and SHRINCS and activated, so the first session interval is active.';
+      }
+    }
     proof.status = 'admitted';
     proof.statusNote = 'ANT is admitted on BELL mainnet with a delegated price source. There is no pool yet and no delegate is authorized, so nothing trades and no price is published.';
   }

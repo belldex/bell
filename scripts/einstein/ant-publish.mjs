@@ -103,7 +103,21 @@ async function readPrice() {
   return (bid + ask) / 2;
 }
 
+/** A pool is only swappable inside an activated calendar interval, and each interval is activated by a plain call. This runs the calendar script's
+ *  activate-interval, which does nothing when the current interval is still active, so the publisher doubles as the interval keeper for ANT. */
+function ensureInterval() {
+  if (!broadcast) return;
+  const r = spawnSync(process.execPath, ['scripts/deploy/testnet-einstein-calendar.mjs', 'activate-interval', '--asset=ANT', '--broadcast', '--i-authorize-spend'], {
+    encoding: 'utf8',
+    env: { ...process.env, EINSTEIN_NETWORK: MAINNET ? 'mainnet' : 'testnet', ANT_STATE: arg('state'), BELL_CALENDAR_DAYS: '60', BELL_CALENDAR_STATE_PREFIX: MAINNET ? 'evidence/deploy/pq-hooks-mainnet-calendar-state' : arg('calendar-prefix', 'evidence/deploy/testnet-46630-calendar-state-delegated') },
+  });
+  const line = (r.stdout || r.stderr || '').trim().split('\n').at(-1) ?? '';
+  if (/Interval active|already active/.test(line) && /Interval active/.test(line)) console.log(`calendar: ${line}`);
+  else if (r.status !== 0) console.error(`calendar: ${line.slice(0, 160)}`);
+}
+
 async function publish() {
+  ensureInterval();
   const price = await readPrice();
   const now = Number((await pc.getBlock()).timestamp);
   const session = sessionAt(now, sessionIntervals(now - 86400, now + 86400));

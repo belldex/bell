@@ -68,6 +68,13 @@ if (proof.mainnet) {
   out.M1 = ok ? { verdict: 'PASS', note: `AssetRegistry ${m.assetRegistry} names descriptor ${onchain.slice(0, 12)}… for ANT, the ${codes.length} delegated adapters have code, and ${rcs.length} transactions succeeded.` }
     : { verdict: 'FAIL', note: `descriptor on chain ${onchain}, adapters with code ${codes.filter((x) => x.ok).length}/${codes.length}, successful transactions ${rcs.filter((x) => x === 'success').length}/${rcs.length}` };
 }
+if (proof.mainnet?.calendar) {
+  const cal = proof.mainnet.calendar;
+  const rcs = await Promise.all(cal.txs.map(async (t) => { try { return (await pc.getTransactionReceipt({ hash: t.tx })).status; } catch { return 'missing'; } }));
+  out.M2 = rcs.every((x) => x === 'success')
+    ? { verdict: 'PASS', note: `The ANT calendar root ${cal.root.slice(0, 12)}… (${cal.leafCount} intervals, ${new Date(cal.coverageStart * 1000).toISOString().slice(0, 10)} to ${new Date(cal.coverageEnd * 1000).toISOString().slice(0, 10)}) was queued through a hybrid-signed governance call and activated: ${rcs.length} transactions succeeded.` }
+    : { verdict: 'FAIL', note: `calendar transactions: ${rcs.join(', ')}` };
+}
 // The testnet rehearsal, when a testnet RPC is given: every linked transaction must be a successful receipt, and the Swap event and the revert are read again.
 const testnetRpc = arg('testnet-rpc', process.env.TESTNET_RPC_URL);
 if (proof.rehearsals?.length && testnetRpc) {

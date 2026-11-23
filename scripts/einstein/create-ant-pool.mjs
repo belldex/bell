@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /**
- * Creates and seeds the first Einstein Hooks v2 pool (NVDA/USDG) on Robinhood TESTNET (46630) through the
- * BellPoolFactoryV3, using the PQ stack in evidence/deploy/pq-hooks-mainnet.json.
+ * Creates and seeds an Einstein Hooks v2 pool through the BellPoolFactoryV3. Default network is Robinhood testnet (46630); with
+ * --network mainnet it targets Robinhood mainnet (4663) and the stack in evidence/deploy/pq-hooks-mainnet.json. With --asset ANT the
+ * stock side is the ANT admitted by ant-testnet-admit.mjs (test token on testnet, Robinhood's ANT on mainnet).
+ *
+ *   --ant-usd <price|live>   the opening price; live reads Robinhood's pricing API (tokenBid and tokenAsk)
+ *   --caps-factor 0.5        scales the per-trade, window and closure caps (ANT starts at half of NVDA's for 30 days)
  *
  * Default is a dry run: it derives the request, mines the hook salt and checks balances, and sends nothing.
  *
@@ -25,35 +29,45 @@ import { deriveSqrtPriceFromAmounts, deriveTickBounds, deriveLiquidityForSeed, d
 
 const arg = (name, fallback) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : fallback; };
 const broadcast = process.argv.includes('--broadcast');
+const MAINNET = arg('network', 'testnet') === 'mainnet';
+if (MAINNET && broadcast && !process.argv.includes('--i-authorize-spend')) throw new Error('a mainnet broadcast needs --broadcast --i-authorize-spend');
 
 const env = {};
 for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
   const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
   if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
 }
-const manifest = JSON.parse(readFileSync('evidence/deploy/pq-hooks-testnet-46630.json', 'utf8'));
-const inputs = JSON.parse(readFileSync('evidence/deploy/testnet-46630-pq-inputs.json', 'utf8'));
+const manifest = JSON.parse(readFileSync(MAINNET ? 'evidence/deploy/pq-hooks-mainnet.json' : 'evidence/deploy/pq-hooks-testnet-46630.json', 'utf8'));
+const inputs = MAINNET ? JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8')) : JSON.parse(readFileSync('evidence/deploy/testnet-46630-pq-inputs.json', 'utf8'));
 const c = manifest.contracts;
 const USDG = manifest.assetDescriptors.USDG.token;
 // --asset ANT creates the pool for the test ANT token admitted by ant-testnet-admit.mjs; the stock side is called NVDA below only because the script grew from the NVDA one.
-const ANT = arg('asset', 'NVDA') === 'ANT' ? JSON.parse(readFileSync(process.env.ANT_STATE || 'evidence/deploy/testnet-46630-ant.json', 'utf8')) : null;
+const ANT = arg('asset', 'NVDA') === 'ANT' ? JSON.parse(readFileSync(process.env.ANT_STATE || (MAINNET ? 'evidence/deploy/mainnet-4663-ant.json' : 'evidence/deploy/testnet-46630-ant.json'), 'utf8')) : null;
 const NVDA = ANT ? ANT.token : manifest.assetDescriptors.NVDA.token;
 const USDG_ID = manifest.assetDescriptors.USDG.descriptorId;
 const NVDA_ID = ANT ? ANT.admittedDescriptorId : manifest.assetDescriptors.NVDA.descriptorId;
 const NVDA_IS_0 = BigInt(NVDA) < BigInt(USDG); // the pool sorts by address; on testnet tNVDA happens to sort first
 
-const nvdaUsd = Number(arg('nvda-usd', ''));
+async function liveQuote() {
+  const q = (await (await fetch('https://api.robinhood.com/rhj/prices/ANT')).json()).quotes?.[0];
+  if (!q || q.isTradingHalt) throw new Error('no live ANT quote, or ANT is halted');
+  const bid = Number(q.tokenBid); const ask = Number(q.tokenAsk);
+  if (!(bid > 0 && ask >= bid) || (ask - bid) / ((ask + bid) / 2) > 0.02) throw new Error('the live spread is wider than 2 percent');
+  return (bid + ask) / 2;
+}
+const priceArg = arg('ant-usd', arg('nvda-usd', ''));
+const nvdaUsd = priceArg === 'live' ? await liveQuote() : Number(priceArg);
 const usdg = Number(arg('usdg', '1'));
-if (!(nvdaUsd > 0)) throw new Error('pass --nvda-usd <price>, a real NVDA quote in USD');
+if (!(nvdaUsd > 0)) throw new Error('pass --ant-usd <price|live> (or --nvda-usd), a real quote in USD');
 if (!(usdg > 0)) throw new Error('--usdg must be positive');
 
-const rpcUrl = arg('rpc', env.RH_TESTNET_RPC_PRIMARY);
-const key = env.DEPLOYER_PRIVATE_KEY;
-if (!rpcUrl || !key) throw new Error('RH_TESTNET_RPC_PRIMARY and DEPLOYER_PRIVATE_KEY are required in .env');
+const rpcUrl = arg('rpc', MAINNET ? (env.RH_MAINNET_RPC_PRIMARY || env.RH_MAINNET_RPC_SECONDARY) : env.RH_TESTNET_RPC_PRIMARY);
+const key = MAINNET ? env.LP_TEST_PRIVATE_KEY : env.DEPLOYER_PRIVATE_KEY; // on mainnet the creator is LP_TEST, as for the first pool
+if (!rpcUrl || !key) throw new Error('an RPC URL and the creator key are required in .env');
 const account = privateKeyToAccount(key.startsWith('0x') ? key : `0x${key}`);
 const publicClient = createPublicClient({ transport: http(rpcUrl) });
 const walletClient = createWalletClient({ account, transport: http(rpcUrl) });
-if ((await publicClient.getChainId()) !== 46630) throw new Error('RPC is not Robinhood testnet (46630)');
+if ((await publicClient.getChainId()) !== (MAINNET ? 4663 : 46630)) throw new Error('RPC is not the chosen network');
 
 const erc20 = parseAbi(['function balanceOf(address) view returns (uint256)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)']);
 const factoryAbi = FactoryArtifact.abi;
@@ -80,7 +94,10 @@ console.log(`need  USDG ${Number(needUsdg) / 1e6} (49 fee + ${usdg} seed), NVDA 
 const sqrtPriceX96 = deriveSqrtPriceFromAmounts({ amount0, amount1 });
 const { tickLower, tickUpper, currentTick } = deriveTickBounds({ sqrtPriceX96, tickSpacing: 60, halfWidth: 6000 });
 const liquidity = deriveLiquidityForSeed({ sqrtPriceX96, tickLower, tickUpper, amount0, amount1 });
-const caps = deriveFlowCaps({ seed0: amount0, seed1: amount1 });
+const capsRaw = deriveFlowCaps({ seed0: amount0, seed1: amount1 });
+const factor = Number(arg('caps-factor', '1'));
+const scale = (arr) => arr.map((v) => (BigInt(v) * BigInt(Math.round(factor * 1000))) / 1000n);
+const caps = { tradeCap: scale(capsRaw.tradeCap), windowCap: scale(capsRaw.windowCap), closureCap: scale(capsRaw.closureCap) };
 
 const profile = {
   token0: NVDA_IS_0 ? NVDA : USDG, token1: NVDA_IS_0 ? USDG : NVDA, asset0: NVDA_IS_0 ? NVDA_ID : USDG_ID, asset1: NVDA_IS_0 ? USDG_ID : NVDA_ID,
@@ -89,7 +106,7 @@ const profile = {
   factory: c.poolFactory, assetRegistry: c.assetRegistry, calendarRegistry: c.calendarRegistry, safetyController: c.safetyController,
   treasuryAdapter: '0x0000000000000000000000000000000000000000', poolClass: 1, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
   tradeCap: [...caps.tradeCap], windowCap: [...caps.windowCap], closureCap: [...caps.closureCap],
-  policyId: (await import('viem')).keccak256((await import('viem')).stringToHex('bell-einstein-testnet-v1')),
+  policyId: (await import('viem')).keccak256((await import('viem')).stringToHex(MAINNET ? (env.BELL_POLICY_ID || 'bell-mainnet-v1') : 'bell-einstein-testnet-v1')),
   referenceAdapter0: '0x0000000000000000000000000000000000000000', referenceAdapter1: '0x0000000000000000000000000000000000000000',
 };
 
@@ -97,7 +114,7 @@ const nonce = await publicClient.readContract({ address: c.poolFactory, abi: fac
 const poolKey = { currency0: profile.token0, currency1: profile.token1, fee: 0x800000, tickSpacing: 60, hooks: '0x0000000000000000000000000000000000000000' };
 const initCodeHash = await publicClient.readContract({ address: c.hookDeployer, abi: DeployerArtifact.abi, functionName: 'initCodeHash', args: [profile, poolKey] });
 const mined = mineHookSalt({
-  chainId: 46630n, factory: c.poolFactory, creator: account.address, deployer: c.hookDeployer, nonce: BigInt(nonce),
+  chainId: MAINNET ? 4663n : 46630n, factory: c.poolFactory, creator: account.address, deployer: c.hookDeployer, nonce: BigInt(nonce),
   baseSalt: `0x${'0'.repeat(64)}`, initCodeHash, maxAttempts: 1_000_000,
 });
 console.log(`hook ${mined.hook} (flags ${mined.hookFlags}, found after ${mined.attempts} tries)`);
@@ -149,6 +166,6 @@ log.txs.createAndSeed = hash;
 log.block = Number(receipt.blockNumber); log.gasUsed = Number(receipt.gasUsed); log.status = receipt.status;
 log.hook = sim.result.hook; log.poolId = sim.result.poolId; log.tokenId = String(sim.result.tokenId);
 log.request = { sqrtPriceX96: String(sqrtPriceX96), tickLower, tickUpper, liquidity: String(liquidity), seedUsdg: usdg, nvdaUsd };
-const out = `evidence/einstein/${ANT ? 'testnet-ant-pool' : 'testnet-pool'}-${Date.now()}.json`;
+const out = `evidence/einstein/${MAINNET ? (ANT ? 'ant-pool' : 'pool') : ANT ? 'testnet-ant-pool' : 'testnet-pool'}-${Date.now()}.json`;
 writeFileSync(out, `${JSON.stringify(log, null, 2)}\n`);
 console.log(`createAndSeed ${hash} status ${receipt.status} block ${receipt.blockNumber}\nwrote ${out}`);

@@ -19,7 +19,7 @@ const SECTIONS = [
 type Verdict = "PASS" | "PENDING" | "FAIL";
 type Rehearsal = { key: string; title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
 const rehearsals = ((proof as { rehearsals?: Rehearsal[] }).rehearsals ?? []);
-type Mainnet = { title: string; note: string; assetRegistry: string; token: string; descriptorId: string; governance: { tx: string; url: string }[]; adapters: { name: string; address: string; deployTx: { tx: string; url: string } }[] };
+type Mainnet = { calendar?: { root: string; leafCount: number; txs: { tx: string; url: string }[] }; title: string; note: string; assetRegistry: string; token: string; descriptorId: string; governance: { tx: string; url: string }[]; adapters: { name: string; address: string; deployTx: { tx: string; url: string } }[] };
 const mainnet = (proof as { mainnet?: Mainnet }).mainnet;
 type Solution = { title: string; points: string[]; contract: string; tests: string };
 const solution = (proof.blocker as { solution?: Solution }).solution;
@@ -62,6 +62,7 @@ export function AntPage() {
               <div><dt>Check M1</dt><dd>{(replay.find((l) => l.startsWith("M1 ")) ?? "").includes(" PASS ") ? "Proven: the registry names the descriptor, the adapters have code and every transaction succeeded" : "Not replayed yet"}</dd></div>
               <div><dt>Asset descriptor</dt><dd><code>{short(mainnet.descriptorId, 12, 8)}</code> in {addr(mainnet.assetRegistry)}</dd></div>
               <div><dt>Governance</dt><dd>{mainnet.governance.map((t) => <a key={t.tx} href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)} </a>)}</dd></div>
+              {mainnet.calendar && <div><dt>Check M2</dt><dd>{(replay.find((l) => l.startsWith("M2 ")) ?? "").includes(" PASS ") ? "Proven: " : "Not replayed yet: "}the calendar root {short(mainnet.calendar.root, 10, 6)} ({mainnet.calendar.leafCount} intervals) was signed post-quantum and activated {mainnet.calendar.txs.map((t) => <a key={t.tx} href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)} </a>)}</dd></div>}
               <div><dt>Adapters</dt><dd>{mainnet.adapters.map((a) => <span key={a.address}>{a.name}: {addr(a.address)} (<a href={a.deployTx.url} target="_blank" rel="noopener noreferrer">deploy</a>); </span>)}</dd></div>
             </dl>
           </section>
