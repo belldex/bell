@@ -15,12 +15,12 @@
   "stage": "INTERVAL_ACTIVE",
   "sourceMode": "HybridAuth-SafetyControllerV2",
   "assetLabel": "ANT",
-  "updatedAt": "2026-11-23T03:43:34.673Z",
+  "updatedAt": "2026-11-23T13:34:33.897Z",
   "rootOperationId": "0xf91f281813ece9595c9f063c7aea982b08440fa4ffcfb7c98a2c3e55b79dd867",
   "rootQueuedTxHash": "0x4d8396fdd6de104040819aae93ed0c5169ab64eadea999adafeebbfe3701e830",
   "rootEta": 1795405117,
   "rootExpiry": 1796009917,
   "rootActivatedAt": 1795405119,
-  "intervalActivatedAt": 1795405413,
-  "activePhase": 4
+  "intervalActivatedAt": 1795440872,
+  "activePhase": 1
 }

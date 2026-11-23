@@ -48,6 +48,16 @@ The deploy script was broadcast to testnet only (manifest: `evidence/deploy/halt
 - HaltRegistry `0xFE42C91Dd28a0501512717bC4541FCaa21458138`, BellPolicyOracleV3 `0xba229B3B018f2deEC5b3D813a466E8c24EBe6eFe`, BellPoolFactoryV3 `0x4C7E5dEc779217B3ADF7EE4E95E9665342D0008a`, BellHookDeployerV3 `0x4D69e4Ca36066C1d375DF40DA00C5cb55221CDb4`, auction registry `0x457462262a9D9be6dEE745CE4B4B786f187231A1`, module V2 `0x548B5F2dfd0F3bA0D0e4F022b8a1239FE241F6A4`.
 - Not done on testnet yet: a pool through the new factory, a real hybrid-signed `halt` and `resume` (the REPORTER key needs PQ leaves on the testnet profile), a swap during the halt and the `AuctionActive` refusal. Source verification on the testnet explorer is not done either. Nothing on mainnet changed.
 
+## Run on testnet through the deployed stack (46630), 23 Nov 2026
+A pool was created through the new factory (hook `0xB81Ef919Fcc4934Db60B8284dEfec5ecaA84acc0`, ANT test token, fixture feed; `evidence/einstein/testnet-ant-pool-1795440881690.json`) and the halt proofs ran with real HybridAuth signatures (ECDSA by the REPORTER signer, SHRINCS from the local signer state, `scripts/einstein/halt-reporter.mjs`, `scripts/einstein/halt-testnet-proofs.mjs`, results in `evidence/einstein/halt-testnet-proofs.json`):
+- **V3 PASS**: a halt with ECDSA only reverted on chain and changed nothing.
+- **V1 PASS**: a hybrid halt (REPORTER leaf 7), the closure checkpoint, then a swap whose Swap event fee is 10,000 pips; the hook reported CLOSED. An earlier 0.3 USDG swap in the same halt reverted with `TradeCapExceeded`: the closure trade cap applies while halted (about 0.2 USDG for this pool).
+- **V6 PASS**: 1 percent of the position removed while the registry said HALTED; the receipt has no log from the hook, and the hook address has the remove-liquidity bits off.
+- **V2 PASS**: a hybrid resume, `armResume`, then a swap reverted with `AuctionActive`. After the five minute window the cycle stayed LOCKED until someone called `settle` (permissionless, empty book); only then did swaps reopen. A keeper has to call `armResume` after a resume and `settle` after the window.
+- **V4 pending**: halt 2 was recorded and left alone; it lapses at unix 1795448256 (two hours after it was recorded). `node scripts/einstein/halt-testnet-proofs.mjs --pool evidence/einstein/testnet-ant-pool-1795440881690.json --v4-check` records PASS only if the registry has gone back to NORMAL by itself. It does not yet show a swap at the normal session fee afterwards, which needs the pool to finish its recovery with fresh session reports.
+- Two things the run taught: the pool factory's profile hash includes the policy id, which `BELL_POLICY_ID` fixes (the script now uses it with `--stack halt`); and a pool cannot be created while the stock has no active calendar interval, which on testnet needs `activate-interval` because no keeper runs there.
+- Testnet only, test token, fixture feed. Nothing on mainnet changed. Not an independent review.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 

@@ -39,7 +39,14 @@ for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
 }
 const manifest = JSON.parse(readFileSync(MAINNET ? 'evidence/deploy/pq-hooks-mainnet.json' : 'evidence/deploy/pq-hooks-testnet-46630.json', 'utf8'));
 const inputs = MAINNET ? JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8')) : JSON.parse(readFileSync('evidence/deploy/testnet-46630-pq-inputs.json', 'utf8'));
-const c = manifest.contracts;
+const c = { ...manifest.contracts };
+// --stack halt: create the pool through the Einstein Hooks v3 factory (docs/einstein-v3-halt-design.md); every other dependency is the same.
+if (arg('stack', '') === 'halt') {
+  const halt = JSON.parse(readFileSync(MAINNET ? 'evidence/deploy/halt-stack-4663.json' : 'evidence/deploy/halt-stack-testnet-46630.json', 'utf8'));
+  if (halt.status !== 'BROADCAST') throw new Error('the halt stack manifest is not a broadcast deployment');
+  c.poolFactory = halt.contracts.poolFactory; c.hookDeployer = halt.contracts.hookDeployer;
+  c.auctionRegistry = halt.contracts.auctionRegistry; c.haltRegistry = halt.contracts.haltRegistry;
+}
 const USDG = manifest.assetDescriptors.USDG.token;
 // --asset ANT creates the pool for the test ANT token admitted by ant-testnet-admit.mjs; the stock side is called NVDA below only because the script grew from the NVDA one.
 const ANT = arg('asset', 'NVDA') === 'ANT' ? JSON.parse(readFileSync(process.env.ANT_STATE || (MAINNET ? 'evidence/deploy/mainnet-4663-ant.json' : 'evidence/deploy/testnet-46630-ant.json'), 'utf8')) : null;
@@ -106,7 +113,7 @@ const profile = {
   factory: c.poolFactory, assetRegistry: c.assetRegistry, calendarRegistry: c.calendarRegistry, safetyController: c.safetyController,
   treasuryAdapter: '0x0000000000000000000000000000000000000000', poolClass: 1, liquidityMode: 0, referenceMode: 0, tickSpacing: 60,
   tradeCap: [...caps.tradeCap], windowCap: [...caps.windowCap], closureCap: [...caps.closureCap],
-  policyId: (await import('viem')).keccak256((await import('viem')).stringToHex(MAINNET ? (env.BELL_POLICY_ID || 'bell-mainnet-v1') : 'bell-einstein-testnet-v1')),
+  policyId: (await import('viem')).keccak256((await import('viem')).stringToHex(MAINNET || arg('stack', '') === 'halt' ? (env.BELL_POLICY_ID || 'bell-mainnet-v1') : 'bell-einstein-testnet-v1')),
   referenceAdapter0: '0x0000000000000000000000000000000000000000', referenceAdapter1: '0x0000000000000000000000000000000000000000',
 };
 
@@ -154,6 +161,11 @@ for (const [token, need, name] of missing) {
   const approveHash = await walletClient.writeContract({ address: token, abi: erc20, functionName: 'approve', args: [c.poolFactory, need] });
   await publicClient.waitForTransactionReceipt({ hash: approveHash });
   log.txs[name] = approveHash; console.log(`${name} ${approveHash}`);
+}
+if (process.env.DUMP_CALLDATA) {
+  const { encodeFunctionData } = await import('viem');
+  writeFileSync(process.env.DUMP_CALLDATA, encodeFunctionData({ abi: factoryAbi, functionName: 'createAndSeed', args: [request] }));
+  console.log(`wrote calldata for ${account.address} to ${process.env.DUMP_CALLDATA}`); process.exit(0);
 }
 const sim = await publicClient.simulateContract({ address: c.poolFactory, abi: factoryAbi, functionName: 'createAndSeed', args: [request], account });
 console.log(`simulation passed, hook ${sim.result.hook}, pool ${sim.result.poolId}`);

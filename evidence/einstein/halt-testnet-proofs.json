@@ -1,0 +1,62 @@
+{
+  "chainId": 46630,
+  "pool": "0x9173cf0b941b5d75923cc86511a1944ee5460e3d7b30c9e12c19dbbed377c598",
+  "hook": "0xB81Ef919Fcc4934Db60B8284dEfec5ecaA84acc0",
+  "createTx": "0x89bbd9f1da05c917ef73cd331e85f31df9f98832239a0064b548779ed53b44e1",
+  "haltRegistry": "0xFE42C91Dd28a0501512717bC4541FCaa21458138",
+  "note": "Testnet rehearsal. Test ANT token, fixture feed, mock-free HybridAuth. Not mainnet.",
+  "checks": {
+    "V3": {
+      "verdict": "PASS",
+      "tx": "0xe119368929e24bd56f0a3214fd924ec1dee53bb7628dfee0df650167ead8cd32",
+      "note": "a halt carrying only the ECDSA signature reverted on chain; the registry state did not change"
+    },
+    "V1": {
+      "verdict": "PASS",
+      "haltTx": "0xe72bb66e354e36668fadba853918038cfe9583422a1cccb7de8966a4ab514fa9",
+      "reporterLeaf": "7",
+      "checkpointTx": "0xbdcb7878c11c438aef4848a8761021f1cdf8d4f81223e526fa9d5531e53edd46",
+      "swapTx": "0x909f7fb516a31136837730c0d232eaaa6d8343a0fdc044ee0f7baab9d2bf8f05",
+      "registryPhase": "HALTED",
+      "haltedUntil": 1795448256,
+      "hookMode": "CLOSED",
+      "feePips": 10000,
+      "note": "hybrid halt recorded, registry HALTED, hook CLOSED, Swap event fee 10000 pips"
+    },
+    "V6": {
+      "verdict": "PASS",
+      "tx": "0x06984d9edebc8e69d9a92f7dbb17d871b5574d22046f6e9c5471707af1793272",
+      "registryPhase": "HALTED",
+      "hookLogs": false,
+      "note": "1 percent of the position removed while the registry said HALTED; no log from the hook in the receipt, and the hook address has remove-liquidity bits 9, 8 and 0 off"
+    },
+    "V2": {
+      "verdict": "PASS",
+      "resumeTx": "0xccda8a765a774b68327fb27cebea43218f30ca41cf62584c324fe012fb527fa0",
+      "reporterLeaf": "6",
+      "armTx": "0xfe76a9096cdd3714e739edff2128f2c24653bc886580799f856fb797910d5534",
+      "swapTx": "0x97089473148e867ae5bdb6f15739ae8c66c992cca851af9653f7397c54e797af",
+      "auctionBlocksSwaps": true,
+      "error": "AuctionActive",
+      "note": "hybrid resume recorded, reopening auction armed (blocksSwaps true), a swap reverted with AuctionActive; after the window the empty cycle was settled and swaps reopened",
+      "settleTx": "0x806c31f1d56969ae2ac9902a8f503532fe5206a352c200c5e41e3540023c777d"
+    },
+    "V1_firstAttempt": {
+      "tx": "0xbbd2bc2a6041acdf866a966a10f8ddc0e5605fa8088d8696162b09bfe0c9b76c",
+      "error": "TradeCapExceeded",
+      "note": "a 0.3 USDG swap during the first halt reverted with TradeCapExceeded: the closure trade cap applies while halted"
+    }
+  },
+  "auction": "0x5094Cf8EAd1c2fC30dfb5c39C1731eC2e804dDb4",
+  "recordedAt": "2026-11-23T13:41:58.829Z",
+  "halt1": {
+    "haltTx": "0x3985f9b05572bfad7b081da678a690f5798cc48e5d7706237ba162f7f65af5f3",
+    "haltedUntil": 1795448203
+  },
+  "v4": {
+    "haltTx": "0xe72bb66e354e36668fadba853918038cfe9583422a1cccb7de8966a4ab514fa9",
+    "haltedUntil": 1795448256,
+    "recordedAt": 1795441054,
+    "leaf": "7"
+  }
+}
