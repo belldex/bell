@@ -17,7 +17,7 @@ const retrievedAt = '2026-11-23';
 const proof = {
   title: 'ANT on BELL', subtitle: "Robinhood's Anthropic stock token, onboarded step by step. Nothing here is live until it says so.",
   chain: { id: 4663, name: 'Robinhood Chain', explorer: 'https://robinhoodchain.blockscout.com' },
-  status: 'blocked', statusNote: "ANT cannot be admitted yet: Chainlink has no ANT feed on Robinhood Chain, and BELL's asset registry refuses a stock token that has no price source.",
+  status: 'blocked', statusNote: "ANT is not live on mainnet yet. Chainlink has no ANT feed, and BELL's asset registry refuses a stock token without a price source, so BELL built its own: a delegated-attestation source, rehearsed end to end on testnet below. The mainnet steps are next.",
   a1: {
     address: '0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373',
     referenceTokens: [
@@ -41,7 +41,18 @@ const proof = {
       "BELL's AssetRegistry refuses a stock token without a price adapter and session sources (ERR_STOCK_ADAPTERS, ERR_TOKEN_SOURCE_MISSING). A market-price mode, where the pool prices from its own liquidity, is not something the deployed contracts allow for admission.",
       'A BELL-attested price would need a post-quantum signed report on every update, because each report spends one HybridAuth leaf. Reports must be at most 60 to 300 seconds old depending on the session, so a 4,096-leaf REPORTER key would last roughly three to six days of continuous quoting.',
     ],
-    unblocks: 'A Chainlink ANT/USD feed on Robinhood Chain. When one is listed the launch is the same sequence as NVDA: four source adapters, the asset queued through hybrid governance, the calendar root, the pool, the Lens.',
+    unblocks: 'Two ways. A Chainlink ANT/USD feed on Robinhood Chain, if one is listed. Or the delegated-attestation source below, which needs no feed.',
+    solution: {
+      title: 'The way around it: one post-quantum signature a day, a delegate key per report',
+      points: [
+        'One hybrid-signed call (ECDSA and SHRINCS, one leaf per adapter) names a delegate key that may sign for at most a day and an hour. The delegate signs each report with ECDSA only. Four adapters means four leaves a day, so a 4,096-leaf REPORTER key lasts about two and a half years.',
+        "The price is read from Robinhood's own REST pricing API (tokenBid and tokenAsk, already adjusted for the corporate-action multiplier). A report is not published when the API says the asset is halted, when the spread is wider than 2 percent, or when the quote is older than a minute.",
+        "What it costs in trust, plainly: inside a delegation window one ECDSA key can publish prices, and BELL is the oracle for ANT. Limits: a report may move the price at most 3 percent from the last one (25 percent after a quiet gap, anything larger needs a hybrid-signed rebase), the delegation expires by itself and can be revoked with a hybrid-signed call, and the delegate cannot touch the token's corporate-action status, which the registry reads from the token.",
+        'The pool is SESSION_ONLY, so the price never sets a swap price; it feeds the health checks and the closing anchors. If Chainlink lists an ANT feed later, the source can be replaced.',
+      ],
+      contract: 'contracts/src/adapters/DelegatedAttestedSourceAdapter.sol',
+      tests: '14 forge tests, including: no report before a delegate exists, one leaf for twenty reports, a foreign key refused, a post-quantum field on a report refused, expiry, rotation and revoke, the step bands and rebase.',
+    },
     sources: [
       { label: 'Chainlink feed directory for Robinhood mainnet', url: 'https://reference-data-directory.vercel.app/feeds-robinhood-mainnet.json', retrievedAt },
       { label: 'Robinhood: oracles and price feeds', url: 'https://docs.robinhood.com/chain/oracles-and-price-feeds', retrievedAt },
@@ -67,19 +78,17 @@ const proof = {
     'No independent cryptographic review of the post-quantum stack exists yet.',
   ],
 };
-// The testnet rehearsal: the same steps ANT will need on mainnet, run with a test token and a fixture feed, every transaction linked.
+// Testnet rehearsals: the same steps ANT needs on mainnet, run with a test token, every transaction linked. Two of them: one with a
+// Chainlink-shaped fixture feed, one with the delegated-attestation price source, which is what ANT has to use because no feed exists.
 const exp = 'https://explorer.testnet.chain.robinhood.com';
-if (existsSync('evidence/deploy/testnet-46630-ant.json') && existsSync('evidence/einstein/ant-testnet-proofs.json')) {
-  const adm = JSON.parse(readFileSync('evidence/deploy/testnet-46630-ant.json', 'utf8'));
-  const cal = JSON.parse(readFileSync('evidence/deploy/testnet-46630-calendar-state-ANT.json', 'utf8'));
-  const proofs = JSON.parse(readFileSync('evidence/einstein/ant-testnet-proofs.json', 'utf8'));
-  const tx = (h) => ({ tx: h, url: `${exp}/tx/${h}` });
-  proof.rehearsal = {
-    title: 'Rehearsal on Robinhood testnet', network: { id: 46630, explorer: exp },
-    note: 'The same steps ANT needs on mainnet, run with a test token (tANT), a fixture price feed and the Einstein stack deployed on testnet. It is not ANT and it is not mainnet. It shows that the path that does not exist on mainnet yet, adding a stock token after genesis, works.',
-    token: adm.token, feed: adm.feed, hook: proofs.hook, pool: proofs.pool,
+const tx = (h) => ({ tx: h, url: `${exp}/tx/${h}` });
+const j = (f) => JSON.parse(readFileSync(f, 'utf8'));
+function rehearsal(key, title, note, adm, cal, proofs, extraSteps) {
+  return {
+    key, title, network: { id: 46630, explorer: exp }, note, token: adm.token, feed: adm.feed ?? null, hook: proofs.hook, pool: proofs.pool,
     steps: [
       { id: 'R1', title: 'Admitted after genesis through hybrid governance', note: `A governance call signed with ECDSA and SHRINCS (HybridAuth leaf ${adm.pqLeafUsed}) queued AssetRegistry.queueAsset, was executed, and the asset was activated.`, txs: [tx(adm.txs.queueGovernanceCall), tx(adm.txs.executeGovernanceCall), tx(adm.txs.activateAsset)], verdict: 'PASS' },
+      ...extraSteps,
       { id: 'A2', title: 'The calendar root was signed post-quantum', note: 'The root for the asset was queued through a second hybrid-signed governance call, executed, then activated.', txs: [tx(cal.governanceQueuedTxHash), tx(cal.rootQueuedTxHash)], verdict: cal.stage === 'INTERVAL_ACTIVE' ? 'PASS' : 'PENDING' },
       { id: 'A3', title: 'The pool is real', note: 'Created and seeded in one transaction through the factory.', txs: [tx(proofs.createTx)], verdict: 'PASS' },
       { id: 'A4', title: 'The hook cannot trap exits', note: proofs.checks.A4.note, txs: [], verdict: proofs.checks.A4.verdict },
@@ -88,12 +97,29 @@ if (existsSync('evidence/deploy/testnet-46630-ant.json') && existsSync('evidence
     ],
   };
 }
+proof.rehearsals = [];
+if (existsSync('evidence/deploy/testnet-46630-ant.json') && existsSync('evidence/einstein/ant-testnet-proofs.json')) {
+  proof.rehearsals.push(rehearsal('fixture', 'Rehearsal 1: a fixture feed',
+    'The path with a Chainlink-shaped fixture feed. It shows adding a stock token after genesis works, which no mainnet transaction has done yet. Test token, not ANT, not mainnet.',
+    j('evidence/deploy/testnet-46630-ant.json'), j('evidence/deploy/testnet-46630-calendar-state-ANT.json'), j('evidence/einstein/ant-testnet-proofs.json'), []));
+}
+if (existsSync('evidence/deploy/testnet-46630-ant-delegated.json') && existsSync('evidence/einstein/ant-testnet-proofs-delegated.json')) {
+  const adm = j('evidence/deploy/testnet-46630-ant-delegated.json');
+  const published = readFileSync('evidence/einstein/ant-publish.out.log', 'utf8').split('\n').map((l) => l.match(/published (\d+) USD, reasons (\d+), tx (0x[0-9a-f]{64})/)).filter(Boolean)[0];
+  proof.rehearsals.push(rehearsal('delegated', 'Rehearsal 2: no feed, a delegated price source',
+    'The situation ANT is in: no Chainlink feed. The price source is the delegated-attestation adapter: one post-quantum signature authorizes a delegate key for a day, and the delegate signs each report with ECDSA only. Test token, not ANT, not mainnet.',
+    adm, j('evidence/deploy/testnet-46630-calendar-state-delegated-ANT.json'), j('evidence/einstein/ant-testnet-proofs-delegated.json'),
+    [
+      { id: 'D1', title: 'The delegate was authorized with one post-quantum signature per adapter', note: `Four adapters, one hybrid-signed call each (REPORTER leaves ${adm.delegations.map((d) => d.leaf).join(', ')}). After that the delegate signs reports with ECDSA only and spends no more leaves.`, txs: adm.delegations.map((d) => tx(d.tx)), verdict: adm.delegations.length === 4 ? 'PASS' : 'PENDING' },
+      ...(published ? [{ id: 'D2', title: 'A delegate-signed report was accepted and the asset read healthy', note: `A direct price and a session report signed by the delegate were submitted to the SessionRegistry. Health reason bits after the report: ${published[2]}.`, txs: [tx(published[3])], verdict: published[2] === '0' ? 'PASS' : 'FAIL' }] : []),
+    ]));
+}
 const out = `${dir}/proof.json`;
 if (arg('rpc')) {
   let r = '';
   try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online', ...(arg('testnet-rpc') ? ['--testnet-rpc', arg('testnet-rpc')] : [])], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
   proof.lastRun = new Date().toISOString();
-  proof.replay = r.split('\n').filter((l) => /^(R:)?[AB]\d/.test(l) || /^R:R\d/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
+  proof.replay = r.split('\n').filter((l) => /^[AB]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
 }
 writeFileSync(out, `${JSON.stringify(proof, null, 2)}\n`);
 copyFileSync(out, 'apps/web/components/einstein/ant-proof.json');

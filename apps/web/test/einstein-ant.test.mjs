@@ -17,7 +17,7 @@ test('claims A1 to A7 are all there, and every claim but A1 says what it waits f
 
 test('the status never says ANT is live while a blocker is recorded', () => {
   assert.equal(proof.status, 'blocked');
-  assert.match(proof.statusNote, /cannot be admitted/);
+  assert.match(proof.statusNote, /not live on mainnet yet/);
   assert.doesNotMatch(page, /ANT is live/i);
   assert.equal(proof.blocker.id, 'B1');
   assert.ok(proof.blocker.why.length >= 2);
@@ -48,17 +48,27 @@ test('the compliance notes the brief requires are on the page', () => {
   assert.doesNotMatch(page, /anthropic.*logo\.(png|svg)/i);
 });
 
-test('the testnet rehearsal is labelled as a rehearsal and each step is proven only when the replay says so', () => {
-  const r = proof.rehearsal;
-  assert.ok(r, 'no rehearsal section');
-  assert.equal(r.network.id, 46630);
-  assert.match(r.note, /not ANT and it is not mainnet/);
-  assert.deepEqual(r.steps.map((s) => s.id), ['R1', 'A2', 'A3', 'A4', 'A5', 'A6']);
-  for (const s of r.steps.filter((x) => x.verdict === 'PASS')) {
-    const line = (proof.replay ?? []).find((l) => l.startsWith(`R:${s.id} `));
-    assert.ok(line && /\sPASS\s/.test(line), `${s.id} is marked PASS without a PASS replay line`);
+test('the testnet rehearsals are labelled as rehearsals and each step is proven only when the replay says so', () => {
+  const rs = proof.rehearsals;
+  assert.deepEqual(rs.map((r) => r.key), ['fixture', 'delegated']);
+  for (const r of rs) {
+    assert.equal(r.network.id, 46630);
+    assert.match(r.note, /not ANT, not mainnet|not ANT and it is not mainnet/);
+    for (const s of r.steps.filter((x) => x.verdict === 'PASS')) {
+      const line = (proof.replay ?? []).find((l) => l.startsWith(`R:${r.key}:${s.id} `));
+      assert.ok(line && /\sPASS\s/.test(line), `${r.key} ${s.id} is marked PASS without a PASS replay line`);
+    }
+    assert.ok(r.steps.every((s) => s.txs.every((t) => /^0x[0-9a-f]{64}$/i.test(t.tx) && t.url.startsWith(r.network.explorer))));
   }
-  assert.ok(r.steps.every((s) => s.txs.every((t) => /^0x[0-9a-f]{64}$/i.test(t.tx) && t.url.startsWith(r.network.explorer))));
+  assert.deepEqual(rs[1].steps.map((s) => s.id), ['R1', 'D1', 'D2', 'A2', 'A3', 'A4', 'A5', 'A6']);
+});
+
+test('the delegated source is described with its trust cost, not only its benefit', () => {
+  const text = proof.blocker.solution.points.join(' ');
+  assert.match(text, /BELL is the oracle for ANT/);
+  assert.match(text, /one ECDSA key can publish prices/);
+  assert.match(text, /expires by itself/);
+  assert.match(text, /Robinhood's own REST pricing API/);
 });
 
 test('mainnet claims stay pending while the rehearsal passes', () => {

@@ -7,7 +7,7 @@
     "explorer": "https://robinhoodchain.blockscout.com"
   },
   "status": "blocked",
-  "statusNote": "ANT cannot be admitted yet: Chainlink has no ANT feed on Robinhood Chain, and BELL's asset registry refuses a stock token that has no price source.",
+  "statusNote": "ANT is not live on mainnet yet. Chainlink has no ANT feed, and BELL's asset registry refuses a stock token without a price source, so BELL built its own: a delegated-attestation source, rehearsed end to end on testnet below. The mainnet steps are next.",
   "a1": {
     "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
     "referenceTokens": [
@@ -57,7 +57,18 @@
       "BELL's AssetRegistry refuses a stock token without a price adapter and session sources (ERR_STOCK_ADAPTERS, ERR_TOKEN_SOURCE_MISSING). A market-price mode, where the pool prices from its own liquidity, is not something the deployed contracts allow for admission.",
       "A BELL-attested price would need a post-quantum signed report on every update, because each report spends one HybridAuth leaf. Reports must be at most 60 to 300 seconds old depending on the session, so a 4,096-leaf REPORTER key would last roughly three to six days of continuous quoting."
     ],
-    "unblocks": "A Chainlink ANT/USD feed on Robinhood Chain. When one is listed the launch is the same sequence as NVDA: four source adapters, the asset queued through hybrid governance, the calendar root, the pool, the Lens.",
+    "unblocks": "Two ways. A Chainlink ANT/USD feed on Robinhood Chain, if one is listed. Or the delegated-attestation source below, which needs no feed.",
+    "solution": {
+      "title": "The way around it: one post-quantum signature a day, a delegate key per report",
+      "points": [
+        "One hybrid-signed call (ECDSA and SHRINCS, one leaf per adapter) names a delegate key that may sign for at most a day and an hour. The delegate signs each report with ECDSA only. Four adapters means four leaves a day, so a 4,096-leaf REPORTER key lasts about two and a half years.",
+        "The price is read from Robinhood's own REST pricing API (tokenBid and tokenAsk, already adjusted for the corporate-action multiplier). A report is not published when the API says the asset is halted, when the spread is wider than 2 percent, or when the quote is older than a minute.",
+        "What it costs in trust, plainly: inside a delegation window one ECDSA key can publish prices, and BELL is the oracle for ANT. Limits: a report may move the price at most 3 percent from the last one (25 percent after a quiet gap, anything larger needs a hybrid-signed rebase), the delegation expires by itself and can be revoked with a hybrid-signed call, and the delegate cannot touch the token's corporate-action status, which the registry reads from the token.",
+        "The pool is SESSION_ONLY, so the price never sets a swap price; it feeds the health checks and the closing anchors. If Chainlink lists an ANT feed later, the source can be replaced."
+      ],
+      "contract": "contracts/src/adapters/DelegatedAttestedSourceAdapter.sol",
+      "tests": "14 forge tests, including: no report before a delegate exists, one leaf for twenty reports, a foreign key refused, a post-quantum field on a report refused, expiry, rotation and revoke, the step bands and rebase."
+    },
     "sources": [
       {
         "label": "Chainlink feed directory for Robinhood mainnet",
@@ -131,110 +142,251 @@
     "A1 shows the token is Robinhood's. It says nothing about whether ANT is a good asset to hold or trade.",
     "No independent cryptographic review of the post-quantum stack exists yet."
   ],
-  "rehearsal": {
-    "title": "Rehearsal on Robinhood testnet",
-    "network": {
-      "id": 46630,
-      "explorer": "https://explorer.testnet.chain.robinhood.com"
+  "rehearsals": [
+    {
+      "key": "fixture",
+      "title": "Rehearsal 1: a fixture feed",
+      "network": {
+        "id": 46630,
+        "explorer": "https://explorer.testnet.chain.robinhood.com"
+      },
+      "note": "The path with a Chainlink-shaped fixture feed. It shows adding a stock token after genesis works, which no mainnet transaction has done yet. Test token, not ANT, not mainnet.",
+      "token": "0x87c03052ffeb0f6d4583f6a14e63bf949e181116",
+      "feed": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "hook": "0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0",
+      "pool": "0x11124e8f2f13370b43a8c85a8af8ecd6577cdd72cbda8c8606d96f1dc28ff1d4",
+      "steps": [
+        {
+          "id": "R1",
+          "title": "Admitted after genesis through hybrid governance",
+          "note": "A governance call signed with ECDSA and SHRINCS (HybridAuth leaf 2) queued AssetRegistry.queueAsset, was executed, and the asset was activated.",
+          "txs": [
+            {
+              "tx": "0x9fb3773607f50b1c3ccc66b5028a9d7a6f1b086fe4383fb7153dec1ceb4c1573",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x9fb3773607f50b1c3ccc66b5028a9d7a6f1b086fe4383fb7153dec1ceb4c1573"
+            },
+            {
+              "tx": "0xa4efa3297e80a420691f733714f77af6919478ed3e102c0f789a6224b504b745",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0xa4efa3297e80a420691f733714f77af6919478ed3e102c0f789a6224b504b745"
+            },
+            {
+              "tx": "0x9cce07fb7757828484d3e074fe629bc3a212202f2df0f4130679633ad6751dbf",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x9cce07fb7757828484d3e074fe629bc3a212202f2df0f4130679633ad6751dbf"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A2",
+          "title": "The calendar root was signed post-quantum",
+          "note": "The root for the asset was queued through a second hybrid-signed governance call, executed, then activated.",
+          "txs": [
+            {
+              "tx": "0x7cc147bf9c01b9796251081b907521ee1fe126e15e0757ce61b0639f473404a6",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x7cc147bf9c01b9796251081b907521ee1fe126e15e0757ce61b0639f473404a6"
+            },
+            {
+              "tx": "0x48963efa3b0daa3e6f26ae76f9d6ee4e5c316748a6e07c1870351776a4d7dc46",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x48963efa3b0daa3e6f26ae76f9d6ee4e5c316748a6e07c1870351776a4d7dc46"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A3",
+          "title": "The pool is real",
+          "note": "Created and seeded in one transaction through the factory.",
+          "txs": [
+            {
+              "tx": "0x0fcffa6599e220a6692b42c42d0383d8c64322a106fe3059d5e8663619db7f7a",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x0fcffa6599e220a6692b42c42d0383d8c64322a106fe3059d5e8663619db7f7a"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A4",
+          "title": "The hook cannot trap exits",
+          "note": "hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits 9, 8 and 0 off",
+          "txs": [],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A5",
+          "title": "Session fees apply",
+          "note": "swap in OVERNIGHT, Swap event fee 5000 pips, table says 5000",
+          "txs": [
+            {
+              "tx": "0x7f51c0b86dda5d00728ffee6f66b8ff0acbc7bc36d86283096cd2aceb1ee0db1",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x7f51c0b86dda5d00728ffee6f66b8ff0acbc7bc36d86283096cd2aceb1ee0db1"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A6",
+          "title": "Caps hold",
+          "note": "a 900 USDG swap reverted with TradeCapExceeded",
+          "txs": [
+            {
+              "tx": "0x2e8e0d786aa69a2b1aa3cb4d061bb8c97fc1e9939a3d95eb55192100990288b9",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x2e8e0d786aa69a2b1aa3cb4d061bb8c97fc1e9939a3d95eb55192100990288b9"
+            }
+          ],
+          "verdict": "PASS"
+        }
+      ]
     },
-    "note": "The same steps ANT needs on mainnet, run with a test token (tANT), a fixture price feed and the Einstein stack deployed on testnet. It is not ANT and it is not mainnet. It shows that the path that does not exist on mainnet yet, adding a stock token after genesis, works.",
-    "token": "0x87c03052ffeb0f6d4583f6a14e63bf949e181116",
-    "feed": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
-    "hook": "0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0",
-    "pool": "0x11124e8f2f13370b43a8c85a8af8ecd6577cdd72cbda8c8606d96f1dc28ff1d4",
-    "steps": [
-      {
-        "id": "R1",
-        "title": "Admitted after genesis through hybrid governance",
-        "note": "A governance call signed with ECDSA and SHRINCS (HybridAuth leaf 2) queued AssetRegistry.queueAsset, was executed, and the asset was activated.",
-        "txs": [
-          {
-            "tx": "0x9fb3773607f50b1c3ccc66b5028a9d7a6f1b086fe4383fb7153dec1ceb4c1573",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x9fb3773607f50b1c3ccc66b5028a9d7a6f1b086fe4383fb7153dec1ceb4c1573"
-          },
-          {
-            "tx": "0xa4efa3297e80a420691f733714f77af6919478ed3e102c0f789a6224b504b745",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0xa4efa3297e80a420691f733714f77af6919478ed3e102c0f789a6224b504b745"
-          },
-          {
-            "tx": "0x9cce07fb7757828484d3e074fe629bc3a212202f2df0f4130679633ad6751dbf",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x9cce07fb7757828484d3e074fe629bc3a212202f2df0f4130679633ad6751dbf"
-          }
-        ],
-        "verdict": "PASS"
+    {
+      "key": "delegated",
+      "title": "Rehearsal 2: no feed, a delegated price source",
+      "network": {
+        "id": 46630,
+        "explorer": "https://explorer.testnet.chain.robinhood.com"
       },
-      {
-        "id": "A2",
-        "title": "The calendar root was signed post-quantum",
-        "note": "The root for the asset was queued through a second hybrid-signed governance call, executed, then activated.",
-        "txs": [
-          {
-            "tx": "0x7cc147bf9c01b9796251081b907521ee1fe126e15e0757ce61b0639f473404a6",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x7cc147bf9c01b9796251081b907521ee1fe126e15e0757ce61b0639f473404a6"
-          },
-          {
-            "tx": "0x48963efa3b0daa3e6f26ae76f9d6ee4e5c316748a6e07c1870351776a4d7dc46",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x48963efa3b0daa3e6f26ae76f9d6ee4e5c316748a6e07c1870351776a4d7dc46"
-          }
-        ],
-        "verdict": "PASS"
-      },
-      {
-        "id": "A3",
-        "title": "The pool is real",
-        "note": "Created and seeded in one transaction through the factory.",
-        "txs": [
-          {
-            "tx": "0x0fcffa6599e220a6692b42c42d0383d8c64322a106fe3059d5e8663619db7f7a",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x0fcffa6599e220a6692b42c42d0383d8c64322a106fe3059d5e8663619db7f7a"
-          }
-        ],
-        "verdict": "PASS"
-      },
-      {
-        "id": "A4",
-        "title": "The hook cannot trap exits",
-        "note": "hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits 9, 8 and 0 off",
-        "txs": [],
-        "verdict": "PASS"
-      },
-      {
-        "id": "A5",
-        "title": "Session fees apply",
-        "note": "swap in OVERNIGHT, Swap event fee 5000 pips, table says 5000",
-        "txs": [
-          {
-            "tx": "0x7f51c0b86dda5d00728ffee6f66b8ff0acbc7bc36d86283096cd2aceb1ee0db1",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x7f51c0b86dda5d00728ffee6f66b8ff0acbc7bc36d86283096cd2aceb1ee0db1"
-          }
-        ],
-        "verdict": "PASS"
-      },
-      {
-        "id": "A6",
-        "title": "Caps hold",
-        "note": "a 900 USDG swap reverted with TradeCapExceeded",
-        "txs": [
-          {
-            "tx": "0x2e8e0d786aa69a2b1aa3cb4d061bb8c97fc1e9939a3d95eb55192100990288b9",
-            "url": "https://explorer.testnet.chain.robinhood.com/tx/0x2e8e0d786aa69a2b1aa3cb4d061bb8c97fc1e9939a3d95eb55192100990288b9"
-          }
-        ],
-        "verdict": "PASS"
-      }
-    ]
-  },
-  "lastRun": "2026-11-23T03:31:33.700Z",
+      "note": "The situation ANT is in: no Chainlink feed. The price source is the delegated-attestation adapter: one post-quantum signature authorizes a delegate key for a day, and the delegate signs each report with ECDSA only. Test token, not ANT, not mainnet.",
+      "token": "0x9de6d270a5e949338915d139020500cb076a14c4",
+      "feed": null,
+      "hook": "0x3631d486ff7396e7426E73a21Beeb6245CE72cC0",
+      "pool": "0xc3f6e1b49b55c6f7e381916711a5df06a358979b4bc385b9e9d3a7280ea4b2d2",
+      "steps": [
+        {
+          "id": "R1",
+          "title": "Admitted after genesis through hybrid governance",
+          "note": "A governance call signed with ECDSA and SHRINCS (HybridAuth leaf 4) queued AssetRegistry.queueAsset, was executed, and the asset was activated.",
+          "txs": [
+            {
+              "tx": "0x3bcbe36e1b9869941ea40dcd114c0948fca7a724c08acd08aa94031e05b1d01c",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x3bcbe36e1b9869941ea40dcd114c0948fca7a724c08acd08aa94031e05b1d01c"
+            },
+            {
+              "tx": "0x0f4dd5771c73887b531aa2d79ce8385f4f47a61a6d707b842c6215e42363c340",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x0f4dd5771c73887b531aa2d79ce8385f4f47a61a6d707b842c6215e42363c340"
+            },
+            {
+              "tx": "0x361a3dedadf9ea8466a19726f843d7fddf7d9411857893d64008edec21ac1bb2",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x361a3dedadf9ea8466a19726f843d7fddf7d9411857893d64008edec21ac1bb2"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "D1",
+          "title": "The delegate was authorized with one post-quantum signature per adapter",
+          "note": "Four adapters, one hybrid-signed call each (REPORTER leaves 1, 2, 3, 4). After that the delegate signs reports with ECDSA only and spends no more leaves.",
+          "txs": [
+            {
+              "tx": "0x7f8ecc6d2c52dc7a651c63f21071d87077eee3b7dc1cc397ab3d1f2af8989fd5",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x7f8ecc6d2c52dc7a651c63f21071d87077eee3b7dc1cc397ab3d1f2af8989fd5"
+            },
+            {
+              "tx": "0x66c426f2eb510b3436d0ff1743c30dd77e560dea3f353c6f05af31c3a75c9b88",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x66c426f2eb510b3436d0ff1743c30dd77e560dea3f353c6f05af31c3a75c9b88"
+            },
+            {
+              "tx": "0xbbf6a2438653eca39b6e3addfc7dcfeffbd6cc351d02e9a7abf7348251a43317",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0xbbf6a2438653eca39b6e3addfc7dcfeffbd6cc351d02e9a7abf7348251a43317"
+            },
+            {
+              "tx": "0x3c8520f4b744f394d346e991fc34f3f5b73992b7b0cf1e90c28ff6365a2bdda1",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x3c8520f4b744f394d346e991fc34f3f5b73992b7b0cf1e90c28ff6365a2bdda1"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "D2",
+          "title": "A delegate-signed report was accepted and the asset read healthy",
+          "note": "A direct price and a session report signed by the delegate were submitted to the SessionRegistry. Health reason bits after the report: 0.",
+          "txs": [
+            {
+              "tx": "0xa8f788dccff9cc26b6fa14042d315b1a7307ad6cc0520af30e1da0b8647c9ed4",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0xa8f788dccff9cc26b6fa14042d315b1a7307ad6cc0520af30e1da0b8647c9ed4"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A2",
+          "title": "The calendar root was signed post-quantum",
+          "note": "The root for the asset was queued through a second hybrid-signed governance call, executed, then activated.",
+          "txs": [
+            {
+              "tx": "0x0a8f6fbb061586cb0a07c6b67ef8e73b52f21018b17e8c5ef7e79ac28e8cbfd9",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x0a8f6fbb061586cb0a07c6b67ef8e73b52f21018b17e8c5ef7e79ac28e8cbfd9"
+            },
+            {
+              "tx": "0x4d8396fdd6de104040819aae93ed0c5169ab64eadea999adafeebbfe3701e830",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x4d8396fdd6de104040819aae93ed0c5169ab64eadea999adafeebbfe3701e830"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A3",
+          "title": "The pool is real",
+          "note": "Created and seeded in one transaction through the factory.",
+          "txs": [
+            {
+              "tx": "0xdf3f017281d5d1141eaabcc2570938d6af8cc121d94d8b54c3ed727c085d938f",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0xdf3f017281d5d1141eaabcc2570938d6af8cc121d94d8b54c3ed727c085d938f"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A4",
+          "title": "The hook cannot trap exits",
+          "note": "hook 0x3631d486ff7396e7426E73a21Beeb6245CE72cC0, low 14 bits 0x2cc0, remove-liquidity bits 9, 8 and 0 off",
+          "txs": [],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A5",
+          "title": "Session fees apply",
+          "note": "swap in OVERNIGHT, Swap event fee 5000 pips, table says 5000",
+          "txs": [
+            {
+              "tx": "0x149f05a6e5ac939d95816fed94e42da26fe4cc27d5f09b8015efe52d79c948fd",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x149f05a6e5ac939d95816fed94e42da26fe4cc27d5f09b8015efe52d79c948fd"
+            }
+          ],
+          "verdict": "PASS"
+        },
+        {
+          "id": "A6",
+          "title": "Caps hold",
+          "note": "a 900 USDG swap reverted with TradeCapExceeded",
+          "txs": [
+            {
+              "tx": "0x26b286850682f95f391ef5c243da3dfb5d66d2c412be41c142a26361cb29b031",
+              "url": "https://explorer.testnet.chain.robinhood.com/tx/0x26b286850682f95f391ef5c243da3dfb5d66d2c412be41c142a26361cb29b031"
+            }
+          ],
+          "verdict": "PASS"
+        }
+      ]
+    }
+  ],
+  "lastRun": "2026-11-23T03:52:12.512Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
     "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
-    "R:R1 PASS    Admitted after genesis through hybrid governance: 0x9fb37736… success, 0xa4efa329… success, 0x9cce07fb… success",
-    "R:A2 PASS    The calendar root was signed post-quantum: 0x7cc147bf… success, 0x48963efa… success",
-    "R:A3 PASS    The pool is real: 0x0fcffa65… success",
-    "R:A4 PASS    The hook cannot trap exits: hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits",
-    "R:A5 PASS    Session fees apply: 0x7f51c0b8… success",
-    "R:A6 PASS    Caps hold: 0x2e8e0d78… reverted",
+    "R:fixture:R1 PASS    Admitted after genesis through hybrid governance: 0x9fb37736… success, 0xa4efa329… success, 0x9cce07fb… success",
+    "R:fixture:A2 PASS    The calendar root was signed post-quantum: 0x7cc147bf… success, 0x48963efa… success",
+    "R:fixture:A3 PASS    The pool is real: 0x0fcffa65… success",
+    "R:fixture:A4 PASS    The hook cannot trap exits: hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits",
+    "R:fixture:A5 PASS    Session fees apply: 0x7f51c0b8… success",
+    "R:fixture:A6 PASS    Caps hold: 0x2e8e0d78… reverted",
+    "R:delegated:R1 PASS    Admitted after genesis through hybrid governance: 0x3bcbe36e… success, 0x0f4dd577… success, 0x361a3ded… success",
+    "R:delegated:D1 PASS    The delegate was authorized with one post-quantum signature per adapter: 0x7f8ecc6d… success, 0x66c426f2… success, 0xbbf6a243… success, 0x3c8520f4… success",
+    "R:delegated:D2 PASS    A delegate-signed report was accepted and the asset read healthy: 0xa8f788dc… success",
+    "R:delegated:A2 PASS    The calendar root was signed post-quantum: 0x0a8f6fbb… success, 0x4d8396fd… success",
+    "R:delegated:A3 PASS    The pool is real: 0xdf3f0172… success",
+    "R:delegated:A4 PASS    The hook cannot trap exits: hook 0x3631d486ff7396e7426E73a21Beeb6245CE72cC0, low 14 bits 0x2cc0, remove-liquidity bits",
+    "R:delegated:A5 PASS    Session fees apply: 0x149f05a6… success",
+    "R:delegated:A6 PASS    Caps hold: 0x26b28685… reverted",
     "A2  PENDING Needs the asset admitted first, which needs a price source (B1).",
     "A3  PENDING Needs the asset admitted (B1) and a seed.",
     "A4  PENDING Needs the ANT hook to be deployed.",

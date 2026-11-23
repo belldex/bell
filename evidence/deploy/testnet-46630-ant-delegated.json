@@ -1,0 +1,112 @@
+{
+  "chainId": 46630,
+  "note": "Testnet rehearsal of the ANT onboarding. Test token, fixture feed.",
+  "txs": {
+    "tANT token": "0x7abf80d08b1adef76938820320a1bdfb8b94d1551b1bf88cce19199474f05aca",
+    "tokenPriceAdapter": "0x14c7e8d408a7835038a0bb705a9272db5918b45e809fb8c4561b7469f96c5d6c",
+    "regularAdapter": "0xd062784c4fd6c54729e2b2b49b5311fee92a7867528f09d75eaed9a85fcaacef",
+    "extendedAdapter": "0xdfe18e2c8691d71db4e343157746b470a2195bea74a32853e7840511fc4899a9",
+    "overnightAdapter": "0x425978fe79b7890839d4b53072582ba5989bcc1a1d4d67d0d958093799fe351c",
+    "queueGovernanceCall": "0x3bcbe36e1b9869941ea40dcd114c0948fca7a724c08acd08aa94031e05b1d01c",
+    "executeGovernanceCall": "0x0f4dd5771c73887b531aa2d79ce8385f4f47a61a6d707b842c6215e42363c340",
+    "activateAsset": "0x361a3dedadf9ea8466a19726f843d7fddf7d9411857893d64008edec21ac1bb2"
+  },
+  "token": "0x9de6d270a5e949338915d139020500cb076a14c4",
+  "tokenCodeHash": "0x20e65136f68d0118f8f56e81fdf17ea32c97558e470c8e86a16225690d00b350",
+  "wires": [
+    {
+      "kind": 1,
+      "phaseScope": 0,
+      "endpoint": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "feedId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "schema": 0,
+      "decimals": 18,
+      "priceBasis": 2,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0xba673639df34786cebf27e039d9f8bd4fd2ad047b5fdb3047778885788671d98",
+      "expectedImplementation": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "canonicalTokenId": "0x93f2559c00fc3b7053e002e7b2a8341354a8ed2aeba249d9cbcde34b44d4c050"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 1,
+      "endpoint": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "feedId": "0xddfc8d00eff6da60c47fffbb44b49000e74001c8899eba978ea2af6a3a336425",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0xba673639df34786cebf27e039d9f8bd4fd2ad047b5fdb3047778885788671d98",
+      "expectedImplementation": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "canonicalTokenId": "0x93f2559c00fc3b7053e002e7b2a8341354a8ed2aeba249d9cbcde34b44d4c050"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 2,
+      "endpoint": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "feedId": "0xd59b7ab7f884615b24ccfce1181eaf69992eedf0ca57b4d5c635398584c76dee",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0xba673639df34786cebf27e039d9f8bd4fd2ad047b5fdb3047778885788671d98",
+      "expectedImplementation": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "canonicalTokenId": "0x93f2559c00fc3b7053e002e7b2a8341354a8ed2aeba249d9cbcde34b44d4c050"
+    },
+    {
+      "kind": 3,
+      "phaseScope": 3,
+      "endpoint": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "feedId": "0xfd0de62a9568afc726b8968b34161ea7901bb99db47c48057cc5924751233027",
+      "schema": 12,
+      "decimals": 18,
+      "priceBasis": 1,
+      "heartbeatSec": 120,
+      "expectedCodeHash": "0xba673639df34786cebf27e039d9f8bd4fd2ad047b5fdb3047778885788671d98",
+      "expectedImplementation": "0xe4D5117e1ca595795C1FB8C716f15a7d98aBC1B6",
+      "canonicalTokenId": "0x93f2559c00fc3b7053e002e7b2a8341354a8ed2aeba249d9cbcde34b44d4c050"
+    }
+  ],
+  "adapters": {
+    "tokenPriceAdapter": "0x11b69978e13d42d46ce0d99127d71b11c517a2a6",
+    "regularAdapter": "0x79c84a895252c602a5571bb1ae96c33e739dffbe",
+    "extendedAdapter": "0xf9a46bf41dd49960aefa8742ab8d2ca831d2beb7",
+    "overnightAdapter": "0xc9184e0636502c7d326e4de04ebbefcdd8b893f5"
+  },
+  "delegatedBands": {
+    "maxStepBps": 300,
+    "maxGapBps": 2500
+  },
+  "feed": null,
+  "governanceOperation": "0xb73b36cc3f6e8287898dfa3ca3501d60d1492e1c85b2d29d7234774e82119119",
+  "pqLeafUsed": 4,
+  "assetOperation": "0xad82a5faab7342bd9e1b1f231329d7a0572186804d0c991fc3e76f5e52f5462b",
+  "descriptorId": "0xc3e03d05c4fc8a2f58d56bf3c8d7f305d7ed3138554f268006a0d12e43db6f22",
+  "admittedDescriptorId": "0xc3e03d05c4fc8a2f58d56bf3c8d7f305d7ed3138554f268006a0d12e43db6f22",
+  "delegations": [
+    {
+      "adapter": "tokenPriceAdapter",
+      "tx": "0x7f8ecc6d2c52dc7a651c63f21071d87077eee3b7dc1cc397ab3d1f2af8989fd5",
+      "leaf": 1,
+      "validUntil": "1795491495"
+    },
+    {
+      "adapter": "regularAdapter",
+      "tx": "0x66c426f2eb510b3436d0ff1743c30dd77e560dea3f353c6f05af31c3a75c9b88",
+      "leaf": 2,
+      "validUntil": "1795491498"
+    },
+    {
+      "adapter": "extendedAdapter",
+      "tx": "0xbbf6a2438653eca39b6e3addfc7dcfeffbd6cc351d02e9a7abf7348251a43317",
+      "leaf": 3,
+      "validUntil": "1795491500"
+    },
+    {
+      "adapter": "overnightAdapter",
+      "tx": "0x3c8520f4b744f394d346e991fc34f3f5b73992b7b0cf1e90c28ff6365a2bdda1",
+      "leaf": 4,
+      "validUntil": "1795491501"
+    }
+  ]
+}

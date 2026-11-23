@@ -16,8 +16,10 @@ const SECTIONS = [
 ] as const;
 
 type Verdict = "PASS" | "PENDING" | "FAIL";
-type Rehearsal = { title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
-const rehearsal = (proof as { rehearsal?: Rehearsal }).rehearsal;
+type Rehearsal = { key: string; title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
+const rehearsals = ((proof as { rehearsals?: Rehearsal[] }).rehearsals ?? []);
+type Solution = { title: string; points: string[]; contract: string; tests: string };
+const solution = (proof.blocker as { solution?: Solution }).solution;
 const replay = (proof as { replay?: string[] }).replay ?? [];
 const verdictOf = (id: string): Verdict => {
   const line = replay.find((l) => l.startsWith(`${id} `));
@@ -68,18 +70,25 @@ export function AntPage() {
           <p className="ein-ledger__lede">{proof.blocker.what}</p>
           <ul className="pp-limits">{proof.blocker.why.map((w) => <li key={w}>{w}</li>)}</ul>
           <p className="ein-ledger__lede"><b>What unblocks it.</b> {proof.blocker.unblocks}</p>
+          {solution && (
+            <>
+              <h3>{solution.title}</h3>
+              <ul className="pp-limits">{solution.points.map((w) => <li key={w}>{w}</li>)}</ul>
+              <p className="ein-fine">Contract <code>{solution.contract}</code>. {solution.tests}</p>
+            </>
+          )}
           <ul className="pp-links">
             {proof.blocker.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.label} <ArrowUpRight size={14} aria-hidden="true" /></a> <span className="ein-fine">read {s.retrievedAt}</span></li>)}
           </ul>
         </section>
 
-        {rehearsal && (
-          <section id="rehearsal" className="ein-section" data-reveal>
+        {rehearsals.map((rehearsal) => (
+          <section key={rehearsal.key} id={rehearsal.key === "delegated" ? "rehearsal" : `rehearsal-${rehearsal.key}`} className="ein-section" data-reveal>
             <h2>{rehearsal.title}</h2>
             <p className="ein-ledger__lede">{rehearsal.note}</p>
             <ol className="pp-ledger">
               {rehearsal.steps.map((st) => {
-                const v = (replay.find((l) => l.startsWith(`R:${st.id} `)) ?? "").includes(" PASS ") ? "PASS" : st.verdict === "PASS" ? "PENDING" : (st.verdict as Verdict);
+                const v = (replay.find((l) => l.startsWith(`R:${rehearsal.key}:${st.id} `)) ?? "").includes(" PASS ") ? "PASS" : st.verdict === "PASS" ? "PENDING" : (st.verdict as Verdict);
                 return (
                   <li key={st.id} data-v={v.toLowerCase()}>
                     <div className="pp-ledger__id"><b>{st.id}</b><span>{v === "PASS" ? "Proven on testnet" : v === "FAIL" ? "Failed" : "Pending"}</span></div>
@@ -90,9 +99,9 @@ export function AntPage() {
                 );
               })}
             </ol>
-            <p className="ein-fine">Test token <a href={`${rehearsal.network.explorer}/address/${rehearsal.token}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.token, 10, 8)}</a>, fixture feed <a href={`${rehearsal.network.explorer}/address/${rehearsal.feed}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.feed, 10, 8)}</a>, hook <a href={`${rehearsal.network.explorer}/address/${rehearsal.hook}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.hook, 10, 8)}</a>.</p>
+            <p className="ein-fine">Test token <a href={`${rehearsal.network.explorer}/address/${rehearsal.token}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.token, 10, 8)}</a>{rehearsal.feed ? <>, fixture feed <a href={`${rehearsal.network.explorer}/address/${rehearsal.feed}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.feed, 10, 8)}</a></> : null}, hook <a href={`${rehearsal.network.explorer}/address/${rehearsal.hook}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.hook, 10, 8)}</a>.</p>
           </section>
-        )}
+        ))}
 
         <section id="claims" className="ein-section" data-reveal>
           <h2>Claims</h2>

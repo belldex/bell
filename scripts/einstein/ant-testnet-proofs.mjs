@@ -19,7 +19,7 @@ import { sessionIntervals, sessionAt } from './v3-evolve/lib.mjs';
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const env = {}; for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); }
 const poolLog = JSON.parse(readFileSync(arg('pool'), 'utf8'));
-const ant = JSON.parse(readFileSync('evidence/deploy/testnet-46630-ant.json', 'utf8'));
+const ant = JSON.parse(readFileSync(process.env.ANT_STATE || 'evidence/deploy/testnet-46630-ant.json', 'utf8'));
 const inputs = JSON.parse(readFileSync('evidence/deploy/testnet-46630-pq-inputs.json', 'utf8'));
 const manifest = JSON.parse(readFileSync('evidence/deploy/pq-hooks-testnet-46630.json', 'utf8'));
 const run1 = JSON.parse(readFileSync('evidence/einstein/v3-evolve/testnet-run-config.json', 'utf8'));
@@ -76,7 +76,7 @@ if (big.receipt.status === 'reverted') {
 } else out.checks.A6 = { verdict: 'FAIL', tx: big.hash, note: 'the oversized swap did not revert' };
 
 out.recordedAt = new Date().toISOString();
-const file = 'evidence/einstein/ant-testnet-proofs.json';
+const file = (process.env.ANT_STATE ?? '').includes('delegated') ? 'evidence/einstein/ant-testnet-proofs-delegated.json' : 'evidence/einstein/ant-testnet-proofs.json';
 writeFileSync(file, `${JSON.stringify(out, null, 2)}\n`);
 for (const [id, r] of Object.entries(out.checks)) console.log(id, r.verdict, r.note);
 console.log(`wrote ${file}`);

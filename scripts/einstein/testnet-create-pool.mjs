@@ -36,7 +36,7 @@ const inputs = JSON.parse(readFileSync('evidence/deploy/testnet-46630-pq-inputs.
 const c = manifest.contracts;
 const USDG = manifest.assetDescriptors.USDG.token;
 // --asset ANT creates the pool for the test ANT token admitted by ant-testnet-admit.mjs; the stock side is called NVDA below only because the script grew from the NVDA one.
-const ANT = arg('asset', 'NVDA') === 'ANT' ? JSON.parse(readFileSync('evidence/deploy/testnet-46630-ant.json', 'utf8')) : null;
+const ANT = arg('asset', 'NVDA') === 'ANT' ? JSON.parse(readFileSync(process.env.ANT_STATE || 'evidence/deploy/testnet-46630-ant.json', 'utf8')) : null;
 const NVDA = ANT ? ANT.token : manifest.assetDescriptors.NVDA.token;
 const USDG_ID = manifest.assetDescriptors.USDG.descriptorId;
 const NVDA_ID = ANT ? ANT.admittedDescriptorId : manifest.assetDescriptors.NVDA.descriptorId;

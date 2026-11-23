@@ -1,0 +1,23 @@
+{
+  "startedAt": "2026-11-23T03:43:52.760Z",
+  "creator": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "txs": {
+    "approveUSDG": "0x0a46f29327d1209dad65607dbff961888ab8f67fb903967b896dbc58d18e55e0",
+    "approveNVDA": "0x13c9b617e2039731856daa834a6090bdbe7793ddde3713b1ef83bd51e68140bd",
+    "createAndSeed": "0xdf3f017281d5d1141eaabcc2570938d6af8cc121d94d8b54c3ed727c085d938f"
+  },
+  "block": 156868811,
+  "gasUsed": 8858582,
+  "status": "success",
+  "hook": "0x3631d486ff7396e7426E73a21Beeb6245CE72cC0",
+  "poolId": "0xc3f6e1b49b55c6f7e381916711a5df06a358979b4bc385b9e9d3a7280ea4b2d2",
+  "tokenId": "8",
+  "request": {
+    "sqrtPriceX96": "1372272028718911577462517",
+    "tickLower": -225300,
+    "tickUpper": -213240,
+    "liquidity": "221398207488673",
+    "seedUsdg": 1000,
+    "nvdaUsd": 300
+  }
+}
