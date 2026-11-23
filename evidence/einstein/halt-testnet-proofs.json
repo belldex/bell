@@ -45,6 +45,11 @@
       "tx": "0xbbd2bc2a6041acdf866a966a10f8ddc0e5605fa8088d8696162b09bfe0c9b76c",
       "error": "TradeCapExceeded",
       "note": "a 0.3 USDG swap during the first halt reverted with TradeCapExceeded: the closure trade cap applies while halted"
+    },
+    "V4_forkSimulation": {
+      "verdict": "SIMULATION",
+      "note": "On an anvil fork of testnet with time advanced 7,300 s, the halt recorded in 0xe72bb66e354e36668fadba853918038cfe9583422a1cccb7de8966a4ab514fa9 read back as NORMAL (haltedUntil 0) without any resume or renew. The hook then reported mode HALTED with reason bits 352 (REPORT_INVALID_OR_STALE, CALENDAR_CONFLICT, CALENDAR_MISSING): the testnet calendar interval had ended and no keeper or reports run there, so a swap at the normal fee is not shown. This is a simulation on a fork, not the live check; the live V4 check stays pending until the halt lapses on the real chain.",
+      "haltedUntilBefore": 1795448256
     }
   },
   "auction": "0x5094Cf8EAd1c2fC30dfb5c39C1731eC2e804dDb4",
