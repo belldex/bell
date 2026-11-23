@@ -3,7 +3,7 @@
   "createdAt": "2026-11-21T04:43:52.895Z",
   "window": {
     "startTs": 1795236143,
-    "endTs": 1795446000,
+    "endTs": 1795398726,
     "startBlock": 156136089
   },
   "feed": "0x33aaf578f4eca0104b500e16b135362e4111d3c8",
@@ -81,5 +81,10 @@
   },
   "controlLog": {
     "executorTx": "0x0d9c53cde2bba2945b391473697e238aa1a37b8686e0ae44df7e4b6d28111e37"
+  },
+  "stoppedEarly": {
+    "plannedEndTs": 1795446000,
+    "stoppedAtTs": 1795398726,
+    "reason": "Stopped by the team on 23 November so the testnet run could be closed and published the same day."
   }
 }

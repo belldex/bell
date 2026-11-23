@@ -46,7 +46,7 @@ for (let i = 1; i < feedTimes.length; i += 1) if (feedTimes[i] - feedTimes[i - 1
 const run = {
   run: 3, label: 'Testnet run, 21 to 23 November', network: 'testnet', status: arg('status', 'live'),
   window: { startTs: cfg.window.startTs, endTs: cfg.window.endTs },
-  note: 'Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.',
+  note: `Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.${cfg.stoppedEarly ? ` ${cfg.stoppedEarly.reason} The planned end was ${new Date(cfg.stoppedEarly.plannedEndTs * 1000).toISOString()}.` : ''}`,
   outages,
   config: {
     chain: { id: 46630, name: 'Robinhood Chain testnet', explorer: 'https://explorer.testnet.chain.robinhood.com', publicRpc: 'https://rpc.testnet.chain.robinhood.com', poolManager: cfg.poolManager, feed: cfg.feed, feedKind: 'fixture' },
