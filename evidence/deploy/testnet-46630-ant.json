@@ -1,0 +1,85 @@
+{
+  "chainId": 46630,
+  "note": "Testnet rehearsal of the ANT onboarding. Test token, fixture feed.",
+  "txs": {
+    "tANT token": "0x9e0db13cd5ef165c8cd2e72bdd2d3e61cbbcb2b725584415093195fe9afe05aa",
+    "ANT fixture feed": "0x6afffcbe07c3dee4d88cab48ba70f6e6622707910a59d1b4817d0a4c7fcd4745",
+    "direct adapter": "0x05007e213316f23cf306ab230b7a7e0569b64e4d0b287c19ea94fc73237841ea",
+    "regularAdapter": "0xa6a2657c48bf2a9d889035194ff115180283d7aa3b90718aeaa3e0289e6aa036",
+    "extendedAdapter": "0x62575bd37be42e57ac18b56e4fe8fc9743ee54099f3f1fe717c84940adc7e397",
+    "overnightAdapter": "0xe041153de24281feb942f16206846134ae4ca94dbd3a9a581466ec17cf913c31",
+    "queueGovernanceCall": "0x9fb3773607f50b1c3ccc66b5028a9d7a6f1b086fe4383fb7153dec1ceb4c1573",
+    "executeGovernanceCall": "0xa4efa3297e80a420691f733714f77af6919478ed3e102c0f789a6224b504b745",
+    "activateAsset": "0x9cce07fb7757828484d3e074fe629bc3a212202f2df0f4130679633ad6751dbf"
+  },
+  "token": "0x87c03052ffeb0f6d4583f6a14e63bf949e181116",
+  "feed": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+  "proxyCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+  "tokenCodeHash": "0x20e65136f68d0118f8f56e81fdf17ea32c97558e470c8e86a16225690d00b350",
+  "implementation": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+  "adapters": {
+    "tokenPriceAdapter": "0x1ccae7d257ff2e57359e2ba5fe5dc67423502c8c",
+    "regularAdapter": "0x0154c8e05e8be388d029f60fa1a58f5a6e980130",
+    "extendedAdapter": "0xd6c1c4b0aedc6df195e9e82fc464ff65f8a39ced",
+    "overnightAdapter": "0x05503f65cc9f0c572d1e6e43698bc35669e246cf"
+  },
+  "wires": [
+    {
+      "kind": 1,
+      "phaseScope": 0,
+      "endpoint": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "feedId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "schema": 0,
+      "decimals": 8,
+      "priceBasis": 2,
+      "heartbeatSec": 86400,
+      "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+      "expectedImplementation": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "canonicalTokenId": "0x1b699489166c186562fceef27dc130d7901af97aa9cabf1827098cebefe0c06b"
+    },
+    {
+      "kind": 5,
+      "phaseScope": 1,
+      "endpoint": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "feedId": "0x66819f77d69a6481ec5ae3cccc2dde8ac5e264758c9a88a25e5d40b7aada9e1e",
+      "schema": 1,
+      "decimals": 8,
+      "priceBasis": 1,
+      "heartbeatSec": 86400,
+      "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+      "expectedImplementation": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "canonicalTokenId": "0x1b699489166c186562fceef27dc130d7901af97aa9cabf1827098cebefe0c06b"
+    },
+    {
+      "kind": 5,
+      "phaseScope": 2,
+      "endpoint": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "feedId": "0xad4ad73e10fe7a8ed27daf591ab5ba56c6c3124af3e6054d5e4c81c250ec9b25",
+      "schema": 1,
+      "decimals": 8,
+      "priceBasis": 1,
+      "heartbeatSec": 86400,
+      "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+      "expectedImplementation": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "canonicalTokenId": "0x1b699489166c186562fceef27dc130d7901af97aa9cabf1827098cebefe0c06b"
+    },
+    {
+      "kind": 5,
+      "phaseScope": 3,
+      "endpoint": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "feedId": "0x9f5c8ea86743d0e21630f2c13e0d9846f3f40dcae19265416160375cff0ea67a",
+      "schema": 1,
+      "decimals": 8,
+      "priceBasis": 1,
+      "heartbeatSec": 86400,
+      "expectedCodeHash": "0x74f59ac76697a39bf2f3f6e6649177a06381d0e7bb95b023be3d12702dfff9df",
+      "expectedImplementation": "0x486bdc644c4988cc9eb7686ab7f0e8eba5998c6c",
+      "canonicalTokenId": "0x1b699489166c186562fceef27dc130d7901af97aa9cabf1827098cebefe0c06b"
+    }
+  ],
+  "governanceOperation": "0xb7d02695cd3e6b6e3b1639927a2cb52aa76ee57b2208c4a0c4221ad75c007370",
+  "pqLeafUsed": 2,
+  "assetOperation": "0x79c43ba9d25868f9071c2620752f3b21faf48d6958bb946bd7d159809b193e3a",
+  "descriptorId": "0xa0e454b81cf431693e35ce5217017606bd4f8cdd5d678ba50c195b616d944b06",
+  "admittedDescriptorId": "0xa0e454b81cf431693e35ce5217017606bd4f8cdd5d678ba50c195b616d944b06"
+}

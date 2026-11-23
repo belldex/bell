@@ -1,0 +1,28 @@
+{
+  "chainId": 46630,
+  "pool": "0x11124e8f2f13370b43a8c85a8af8ecd6577cdd72cbda8c8606d96f1dc28ff1d4",
+  "hook": "0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0",
+  "createTx": "0x0fcffa6599e220a6692b42c42d0383d8c64322a106fe3059d5e8663619db7f7a",
+  "note": "Testnet rehearsal. Test ANT token, fixture feed.",
+  "checks": {
+    "A4": {
+      "verdict": "PASS",
+      "note": "hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits 9, 8 and 0 off"
+    },
+    "A5": {
+      "verdict": "PASS",
+      "tx": "0x7f51c0b86dda5d00728ffee6f66b8ff0acbc7bc36d86283096cd2aceb1ee0db1",
+      "session": "OVERNIGHT",
+      "feePips": 5000,
+      "expectedPips": 5000,
+      "note": "swap in OVERNIGHT, Swap event fee 5000 pips, table says 5000"
+    },
+    "A6": {
+      "verdict": "PASS",
+      "tx": "0x2e8e0d786aa69a2b1aa3cb4d061bb8c97fc1e9939a3d95eb55192100990288b9",
+      "error": "TradeCapExceeded",
+      "note": "a 900 USDG swap reverted with TradeCapExceeded"
+    }
+  },
+  "recordedAt": "2026-11-23T03:30:32.638Z"
+}

@@ -9,12 +9,15 @@ const SECTIONS = [
   { id: "status", label: "Status", desc: "Where ANT stands." },
   { id: "token", label: "The token", desc: "Which contract is Robinhood's ANT." },
   { id: "blocker", label: "What blocks it", desc: "Why ANT is not live." },
+  { id: "rehearsal", label: "Testnet rehearsal", desc: "The path, run end to end." },
   { id: "claims", label: "Claims", desc: "A1 to A7." },
   { id: "check", label: "Check it yourself", desc: "Replay the checks." },
   { id: "limits", label: "Honest limits", desc: "What this does not show." },
 ] as const;
 
 type Verdict = "PASS" | "PENDING" | "FAIL";
+type Rehearsal = { title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
+const rehearsal = (proof as { rehearsal?: Rehearsal }).rehearsal;
 const replay = (proof as { replay?: string[] }).replay ?? [];
 const verdictOf = (id: string): Verdict => {
   const line = replay.find((l) => l.startsWith(`${id} `));
@@ -69,6 +72,27 @@ export function AntPage() {
             {proof.blocker.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.label} <ArrowUpRight size={14} aria-hidden="true" /></a> <span className="ein-fine">read {s.retrievedAt}</span></li>)}
           </ul>
         </section>
+
+        {rehearsal && (
+          <section id="rehearsal" className="ein-section" data-reveal>
+            <h2>{rehearsal.title}</h2>
+            <p className="ein-ledger__lede">{rehearsal.note}</p>
+            <ol className="pp-ledger">
+              {rehearsal.steps.map((st) => {
+                const v = (replay.find((l) => l.startsWith(`R:${st.id} `)) ?? "").includes(" PASS ") ? "PASS" : st.verdict === "PASS" ? "PENDING" : (st.verdict as Verdict);
+                return (
+                  <li key={st.id} data-v={v.toLowerCase()}>
+                    <div className="pp-ledger__id"><b>{st.id}</b><span>{v === "PASS" ? "Proven on testnet" : v === "FAIL" ? "Failed" : "Pending"}</span></div>
+                    <div className="pp-ledger__body"><h3>{st.title}</h3><p>{st.note}</p>
+                      {st.txs.length > 0 && <p className="pp-ledger__bar">{st.txs.map((t) => <a key={t.tx} href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)} </a>)}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="ein-fine">Test token <a href={`${rehearsal.network.explorer}/address/${rehearsal.token}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.token, 10, 8)}</a>, fixture feed <a href={`${rehearsal.network.explorer}/address/${rehearsal.feed}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.feed, 10, 8)}</a>, hook <a href={`${rehearsal.network.explorer}/address/${rehearsal.hook}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.hook, 10, 8)}</a>.</p>
+          </section>
+        )}
 
         <section id="claims" className="ein-section" data-reveal>
           <h2>Claims</h2>

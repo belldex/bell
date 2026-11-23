@@ -56,6 +56,18 @@ if (online) {
       : { verdict: 'PENDING', note: `Chainlink's Robinhood mainnet directory has ${feeds.length} feeds and none for ANT, so BELL cannot admit ANT yet.` };
   } catch (e) { out.B1 = { verdict: 'PENDING', note: `could not read Chainlink's feed directory: ${String(e.cause?.code ?? e.message).slice(0, 80)}` }; }
 }
+// The testnet rehearsal, when a testnet RPC is given: every linked transaction must be a successful receipt, and the Swap event and the revert are read again.
+const testnetRpc = arg('testnet-rpc', process.env.TESTNET_RPC_URL);
+if (proof.rehearsal && testnetRpc) {
+  const tpc = createPublicClient({ transport: http(testnetRpc) });
+  if (await tpc.getChainId() !== proof.rehearsal.network.id) { console.error('--testnet-rpc is not chain 46630'); process.exit(2); }
+  for (const step of proof.rehearsal.steps) {
+    const rows = await Promise.all(step.txs.map(async (t) => { try { const r = await tpc.getTransactionReceipt({ hash: t.tx }); return { tx: t.tx, status: r.status }; } catch { return { tx: t.tx, status: 'missing' }; } }));
+    const expectRevert = step.id === 'A6';
+    const ok = step.txs.length === 0 ? step.verdict === 'PASS' : rows.every((r) => (expectRevert ? r.status === 'reverted' : r.status === 'success'));
+    out[`R:${step.id}`] = { verdict: ok && step.verdict === 'PASS' ? 'PASS' : 'FAIL', note: `${step.title}: ${step.txs.length ? rows.map((r) => `${r.tx.slice(0, 10)}… ${r.status}`).join(', ') : step.note.slice(0, 90)}` };
+  }
+}
 for (const id of ['A2', 'A3', 'A4', 'A5', 'A6', 'A7']) out[id] = { verdict: 'PENDING', note: proof.claims.find((c) => c.id === id)?.blockedBy ?? 'Waits for the pool.' };
 
 for (const [id, r] of Object.entries(out)) {

@@ -47,3 +47,21 @@ test('the compliance notes the brief requires are on the page', () => {
   assert.match(text, /not affiliated with Robinhood or Anthropic/);
   assert.doesNotMatch(page, /anthropic.*logo\.(png|svg)/i);
 });
+
+test('the testnet rehearsal is labelled as a rehearsal and each step is proven only when the replay says so', () => {
+  const r = proof.rehearsal;
+  assert.ok(r, 'no rehearsal section');
+  assert.equal(r.network.id, 46630);
+  assert.match(r.note, /not ANT and it is not mainnet/);
+  assert.deepEqual(r.steps.map((s) => s.id), ['R1', 'A2', 'A3', 'A4', 'A5', 'A6']);
+  for (const s of r.steps.filter((x) => x.verdict === 'PASS')) {
+    const line = (proof.replay ?? []).find((l) => l.startsWith(`R:${s.id} `));
+    assert.ok(line && /\sPASS\s/.test(line), `${s.id} is marked PASS without a PASS replay line`);
+  }
+  assert.ok(r.steps.every((s) => s.txs.every((t) => /^0x[0-9a-f]{64}$/i.test(t.tx) && t.url.startsWith(r.network.explorer))));
+});
+
+test('mainnet claims stay pending while the rehearsal passes', () => {
+  assert.equal(proof.status, 'blocked');
+  assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)));
+});

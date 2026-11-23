@@ -76,6 +76,7 @@ if (Number(manifest.chainId) !== MAINNET_CHAIN_ID) {
 }
 const testnetAdapters = JSON.parse(readFileSync('evidence/deploy/testnet-46630-chainlink-session-adapters.json', 'utf8'));
 const assetQueue = { chainId: 46630, stocks: { NVDA: { symbol: 'NVDA', token: testnetAdapters.assets.NVDA.stockToken, descriptorId: deploymentManifest.assetDescriptors.NVDA.descriptorId, isStock: true, capabilityMask: 30 } } };
+if (existsSync('evidence/deploy/testnet-46630-ant.json')) { const ant = JSON.parse(readFileSync('evidence/deploy/testnet-46630-ant.json', 'utf8')); if (ant.admittedDescriptorId) assetQueue.stocks.ANT = { symbol: 'ANT', token: ant.token, descriptorId: ant.admittedDescriptorId, isStock: true, capabilityMask: 30 }; }
 // Multi-asset: resolve the target asset via --asset=<descriptorId|SYMBOL> falling back to the
 // first stock in the queue evidence. Each asset owns its own calendar root/state file.
 const ASSET_ARG = process.argv.find((a) => a.startsWith('--asset='))?.slice('--asset='.length) ?? null;

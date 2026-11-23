@@ -7,7 +7,7 @@
  *   node scripts/einstein/build-ant-proof.mjs                 build from the facts in this file, no network
  *   node scripts/einstein/build-ant-proof.mjs --rpc <url>     also replay A1 and record the verdicts
  */
-import { writeFileSync, copyFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, copyFileSync, mkdirSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
@@ -67,12 +67,33 @@ const proof = {
     'No independent cryptographic review of the post-quantum stack exists yet.',
   ],
 };
+// The testnet rehearsal: the same steps ANT will need on mainnet, run with a test token and a fixture feed, every transaction linked.
+const exp = 'https://explorer.testnet.chain.robinhood.com';
+if (existsSync('evidence/deploy/testnet-46630-ant.json') && existsSync('evidence/einstein/ant-testnet-proofs.json')) {
+  const adm = JSON.parse(readFileSync('evidence/deploy/testnet-46630-ant.json', 'utf8'));
+  const cal = JSON.parse(readFileSync('evidence/deploy/testnet-46630-calendar-state-ANT.json', 'utf8'));
+  const proofs = JSON.parse(readFileSync('evidence/einstein/ant-testnet-proofs.json', 'utf8'));
+  const tx = (h) => ({ tx: h, url: `${exp}/tx/${h}` });
+  proof.rehearsal = {
+    title: 'Rehearsal on Robinhood testnet', network: { id: 46630, explorer: exp },
+    note: 'The same steps ANT needs on mainnet, run with a test token (tANT), a fixture price feed and the Einstein stack deployed on testnet. It is not ANT and it is not mainnet. It shows that the path that does not exist on mainnet yet, adding a stock token after genesis, works.',
+    token: adm.token, feed: adm.feed, hook: proofs.hook, pool: proofs.pool,
+    steps: [
+      { id: 'R1', title: 'Admitted after genesis through hybrid governance', note: `A governance call signed with ECDSA and SHRINCS (HybridAuth leaf ${adm.pqLeafUsed}) queued AssetRegistry.queueAsset, was executed, and the asset was activated.`, txs: [tx(adm.txs.queueGovernanceCall), tx(adm.txs.executeGovernanceCall), tx(adm.txs.activateAsset)], verdict: 'PASS' },
+      { id: 'A2', title: 'The calendar root was signed post-quantum', note: 'The root for the asset was queued through a second hybrid-signed governance call, executed, then activated.', txs: [tx(cal.governanceQueuedTxHash), tx(cal.rootQueuedTxHash)], verdict: cal.stage === 'INTERVAL_ACTIVE' ? 'PASS' : 'PENDING' },
+      { id: 'A3', title: 'The pool is real', note: 'Created and seeded in one transaction through the factory.', txs: [tx(proofs.createTx)], verdict: 'PASS' },
+      { id: 'A4', title: 'The hook cannot trap exits', note: proofs.checks.A4.note, txs: [], verdict: proofs.checks.A4.verdict },
+      { id: 'A5', title: 'Session fees apply', note: proofs.checks.A5.note, txs: [tx(proofs.checks.A5.tx)], verdict: proofs.checks.A5.verdict },
+      { id: 'A6', title: 'Caps hold', note: proofs.checks.A6.note, txs: [tx(proofs.checks.A6.tx)], verdict: proofs.checks.A6.verdict },
+    ],
+  };
+}
 const out = `${dir}/proof.json`;
 if (arg('rpc')) {
   let r = '';
-  try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online'], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
+  try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online', ...(arg('testnet-rpc') ? ['--testnet-rpc', arg('testnet-rpc')] : [])], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
   proof.lastRun = new Date().toISOString();
-  proof.replay = r.split('\n').filter((l) => /^[AB]\d/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
+  proof.replay = r.split('\n').filter((l) => /^(R:)?[AB]\d/.test(l) || /^R:R\d/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
 }
 writeFileSync(out, `${JSON.stringify(proof, null, 2)}\n`);
 copyFileSync(out, 'apps/web/components/einstein/ant-proof.json');
