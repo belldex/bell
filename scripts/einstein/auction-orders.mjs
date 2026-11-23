@@ -11,7 +11,7 @@
  * Buyer is LP_TEST_PRIVATE_KEY (USDG in), seller is LP_TEST_PRIVATE_KEY_2 (NVDA in). Limits cross the market so both fill.
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { createPublicClient, createWalletClient, http, parseAbi, parseEther } from 'viem';
+import { createPublicClient, createWalletClient, http, fallback, parseAbi, parseEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const command = process.argv[2] ?? 'status';
@@ -28,11 +28,15 @@ const pq = JSON.parse(readFileSync('evidence/deploy/pq-hooks-mainnet.json', 'utf
 const USDG = pq.assetDescriptors.USDG.token;
 const NVDA = pq.assetDescriptors.NVDA.token;
 const rpcUrl = arg('rpc', env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_RPC_PRIMARY);
-const pc = createPublicClient({ transport: http(rpcUrl) });
+// The 22 Nov run died on its first call with ENOTFOUND: the machine had just woken and had no network yet. Retry for minutes, and
+// fall back across every configured mainnet RPC, so a few seconds without DNS cannot cost a ten-minute order window.
+const rpcUrls = [...new Set([rpcUrl, env.RH_MAINNET_RPC_SECONDARY, env.RH_MAINNET_RPC_PRIMARY].filter(Boolean))];
+const transport = fallback(rpcUrls.map((u) => http(u, { retryCount: 40, retryDelay: 15000, timeout: 20000 })));
+const pc = createPublicClient({ transport });
 const acct = (k) => privateKeyToAccount(env[k].startsWith('0x') ? env[k] : `0x${env[k]}`);
 const buyer = acct('LP_TEST_PRIVATE_KEY');
 const seller = acct('LP_TEST_PRIVATE_KEY_2');
-const wc = (a) => createWalletClient({ account: a, transport: http(rpcUrl) });
+const wc = (a) => createWalletClient({ account: a, transport });
 
 const erc20 = parseAbi(['function balanceOf(address) view returns (uint256)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)', 'function transfer(address,uint256) returns (bool)']);
 const registry = parseAbi(['function auctionFor(bytes32) view returns (address)']);
@@ -86,14 +90,13 @@ if (command === 'status') {
   if (broadcast) for (const [label, fn] of plan) { await fn(); log('done:', label); }
 } else if (command === 'run') {
   log(`waiting for the order window of auction ${auction}`);
-  // A finished cycle has to be armed for the next CLOSED to open transition. Anyone may call armNext, and it does nothing outside CLOSED.
-  for (let i = 0; i < 2000 && [0, 4, 5].includes(await stage()); i += 1) {
-    try { const t = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'armNext' }); log('armNext sent', t.hash); } catch (e) { /* not armable yet */ }
-    if ([0, 4, 5].includes(await stage())) await new Promise((r) => setTimeout(r, 60_000)); else break;
-  }
-  while ((await stage()) !== 2) {
-    const s = await stage();
-    if (s > 2) throw new Error(`the order window has passed (stage ${STAGES[s]})`);
+  // Wait for OPEN. A cycle that was LOCKED with nothing in it has to be settled (anyone may call settle) before the next one can be
+  // armed, and a finished cycle has to be armed for the next CLOSED to open transition (anyone may call armNext; it does nothing outside
+  // CLOSED). One loop does both, so a missed window (16 and 23 Nov) never leaves the script stuck or throwing.
+  for (let guard = 0; (await stage()) !== 2 && guard < 20000; guard += 1) {
+    const st = await stage();
+    if (st === 3) { try { const t = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'settle' }); log('settle sent for the locked cycle', t.hash); } catch (e) { /* not settleable yet */ } }
+    if ([0, 4, 5].includes(st)) { try { const t = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'armNext' }); log('armNext sent', t.hash); } catch (e) { /* not armable yet */ } }
     await new Promise((r) => setTimeout(r, 15_000));
   }
   log('order window is OPEN, submitting both orders');

@@ -33,7 +33,7 @@ type Result = {
 };
 type PoolCfg = { poolId: string; hook: string; positionId: string; tickLower: number; tickUpper: number; seedTx: string; seedBlock: number; seed: { usdg: string; nvda: string } };
 type Run = {
-  id: number; label: string; network?: "mainnet" | "testnet"; methodCommit?: string | null; postponed?: boolean; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
+  id: number; label: string; network?: "mainnet" | "testnet"; outages?: { fromTs: number; toTs: number }[]; methodCommit?: string | null; postponed?: boolean; status: "scheduled" | "live" | "final"; window: { startTs: number; endTs: number }; note: string | null;
   generatedAt?: string; result?: Result;
   config?: { chain?: { id: number; name: string; explorer: string; publicRpc: string; feedKind?: string }; pools: { bell: PoolCfg; control: PoolCfg }; bot: { addresses: string[]; sourceFile: string; sourceUrl?: string; sourceSha256: string; maxUsdg: number }; blocked?: { tx: string; error: string }[] };
   replay?: Record<string, { verdict: Verdict; note: string }>;
@@ -144,6 +144,7 @@ export function V3EvolvePage() {
         <section id="verdict" className="ein-section ve-verdict" data-reveal data-status={current.status}>
           <p className="ve-verdict__status">{current.postponed && current.status === "scheduled" ? "Postponed" : current.status === "scheduled" ? "Scheduled" : current.status === "live" ? "Run in progress" : "Result"}</p>
           <p className="ve-verdict__line">{verdictLine(current)}</p>
+          {testnet && (current.outages?.length ?? 0) > 0 && <p className="ein-fine"><b>The bot was not running</b> {current.outages!.map((o) => `from ${day(o.fromTs)} to ${day(o.toTs)} ET`).join("; ")}. The price path is a function of the clock, so when it came back it jumped to where the path had gone, and the pools were arbitraged on that jump.</p>}
           {testnet && <p className="ein-fine"><b>Testnet run.</b> Test tokens, a fixture price feed that follows a published seeded path, and the Einstein stack redeployed on Robinhood testnet. It tests the machinery. It is not a mainnet result, and the mainnet Run 1 is still postponed until the pools are funded.</p>}
           {r && r.pendingReferences > 0 && <p className="ein-fine">{r.pendingReferences} swap(s) are left out of LVR until the feed publishes its next round.</p>}
         </section>

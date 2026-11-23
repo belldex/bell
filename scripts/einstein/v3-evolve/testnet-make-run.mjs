@@ -38,10 +38,16 @@ for (const r of reverted) {
   blocked.push({ tx: r.tx, error, selector, at: r.at });
 }
 
+// Stretches where the bot and the price keeper did not run (longer than 20 minutes between two price updates). They are published as they are.
+const feedTimes = rows.filter((r) => r.pool === 'feed' && r.action === 'setPrice').map((r) => Date.parse(r.at) / 1000);
+const outages = [];
+for (let i = 1; i < feedTimes.length; i += 1) if (feedTimes[i] - feedTimes[i - 1] > 20 * 60) outages.push({ fromTs: Math.round(feedTimes[i - 1]), toTs: Math.round(feedTimes[i]) });
+
 const run = {
   run: 3, label: 'Testnet run, 21 to 23 November', network: 'testnet', status: arg('status', 'live'),
   window: { startTs: cfg.window.startTs, endTs: cfg.window.endTs },
   note: 'Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.',
+  outages,
   config: {
     chain: { id: 46630, name: 'Robinhood Chain testnet', explorer: 'https://explorer.testnet.chain.robinhood.com', publicRpc: 'https://rpc.testnet.chain.robinhood.com', poolManager: cfg.poolManager, feed: cfg.feed, feedKind: 'fixture' },
     decimals: { usdg: 6, nvda: 18 },
