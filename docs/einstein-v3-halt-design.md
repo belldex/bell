@@ -1,6 +1,6 @@
 # Einstein Hooks v3: halt and event windows (design and status)
 
-Status: **the halt registry, the halt-aware policy oracle and the resume auction are built and tested, including on a mainnet fork with the whole v3 stack deployed; event windows are built at calendar and hook level; the real deploy script, a close-capture run on an intraday window and an independent review are not done.** Nothing here is deployed.
+Status: **the halt registry, the halt-aware policy oracle and the resume auction are built and tested, including on a mainnet fork with the whole v3 stack deployed; event windows are built at calendar and hook level; the deploy itself, a close-capture run on an intraday window and an independent review are not done.** Nothing here is deployed.
 
 ## Naming
 `BellHookV3` already exists: it is the PQ Hooks v2 template deployed on mainnet in 1fb9b06. The brief's "Einstein Hooks v3" therefore needs new contract names (`BellHookV4` and its factory), or the page and posts will describe two different things as v3.
@@ -36,6 +36,13 @@ An earnings window needs no new contract. It is a CLOSED leaf with its own prove
 - Auction at the end of a window: the opening auction arms only for CLOSED followed by PRE or OVERNIGHT. A window that ends into REGULAR or POST reopens through the closure recovery, without an auction.
 - Not run: `SessionRegistry.captureClose` on an intraday window. From the code its conditions (open phase before, CLOSED after, capture within the capture window before the start) allow it, but it was read, not executed. The fee of 10,000 pips in a planned CLOSED comes from the earlier fork run in a closed session, not from a swap inside a carved window.
 
+## Built: deploy script (contracts/script/DeployHaltStack.s.sol), simulated only
+Deploys HaltRegistry, BellPolicyOracleV3, an auction registry, BellAuctionFactoryModuleV2, a BellHookDeployerV3 and a BellPoolFactoryV3 beside the live Einstein v2 stack and replaces nothing; it reuses the session registry, asset registry, calendar, safety controller, HybridAuth, mode evaluator, pool manager and position manager from the environment (`BELL_HALT_*`, see the contract header). After deploying it reads every binding back (deployer to factory, oracle to registry, module to registry, auction writer, HybridAuth and role) and fails the whole run on any mismatch, including a wrong nonce count.
+- Dry run on a fork of mainnet (4663) with a throwaway key and no `--broadcast`: ran, all checks passed, estimated gas about 31 million (about 0.00125 ETH at the 0.04 gwei the node quoted). The addresses it printed belong to the throwaway deployer and are not the real ones.
+- The mainnet deployer held about 0.00066 ETH when last checked, which is below that estimate; it needs topping up before a broadcast.
+- Not done, on purpose: no broadcast. Per the design notes, mainnet waits for an independent review, and a testnet run of the same script (chain 46630) is the step before it.
+- After a broadcast the manifest status reads BROADCAST (it reads SIMULATED_NOT_DEPLOYED otherwise); verification on the explorer, the halt reporter and the keeper that calls `refreshState` and `armResume` are separate pieces of work.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 
@@ -48,7 +55,7 @@ These are read from the current contracts, not assumed.
 ## Order of work
 1. Done: `HaltRegistry` with tests.
 2. Done: halt-aware oracle V3 (no ModePolicy change was needed).
-3. Done at fork level: `test/fork/EinsteinHaltRehearsal.t.sol` creates a real pool through the mainnet factory on a fork, gives the deployer's oracle address the V3 runtime code and applies a halt: the pool is ACTIVE before (mode 1), the Swap event fee during the halt is 10,000 pips (V1), and an exit during the halt works without the hook (V6). Run it with `forge test --match-contract EinsteinHaltRehearsal --match-test test_V --fork-url $RH_MAINNET_RPC_SECONDARY`. Left: a deploy script for the real stack. No new factory or deployer code is needed: `BellHookDeployerV3` already takes any `BellPolicyOracleV2`, and V3 extends it, so the stack is HaltRegistry, BellPolicyOracleV3, a new BellHookDeployerV3 pointing at it, and a new BellPoolFactoryV3. The fork test etches the code instead of deploying, so deployment wiring itself is not yet exercised.
+3. Done at fork level (and the deploy script is built, see below): `test/fork/EinsteinHaltRehearsal.t.sol` creates a real pool through the mainnet factory on a fork, gives the deployer's oracle address the V3 runtime code and applies a halt: the pool is ACTIVE before (mode 1), the Swap event fee during the halt is 10,000 pips (V1), and an exit during the halt works without the hook (V6). Run it with `forge test --match-contract EinsteinHaltRehearsal --match-test test_V --fork-url $RH_MAINNET_RPC_SECONDARY`. Left: a deploy script for the real stack. No new factory or deployer code is needed: `BellHookDeployerV3` already takes any `BellPolicyOracleV2`, and V3 extends it, so the stack is HaltRegistry, BellPolicyOracleV3, a new BellHookDeployerV3 pointing at it, and a new BellPoolFactoryV3. The fork test etches the code instead of deploying, so deployment wiring itself is not yet exercised.
 4. Done at calendar and hook level (V5). Left: run `captureClose` and a swap inside a carved window on a fork.
 5. Fork rehearsal on Robinhood testnet, then an independent review before any mainnet deploy. V7 (Sourcify exact match) has the same limit as v2: the factory builds hooks without a metadata hash.
 
