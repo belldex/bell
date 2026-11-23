@@ -92,61 +92,61 @@
     "blocked": [
       {
         "tx": "0x5508211166358a227bf482ec78236e22079999872ebc764f611532a56fe7d712",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:01:48.707Z"
       },
       {
         "tx": "0xd77823bdc84ca816ebd8ce84ddce2a9862ff35feb4d9d31980a598477347c14f",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:06:52.172Z"
       },
       {
         "tx": "0x0f79d7d37502a44df3b866e4b192446cb733e46d9ff46ef9a41187b6b92392e5",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:11:55.467Z"
       },
       {
         "tx": "0x2fb286107d47a04f33a5e0b82c670ae9486d8bd169fbd60affe24d737731f395",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:16:57.861Z"
       },
       {
         "tx": "0x5b9cc2f9e1a1a786c7275387c5148e08c1d9fa903286e59bbf9ee11e72b05068",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:22:00.457Z"
       },
       {
         "tx": "0xd9c088f43782bbc32e4beb335582039841e6f5c48fa47fcf82a950f5135a23d8",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:27:04.494Z"
       },
       {
         "tx": "0x29f45054a045d9e94077101a4ac2ac6bf0297d30dc483bfd7530d9373690a578",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:32:07.031Z"
       },
       {
         "tx": "0x4c20aac8149bc33635ef7f72646443d271a93da4f54901c96385236e7dc6ad2f",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:37:10.293Z"
       },
       {
         "tx": "0x7bc8f5fe6089b868f64bbd625568305d16c5b2c8048edd6efa9e2f7e2632da95",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:42:13.293Z"
       },
       {
         "tx": "0xc3e9d00e59059e3ee760a2c36d92bf5ca34246115b1e2da49162d4d049c773b8",
-        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "error": "PolicyBlocked (raised by the hook 0xb4213C…, wrapped by the PoolManager)",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:47:16.815Z"
       }
