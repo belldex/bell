@@ -8,6 +8,12 @@
     "endTs": 1795446000
   },
   "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.",
+  "outages": [
+    {
+      "fromTs": 1795247734,
+      "toTs": 1795395707
+    }
+  ],
   "config": {
     "chain": {
       "id": 46630,
@@ -83,7 +89,14 @@
       "sourceSha256": "d6e42f47fa1875a5ffd526cb7c506615279b4f05833d61656a88aa1142e5217d",
       "maxUsdg": 100
     },
-    "blocked": []
+    "blocked": [
+      {
+        "tx": "0x5508211166358a227bf482ec78236e22079999872ebc764f611532a56fe7d712",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:01:48.707Z"
+      }
+    ]
   },
   "methodCommit": "ef75480"
 }
