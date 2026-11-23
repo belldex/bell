@@ -185,7 +185,7 @@ export function V3EvolvePage() {
 
         <section id="blocked" className="ein-section" data-reveal>
           <h2>Flow the BELL pool refused</h2>
-          {testnet && blocked.length > 0 && <p className="ein-fine">On testnet these reverted with <code>PolicyBlocked</code>, starting when the OVERNIGHT session opened. The session keeper that publishes the anchors the policy reads did not run on testnet, so the cause is not verified: it may be missing data, not a refusal of toxic flow. Do not read it as one.</p>}
+          {testnet && blocked.length > 0 && <p className="ein-fine">On testnet these reverted with <code>PolicyBlocked</code>, starting when the OVERNIGHT session opened. Reading the hook&apos;s policy afterwards gives reason bits 352: calendar missing, calendar conflict and report invalid or stale. The first calendar interval ended at 01:00 UTC and no keeper ran on testnet to activate the next one, so the pool had no valid session. This was missing infrastructure, not a refusal of toxic flow, and the mainnet pool, which has a keeper, was swappable later in the same OVERNIGHT session.</p>}
           {blocked.length ? (
             <ul className="pp-links">{blocked.map((b) => <li key={b.tx}>{link(`tx/${b.tx}`, `${b.error} ${short(b.tx)}`)}</li>)}</ul>
           ) : <p className="ein-ledger__lede">No refused swap is on record yet. Each one will be listed here with its reverted transaction and error name.</p>}
