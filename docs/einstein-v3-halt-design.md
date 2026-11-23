@@ -33,7 +33,7 @@ These are read from the current contracts, not assumed.
 ## Order of work
 1. Done: `HaltRegistry` with tests.
 2. Done: halt-aware oracle V3 (no ModePolicy change was needed).
-3. Factory and deployer that build pools with the V3 oracle, plus a swap-level test of V1 and V6 against a real pool manager.
+3. Done at fork level: `test/fork/EinsteinHaltRehearsal.t.sol` creates a real pool through the mainnet factory on a fork, gives the deployer's oracle address the V3 runtime code and applies a halt: the pool is ACTIVE before (mode 1), the Swap event fee during the halt is 10,000 pips (V1), and an exit during the halt works without the hook (V6). Run it with `forge test --match-contract EinsteinHaltRehearsal --match-test test_V --fork-url $RH_MAINNET_RPC_SECONDARY`. Left: a deploy script for the real stack. No new factory or deployer code is needed: `BellHookDeployerV3` already takes any `BellPolicyOracleV2`, and V3 extends it, so the stack is HaltRegistry, BellPolicyOracleV3, a new BellHookDeployerV3 pointing at it, and a new BellPoolFactoryV3. The fork test etches the code instead of deploying, so deployment wiring itself is not yet exercised.
 4. Event-window leaf test through `CalendarRegistry` (V5), including the one-day interval case.
 5. Fork rehearsal on Robinhood testnet, then an independent review before any mainnet deploy. V7 (Sourcify exact match) has the same limit as v2: the factory builds hooks without a metadata hash.
 
