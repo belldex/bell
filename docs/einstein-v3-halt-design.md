@@ -58,6 +58,9 @@ A pool was created through the new factory (hook `0xB81Ef919Fcc4934Db60B8284dEfe
 - Two things the run taught: the pool factory's profile hash includes the policy id, which `BELL_POLICY_ID` fixes (the script now uses it with `--stack halt`); and a pool cannot be created while the stock has no active calendar interval, which on testnet needs `activate-interval` because no keeper runs there.
 - Testnet only, test token, fixture feed. Nothing on mainnet changed. Not an independent review.
 
+## Built: halt keeper (scripts/einstein/halt-keeper.mjs)
+`tick` and `loop` call only permissionless functions, so the keeper holds no authority: `refreshState` when a halt has started or ended and the stored closure disagrees with the projected one, `armResume` when the registry shows the resume window, and `settle` when the auction is LOCKED. Dry run by default; `--broadcast` sends, `--network mainnet` also needs `--i-authorize-spend`. One dry-run tick on the testnet pool read the registry, hook and auction correctly (registry HALTED, hook CLOSED and latched, auction SETTLED, nothing to do). Its decisions at a halt's end and at a resume have not been run live yet; the V4 lapse is the first chance. It does not run on its own: it needs a machine or a Worker that stays up, like the ANT publisher.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 
