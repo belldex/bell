@@ -95,6 +95,24 @@
         "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:01:48.707Z"
+      },
+      {
+        "tx": "0xd77823bdc84ca816ebd8ce84ddce2a9862ff35feb4d9d31980a598477347c14f",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:06:52.172Z"
+      },
+      {
+        "tx": "0x0f79d7d37502a44df3b866e4b192446cb733e46d9ff46ef9a41187b6b92392e5",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:11:55.467Z"
+      },
+      {
+        "tx": "0x2fb286107d47a04f33a5e0b82c670ae9486d8bd169fbd60affe24d737731f395",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:16:57.861Z"
       }
     ]
   },
