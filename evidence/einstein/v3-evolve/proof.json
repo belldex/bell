@@ -139,12 +139,12 @@
     {
       "id": 3,
       "label": "Testnet run, 21 to 23 November",
-      "status": "live",
+      "status": "final",
       "window": {
         "startTs": 1795236143,
-        "endTs": 1795446000
+        "endTs": 1795398726
       },
-      "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.",
+      "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics. Stopped by the team on 23 November so the testnet run could be closed and published the same day. The planned end was 2026-11-23T15:00:00.000Z.",
       "postponed": false,
       "network": "testnet",
       "outages": [
@@ -170,7 +170,7 @@
         },
         "window": {
           "startTs": 1795236143,
-          "endTs": 1795446000
+          "endTs": 1795398726
         },
         "blocks": {
           "start": 156136089
@@ -253,14 +253,50 @@
             "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
             "selector": "0x90bfb865",
             "at": "2026-11-23T01:16:57.861Z"
+          },
+          {
+            "tx": "0x5b9cc2f9e1a1a786c7275387c5148e08c1d9fa903286e59bbf9ee11e72b05068",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:22:00.457Z"
+          },
+          {
+            "tx": "0xd9c088f43782bbc32e4beb335582039841e6f5c48fa47fcf82a950f5135a23d8",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:27:04.494Z"
+          },
+          {
+            "tx": "0x29f45054a045d9e94077101a4ac2ac6bf0297d30dc483bfd7530d9373690a578",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:32:07.031Z"
+          },
+          {
+            "tx": "0x4c20aac8149bc33635ef7f72646443d271a93da4f54901c96385236e7dc6ad2f",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:37:10.293Z"
+          },
+          {
+            "tx": "0x7bc8f5fe6089b868f64bbd625568305d16c5b2c8048edd6efa9e2f7e2632da95",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:42:13.293Z"
+          },
+          {
+            "tx": "0xc3e9d00e59059e3ee760a2c36d92bf5ca34246115b1e2da49162d4d049c773b8",
+            "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+            "selector": "0x90bfb865",
+            "at": "2026-11-23T01:47:16.815Z"
           }
         ]
       },
       "result": {
         "blocks": {
           "start": 156136089,
-          "end": 156828221,
-          "head": 156828221
+          "end": 156836791,
+          "head": 156836839
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -271,11 +307,11 @@
             "updatedAt": 1795236143
           },
           "end": {
-            "block": 156828221,
-            "roundId": "45",
-            "price": 131.85120151,
-            "updatedAt": 1795396782,
-            "fresh": false
+            "block": 156836791,
+            "roundId": "51",
+            "price": 132.13653098,
+            "updatedAt": 1795398726,
+            "fresh": true
           }
         },
         "pendingReferences": 0,
@@ -283,12 +319,12 @@
           "role": "bell",
           "poolId": "0x9ca2b8a2b612ffda9da7121c4fe02de50b60fc3cf6e81b8d44d22be0cb63b0ed",
           "startCapital": 5979.719485,
-          "feesEarned": 0.310569,
+          "feesEarned": 0.311241,
           "lvr": 0.329947,
-          "valueVsHold": 0.822039,
-          "netBps": 1.374712,
-          "positionValueEnd": 6023.07298,
-          "holdValueEnd": 6022.250941,
+          "valueVsHold": 0.889247,
+          "netBps": 1.487105,
+          "positionValueEnd": 6029.680418,
+          "holdValueEnd": 6028.791172,
           "swaps": 3,
           "volume": 30.234851,
           "organicSwaps": 0,
@@ -369,16 +405,16 @@
           "role": "control",
           "poolId": "0x330520cd8004e7b8b64625e24a6c404abb9d0e4ddcb8deeaadf22e7316eedc94",
           "startCapital": 5979.719485,
-          "feesEarned": 0.665861,
-          "lvr": 2.137464,
-          "valueVsHold": 0.106759,
-          "netBps": 0.178535,
-          "positionValueEnd": 6022.3577,
-          "holdValueEnd": 6022.250941,
-          "swaps": 13,
-          "volume": 220.122241,
+          "feesEarned": 0.752296,
+          "lvr": 2.262835,
+          "valueVsHold": -0.016965,
+          "netBps": -0.02837,
+          "positionValueEnd": 6028.774207,
+          "holdValueEnd": 6028.791172,
+          "swaps": 16,
+          "volume": 248.764268,
           "organicSwaps": 0,
-          "botSwaps": 13,
+          "botSwaps": 16,
           "sessions": {
             "CLOSED": {
               "swaps": 11,
@@ -389,12 +425,12 @@
               "botSwaps": 11
             },
             "OVERNIGHT": {
-              "swaps": 2,
-              "volume": 117.507457,
-              "fees": 0.352522,
-              "lvr": 1.70282,
+              "swaps": 5,
+              "volume": 146.149484,
+              "fees": 0.438448,
+              "lvr": 1.828191,
               "organicSwaps": 0,
-              "botSwaps": 2
+              "botSwaps": 5
             }
           },
           "series": [
@@ -449,6 +485,18 @@
             {
               "ts": 1795396012,
               "net": 0.077777
+            },
+            {
+              "ts": 1795396921,
+              "net": -0.194423
+            },
+            {
+              "ts": 1795397527,
+              "net": -0.28694
+            },
+            {
+              "ts": 1795398133,
+              "net": -0.324546
             }
           ],
           "rows": [
@@ -646,11 +694,56 @@
               "ref": 131.908272,
               "lvr": 0.079011,
               "fee": 0.052522
+            },
+            {
+              "tx": "0x7781b0fbebdfbf49e0c254ab3812fb2ed09672f94754ecd9b87da3254e9dd0f0",
+              "block": 156828888,
+              "ts": 1795396921,
+              "session": "OVERNIGHT",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "USDG",
+              "in": 20.416032,
+              "execPrice": 131.744242,
+              "ref": 132.373454,
+              "lvr": 0.097215,
+              "fee": 0.061248
+            },
+            {
+              "tx": "0x9921b789af68e4c6083591bb6ce500641eaa2fef03dff2ef5896809e7e41ba41",
+              "block": 156831826,
+              "ts": 1795397527,
+              "session": "OVERNIGHT",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "USDG",
+              "in": 5.923456,
+              "execPrice": 132.043688,
+              "ref": 132.508574,
+              "lvr": 0.020792,
+              "fee": 0.01777
+            },
+            {
+              "tx": "0x32cf7ba1adb7b89ebc5f0a24101329ea627a6a59de161b40bef80f7db43b5df9",
+              "block": 156834425,
+              "ts": 1795398133,
+              "session": "OVERNIGHT",
+              "feePips": 3000,
+              "from": "0xf3784048450e72596cd18bf079aed441894176e4",
+              "kind": "bot",
+              "inToken": "USDG",
+              "in": 2.302539,
+              "execPrice": 132.13726,
+              "ref": 132.561116,
+              "lvr": 0.007364,
+              "fee": 0.006908
             }
           ]
         },
         "verdict": {
-          "gapBps": 1.196177,
+          "gapBps": 1.515475,
           "winner": "BELL"
         },
         "bands": [
@@ -662,21 +755,11 @@
           {
             "phase": "OVERNIGHT",
             "start": 1795395600,
-            "end": 1795424400
-          },
-          {
-            "phase": "PRE",
-            "start": 1795424400,
-            "end": 1795444200
-          },
-          {
-            "phase": "REGULAR",
-            "start": 1795444200,
-            "end": 1795446000
+            "end": 1795398726
           }
         ]
       },
-      "generatedAt": "2026-11-23T01:20:05.490Z",
+      "generatedAt": "2026-11-23T01:52:41.840Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -687,35 +770,35 @@
           "note": "control pool hook is the zero address, BELL pool hook is 0xb4213Cca3cE02179489b1923276110F696faECc0"
         },
         "E3": {
-          "verdict": "PENDING",
-          "note": "The reference price is fixed when the run ends."
+          "verdict": "PASS",
+          "note": "feed round 51 at 132.13653098 read again at block 156836791, published 1795398726"
         },
         "E4": {
           "verdict": "PASS",
-          "note": "fees earned: BELL 0.310569, control 0.665861 (matches the page)"
+          "note": "fees earned: BELL 0.311241, control 0.752296 (matches the page)"
         },
         "E5": {
           "verdict": "PASS",
-          "note": "LVR: BELL 0.329947, control 2.137464 (matches the page)"
+          "note": "LVR: BELL 0.329947, control 2.262835 (matches the page)"
         },
         "E6": {
           "verdict": "PASS",
-          "note": "net LP result in bps: BELL 1.374712, control 0.178535 (matches the page)"
+          "note": "net LP result in bps: BELL 1.487105, control -0.02837 (matches the page)"
         },
         "E7": {
           "verdict": "PASS",
-          "note": "bot source matches d6e42f47fa18…, 3 bot swaps on BELL and 13 on the control, none above 100 USDG"
+          "note": "bot source matches d6e42f47fa18…, 3 bot swaps on BELL and 16 on the control, none above 100 USDG"
         },
         "E8": {
           "verdict": "PASS",
           "note": "all checks held"
         },
         "E9": {
-          "verdict": "PARTIAL",
-          "note": "Not every one of E1 to E8 passes yet."
+          "verdict": "PASS",
+          "note": "E1 to E8 all pass from a public RPC."
         }
       }
     }
   ],
-  "lastBuild": "2026-11-23T01:20:22.378Z"
+  "lastBuild": "2026-11-23T01:53:05.987Z"
 }

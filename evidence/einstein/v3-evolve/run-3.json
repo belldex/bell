@@ -2,12 +2,12 @@
   "run": 3,
   "label": "Testnet run, 21 to 23 November",
   "network": "testnet",
-  "status": "live",
+  "status": "final",
   "window": {
     "startTs": 1795236143,
-    "endTs": 1795446000
+    "endTs": 1795398726
   },
-  "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics.",
+  "note": "Robinhood testnet, test tokens, a fixture price feed that follows a published seeded path. It tests the machinery, not mainnet economics. Stopped by the team on 23 November so the testnet run could be closed and published the same day. The planned end was 2026-11-23T15:00:00.000Z.",
   "outages": [
     {
       "fromTs": 1795247734,
@@ -30,7 +30,7 @@
     },
     "window": {
       "startTs": 1795236143,
-      "endTs": 1795446000
+      "endTs": 1795398726
     },
     "blocks": {
       "start": 156136089
@@ -113,6 +113,42 @@
         "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
         "selector": "0x90bfb865",
         "at": "2026-11-23T01:16:57.861Z"
+      },
+      {
+        "tx": "0x5b9cc2f9e1a1a786c7275387c5148e08c1d9fa903286e59bbf9ee11e72b05068",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:22:00.457Z"
+      },
+      {
+        "tx": "0xd9c088f43782bbc32e4beb335582039841e6f5c48fa47fcf82a950f5135a23d8",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:27:04.494Z"
+      },
+      {
+        "tx": "0x29f45054a045d9e94077101a4ac2ac6bf0297d30dc483bfd7530d9373690a578",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:32:07.031Z"
+      },
+      {
+        "tx": "0x4c20aac8149bc33635ef7f72646443d271a93da4f54901c96385236e7dc6ad2f",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:37:10.293Z"
+      },
+      {
+        "tx": "0x7bc8f5fe6089b868f64bbd625568305d16c5b2c8048edd6efa9e2f7e2632da95",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:42:13.293Z"
+      },
+      {
+        "tx": "0xc3e9d00e59059e3ee760a2c36d92bf5ca34246115b1e2da49162d4d049c773b8",
+        "error": "The contract function \"executeSwap\" reverted with the following signature:\n0x90bfb865",
+        "selector": "0x90bfb865",
+        "at": "2026-11-23T01:47:16.815Z"
       }
     ]
   },
