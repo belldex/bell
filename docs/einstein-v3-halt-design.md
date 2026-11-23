@@ -61,6 +61,11 @@ A pool was created through the new factory (hook `0xB81Ef919Fcc4934Db60B8284dEfe
 ## Built: halt keeper (scripts/einstein/halt-keeper.mjs)
 `tick` and `loop` call only permissionless functions, so the keeper holds no authority: `refreshState` when a halt has started or ended and the stored closure disagrees with the projected one, `armResume` when the registry shows the resume window, and `settle` when the auction is LOCKED. Dry run by default; `--broadcast` sends, `--network mainnet` also needs `--i-authorize-spend`. One dry-run tick on the testnet pool read the registry, hook and auction correctly (registry HALTED, hook CLOSED and latched, auction SETTLED, nothing to do). Its decisions at a halt's end and at a resume have not been run live yet; the V4 lapse is the first chance. It does not run on its own: it needs a machine or a Worker that stays up, like the ANT publisher.
 
+## Built: halt watcher (scripts/einstein/halt-watcher.mjs, 6 node tests)
+Reads `isTradingHalt` from Robinhood's pricing API (`/rhj/prices/<symbol>`) and drives the registry through `halt-reporter.mjs`. The decision is a pure function: it acts only after two consecutive observations, renews 15 minutes before the registry would lapse, resumes when the flag clears, and takes no action on a missing, failed or older-than-60-seconds quote (the registry's two hour expiry is the fail-safe). Dry run by default.
+- What its source is not: Robinhood's own flag, not the exchange's halt feed, and it has no halt start time. The watcher records the time it first saw the flag as the start, so `reportDelay` measures nothing about the exchange's own delay. This answers the brief's open question for ANT only as far as that flag goes; whether Robinhood's flag follows Nasdaq's halts, and how quickly, is not known.
+- Only the pure decisions and the quote parsing are tested. A live broadcast of a watcher-driven halt has not been run, and ANT was not halted when it was last read. Do not run `--broadcast` on testnet against the real quote while the V4 halt is pending: the real ANT quote says trading, so it would resume the test halt.
+
 ## Not built: what the hook has to do, and what the code says about it
 These are read from the current contracts, not assumed.
 
@@ -78,5 +83,5 @@ These are read from the current contracts, not assumed.
 5. Fork rehearsal on Robinhood testnet, then an independent review before any mainnet deploy. V7 (Sourcify exact match) has the same limit as v2: the factory builds hooks without a metadata hash.
 
 ## Open questions from the brief, still open
-- Halt source: who runs the reporter and which public feed. Robinhood's pricing API already returns `isTradingHalt` for ANT (used by the ANT publisher), which is a candidate, but it is Robinhood's flag, not the exchange's.
+- Halt source: the watcher uses Robinhood's `isTradingHalt` for ANT. Still open: whether that flag follows the exchange's halts and how fast, and who runs the watcher.
 - Earnings dates: who maintains them and how far ahead they are signed.
