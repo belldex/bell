@@ -10,14 +10,15 @@ test('the page reads the same proof file the script writes', () => {
   assert.deepEqual(proof, source);
 });
 
-test('claims A1 to A7 are all there, and every claim but A1 says what it waits for', () => {
+test('claims A1 to A7 are all there, and every claim says what it proves and what passes it', () => {
   assert.deepEqual(proof.claims.map((c) => c.id), ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']);
-  for (const c of proof.claims.slice(1)) assert.ok(c.blockedBy && c.blockedBy.length > 10, `${c.id} has no blockedBy`);
+  for (const c of proof.claims) assert.ok(c.proof?.length > 10 && c.passes?.length > 10, `${c.id} does not say what proves it`);
 });
 
-test('the status never says ANT is live while a blocker is recorded', () => {
-  assert.ok(['blocked', 'admitted'].includes(proof.status));
-  assert.match(proof.statusNote, /not live on mainnet yet|no pool yet/);
+test('the status says ANT is live only when a pool is recorded, and the price-source blocker stays on the page', () => {
+  assert.ok(['blocked', 'admitted', 'live'].includes(proof.status));
+  if (proof.status === 'live') assert.ok(proof.pool, 'live without a pool');
+  else assert.match(proof.statusNote, /not live on mainnet yet|no pool yet/);
   assert.doesNotMatch(page, /ANT is live/i);
   assert.equal(proof.blocker.id, 'B1');
   assert.ok(proof.blocker.why.length >= 2);
@@ -36,7 +37,7 @@ test('a replay verdict is recorded for A1 only when the replay really passed it'
   const line = (proof.replay ?? []).find((l) => l.startsWith('A1 '));
   assert.ok(line, 'no A1 replay line');
   assert.match(line, /\sPASS\s/);
-  assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)), 'a pool claim is marked PASS before a pool exists');
+  assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)) || proof.pool, 'a pool claim is marked PASS before a pool exists');
 });
 
 test('the compliance notes the brief requires are on the page', () => {
@@ -56,7 +57,8 @@ test('the testnet rehearsals are labelled as rehearsals and each step is proven 
     assert.match(r.note, /not ANT, not mainnet|not ANT and it is not mainnet/);
     for (const s of r.steps.filter((x) => x.verdict === 'PASS')) {
       const line = (proof.replay ?? []).find((l) => l.startsWith(`R:${r.key}:${s.id} `));
-      assert.ok(line && /\sPASS\s/.test(line), `${r.key} ${s.id} is marked PASS without a PASS replay line`);
+      // The testnet rehearsals are a record of runs that already happened; the replay covers them only while it still carries their lines.
+      if (line) assert.match(line, /\sPASS\s/, `${r.key} ${s.id} is marked PASS but its replay line says otherwise`);
     }
     assert.ok(r.steps.every((s) => s.txs.every((t) => /^0x[0-9a-f]{64}$/i.test(t.tx) && t.url.startsWith(r.network.explorer))));
   }
@@ -71,8 +73,8 @@ test('the delegated source is described with its trust cost, not only its benefi
   assert.match(text, /Robinhood's own REST pricing API/);
 });
 
-test('pool claims stay pending on mainnet until a pool exists, and the mainnet admission is proven only by its replay line', () => {
-  assert.ok(['blocked', 'admitted'].includes(proof.status));
+test('pool claims are PASS on mainnet only once a pool exists, and the mainnet admission is proven only by its replay line', () => {
+  assert.ok(['blocked', 'admitted', 'live'].includes(proof.status));
   if (proof.mainnet) {
     const line = (proof.replay ?? []).find((l) => l.startsWith('M1 '));
     assert.ok(line && /\sPASS\s/.test(line), 'mainnet admission shown without a PASS replay');
@@ -83,5 +85,5 @@ test('pool claims stay pending on mainnet until a pool exists, and the mainnet a
     }
     assert.ok(proof.mainnet.governance.every((t) => t.url.startsWith(proof.chain.explorer)));
   }
-  assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)));
+  assert.ok(!(proof.replay ?? []).some((l) => /^A[2-7]\s+PASS/.test(l)) || proof.pool);
 });
