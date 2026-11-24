@@ -42,6 +42,7 @@ jobs:
         env:
           RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
           ANT_PROVER_PRIVATE_KEY: ${{ secrets.ANT_PROVER_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "bell-keeper"
           git config user.email "bell-keeper@users.noreply.github.com"
@@ -61,7 +62,7 @@ jobs:
               else
                 echo "::warning::the proof rebuild failed; the swap is recorded and the next run rebuilds it"
               fi
-              git pull -q --rebase origin main && git push -q origin HEAD:main || echo "::warning::push failed, retried next time"
+              if git pull -q --rebase origin main && git push -q origin HEAD:main; then gh workflow run pages-deploy.yml --repo "$GITHUB_REPOSITORY" || echo "::warning::could not start the site deploy"; else echo "::warning::push failed, retried next time"; fi
             fi
             if complete; then echo "all four sessions are recorded"; touch /tmp/done; break; fi
             sleep 60
