@@ -3,6 +3,7 @@ import { LandingEffects } from "@/components/landing/gyevo/landing-effects";
 import { LandingNav } from "@/components/landing/gyevo/landing-nav";
 import { EinsteinMotion } from "./einstein-motion";
 import { CopyCommand } from "./copy-command";
+import { TokenLogo } from "@/components/ui/TokenLogo";
 import proof from "./ant-proof.json";
 
 const SECTIONS = [
@@ -43,7 +44,7 @@ export function AntPage() {
       <main id="main" className="legal__main ein__main">
         <header className="ein-hero pp-hero">
           <div className="ein-hero__copy">
-            <p className="ein-tag"><span>Einstein Hooks</span><b>ANT, Robinhood&apos;s Anthropic stock token</b></p>
+            <p className="ein-tag"><span>Einstein Hooks</span><b><TokenLogo symbol="ANT" size={20} /> ANT, Robinhood&apos;s Anthropic stock token</b></p>
             <h1>ANT is not trading on BELL <em>yet.</em></h1>
             <p className="ein-lede">{proof.subtitle}</p>
           </div>

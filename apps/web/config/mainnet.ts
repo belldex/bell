@@ -105,6 +105,7 @@ export const CONTRACT_GROUPS: ContractGroup[] = [
     blurb: 'Stock tokens and counterassets the AssetRegistry admits.',
     rows: [
       external('AAPL', 'Robinhood stock token · 18 decimals', '0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9'),
+      external('ANT', 'Robinhood stock token · 18 decimals', '0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373'),
       external('NVDA', 'Robinhood stock token · 18 decimals', '0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC'),
       external('TSLA', 'Robinhood stock token · 18 decimals', '0x322F0929c4625eD5bAd873c95208D54E1c003b2d'),
       external('MEME', 'Admitted counterasset · 18 decimals', '0x385F4f8ae47651ce5F58F5265395a669f8281e18'),
