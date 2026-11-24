@@ -61,7 +61,12 @@ async function collectSources(directory) {
   return sources;
 }
 
-export async function compileProjectSolidity() {
+let memo;
+export function compileProjectSolidity() {
+  return (memo ??= compileOnce());
+}
+
+async function compileOnce() {
   const sources = {};
   const sourceDirs = [resolve(contractsRoot, 'src'), resolve(contractsRoot, 'test')];
   for (const directory of sourceDirs) {
@@ -85,8 +90,26 @@ export async function compileProjectSolidity() {
       outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object'], '': ['ast'] } },
     },
   };
-  const output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
-  const errors = (output.errors ?? []).filter(({ severity }) => severity === 'error');
+  let output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
+  let errors = (output.errors ?? []).filter(({ severity }) => severity === 'error');
+  // The policy oracle's evaluate() exceeds the legacy code generator's stack limit, and production builds it with via-IR (foundry.toml), which
+  // forge build covers in CI. When the legacy pass fails only on stack depth, repeat it without code generation for the production sources:
+  // ABI and AST for everything, bytecode only for the test harnesses.
+  if (errors.length > 0 && errors.every(({ message }) => /Stack too deep/.test(message ?? ''))) {
+    input.settings.outputSelection = { '*': { '*': ['abi'], '': ['ast'] } };
+    output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
+    errors = (output.errors ?? []).filter(({ severity }) => severity === 'error');
+    if (errors.length === 0) {
+      // One bytecode request makes solc generate code for every contract in the unit, so the harnesses get their own compile.
+      const harnessSources = Object.fromEntries(Object.entries(sources).filter(([path]) => path.startsWith('contracts/test/')));
+      const harness = JSON.parse(solc.compile(JSON.stringify({ language: 'Solidity', sources: harnessSources, settings: {
+        optimizer: input.settings.optimizer, evmVersion: 'cancun', metadata: input.settings.metadata,
+        outputSelection: { '*': { '*': ['abi', 'evm.bytecode.object', 'evm.deployedBytecode.object'] } },
+      } }), { import: resolveImport }));
+      errors = (harness.errors ?? []).filter(({ severity }) => severity === 'error');
+      for (const path of Object.keys(harnessSources)) if (harness.contracts?.[path]) output.contracts[path] = harness.contracts[path];
+    }
+  }
   if (errors.length > 0) throw new Error(errors.map(({ formattedMessage }) => formattedMessage).join('\n'));
   // Lens quote traversal exceeds the legacy code generator's stack limit. Compile it
   // independently using the same via-IR settings as the deployable Foundry artifact.
