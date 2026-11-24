@@ -1,0 +1,80 @@
+name: ANT delegate renewal
+
+# Keeps the ANT price delegate authorized on Robinhood mainnet without a laptop. The Worker signs each swap's price report with the delegate key,
+# and each DelegatedAttestedSourceAdapter only lets that key sign for at most 25 hours, renewed by one hybrid-signed REPORTER call per adapter
+# (ECDSA plus a post-quantum SHRINCS leaf). This job checks the four adapters every few hours and renews only when the shortest one has less
+# than six hours left, so a normal day is one renewal of four leaves and every other run is a read.
+#
+# The REPORTER signer state is stateful (one leaf per signature). It lives encrypted on the `pq-state` branch, is restored before the run and is
+# saved after it even if the run failed, and only this workflow signs with it. The concurrency group below makes sure two runs never overlap.
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Renew now even if the delegation is not close to lapsing (uses four leaves)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ant-delegate-renew
+  cancel-in-progress: false
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: pq-state
+          path: pq-state
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          (cd contracts/pq/signer && npm ci --no-audit --no-fund)
+          mkdir -p contracts/pq/keys/robinhood-4663
+          cp pq-state/reporter.enc pq-state/reporter.public.json contracts/pq/keys/robinhood-4663/
+
+      - name: Renew the delegation if it is close to lapsing
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+          YAHOO_REPORTER_PRIVATE_KEY: ${{ secrets.YAHOO_REPORTER_PRIVATE_KEY }}
+          ANT_DELEGATE_PRIVATE_KEY: ${{ secrets.ANT_DELEGATE_PRIVATE_KEY }}
+          ANT_SENDER_PRIVATE_KEY: ${{ secrets.ANT_SENDER_PRIVATE_KEY }}
+          BELL_PQ_MAINNET_ENCRYPTION_KEY: ${{ secrets.BELL_PQ_MAINNET_ENCRYPTION_KEY }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          flag=""
+          if [ "$FORCE" = "true" ]; then flag="--force"; fi
+          node scripts/einstein/ant-publish.mjs renew --network mainnet --state evidence/deploy/mainnet-4663-ant.json --hours 25 --below 6 --broadcast --no-state $flag
+
+      - name: Save the signer state
+        if: always()
+        run: |
+          cp contracts/pq/keys/robinhood-4663/reporter.enc contracts/pq/keys/robinhood-4663/reporter.public.json pq-state/
+          cd pq-state
+          git config user.name "bell-keeper"
+          git config user.email "bell-keeper@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add reporter.enc reporter.public.json
+            git commit -m "signer state after run $GITHUB_RUN_NUMBER"
+            git push origin HEAD:pq-state
+          fi

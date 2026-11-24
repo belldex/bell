@@ -24,7 +24,9 @@ import { sessionIntervals, sessionAt } from './v3-evolve/lib.mjs';
 const command = process.argv[2] ?? 'publish';
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const broadcast = process.argv.includes('--broadcast');
-const env = {}; for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); }
+const env = {};
+try { for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); } } catch { /* no .env: CI passes everything through the environment */ }
+for (const [k, v] of Object.entries(process.env)) if (v) env[k] = v;
 const acct = (n) => privateKeyToAccount(env[n].startsWith('0x') ? env[n] : `0x${env[n]}`);
 const state = JSON.parse(readFileSync(arg('state'), 'utf8'));
 const MAINNET = arg('network', 'testnet') === 'mainnet';
@@ -32,7 +34,7 @@ const manifest = JSON.parse(readFileSync(MAINNET ? 'evidence/deploy/pq-hooks-mai
 const c = manifest.contracts;
 const rpc = MAINNET ? env.RH_MAINNET_RPC_PRIMARY : env.RH_TESTNET_RPC_PRIMARY;
 const pc = createPublicClient({ transport: http(rpc) });
-const sender = acct(MAINNET && env.RH_MAINNET_DEPLOYER_PRIVATE_KEY ? 'RH_MAINNET_DEPLOYER_PRIVATE_KEY' : 'DEPLOYER_PRIVATE_KEY'); // any wallet can submit; it only pays gas
+const sender = acct(env.ANT_SENDER_PRIVATE_KEY ? 'ANT_SENDER_PRIVATE_KEY' : MAINNET && env.RH_MAINNET_DEPLOYER_PRIVATE_KEY ? 'RH_MAINNET_DEPLOYER_PRIVATE_KEY' : 'DEPLOYER_PRIVATE_KEY'); // any wallet can submit; it only pays gas
 const wc = createWalletClient({ account: sender, transport: http(rpc) });
 const delegate = acct('ANT_DELEGATE_PRIVATE_KEY');
 const REPORTER = keccak256(stringToHex('REPORTER'));
@@ -146,7 +148,24 @@ async function publish() {
   console.log(`${session}: published ${price} USD, reasons ${sim.result}, tx ${hash}`);
 }
 
-if (command === 'authorize') { const st = await authorize(); if (broadcast) (await import('node:fs')).writeFileSync(arg('state'), `${JSON.stringify(st, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 2)}\n`); }
+/** Renews the delegation only when it is about to lapse: reads every adapter's delegateUntil and does nothing (no PQ signature, no gas) while the
+ *  shortest one still has more than --below hours (default 6). With --force it renews regardless. Meant to run from a scheduler every few hours. */
+async function renewIfNeeded() {
+  const below = Number(arg('below', '6')) * 3600;
+  const now = Number((await pc.getBlock()).timestamp);
+  const rows = await Promise.all(NAMES.map(async (name) => {
+    const a = state.adapters[name];
+    const [until, current] = await Promise.all([pc.readContract({ address: a, abi: ADAPTER, functionName: 'delegateUntil' }), pc.readContract({ address: a, abi: ADAPTER, functionName: 'delegate' })]);
+    return { name, remaining: Number(until) - now, isOurs: current.toLowerCase() === delegate.address.toLowerCase() };
+  }));
+  const min = Math.min(...rows.map((r) => r.remaining));
+  console.log(`delegation remaining: ${rows.map((r) => `${r.name} ${(r.remaining / 3600).toFixed(1)} h${r.isOurs ? '' : ' (other delegate)'}`).join(', ')}`);
+  if (process.argv.includes('--force') || min <= below || rows.some((r) => !r.isOurs)) { console.log('renewing'); await authorize(); }
+  else console.log(`still valid for more than ${below / 3600} h: nothing to do`);
+}
+
+if (command === 'authorize') { const st = await authorize(); if (broadcast && !process.argv.includes('--no-state')) (await import('node:fs')).writeFileSync(arg('state'), `${JSON.stringify(st, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 2)}\n`); }
+else if (command === 'renew') await renewIfNeeded();
 else if (command === 'publish') await publish();
 else if (command === 'loop') { for (;;) { try { await publish(); } catch (e) { console.error('publish failed', String(e.shortMessage ?? e).slice(0, 200)); } await new Promise((r) => setTimeout(r, 45_000)); } }
-else throw new Error('usage: ant-publish.mjs authorize|publish|loop --state <file> [--price <usd>] [--hours 24] [--broadcast]');
+else throw new Error('usage: ant-publish.mjs authorize|renew|publish|loop --state <file> [--price <usd>] [--hours 24] [--broadcast]');
