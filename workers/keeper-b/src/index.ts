@@ -35,6 +35,7 @@ import { KeeperState, nextAlarmTimestamp } from './keeper-state.mjs';
 import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.mjs';
 import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
+import { buildAntUpdate, AntUpdateError } from './ant-update.mjs';
 import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
 
 export { KeeperState };
@@ -1023,7 +1024,7 @@ const worker = {
     const url = new URL(request.url);
     const receiptRoute = /^\/pools\/([^/]+)\/receipts$/.exec(url.pathname);
     const poolStatusRoute = /^\/pools\/([^/]+)\/status$/.exec(url.pathname);
-    const isPublicRead = Boolean(receiptRoute || poolStatusRoute) || ['/quote', '/pools', '/positions', '/status', '/auctions'].includes(url.pathname);
+    const isPublicRead = Boolean(receiptRoute || poolStatusRoute) || ['/quote', '/pools', '/positions', '/status', '/auctions', '/ant-update'].includes(url.pathname);
     const cors = (response) => {
       const headers = new Headers(response.headers);
       headers.set('access-control-allow-origin', '*');
@@ -1123,6 +1124,23 @@ const worker = {
         // Validation errors are our own fixed strings. Never expose upstream RPC URLs or errors.
         const clientError = error?.receiptValidation === true;
         return cors(json({ error: clientError ? error.message : 'Live pool receipts are temporarily unavailable' }, clientError ? 400 : 503));
+      }
+    }
+    if (url.pathname === '/ant-update') {
+      if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
+      const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
+      try {
+        if (!env.ANT_DELEGATE_PRIVATE_KEY || !env.BELL_ANT_CONFIG || !rpcUrl) throw new AntUpdateError('ANT updates are not configured', 503);
+        const client = createPublicClient({ transport: http(rpcUrl) });
+        if (await client.getChainId() !== 4663) throw new AntUpdateError('ANT updates are temporarily unavailable', 503);
+        const bundle = await buildAntUpdate({ cfg: JSON.parse(env.BELL_ANT_CONFIG), delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client });
+        const response = json(bundle);
+        response.headers.set('cache-control', 'no-store');
+        return cors(response);
+      } catch (error) {
+        const known = error instanceof AntUpdateError;
+        if (!known) console.error('ant update failed', String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 160));
+        return cors(json({ error: known ? error.message : 'ANT update is temporarily unavailable' }, known ? error.status : 503));
       }
     }
     if (url.pathname === '/pools') {

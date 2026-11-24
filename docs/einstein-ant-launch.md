@@ -36,3 +36,11 @@ Still to do, in this order:
 - A hook revert reaches the caller wrapped by the PoolManager as `WrappedError`; the inner error for A6 is `TradeCapExceeded`.
 - A pool needs a keeper that activates calendar intervals. On testnet none runs, so the pool blocks at the next interval.
 - The hook can only reach a Sourcify "match", not "exact match" (A7), because the factory builds it without a metadata hash.
+
+
+## Mainnet: how the price reaches the pool (decided 24 Nov 2026)
+The pool is live (ant-pool-1795488954977.json, v3 factory). A publisher that writes the price on chain every 45 seconds costs about 0.0007 ETH an hour (423,000 gas per report, valid 100 seconds), so it was stopped after about 20 reports and is not used.
+
+Instead the swap carries the report. `GET /ant-update` on the keeper-b Worker reads Robinhood's pricing API, signs the direct sample and one session report with the ANT delegate key (a Worker secret, `ANT_DELEGATE_PRIVATE_KEY`; the adapter lets it sign for at most 25 hours), and returns an `OraclePullUpdate` the swap page puts in `oracleUpdates`. First proof: a 0.02 USDG swap with the update inside, no publisher running, 1.10 million gas, about 0.00002 ETH (`scripts/einstein/ant-swap-check.mjs`). It refuses a halt, a spread over 2 percent and a quote older than 60 seconds.
+
+Running costs now: the interval keeper (`scripts/einstein/ant-interval-keeper.mjs`, a few activation transactions a day, none when the interval is already active) and the daily delegate renewal (scheduled task `bell-ant-delegate-renew`, 4 REPORTER leaves a day). Both run on the owner's computer, so if it is off the pool stops swapping until they run again; funds and liquidity withdrawal are not affected.

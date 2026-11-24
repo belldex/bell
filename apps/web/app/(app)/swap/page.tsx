@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { parseUnits } from 'viem';
 import { AlertTriangle, ArrowDownUp, CheckCircle2, ExternalLink, LoaderCircle, RefreshCw } from 'lucide-react';
 import { makeClients, useWallet } from '@/lib/wallet';
-import { MAINNET, displayAmount, hookAbi, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
+import { MAINNET, displayAmount, fetchAntUpdate, hookAbi, readLivePools, routerAbi, tokenAbi, type LivePool } from '@/lib/mainnet-live';
 import { LogoSelect } from '@/components/ui/LogoSelect';
 import { AppLoadingState } from '@/components/app/AppLoadingState';
 import { SwapProgressModal, type SwapActionType } from '@/components/swap/SwapProgressModal';
@@ -89,6 +89,8 @@ function SwapInner() {
 
   const buildUpdates = async () => {
     if (!pool) return [];
+    // ANT is priced from Robinhood's pricing API through a delegated attester, and the swap itself carries the signed report.
+    if (pool.legs.some((leg) => leg.symbol === 'ANT')) return [await fetchAntUpdate()];
     // A market-price pool prices from its own liquidity, so it needs no external update and no
     // freshness gate. Sending one anyway would force the router through a feed the pool ignores.
     if (pool.poolClass === 1) return [];

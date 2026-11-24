@@ -21,6 +21,9 @@ export const MAINNET = {
   auctionRegistry: typeof (deployment as typeof deployment & { auctionRegistry?: string }).auctionRegistry === 'string'
     ? (deployment as typeof deployment & { auctionRegistry?: string }).auctionRegistry as Address
     : null,
+  swapLensRegistry: typeof (deployment as unknown as { swapLensRegistry?: string }).swapLensRegistry === 'string'
+    ? (deployment as unknown as { swapLensRegistry: string }).swapLensRegistry as Address
+    : null,
   publicRpc: 'https://rpc.mainnet.chain.robinhood.com',
   deploymentBlock: BigInt(verification.blocks.verifiedAtBlock),
 } as const;
@@ -143,6 +146,18 @@ export async function readLivePools(): Promise<LivePool[]> {
       } as LivePool;
     })));
   }
+}
+
+/**
+ * ANT has no Chainlink feed, so the swap carries its own price report. The Worker signs it with the ANT delegate key from Robinhood's
+ * pricing API; the report lives 100 seconds, so ask for it right before sending and never reuse one.
+ */
+export async function fetchAntUpdate() {
+  const url = MAINNET.quoteUrl.replace(/\/quote$/, '/ant-update');
+  const response = await fetch(url, { cache: 'no-store' });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body?.error ?? `ANT price update returned HTTP ${response.status}`);
+  return oracleUpdate(body);
 }
 
 export function oracleUpdate(bundle: any) {
