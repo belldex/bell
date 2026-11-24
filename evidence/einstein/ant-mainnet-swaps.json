@@ -6,6 +6,12 @@
       "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
       "amountUsdg": 0.02,
       "expectedFeePips": 5000
+    },
+    {
+      "session": "PRE",
+      "tx": "0x4ca58e658d4fe981da5c68c1a0b2b3cce9006eab70ef9f70c3173cb1a9f99827",
+      "amountUsdg": 0.02,
+      "expectedFeePips": 3000
     }
   ],
   "a6": {
