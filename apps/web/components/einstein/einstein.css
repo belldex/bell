@@ -471,3 +471,21 @@
   .ve-sessions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ve-history li { grid-template-columns: 1fr; gap: 0.3rem; }
 }
+
+/* Verdict tally under the status headline */
+.ve-tally { display: flex; flex-wrap: wrap; gap: 0.6rem 0.8rem; margin: 1.4rem 0 0; padding: 0; list-style: none; font: 500 0.78rem/1 var(--lp-font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--lp-muted); }
+.ve-tally li { display: inline-flex; align-items: baseline; gap: 0.5rem; padding: 0.55rem 0.8rem; border: 1px solid var(--lp-line); }
+.ve-tally b { color: var(--lp-white); font: 650 1.25rem/1 var(--lp-font-display); letter-spacing: -0.02em; }
+.ve-tally li[data-v="pass"] { border-color: color-mix(in srgb, var(--lp-accent-light) 55%, transparent); }
+.ve-tally li[data-v="pass"] b { color: var(--lp-accent-light); }
+
+/* Background sections that stay closed until asked for */
+.ein-fold details { border-top: 1px solid var(--lp-line); padding-top: 1.1rem; }
+.ein-fold summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.4rem 1.5rem; cursor: pointer; list-style: none; }
+.ein-fold summary::-webkit-details-marker { display: none; }
+.ein-fold summary h2 { margin: 0; font-size: clamp(1.25rem, 2.4vw, 1.7rem); }
+.ein-fold summary span { color: var(--lp-muted); font: 500 0.72rem/1.4 var(--lp-font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.ein-fold summary::after { content: "Show"; color: var(--lp-accent-light); font: 500 0.72rem/1 var(--lp-font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.ein-fold details[open] summary::after { content: "Hide"; }
+.ein-fold details > :not(summary) { margin-top: 1.2rem; }
+.ein-fold { padding-top: clamp(2rem, 5vw, 3.5rem); }

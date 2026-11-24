@@ -46,6 +46,8 @@ const verdictOf = (id: string): Verdict => {
   if (!line) return "PENDING";
   return /\sPASS\s/.test(line) ? "PASS" : /\sPARTIAL\s/.test(line) ? "PARTIAL" : /\sFAIL\s/.test(line) ? "FAIL" : "PENDING";
 };
+const ALL_IDS = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "M1", "M2"];
+const tally = ALL_IDS.reduce((t, id) => { t[verdictOf(id)] += 1; return t; }, { PASS: 0, PARTIAL: 0, PENDING: 0, FAIL: 0 } as Record<Verdict, number>);
 const short = (h: string, a = 8, b = 6) => `${h.slice(0, a)}…${h.slice(-b)}`;
 const explorer = proof.chain.explorer;
 const addr = (a: string, text?: string) => <a href={`${explorer}/address/${a}`} target="_blank" rel="noopener noreferrer">{text ?? short(a, 10, 8)}</a>;
@@ -69,6 +71,12 @@ export function AntPage() {
         <section id="status" className="ein-section ve-verdict" data-reveal data-status="scheduled">
           <p className="ve-verdict__status">{proof.status === "live" ? "Live, small seed" : proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
           <p className="ve-verdict__line">{proof.status === "live" ? "ANT/USDG is live on BELL mainnet." : proof.statusNote}</p>
+          <ul className="ve-tally" aria-label="Checks replayed against the chain">
+            <li data-v="pass"><b>{tally.PASS}</b> proven</li>
+            <li data-v="partial"><b>{tally.PARTIAL}</b> partly proven</li>
+            <li data-v="pending"><b>{tally.PENDING}</b> pending</li>
+            {tally.FAIL > 0 && <li data-v="fail"><b>{tally.FAIL}</b> failed</li>}
+          </ul>
           {proof.status === "live" && <p className="ve-verdict__note">{proof.statusNote.replace(/^ANT\/USDG is live on BELL mainnet\.\s*/, "")}</p>}
         </section>
 
@@ -153,8 +161,9 @@ export function AntPage() {
           </ul>
         </section>
 
-        <section id="blocker" className="ein-section" data-reveal>
-          <h2>{proof.blocker.title}</h2>
+        <section id="blocker" className="ein-section ein-fold" data-reveal>
+          <details>
+          <summary><h2>How ANT is priced</h2><span>{proof.blocker.title}</span></summary>
           <p className="ein-ledger__lede">{proof.blocker.what}</p>
           <ul className="pp-limits">{proof.blocker.why.map((w) => <li key={w}>{w}</li>)}</ul>
           <p className="ein-ledger__lede"><b>What unblocks it.</b> {proof.blocker.unblocks}</p>
@@ -168,11 +177,13 @@ export function AntPage() {
           <ul className="pp-links">
             {proof.blocker.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.label} <ArrowUpRight size={14} aria-hidden="true" /></a> <span className="ein-fine">read {s.retrievedAt}</span></li>)}
           </ul>
+          </details>
         </section>
 
         {rehearsals.map((rehearsal) => (
-          <section key={rehearsal.key} id={rehearsal.key === "delegated" ? "rehearsal" : `rehearsal-${rehearsal.key}`} className="ein-section" data-reveal>
-            <h2>{rehearsal.title}</h2>
+          <section key={rehearsal.key} id={rehearsal.key === "delegated" ? "rehearsal" : `rehearsal-${rehearsal.key}`} className="ein-section ein-fold" data-reveal>
+            <details>
+            <summary><h2>{rehearsal.title}</h2><span>Testnet history, not ANT and not mainnet</span></summary>
             <p className="ein-ledger__lede">{rehearsal.note}</p>
             <ol className="pp-ledger">
               {rehearsal.steps.map((st) => {
@@ -188,6 +199,7 @@ export function AntPage() {
               })}
             </ol>
             <p className="ein-fine">Test token <a href={`${rehearsal.network.explorer}/address/${rehearsal.token}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.token, 10, 8)}</a>{rehearsal.feed ? <>, fixture feed <a href={`${rehearsal.network.explorer}/address/${rehearsal.feed}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.feed, 10, 8)}</a></> : null}, hook <a href={`${rehearsal.network.explorer}/address/${rehearsal.hook}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.hook, 10, 8)}</a>.</p>
+            </details>
           </section>
         ))}
 
