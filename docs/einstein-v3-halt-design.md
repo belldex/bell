@@ -86,3 +86,9 @@ These are read from the current contracts, not assumed.
 ## Open questions from the brief, still open
 - Halt source: the watcher uses Robinhood's `isTradingHalt` for ANT. Still open: whether that flag follows the exchange's halts and how fast, and who runs the watcher.
 - Earnings dates: who maintains them and how far ahead they are signed.
+
+## Mainnet deploy (4663)
+
+The v3 stack was broadcast on mainnet on 2026-11-24 on the owner's go-ahead, with the independent review dropped by the owner's decision (own review and the tests above only). Manifest `evidence/deploy/halt-stack-4663.json`, transactions `contracts/broadcast/DeployHaltStack.s.sol/4663/run-latest.json`: six transactions, all status 1, cost about 0.0005 ETH. The script's own read-back passed, and the oracle's `haltRegistry()` and the registry's `hybridAuth()` were read again with `cast`. Existing pools and contracts are untouched; only pools created through the new factory (0x86e770E2f2B7Fb9511bC5901DcdEC12E0b916a91) get halts.
+
+Not done: REPORTER leaves for the halt registry's hybrid role are not delegated on mainnet yet, no pool exists on this factory, source verification is not done, and nothing runs the watcher or keeper on an always-on machine.
