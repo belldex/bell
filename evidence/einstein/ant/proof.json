@@ -6,8 +6,8 @@
     "name": "Robinhood Chain",
     "explorer": "https://robinhoodchain.blockscout.com"
   },
-  "status": "admitted",
-  "statusNote": "ANT is admitted on BELL mainnet with a delegated price source. There is no pool yet and no delegate is authorized, so nothing trades and no price is published.",
+  "status": "live",
+  "statusNote": "ANT/USDG is live on BELL mainnet. Pool 0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940, created in block 121908958 through the Einstein Hooks v3 factory with a 4.8 USDG seed, which is small: the per-trade cap is about 0.24 USDG. BELL attests the price (Chainlink has no ANT feed): each swap carries a price report signed by a delegate key, so the pool refuses a swap when no fresh report is available.",
   "a1": {
     "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
     "referenceTokens": [
@@ -51,13 +51,13 @@
   },
   "blocker": {
     "id": "B1",
-    "title": "There is no price source for ANT",
+    "title": "ANT has no Chainlink feed, so BELL attests the price",
     "what": "Chainlink's Robinhood mainnet feed directory lists 62 feeds and none is ANT. Robinhood's docs say feeds exist only for a selected subset of Stock Tokens.",
     "why": [
       "BELL's AssetRegistry refuses a stock token without a price adapter and session sources (ERR_STOCK_ADAPTERS, ERR_TOKEN_SOURCE_MISSING). A market-price mode, where the pool prices from its own liquidity, is not something the deployed contracts allow for admission.",
       "A BELL-attested price would need a post-quantum signed report on every update, because each report spends one HybridAuth leaf. Reports must be at most 60 to 300 seconds old depending on the session, so a 4,096-leaf REPORTER key would last roughly three to six days of continuous quoting."
     ],
-    "unblocks": "Two ways. A Chainlink ANT/USD feed on Robinhood Chain, if one is listed. Or the delegated-attestation source below, which needs no feed.",
+    "unblocks": "Solved with the delegated-attestation source below, live on mainnet. If Chainlink lists an ANT feed later, the source can be replaced.",
     "solution": {
       "title": "The way around it: one post-quantum signature a day, a delegate key per report",
       "points": [
@@ -93,43 +93,37 @@
       "id": "A2",
       "title": "The ANT calendar was signed post-quantum",
       "proof": "HybridAuth submit tx and the REPORTER leaf counter before and after.",
-      "passes": "Tx succeeds with ECDSA and SHRINCS and the leaf counter goes up by one.",
-      "blockedBy": "Needs the asset admitted first, which needs a price source (B1)."
+      "passes": "Tx succeeds with ECDSA and SHRINCS and the leaf counter goes up by one."
     },
     {
       "id": "A3",
       "title": "The pool is real",
       "proof": "Initialize and seed transaction, position id.",
-      "passes": "Pool id matches, hook is the ANT Einstein hook, liquidity above zero.",
-      "blockedBy": "Needs the asset admitted (B1) and a seed."
+      "passes": "Pool id matches, hook is the ANT Einstein hook, liquidity above zero."
     },
     {
       "id": "A4",
       "title": "The hook cannot trap exits",
       "proof": "The hook address decoded.",
-      "passes": "Low 14 bits are 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
-      "blockedBy": "Needs the ANT hook to be deployed."
+      "passes": "Low 14 bits are 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off."
     },
     {
       "id": "A5",
       "title": "Session fees apply",
       "proof": "One swap per session as they occur, fee read from the Swap event.",
-      "passes": "Fee equals 500, 3000, 5000 or 10000 pips for that session.",
-      "blockedBy": "Needs the pool."
+      "passes": "Fee equals 500, 3000, 5000 or 10000 pips for that session."
     },
     {
       "id": "A6",
       "title": "Caps hold",
       "proof": "One reverted swap above the cap.",
-      "passes": "It reverts with TradeCapExceeded.",
-      "blockedBy": "Needs the pool."
+      "passes": "It reverts with TradeCapExceeded."
     },
     {
       "id": "A7",
       "title": "The code is verifiable",
       "proof": "Sourcify for the hook and the Lens.",
-      "passes": "Exact match for both.",
-      "blockedBy": "Needs the contracts. The factory builds hooks without a metadata hash, so the hook can only reach match, not exact match."
+      "passes": "Exact match for both."
     }
   ],
   "compliance": [
@@ -422,7 +416,7 @@
       }
     ],
     "pqLeafUsed": 5,
-    "note": "Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf 5). No pool exists yet. The delegate that signs prices has not been authorized yet, so no price can be published. The calendar root for ANT was signed with ECDSA and SHRINCS and activated, so the first session interval is active.",
+    "note": "Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf 5). The delegate key that signs each swap's price report is authorized for 25 hours at a time with one hybrid-signed call per adapter, renewed automatically by a scheduled workflow. The calendar root for ANT was signed with ECDSA and SHRINCS and is activated session by session.",
     "calendar": {
       "root": "0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d",
       "coverageStart": 1795407371,
@@ -440,32 +434,69 @@
       ]
     }
   },
-  "lastRun": "2026-11-23T04:17:24.919Z",
+  "pool": {
+    "chainId": 4663,
+    "poolId": "0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940",
+    "hook": "0x5839006Fdb458b81e50d9d393A775c1B5F406cc0",
+    "factory": "0x86e770E2f2B7Fb9511bC5901DcdEC12E0b916a91",
+    "poolManager": "0x8b26FEfa276860592D45114Cb30B335DdDd87B56",
+    "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+    "createTx": "0x65dc33a5e9a590dfa253a8d613c0fc519c31fe7a91c312df698af640ce0c0d14",
+    "block": 121908958,
+    "lens": "0xa07e32a3b3350027c7d6d030b6d141c28f85345d",
+    "seed": {
+      "usdg": 4.8,
+      "openingPriceUsd": 85.775
+    },
+    "swaps": [
+      {
+        "session": "OVERNIGHT",
+        "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
+        "amountUsdg": 0.02,
+        "expectedFeePips": 5000
+      }
+    ],
+    "a6": {
+      "tx": "0x37fc587b9e35bc316a8cf9f40a2f729f54c02e422d19e579a246813885ed165f",
+      "amountUsdg": 0.3,
+      "capUsdg": 0.06,
+      "session": "OVERNIGHT",
+      "expectedError": "TradeCapExceeded",
+      "selector": "0xecb1f63f"
+    },
+    "links": {
+      "create": {
+        "tx": "0x65dc33a5e9a590dfa253a8d613c0fc519c31fe7a91c312df698af640ce0c0d14",
+        "url": "https://robinhoodchain.blockscout.com/tx/0x65dc33a5e9a590dfa253a8d613c0fc519c31fe7a91c312df698af640ce0c0d14"
+      },
+      "lens": {
+        "tx": "0x4d41db3697c6dcaa6fa4efcbb783162924b4fe134b69e27fd11b5d9b05b8463d",
+        "url": "https://robinhoodchain.blockscout.com/tx/0x4d41db3697c6dcaa6fa4efcbb783162924b4fe134b69e27fd11b5d9b05b8463d"
+      },
+      "swaps": [
+        {
+          "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6"
+        }
+      ],
+      "a6": {
+        "tx": "0x37fc587b9e35bc316a8cf9f40a2f729f54c02e422d19e579a246813885ed165f",
+        "url": "https://robinhoodchain.blockscout.com/tx/0x37fc587b9e35bc316a8cf9f40a2f729f54c02e422d19e579a246813885ed165f"
+      }
+    }
+  },
+  "lastRun": "2026-11-24T03:59:54.051Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
     "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
     "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
     "M2  PASS    The ANT calendar root 0xe0d59218fd… (114 intervals, 2026-11-23 to 2027-01-01) was queued through a hybrid-signed governance call and activated: 2 transactions succeeded.",
-    "R:fixture:R1 PASS    Admitted after genesis through hybrid governance: 0x9fb37736… success, 0xa4efa329… success, 0x9cce07fb… success",
-    "R:fixture:A2 PASS    The calendar root was signed post-quantum: 0x7cc147bf… success, 0x48963efa… success",
-    "R:fixture:A3 PASS    The pool is real: 0x0fcffa65… success",
-    "R:fixture:A4 PASS    The hook cannot trap exits: hook 0xd67BF333d04FcDf35B4b73CFfA6eD8308789ecC0, low 14 bits 0x2cc0, remove-liquidity bits",
-    "R:fixture:A5 PASS    Session fees apply: 0x7f51c0b8… success",
-    "R:fixture:A6 PASS    Caps hold: 0x2e8e0d78… reverted",
-    "R:delegated:R1 PASS    Admitted after genesis through hybrid governance: 0x3bcbe36e… success, 0x0f4dd577… success, 0x361a3ded… success",
-    "R:delegated:D1 PASS    The delegate was authorized with one post-quantum signature per adapter: 0x7f8ecc6d… success, 0x66c426f2… success, 0xbbf6a243… success, 0x3c8520f4… success",
-    "R:delegated:D2 PASS    A delegate-signed report was accepted and the asset read healthy: 0xa8f788dc… success",
-    "R:delegated:A2 PASS    The calendar root was signed post-quantum: 0x0a8f6fbb… success, 0x4d8396fd… success",
-    "R:delegated:A3 PASS    The pool is real: 0xdf3f0172… success",
-    "R:delegated:A4 PASS    The hook cannot trap exits: hook 0x3631d486ff7396e7426E73a21Beeb6245CE72cC0, low 14 bits 0x2cc0, remove-liquidity bits",
-    "R:delegated:A5 PASS    Session fees apply: 0x149f05a6… success",
-    "R:delegated:A6 PASS    Caps hold: 0x26b28685… reverted",
-    "A2  PENDING Needs the asset admitted first, which needs a price source (B1).",
-    "A3  PENDING Needs the asset admitted (B1) and a seed.",
-    "A4  PENDING Needs the ANT hook to be deployed.",
-    "A5  PENDING Needs the pool.",
-    "A6  PENDING Needs the pool.",
-    "A7  PENDING Needs the contracts. The factory builds hooks without a metadata hash, so the hook can only reach match, not exact match."
+    "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 4) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
+    "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1989668204787 for it now.",
+    "A4  PASS    The hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
+    "A5  PARTIAL The Swap event fee matched in OVERNIGHT 5000 pips. Still to be shown, as the sessions occur: REGULAR, PRE, POST, CLOSED.",
+    "A6  PASS    A swap of 0.3 USDG, above the cap of 0.06 USDG in that session, reverted on mainnet (block 121940581); replaying it on the block before returns TradeCapExceeded (0xecb1f63f).",
+    "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed."
   ]
 }

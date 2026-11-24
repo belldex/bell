@@ -5,6 +5,7 @@
  *
  *   node scripts/einstein/ant-swap-check.mjs --pool evidence/einstein/ant-pool-<ts>.json --usdg 0.02            # simulate only
  *   node scripts/einstein/ant-swap-check.mjs --pool ... --usdg 0.02 --send --i-authorize-spend                  # approve and swap
+ *   node scripts/einstein/ant-swap-check.mjs --pool ... --usdg 0.5 --expect-revert --i-authorize-spend         # claim A6: send a swap above the cap with a fixed gas limit and keep the reverted tx
  *
  * The swapper is LP_TEST. --send approves exactly the input amount to the router if the allowance is short.
  */
@@ -15,7 +16,8 @@ import { buildAntUpdate } from '../../workers/keeper-b/src/ant-update.mjs';
 
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const send = process.argv.includes('--send');
-if (send && !process.argv.includes('--i-authorize-spend')) throw new Error('--send needs --i-authorize-spend');
+const expectRevert = process.argv.includes('--expect-revert');
+if ((send || expectRevert) && !process.argv.includes('--i-authorize-spend')) throw new Error('--send needs --i-authorize-spend');
 const env = {}; for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); }
 const pool = JSON.parse(readFileSync(arg('pool'), 'utf8'));
 const manifest = JSON.parse(readFileSync('packages/protocol/generated/abi-manifest.json', 'utf8'));
@@ -49,10 +51,18 @@ const request = {
 };
 const allowance = await pc.readContract({ address: USDG, abi: ERC20, functionName: 'allowance', args: [lp.address, dep.router] });
 console.log(`swap ${arg('usdg', '0.02')} USDG -> ANT, router ${dep.router}, allowance ${allowance}`);
-if (allowance < amount) {
+if (allowance < amount && !expectRevert) {
   if (!send) { console.log('allowance is short; rerun with --send to approve exactly the amount. Not simulated.'); process.exit(0); }
   const h = await wc.writeContract({ address: USDG, abi: ERC20, functionName: 'approve', args: [dep.router, amount], maxFeePerGas: 30_000_000n, maxPriorityFeePerGas: 1_000_000n });
   await pc.waitForTransactionReceipt({ hash: h }); console.log(`approved ${h}`);
+}
+if (expectRevert) {
+  // A6: no simulation, a fixed gas limit so the wallet-less client still broadcasts, and the revert is the proof.
+  if (allowance < amount) { const a = await wc.writeContract({ address: USDG, abi: ERC20, functionName: 'approve', args: [dep.router, amount], maxFeePerGas: 30_000_000n, maxPriorityFeePerGas: 1_000_000n }); await pc.waitForTransactionReceipt({ hash: a }); console.log(`approved ${a}`); }
+  const h = await wc.writeContract({ address: dep.router, abi: manifest.interfaces.IBellRouter, functionName: 'swap', args: [request], gas: 1_500_000n, maxFeePerGas: 30_000_000n, maxPriorityFeePerGas: 1_000_000n });
+  const rc = await pc.waitForTransactionReceipt({ hash: h });
+  console.log(`swap above the cap: status ${rc.status}, tx ${h}, block ${rc.blockNumber}`);
+  process.exit(rc.status === 'reverted' ? 0 : 1);
 }
 const sim = await pc.simulateContract({ address: dep.router, abi: manifest.interfaces.IBellRouter, functionName: 'swap', args: [request], account: lp });
 console.log(`simulation passed: in ${sim.result[0]}, out ${sim.result[1]}`);

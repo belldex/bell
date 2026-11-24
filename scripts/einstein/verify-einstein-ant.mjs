@@ -13,6 +13,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { createPublicClient, http, keccak256, parseAbi, getAddress } from 'viem';
+import { poolChecks } from './ant-pool-checks.mjs';
 
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const online = process.argv.includes('--online');
@@ -89,7 +90,8 @@ if (proof.rehearsals?.length && testnetRpc) {
     }
   }
 }
-for (const id of ['A2', 'A3', 'A4', 'A5', 'A6', 'A7']) out[id] = { verdict: 'PENDING', note: proof.claims.find((c) => c.id === id)?.blockedBy ?? 'Waits for the pool.' };
+await poolChecks({ pc, proof, out });
+for (const id of ['A2', 'A3', 'A4', 'A5', 'A6', 'A7']) out[id] ??= { verdict: 'PENDING', note: proof.claims.find((c) => c.id === id)?.blockedBy ?? 'Waits for the pool.' };
 
 for (const [id, r] of Object.entries(out)) {
   console.log(`${id.padEnd(3)} ${r.verdict.padEnd(7)} ${r.note}`);
@@ -97,5 +99,5 @@ for (const [id, r] of Object.entries(out)) {
 }
 const all = Object.values(out).flatMap((r) => [r, ...(r.official ? [r.official] : [])]);
 const n = (v) => all.filter((r) => r.verdict === v).length;
-console.log(`\n${n('PASS')} PASS, ${n('PENDING')} PENDING, ${n('FAIL')} FAIL`);
+console.log(`\n${n('PASS')} PASS, ${n('PARTIAL')} PARTIAL, ${n('PENDING')} PENDING, ${n('FAIL')} FAIL`);
 process.exit(n('FAIL') ? 1 : 0);

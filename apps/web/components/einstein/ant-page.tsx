@@ -8,27 +8,31 @@ import proof from "./ant-proof.json";
 
 const SECTIONS = [
   { id: "status", label: "Status", desc: "Where ANT stands." },
+  { id: "pool", label: "The pool", desc: "The live ANT/USDG pool." },
   { id: "mainnet", label: "On mainnet", desc: "What is on chain." },
   { id: "token", label: "The token", desc: "Which contract is Robinhood's ANT." },
-  { id: "blocker", label: "What blocks it", desc: "Why ANT is not live." },
+  { id: "blocker", label: "Price source", desc: "How ANT is priced." },
   { id: "rehearsal", label: "Testnet rehearsal", desc: "The path, run end to end." },
   { id: "claims", label: "Claims", desc: "A1 to A7." },
   { id: "check", label: "Check it yourself", desc: "Replay the checks." },
   { id: "limits", label: "Honest limits", desc: "What this does not show." },
 ] as const;
 
-type Verdict = "PASS" | "PENDING" | "FAIL";
+type Verdict = "PASS" | "PARTIAL" | "PENDING" | "FAIL";
+const verdictLabel = (v: Verdict) => (v === "PASS" ? "Proven" : v === "PARTIAL" ? "Partly proven" : v === "FAIL" ? "Failed" : "Pending");
 type Rehearsal = { key: string; title: string; note: string; token: string; feed: string; hook: string; network: { id: number; explorer: string }; steps: { id: string; title: string; note: string; verdict: string; txs: { tx: string; url: string }[] }[] };
 const rehearsals = ((proof as { rehearsals?: Rehearsal[] }).rehearsals ?? []);
 type Mainnet = { calendar?: { root: string; leafCount: number; txs: { tx: string; url: string }[] }; title: string; note: string; assetRegistry: string; token: string; descriptorId: string; governance: { tx: string; url: string }[]; adapters: { name: string; address: string; deployTx: { tx: string; url: string } }[] };
 const mainnet = (proof as { mainnet?: Mainnet }).mainnet;
+type Pool = { poolId: string; hook: string; factory: string; createTx: string; block: number; lens: string | null; seed: { usdg: number }; swaps: { session: string; expectedFeePips: number }[]; a6: { tx: string } | null; links: { create: { url: string }; swaps: { tx: string; url: string }[]; a6: { url: string } | null } };
+const pool = (proof as { pool?: Pool }).pool;
 type Solution = { title: string; points: string[]; contract: string; tests: string };
 const solution = (proof.blocker as { solution?: Solution }).solution;
 const replay = (proof as { replay?: string[] }).replay ?? [];
 const verdictOf = (id: string): Verdict => {
   const line = replay.find((l) => l.startsWith(`${id} `));
   if (!line) return "PENDING";
-  return /\sPASS\s/.test(line) ? "PASS" : /\sFAIL\s/.test(line) ? "FAIL" : "PENDING";
+  return /\sPASS\s/.test(line) ? "PASS" : /\sPARTIAL\s/.test(line) ? "PARTIAL" : /\sFAIL\s/.test(line) ? "FAIL" : "PENDING";
 };
 const short = (h: string, a = 8, b = 6) => `${h.slice(0, a)}…${h.slice(-b)}`;
 const explorer = proof.chain.explorer;
@@ -54,6 +58,22 @@ export function AntPage() {
           <p className="ve-verdict__status">{proof.status === "live" ? "Live, small seed" : proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
           <p className="ve-verdict__line">{proof.statusNote}</p>
         </section>
+
+        {pool && (
+          <section id="pool" className="ein-section" data-reveal>
+            <h2>The pool</h2>
+            <p className="ein-ledger__lede">ANT/USDG is live on mainnet through the Einstein Hooks v3 factory. The seed is {pool.seed.usdg} USDG, which is small on purpose: the per-trade cap is about 0.24 USDG, so this is a working market for small trades, not a deep one. Liquidity can be withdrawn at any time without the hook.</p>
+            <dl className="pp-facts">
+              <div><dt>Pool id</dt><dd><code>{short(pool.poolId, 12, 8)}</code></dd></div>
+              <div><dt>Hook</dt><dd>{addr(pool.hook)}</dd></div>
+              <div><dt>Factory</dt><dd>{addr(pool.factory)}</dd></div>
+              <div><dt>Created and seeded</dt><dd><a href={pool.links.create.url} target="_blank" rel="noopener noreferrer">{short(pool.createTx, 10, 6)}</a> in block {pool.block}</dd></div>
+              {pool.lens && <div><dt>Swap Lens</dt><dd>{addr(pool.lens)}</dd></div>}
+              {pool.links.swaps.map((t, i) => <div key={t.tx}><dt>Swap, {pool.swaps[i].session}</dt><dd><a href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)}</a> at {pool.swaps[i].expectedFeePips} pips</dd></div>)}
+              {pool.links.a6 && <div><dt>Reverted above the cap</dt><dd><a href={pool.links.a6.url} target="_blank" rel="noopener noreferrer">{short(pool.a6?.tx ?? "", 10, 6)}</a>, TradeCapExceeded</dd></div>}
+            </dl>
+          </section>
+        )}
 
         {mainnet && (
           <section id="mainnet" className="ein-section" data-reveal>
@@ -129,8 +149,8 @@ export function AntPage() {
               const blockedBy = (c as { blockedBy?: string }).blockedBy;
               return (
                 <li key={c.id} data-v={v.toLowerCase()}>
-                  <div className="pp-ledger__id"><b>{c.id}</b><span>{v === "PASS" ? "Proven" : v === "FAIL" ? "Failed" : "Pending"}</span></div>
-                  <div className="pp-ledger__body"><h3>{c.title}</h3><p>{v === "PENDING" && blockedBy ? blockedBy : c.proof}</p><p className="pp-ledger__bar"><span>Proven when</span> {c.passes}</p></div>
+                  <div className="pp-ledger__id"><b>{c.id}</b><span>{verdictLabel(v)}</span></div>
+                  <div className="pp-ledger__body"><h3>{c.title}</h3><p>{v === "PENDING" && blockedBy ? blockedBy : (replay.find((l) => l.startsWith(`${c.id} `)) ?? "").replace(/^\S+\s+\S+\s+/, "") || c.proof}</p><p className="pp-ledger__bar"><span>Proven when</span> {c.passes}</p></div>
                 </li>
               );
             })}

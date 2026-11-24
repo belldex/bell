@@ -1,0 +1,7 @@
+{
+  "note": "Mainnet swaps on the ANT/USDG pool kept as proof. Each entry is checked against the PoolManager Swap event by scripts/einstein/ant-pool-checks.mjs; add one per session as it occurs.",
+  "swaps": [
+    { "session": "OVERNIGHT", "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6", "amountUsdg": 0.02, "expectedFeePips": 5000 }
+  ],
+  "a6": { "tx": "0x37fc587b9e35bc316a8cf9f40a2f729f54c02e422d19e579a246813885ed165f", "amountUsdg": 0.3, "capUsdg": 0.06, "session": "OVERNIGHT", "expectedError": "TradeCapExceeded", "selector": "0xecb1f63f" }
+}
