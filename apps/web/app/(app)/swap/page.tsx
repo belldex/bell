@@ -90,7 +90,10 @@ function SwapInner() {
   const buildUpdates = async () => {
     if (!pool) return [];
     // ANT is priced from Robinhood's pricing API through a delegated attester, and the swap itself carries the signed report.
-    if (pool.legs.some((leg) => leg.symbol === 'ANT')) return [await fetchAntUpdate()];
+    if (pool.legs.some((leg) => leg.symbol === 'ANT')) {
+      // In a closed session (weekend, holiday) there is no report to sign: the pool prices from its closing anchor and needs no update.
+      try { return [await fetchAntUpdate()]; } catch (e) { if (/no active session/i.test(String((e as Error)?.message))) return []; throw e; }
+    }
     // A market-price pool prices from its own liquidity, so it needs no external update and no
     // freshness gate. Sending one anyway would force the router through a feed the pool ignores.
     if (pool.poolClass === 1) return [];
