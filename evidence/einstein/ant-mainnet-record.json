@@ -186,5 +186,12 @@
     ],
     "alert": "one GitHub issue, 'ANT health: something needs attention', kept open with the details and closed by the workflow when every check passes"
   },
-  "calendarRenewalGap": "The mainnet calendars of AAPL, NVDA and TSLA (and ANT) end around 1 Jan 2027. Each needs a new root queued, executed and activated through GOVERNANCE (ECDSA and one SHRINCS leaf each, with the registry's delay) before then. The GOVERNANCE signer state is still on the owner's computer; hosting it in CI is a decision for the owner because that role pauses, admits assets and signs every root."
+  "calendarRenewalGap": {
+    "was": "The mainnet calendars end around 30 Dec 2026 (AAPL and TSLA on the old stack) and 1 Jan 2027 (NVDA and ANT on the PQ stack); each needs a new root through GOVERNANCE.",
+    "now": "PQ stack (ANT, NVDA): automated. .github/workflows/calendar-autorenew.yml runs every three hours, reads each asset's state and the chain time, and does the one due step (queue in the last 30 days, execute governance, activate root, activate first interval) through scripts/deploy/calendar-autorenew.mjs, signed by the GOVERNANCE role from the signer state on the pq-state branch. Proven in CI without sending: the simulated queue built the 2027 ANT root (1059 leaves, 2027-01-01 to 2028-01-01) and the hybrid signature passed at governance leaf 7. The first real step is due on 2 Dec 2026 (30 days before the end).",
+    "worker": "The Worker reads the list of roots from evidence/deploy/calendar-roots-<ASSET>.json in the repo, so it keeps intervals active after the first root ends without a redeploy; it now covers ANT and the NVDA pool.",
+    "notCovered": "AAPL and TSLA on the old stack (their pools are unfunded). They use the older SafetyController and mainnet-calendar.mjs; nothing renews them.",
+    "risk": "The deployer key (the GOVERNANCE ECDSA signer and gas payer) and the encrypted GOVERNANCE signer state are in GitHub (repository secrets and the pq-state branch), with no manual approval, as the owner decided. GOVERNANCE pauses, admits assets and signs every root for every BELL pool; keep write access and secrets of belldex/bell tight. The local governance.enc was renamed .migrated-to-ci and must never be used again.",
+    "alerts": "ant-health opens an issue if a root is within 21 days of ending with no next root queued, and checks the governance gas wallet 0x6C36…8d399 stays above 0.0003 ETH."
+  }
 }
