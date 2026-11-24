@@ -1,1 +1,4 @@
 *.pdf binary
+
+# Shell scripts run on Linux (Vercel build step), so keep LF line endings
+*.sh text eol=lf
