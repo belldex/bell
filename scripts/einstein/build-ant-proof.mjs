@@ -171,6 +171,7 @@ writeFileSync(out, `${JSON.stringify(proof, null, 2)}
 if (arg('rpc')) {
   let r = '';
   try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online', ...(arg('testnet-rpc') ? ['--testnet-rpc', arg('testnet-rpc')] : [])], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
+  if (!/\nA1 /.test(`\n${r}`) || !/\d+ PASS/.test(r)) throw new Error('the replay produced no verdicts, so the proof is not rewritten:\n' + String(r).slice(-600));
   proof.lastRun = new Date().toISOString();
   proof.replay = r.split('\n').filter((l) => /^[ABMV]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
 }

@@ -63,10 +63,17 @@ jobs:
           RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
         run: |
           if [ -z "$(git status --porcelain evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant-mainnet-halt-proofs.json)" ]; then echo "nothing new"; exit 0; fi
-          node scripts/einstein/build-ant-proof.mjs --rpc "$RH_MAINNET_RPC_PRIMARY"
           git config user.name "bell-keeper"
           git config user.email "bell-keeper@users.noreply.github.com"
-          git add evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant-mainnet-halt-proofs.json evidence/einstein/ant/proof.json apps/web/components/einstein/ant-proof.json
-          git commit -m "test(einstein): ANT swap in a new session, fee read from the Swap event"
+          # The swap is on chain already: record it first, so a failed proof rebuild can never lose it. The proof is rebuilt next; the builder refuses to
+          # write a proof with no verdicts, and then the old proof stays as it was.
+          git add evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant-mainnet-halt-proofs.json
+          git commit -m "test(einstein): ANT swap recorded"
+          if node scripts/einstein/build-ant-proof.mjs --rpc "$RH_MAINNET_RPC_PRIMARY"; then
+            git add evidence/einstein/ant/proof.json apps/web/components/einstein/ant-proof.json
+            git commit -m "test(einstein): ANT proof rebuilt after the new swap" || true
+          else
+            echo "::warning::the proof rebuild failed; the swap is recorded and the proof is rebuilt by the next run"
+          fi
           git pull --rebase origin main
           git push origin HEAD:main

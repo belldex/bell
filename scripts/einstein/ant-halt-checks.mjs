@@ -21,7 +21,7 @@ const REGISTRY_EVENTS = parseAbi([
   'event Renewed(bytes32 indexed assetId, uint64 indexed haltId, uint64 expiresAt, uint32 leaf)',
   'event Resumed(bytes32 indexed assetId, uint64 indexed haltId, uint64 resumeTs, uint64 auctionEndsAt, uint32 leaf)',
 ]);
-const REG = parseAbi(['function phase(bytes32) view returns (uint8)', 'function haltedUntil(bytes32) view returns (uint64)']);
+const REG = parseAbi(['function phase(bytes32) view returns (uint8)', 'function haltedUntil(bytes32) view returns (uint64)', 'function current(bytes32) view returns ((uint64 haltId,uint64 startTs,uint64 recordedAt,uint64 expiresAt,uint64 resumedAt,uint64 resumeTs,bytes32 reason,bool active))']);
 const SEL = { AuctionActive: 'b37f7006', InvalidPQSignature: '7fd2fae9' };
 const FEE_OF_PHASE = { 1: 3000, 2: 500, 3: 3000, 4: 5000, 5: 10000 };
 
@@ -35,7 +35,9 @@ async function revertData(pc, hash) {
   try { await pc.call({ account: tx.from, to: tx.to, data: tx.input, blockNumber: r.blockNumber - 1n }); } catch (e) { let c = e; msg = String(e?.details ?? e?.shortMessage ?? e?.message ?? ''); while (c && !data) { data = typeof c.data === 'string' && c.data.startsWith('0x') ? c.data : ''; c = c.cause; } }
   return data ? { data } : { gone: /historical state|not available|missing trie|header not found/i.test(msg) };
 }
-const sessionFee = (t) => { const iv = buildEtMarketIntervals(t - 86400, t + 86400).find((i) => t >= i.start && t < i.end); return { fee: iv ? FEE_OF_PHASE[Number(iv.phase)] : null, phase: iv?.phase ?? null }; };
+const FEE_OF_NAME = { PRE: 3000, REGULAR: 500, POST: 3000, OVERNIGHT: 5000, CLOSED: 10000 };
+// The calendar builder names its phases (PRE, REGULAR, ...), the registry numbers them; the fee is looked up by name.
+const sessionFee = (t) => { const iv = buildEtMarketIntervals(t - 86400, t + 86400).find((i) => t >= i.start && t < i.end); return { fee: iv ? (FEE_OF_NAME[iv.phase] ?? FEE_OF_PHASE[Number(iv.phase)] ?? null) : null, phase: iv?.phase ?? null }; };
 const revertVerdict = (status, rv, name, okNote, what) => {
   if (status !== 'reverted') return { verdict: 'FAIL', note: `${what} status ${status}` };
   if (rv.data?.includes(SEL[name])) return { verdict: 'PASS', note: okNote };
@@ -84,14 +86,18 @@ export async function haltChecks({ pc, proof, out }) {
     if (!ev || h.status !== 'success') out.V4 = { verdict: 'FAIL', note: 'the second halt transaction has no Halted event' };
     else if (now < Number(ev.args.expiresAt)) out.V4 = { verdict: 'PENDING', note: `The halt recorded in ${v.v4.haltTx.slice(0, 10)}… lapses on its own at ${new Date(Number(ev.args.expiresAt) * 1000).toISOString()}; nothing renews it.` };
     else if (c.V4?.swapTx) {
-      const logs = await pc.getLogs({ address: reg, events: REGISTRY_EVENTS, fromBlock: h.blockNumber, toBlock: 'latest', args: { assetId: asset } });
-      const touched = logs.filter((l) => l.eventName !== 'Halted' && l.args.haltId === ev.args.haltId);
+      // The registry keeps the last halt's record: a renewal would have moved its expiresAt, a resume would have set resumedAt. Reading it needs no log
+      // query (RPCs cap eth_getLogs ranges) and stays true until the next halt overwrites it.
+      const cur = await pc.readContract({ address: reg, abi: REG, functionName: 'current', args: [asset] });
+      const sameHalt = cur.haltId === ev.args.haltId;
+      const untouched = sameHalt && cur.resumedAt === 0n && cur.expiresAt === ev.args.expiresAt;
+      const touched = untouched ? [] : [1];
       const s = await rc(pc, c.V4.swapTx);
       const t = s ? await ts(pc, s) : 0; const fee = s ? feeOf(s, pool) : null; const want = sessionFee(t);
       const phase = ['NORMAL', 'HALTED', 'RESUME_AUCTION'][await pc.readContract({ address: reg, abi: REG, functionName: 'phase', args: [asset] })];
       out.V4 = touched.length === 0 && phase === 'NORMAL' && s?.status === 'success' && t > Number(ev.args.expiresAt) && want.fee && fee === want.fee
-        ? { verdict: 'PASS', note: `The halt recorded in ${v.v4.haltTx.slice(0, 10)}… was never renewed or resumed (no Renewed or Resumed event); it lapsed by itself at ${new Date(Number(ev.args.expiresAt) * 1000).toISOString()}, the registry reads NORMAL, and a swap after that paid ${fee} pips, the fee of the session it happened in.` }
-        : { verdict: 'FAIL', note: `renew/resume events ${touched.length}, registry ${phase}, swap ${s?.status} at ${t}, fee ${fee}, session fee ${want.fee}` };
+        ? { verdict: 'PASS', note: `The halt recorded in ${v.v4.haltTx.slice(0, 10)}… was never renewed or resumed (the registry's record of it still has its original expiry and no resume); it lapsed by itself at ${new Date(Number(ev.args.expiresAt) * 1000).toISOString()}, the registry reads NORMAL, and a swap after that paid ${fee} pips, the fee of the session it happened in.` }
+        : { verdict: 'FAIL', note: `halt record untouched ${untouched} (same halt ${sameHalt}), registry ${phase}, swap ${s?.status} at ${t}, fee ${fee}, session fee ${want.fee}` };
     } else out.V4 = { verdict: 'PENDING', note: 'the halt has lapsed; the swap at the normal session fee is not recorded yet' };
   }
   out.V5 ??= { verdict: 'PENDING', note: 'Not shown yet, and it cannot be shown on this calendar: the CalendarRegistry only accepts a new root that starts where the active one ends (queueRoot rejects an overlap), and the ANT root runs to 1 Jan 2027. An EVENT window can only be carved into the next root. The carving is built and tested (scripts/calendar/event-windows.mjs, a hook test and a SessionRegistry close-capture test); the swap inside a window waits for that root and a real earnings date.' };

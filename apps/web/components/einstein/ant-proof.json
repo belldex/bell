@@ -635,6 +635,25 @@
       ]
     }
   },
-  "lastRun": "2026-11-24T06:35:18.771Z",
-  "replay": []
+  "lastRun": "2026-11-24T06:37:41.099Z",
+  "replay": [
+    "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
+    "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
+    "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
+    "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
+    "M2  PASS    The ANT calendar root 0xe0d59218fd… (114 intervals, 2026-11-23 to 2027-01-01) was queued through a hybrid-signed governance call and activated: 2 transactions succeeded.",
+    "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 4) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
+    "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1969771522740 for it now.",
+    "A4  PASS    The hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
+    "A5  PARTIAL The Swap event fee matched in OVERNIGHT 5000 pips. Still to be shown, as the sessions occur: REGULAR, PRE, POST, CLOSED.",
+    "A6  PASS    A swap of 0.3 USDG, above the cap of 0.06 USDG in that session, reverted on mainnet (block 121940581); replaying it on the block before returns TradeCapExceeded (0xecb1f63f).",
+    "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed.",
+    "V1  PASS    A hybrid-signed halt was recorded (Halted event, REPORTER leaf 9); a swap inside its window paid 10000 pips in the Swap event.",
+    "V2  PASS    A hybrid-signed resume was recorded (Resumed event, REPORTER leaf 10); a swap sent inside the reopening auction reverted with AuctionActive (0xb37f7006).",
+    "V3  PASS    A halt with the REPORTER ECDSA signature and no post-quantum signature reverted with InvalidPQSignature (0x7fd2fae9).",
+    "V4  PASS    The halt recorded in 0x1eb33b34… was never renewed or resumed (the registry's record of it still has its original expiry and no resume); it lapsed by itself at 2026-11-24T06:17:15.000Z, the registry reads NORMAL, and a swap after that paid 5000 pips, the fee of the session it happened in.",
+    "V5  PENDING Not shown yet, and it cannot be shown on this calendar: the CalendarRegistry only accepts a new root that starts where the active one ends (queueRoot rejects an overlap), and the ANT root runs to 1 Jan 2027. An EVENT window can only be carved into the next root. The carving is built and tested (scripts/calendar/event-windows.mjs, a hook test and a SessionRegistry close-capture test); the swap inside a window waits for that root and a real earnings date.",
+    "V6  PASS    Liquidity was removed through the PositionManager inside the first halt's window (block 121947543); the hook emitted no log and no post-quantum signature was needed.",
+    "V7  PARTIAL Sourcify: haltRegistry match, policyOracleV3 match, auctionRegistry match, auctionFactoryModuleV2 match, hookDeployer match, poolFactory match, hook match. They were built without a compiler metadata hash (bytecode_hash none), so an exact match needs a rebuild and a redeploy; the owner chose to leave them as match."
+  ]
 }
