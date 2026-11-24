@@ -12,6 +12,7 @@
  *
  * Default is a dry run that prints what it would do. --network mainnet needs --i-authorize-spend. The sender only pays gas.
  */
+import { pathToFileURL } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -82,7 +83,7 @@ export async function tick() {
   return did;
 }
 
-if (import.meta.url === new URL(`file:///${process.argv[1].replaceAll('\\', '/')}`).href) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (command === 'tick') await tick();
   else if (command === 'loop') {
     const every = Number(arg('every', '20')) * 1000;

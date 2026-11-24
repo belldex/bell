@@ -14,6 +14,7 @@
  * The reporter reads PUBLIC halt data, so the halt lands on chain some minutes after the exchange's own: pass --started-at with the
  * exchange's time and the registry records both, and `reportDelay` is what the page publishes for that halt.
  */
+import { pathToFileURL } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createPublicClient, createWalletClient, http, keccak256, encodeAbiParameters, parseAbiParameters, parseAbi, stringToHex } from 'viem';
@@ -126,7 +127,7 @@ export async function status(id) {
   return { phase: PHASES[phase], haltedUntil: Number(until), leavesUsed: used, rotationDue: due };
 }
 
-if (import.meta.url === new URL(`file:///${process.argv[1].replaceAll('\\', '/')}`).href) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const now = Number((await pc.getBlock()).timestamp);
   if (command === 'status') {
     const id = assetId();

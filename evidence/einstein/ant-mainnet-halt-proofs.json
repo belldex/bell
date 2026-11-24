@@ -1,0 +1,17 @@
+{
+  "chainId": 4663,
+  "pool": "0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940",
+  "hook": "0x5839006Fdb458b81e50d9d393A775c1B5F406cc0",
+  "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+  "asset": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+  "checks": {
+    "V3": {
+      "verdict": "PASS",
+      "tx": "0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858",
+      "block": 121945899,
+      "error": "0x7fd2fae9",
+      "note": "a halt with the REPORTER ECDSA signature and an empty post-quantum signature reverted; the registry stayed NORMAL"
+    }
+  },
+  "recordedAt": "2026-11-24T04:02:52.210Z"
+}

@@ -13,6 +13,7 @@
  * registry's `reportDelay` measures nothing about the exchange's own delay. Two consecutive observations are required before it acts, and a
  * missing, failed or stale quote never causes an action: the registry's own two hour expiry is the fail-safe.
  */
+import { pathToFileURL } from 'node:url';
 import { doHalt, doResume, doRenew, status } from './halt-reporter.mjs';
 
 export const CONFIRMATIONS = 2; // consecutive observations before acting
@@ -54,7 +55,7 @@ export async function readQuote(symbol, fetchFn = fetch, now = Date.now()) {
   } catch (e) { return { halted: null, ageSeconds: null, error: String(e.message ?? e) }; }
 }
 
-if (import.meta.url === new URL(`file:///${process.argv[1].replaceAll('\\', '/')}`).href) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { readFileSync } = await import('node:fs');
   const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
   const command = process.argv[2] ?? 'tick';
