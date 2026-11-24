@@ -4,7 +4,7 @@ name: ANT session swaps
 # the PoolManager Swap event, recorded in evidence/einstein/ant-mainnet-swaps.json, and the proof rebuilt. The swapper is a separate prover wallet
 # (ANT_PROVER_PRIVATE_KEY) that holds about 0.15 USDG and a little ETH and no pool position, so a leaked key costs cents. The script computes the
 # session from the calendar, swaps only when that session has no recorded swap yet, and does nothing otherwise, so the schedule below can fire
-# more often than needed. Times are UTC and fixed to US standard time; the script's own session check keeps it correct after the clocks change.
+# more often than needed. Two extra one-off runs on 24 Nov (06:35 and 07:05 UTC) take the V4 swap right after the second halt lapsed (06:17 UTC). Times are UTC and fixed to US standard time; the script's own session check keeps it correct after the clocks change.
 
 on:
   schedule:
@@ -12,6 +12,8 @@ on:
     - cron: "5 9 * * *"
     - cron: "35 14 * * *"
     - cron: "5 21 * * *"
+    - cron: "35 6 24 11 *"
+    - cron: "5 7 24 11 *"
   workflow_dispatch:
     inputs:
       force:
@@ -60,11 +62,11 @@ jobs:
         env:
           RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
         run: |
-          if [ -z "$(git status --porcelain evidence/einstein/ant-mainnet-swaps.json)" ]; then echo "nothing new"; exit 0; fi
+          if [ -z "$(git status --porcelain evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant-mainnet-halt-proofs.json)" ]; then echo "nothing new"; exit 0; fi
           node scripts/einstein/build-ant-proof.mjs --rpc "$RH_MAINNET_RPC_PRIMARY"
           git config user.name "bell-keeper"
           git config user.email "bell-keeper@users.noreply.github.com"
-          git add evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant/proof.json apps/web/components/einstein/ant-proof.json
+          git add evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant-mainnet-halt-proofs.json evidence/einstein/ant/proof.json apps/web/components/einstein/ant-proof.json
           git commit -m "test(einstein): ANT swap in a new session, fee read from the Swap event"
           git pull --rebase origin main
           git push origin HEAD:main

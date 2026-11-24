@@ -48,7 +48,11 @@ if (!FEES[expect]) { console.log(`the calendar says ${session}: nothing to do`);
 if (session !== expect) { console.log(`the calendar says ${session} now, not ${expect}: nothing sent`); process.exit(3); }
 const file = 'evidence/einstein/ant-mainnet-swaps.json';
 const doc = JSON.parse(readFileSync(file, 'utf8'));
-if (auto && !process.argv.includes('--force') && doc.swaps.some((x) => x.session === expect)) { console.log(`${expect} is already recorded: nothing to do`); process.exit(0); }
+const HP = 'evidence/einstein/ant-mainnet-halt-proofs.json';
+const hp = JSON.parse(readFileSync(HP, 'utf8'));
+// V4: once the second halt has lapsed on its own, the next swap is the V4 swap (a swap at the fee of the session it happens in), whichever session that is.
+const v4Pending = Boolean(hp.v4?.haltedUntil) && now > hp.v4.haltedUntil + 240 && !hp.checks?.V4?.swapTx;
+if (auto && !process.argv.includes('--force') && !v4Pending && doc.swaps.some((x) => x.session === expect)) { console.log(`${expect} is already recorded: nothing to do`); process.exit(0); }
 
 let updates = [];
 if (expect !== 'CLOSED') {
@@ -75,6 +79,12 @@ const rc = await pc.waitForTransactionReceipt({ hash });
 const fee = Number(parseEventLogs({ abi: SWAP, logs: rc.logs }).find((l) => l.args.id.toLowerCase() === pool.poolId.toLowerCase())?.args.fee ?? -1);
 console.log(`${expect}: ${rc.status}, fee ${fee} pips (expected ${FEES[expect]}), tx ${hash}`);
 if (rc.status !== 'success' || fee !== FEES[expect]) process.exit(1);
+if (v4Pending) {
+  const fresh = JSON.parse(readFileSync(HP, 'utf8'));
+  fresh.checks.V4 = { ...(fresh.checks.V4 ?? {}), haltTx: fresh.v4.haltTx, haltedUntil: fresh.v4.haltedUntil, swapTx: hash, feePips: fee, session: expect, status: rc.status };
+  writeFileSync(HP, `${JSON.stringify(fresh, null, 2)}\n`);
+  console.log('recorded as the V4 swap');
+}
 const doc2 = JSON.parse(readFileSync(file, 'utf8')); doc.swaps = doc2.swaps;
 if (!doc.swaps.some((x) => x.session === expect)) doc.swaps.push({ session: expect, tx: hash, amountUsdg: Number(arg('usdg', '0.02')), expectedFeePips: FEES[expect] });
 writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`);
