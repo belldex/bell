@@ -1,0 +1,14 @@
+{
+  "asset": "NVDA",
+  "assetId": "0x9d718288c84e1620400de986e2d65853512a357734ffcfb2565e15de427f8fe7",
+  "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+  "roots": [
+    {
+      "root": "0x3d8a6bad26d975ac2725b862c4e8e626f8588dc825864e0ad7f2fee1be6dacf7",
+      "year": 2026,
+      "coverageStart": 1794633363,
+      "coverageEnd": 1798761600,
+      "capabilityMask": 30
+    }
+  ]
+}

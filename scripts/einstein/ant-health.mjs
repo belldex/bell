@@ -32,6 +32,9 @@ const pEth = await pc.getBalance({ address: PROVER });
 const pUsdg = await pc.readContract({ address: USDG, abi: parseAbi(['function balanceOf(address) view returns (uint256)']), functionName: 'balanceOf', args: [PROVER] });
 check('Prover wallet (session swaps)', pEth >= 40_000_000_000_000n && pUsdg >= 40_000n, `${formatEther(pEth)} ETH, ${formatUnits(pUsdg, 6)} USDG (alert below 0.00004 ETH or 0.04 USDG; ${PROVER})`);
 
+const dEth = await pc.getBalance({ address: '0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399' });
+check('Governance gas wallet', dEth >= 300_000_000_000_000n, `${formatEther(dEth)} ETH (alert below 0.0003; it pays the calendar-autorenew and delegate-renew transactions; send ETH to 0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399)`);
+
 // Delegate: the Worker signs price reports with it, and it lasts at most 25 hours
 const ADAPTER = parseAbi(['function delegateUntil() view returns (uint64)']);
 const left = await Promise.all(Object.values(ant.adapters).map((a) => pc.readContract({ address: a, abi: ADAPTER, functionName: 'delegateUntil' }).then((u) => Number(u) - now)));
@@ -42,8 +45,9 @@ check('Price delegate', minLeft > 3 * 3600, `${(minLeft / 3600).toFixed(1)} hour
 const CAL = parseAbi(['function currentInterval(bytes32) view returns ((bytes32 assetId,uint32 year,uint32 index,uint64 start,uint64 end,uint8 phase,bytes32 provenanceHash))']);
 const cur = await pc.readContract({ address: cal.calendarRegistry, abi: CAL, functionName: 'currentInterval', args: [ant.admittedDescriptorId] });
 check('Calendar interval', Number(cur.phase) !== 0 || now - Number(cur.end) < 600, Number(cur.phase) ? `phase ${cur.phase} active until ${new Date(Number(cur.end) * 1000).toISOString()}` : `no interval active; the previous one ended ${now - Number(cur.end)} s ago (the Worker activates the next within a minute)`);
+const nextRootQueued = Number(cal.coverageStart) > now; // the autorenew workflow overwrites the state with the next root once it is queued
 const daysToEnd = (cal.coverageEnd - now) / 86400;
-check('Calendar root', daysToEnd > 21, `${daysToEnd.toFixed(0)} days of coverage left, to ${new Date(cal.coverageEnd * 1000).toISOString().slice(0, 10)} (alert under 21: a new root has to be signed through GOVERNANCE and queued before it ends)`);
+check('Calendar root', nextRootQueued || daysToEnd > 21, nextRootQueued ? `the next root is queued, starting ${new Date(cal.coverageStart * 1000).toISOString().slice(0, 10)}` : `${daysToEnd.toFixed(0)} days of coverage left, to ${new Date(cal.coverageEnd * 1000).toISOString().slice(0, 10)} (alert under 21 with no next root queued: the calendar-autorenew workflow should have queued it at 30)`);
 
 // Pool and halt registry
 const HOOK = parseAbi([

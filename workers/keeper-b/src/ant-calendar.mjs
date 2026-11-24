@@ -19,13 +19,31 @@ const CALENDAR_ABI = [
     { name: 'proofs', type: 'bytes32[][]' }], outputs: [] },
 ];
 
-/** `cfg` is BELL_ANT_CONFIG; `calendar` inside it is { coverageStart, coverageEnd, year, capabilityMask, root }. */
-export async function runAntCalendar({ cfg, client, wallet, account, chainId = 4663, nowSeconds = Math.floor(Date.now() / 1000) }) {
+let rootsCache = { at: 0, roots: null };
+/** Every root the calendar has had, newest included. The GitHub renewal workflow appends each new root to evidence/deploy/calendar-roots-ANT.json,
+ *  so the Worker keeps activating intervals after the first root ends without a redeploy. The compiled-in `cfg.calendar` is the fallback. */
+export async function calendarRoots(cfg, fetchImpl = fetch, nowMs = Date.now()) {
+  if (rootsCache.roots && nowMs - rootsCache.at < 600_000) return rootsCache.roots;
+  let roots = cfg?.calendar ? [cfg.calendar] : [];
+  if (cfg?.calendarRootsUrl) {
+    try {
+      const r = await fetchImpl(cfg.calendarRootsUrl);
+      if (r.ok) { const doc = await r.json(); if (Array.isArray(doc.roots) && doc.roots.length) roots = doc.roots; }
+    } catch { /* keep the compiled-in root */ }
+  }
+  rootsCache = { at: nowMs, roots };
+  return roots;
+}
+
+/** `cfg` is BELL_ANT_CONFIG; a root is { coverageStart, coverageEnd, year, capabilityMask, root }. */
+export async function runAntCalendar({ cfg, client, wallet, account, chainId = 4663, nowSeconds = Math.floor(Date.now() / 1000), fetchImpl = fetch }) {
   if (!cfg?.calendar || !cfg.calendarRegistry || !cfg.assetId) return { status: 'skipped', reason: 'no ANT calendar configured' };
-  if (nowSeconds >= Number(cfg.calendar.coverageEnd)) return { status: 'skipped', reason: 'the published ANT calendar has ended; a new root is needed' };
+  const roots = await calendarRoots(cfg, fetchImpl, nowSeconds * 1000);
+  const root = roots.find((x) => nowSeconds >= Number(x.coverageStart) && nowSeconds < Number(x.coverageEnd));
+  if (!root) return { status: 'skipped', reason: 'no published ANT calendar root covers this time; a new root is needed' };
   const current = await client.readContract({ address: cfg.calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [cfg.assetId] });
   if (Number(current.phase) !== 0) return { status: 'calendar-current', phase: Number(current.phase) };
-  const activation = buildCalendarActivation({ config: cfg.calendar, chainId, calendarRegistry: cfg.calendarRegistry, assetId: cfg.assetId, nowSeconds });
+  const activation = buildCalendarActivation({ config: root, chainId, calendarRegistry: cfg.calendarRegistry, assetId: cfg.assetId, nowSeconds });
   const request = await client.simulateContract({
     address: cfg.calendarRegistry, abi: CALENDAR_ABI, functionName: 'activateInterval',
     args: [cfg.assetId, activation.current, activation.previous, activation.next, activation.proofs], account,

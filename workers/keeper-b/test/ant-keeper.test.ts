@@ -70,3 +70,15 @@ describe('ANT keeper', () => {
     await run(resume); expect(resume.writes).toContain('armResume');
   });
 });
+
+import { calendarRoots } from '../src/ant-calendar.mjs';
+describe('ANT calendar roots list', () => {
+  it('uses the list the renewal workflow publishes, and falls back to the compiled-in root when it cannot be read', async () => {
+    const compiled = { root: '0xaa', coverageStart: 1, coverageEnd: 2 };
+    const listed = [compiled, { root: '0xbb', coverageStart: 2, coverageEnd: 3 }];
+    const ok = await calendarRoots({ calendar: compiled, calendarRootsUrl: 'https://x' }, (async () => ({ ok: true, json: async () => ({ roots: listed }) })) as never, 10 ** 12);
+    expect(ok.length).toBe(2);
+    const broken = await calendarRoots({ calendar: compiled, calendarRootsUrl: 'https://x' }, (async () => { throw new Error('offline'); }) as never, 2 * 10 ** 12);
+    expect(broken).toEqual([compiled]);
+  });
+});

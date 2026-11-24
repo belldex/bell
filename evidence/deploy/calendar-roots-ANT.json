@@ -1,0 +1,14 @@
+{
+  "asset": "ANT",
+  "assetId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+  "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+  "roots": [
+    {
+      "root": "0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d",
+      "year": 2026,
+      "coverageStart": 1795407371,
+      "coverageEnd": 1798761600,
+      "capabilityMask": 30
+    }
+  ]
+}
