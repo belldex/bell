@@ -172,7 +172,7 @@ console.log(`simulation passed, hook ${sim.result.hook}, pool ${sim.result.poolI
 const gas = await publicClient.estimateContractGas({ address: c.poolFactory, abi: factoryAbi, functionName: 'createAndSeed', args: [request], account });
 console.log(`estimated gas ${gas}`);
 if (!broadcast) { console.log('\nDRY RUN OK. Add --broadcast to send.'); process.exit(0); }
-const hash =await walletClient.writeContract({ address: c.poolFactory, abi: factoryAbi, functionName: 'createAndSeed', args: [request], gas: (gas * 12n) / 10n });
+const hash =await walletClient.writeContract({ address: c.poolFactory, abi: factoryAbi, functionName: 'createAndSeed', args: [request], gas: (gas * 11n) / 10n, maxFeePerGas: 30_000_000n, maxPriorityFeePerGas: 1_000_000n });
 const receipt = await publicClient.waitForTransactionReceipt({ hash });
 log.txs.createAndSeed = hash;
 log.block = Number(receipt.blockNumber); log.gasUsed = Number(receipt.gasUsed); log.status = receipt.status;

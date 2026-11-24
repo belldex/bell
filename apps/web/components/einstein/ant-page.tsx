@@ -45,13 +45,13 @@ export function AntPage() {
         <header className="ein-hero pp-hero">
           <div className="ein-hero__copy">
             <p className="ein-tag"><span>Einstein Hooks</span><b><TokenLogo symbol="ANT" size={20} /> ANT, Robinhood&apos;s Anthropic stock token</b></p>
-            <h1>ANT is not trading on BELL <em>yet.</em></h1>
+            <h1>ANT is <em>live</em> on BELL.</h1>
             <p className="ein-lede">{proof.subtitle}</p>
           </div>
         </header>
 
         <section id="status" className="ein-section ve-verdict" data-reveal data-status="scheduled">
-          <p className="ve-verdict__status">{proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
+          <p className="ve-verdict__status">{proof.status === "live" ? "Live, small seed" : proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
           <p className="ve-verdict__line">{proof.statusNote}</p>
         </section>
 

@@ -6,8 +6,8 @@
     "name": "Robinhood Chain",
     "explorer": "https://robinhoodchain.blockscout.com"
   },
-  "status": "admitted",
-  "statusNote": "ANT is admitted on BELL mainnet with a delegated price source. There is no pool yet and no delegate is authorized, so nothing trades and no price is published.",
+  "status": "live",
+  "statusNote": "ANT/USDG is live on BELL mainnet through the v3 factory (halt-aware). Pool 0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940, created in block 121908958 with a 4.8 USDG seed. The price is published every 45 seconds by a delegate key authorized for 24 hours; the pool refuses swaps when reports lapse, and liquidity can be withdrawn at any time without the hook.",
   "a1": {
     "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
     "referenceTokens": [
