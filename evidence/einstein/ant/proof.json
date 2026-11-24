@@ -454,6 +454,12 @@
         "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
         "amountUsdg": 0.02,
         "expectedFeePips": 5000
+      },
+      {
+        "session": "PRE",
+        "tx": "0x4ca58e658d4fe981da5c68c1a0b2b3cce9006eab70ef9f70c3173cb1a9f99827",
+        "amountUsdg": 0.02,
+        "expectedFeePips": 3000
       }
     ],
     "a6": {
@@ -477,6 +483,10 @@
         {
           "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
           "url": "https://robinhoodchain.blockscout.com/tx/0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6"
+        },
+        {
+          "tx": "0x4ca58e658d4fe981da5c68c1a0b2b3cce9006eab70ef9f70c3173cb1a9f99827",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x4ca58e658d4fe981da5c68c1a0b2b3cce9006eab70ef9f70c3173cb1a9f99827"
         }
       ],
       "a6": {
@@ -635,17 +645,17 @@
       ]
     }
   },
-  "lastRun": "2026-11-24T08:16:45.264Z",
+  "lastRun": "2026-11-24T11:35:54.383Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
     "B1  PENDING Chainlink's Robinhood mainnet directory has 62 feeds and none for ANT, so BELL cannot admit ANT yet.",
     "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
     "M2  PASS    The ANT calendar root 0xe0d59218fd… (114 intervals, 2026-11-23 to 2027-01-01) was queued through a hybrid-signed governance call and activated: 2 transactions succeeded.",
-    "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 4) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
+    "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 1) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
     "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1969771522740 for it now.",
     "A4  PASS    The hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
-    "A5  PARTIAL The Swap event fee matched in OVERNIGHT 5000 pips. Still to be shown, as the sessions occur: REGULAR, PRE, POST, CLOSED.",
+    "A5  PARTIAL The Swap event fee matched in OVERNIGHT 5000 pips, PRE 3000 pips. Still to be shown, as the sessions occur: REGULAR, POST, CLOSED.",
     "A6  PASS    A swap of 0.3 USDG, above the cap of 0.06 USDG in that session, reverted on mainnet (block 121940581); replaying it on the block before returns TradeCapExceeded (0xecb1f63f).",
     "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed.",
     "V1  PASS    A hybrid-signed halt was recorded (Halted event, REPORTER leaf 9); a swap inside its window paid 10000 pips in the Swap event.",
