@@ -617,7 +617,7 @@
       ]
     }
   },
-  "lastRun": "2026-11-24T04:30:03.168Z",
+  "lastRun": "2026-11-24T04:35:18.184Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
@@ -634,7 +634,7 @@
     "V2  PARTIAL the swap did revert on mainnet (receipt status 0); this RPC no longer has the state of the block before it, so the error name AuctionActive (0xb37f7006) needs an archive node to read.",
     "V3  PARTIAL the halt did revert on mainnet (receipt status 0); this RPC no longer has the state of the block before it, so the error name InvalidPQSignature (0x7fd2fae9) needs an archive node to read.",
     "V4  PENDING The halt recorded in 0x1eb33b34… lapses on its own at 2026-11-24T06:17:15.000Z; nothing renews it.",
-    "V5  PENDING An event window in the ANT calendar and a swap inside it are not done yet.",
+    "V5  PENDING Not shown yet, and it cannot be shown on this calendar: the CalendarRegistry only accepts a new root that starts where the active one ends (queueRoot rejects an overlap), and the ANT root runs to 1 Jan 2027. An EVENT window can only be carved into the next root. The carving is built and tested (scripts/calendar/event-windows.mjs, a hook test and a SessionRegistry close-capture test); the swap inside a window waits for that root and a real earnings date.",
     "V6  PASS    Liquidity was removed through the PositionManager inside the first halt's window (block 121947543); the hook emitted no log and no post-quantum signature was needed.",
     "V7  PARTIAL Sourcify: haltRegistry match, policyOracleV3 match, auctionRegistry match, auctionFactoryModuleV2 match, hookDeployer match, poolFactory match, hook match. They were built without a compiler metadata hash (bytecode_hash none), so an exact match needs a rebuild and a redeploy; the owner chose to leave them as match."
   ]

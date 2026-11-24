@@ -94,7 +94,7 @@ export async function haltChecks({ pc, proof, out }) {
         : { verdict: 'FAIL', note: `renew/resume events ${touched.length}, registry ${phase}, swap ${s?.status} at ${t}, fee ${fee}, session fee ${want.fee}` };
     } else out.V4 = { verdict: 'PENDING', note: 'the halt has lapsed; the swap at the normal session fee is not recorded yet' };
   }
-  out.V5 ??= { verdict: 'PENDING', note: 'An event window in the ANT calendar and a swap inside it are not done yet.' };
+  out.V5 ??= { verdict: 'PENDING', note: 'Not shown yet, and it cannot be shown on this calendar: the CalendarRegistry only accepts a new root that starts where the active one ends (queueRoot rejects an overlap), and the ANT root runs to 1 Jan 2027. An EVENT window can only be carved into the next root. The carving is built and tested (scripts/calendar/event-windows.mjs, a hook test and a SessionRegistry close-capture test); the swap inside a window waits for that root and a real earnings date.' };
   if (c.V6?.tx) {
     const r = await rc(pc, c.V6.tx);
     const t = r ? await ts(pc, r) : 0;
