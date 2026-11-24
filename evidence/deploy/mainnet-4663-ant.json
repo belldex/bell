@@ -81,5 +81,31 @@
   "pqLeafUsed": 5,
   "assetOperation": "0x39cb7e26cc5fe5a4705b9cb1e07293dd4e48eee821677cbc3cf6e95390fab5d8",
   "descriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
-  "admittedDescriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea"
+  "admittedDescriptorId": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+  "delegations": [
+    {
+      "adapter": "tokenPriceAdapter",
+      "tx": "0xb804d2fe85c954d31270b0c01063b0f988a9dc81c2c8326ca307345403ee9dda",
+      "leaf": 1,
+      "validUntil": "1795575178"
+    },
+    {
+      "adapter": "regularAdapter",
+      "tx": "0xe8a3d247711cb2bf00aab082bf10846e2bbe6c2b82625ac01ecb86410d07c9c3",
+      "leaf": 2,
+      "validUntil": "1795575189"
+    },
+    {
+      "adapter": "extendedAdapter",
+      "tx": "0xc2757fbdb1eeafcfe4c51a2e5f1e9669a6e97c93bb75e3a42bb9caebed5e175e",
+      "leaf": 3,
+      "validUntil": "1795575200"
+    },
+    {
+      "adapter": "overnightAdapter",
+      "tx": "0xfb064f84f4729f6df8fba5f0022c53de34914f2e4af3332d4dcea3929dc5c928",
+      "leaf": 4,
+      "validUntil": "1795575212"
+    }
+  ]
 }

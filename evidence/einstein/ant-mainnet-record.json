@@ -1,0 +1,82 @@
+{
+  "chainId": 4663,
+  "recordedAt": "2026-11-24",
+  "summary": "ANT/USDG pool live on Robinhood Chain mainnet through the v3 (halt-aware) factory. The price report rides in the swap; no publisher runs.",
+  "haltStack": {
+    "manifest": "evidence/deploy/halt-stack-4663.json",
+    "broadcast": "contracts/broadcast/DeployHaltStack.s.sol/4663/run-latest.json",
+    "contracts": {
+      "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+      "policyOracleV3": "0x25e1BC6fBDB3fc87BFd6939fDf1596Ca2f42Af9e",
+      "auctionRegistry": "0xE059facc7840a226D299B68B6f697108bb1A75ff",
+      "auctionFactoryModuleV2": "0xa2328f5647ee9361ECdbCd30cF86593595ee2054",
+      "hookDeployer": "0x5A25480BE99d5a0767aD1aa57691a37D0338e088",
+      "poolFactory": "0x86e770E2f2B7Fb9511bC5901DcdEC12E0b916a91"
+    },
+    "transactions": 6,
+    "allSucceeded": true,
+    "note": "Deployed on the owner's go-ahead without an independent review (the owner's decision: own review and the tests only). No halt has been recorded on mainnet; the REPORTER leaves for the halt registry are not delegated."
+  },
+  "pool": {
+    "file": "evidence/einstein/ant-pool-1795488954977.json",
+    "poolId": "0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940",
+    "hook": "0x5839006Fdb458b81e50d9d393A775c1B5F406cc0",
+    "createAndSeedTx": "0x65dc33a5e9a590dfa253a8d613c0fc519c31fe7a91c312df698af640ce0c0d14",
+    "block": 121908958,
+    "creator": "0xf3784048450e72596cd18bF079aED441894176e4",
+    "seed": { "usdg": 4.8, "ant": "about 0.0558 (at 85.775 USD)", "openingPriceUsd": 85.775 },
+    "serviceFeeUsdg": 49,
+    "caps": "0.24 USDG per trade, 0.96 USDG per window (half of NVDA's, first 30 days)",
+    "lens": { "address": "0xa07e32a3b3350027c7d6d030b6d141c28f85345d", "record": "evidence/einstein/lens-ant.json" },
+    "withdrawal": "the position NFT is held by the creator wallet; the hook has no remove-liquidity callback (mask 0x2cc0), exits were proven on the NVDA mainnet pool in evidence/einstein/exits.json"
+  },
+  "token": {
+    "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
+    "onChainName": "Anthropic, PBC Class A Common Stock • Robinhood Token",
+    "symbol": "ANT",
+    "logo": "apps/web/public/assets/tokens/ant.png (Anthropic's own mark from anthropic.com, see the README beside it)"
+  },
+  "priceSource": {
+    "method": "swap-carried report: GET /ant-update on the keeper-b Worker signs the direct sample and one session report with the ANT delegate key from Robinhood's pricing API; the swap page puts it in oracleUpdates",
+    "delegateAuthorization": { "reporterLeaves": [1, 2, 3, 4], "validUntilUnix": [1795575178, 1795575189, 1795575200, 1795575212], "state": "evidence/deploy/mainnet-4663-ant.json (delegations)" },
+    "stoppedPublisher": { "reports": 22, "log": "evidence/einstein/ant-publish-mainnet.log", "why": "423,129 gas per report at 0.02 gwei is about 0.0000085 ETH, one every 45 seconds is about 0.0007 ETH an hour; stopped after about two hours" },
+    "firstSwap": {
+      "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
+      "block": 121920440,
+      "in": "0.02 USDG",
+      "out": "0.000231752056029575 ANT",
+      "gasUsed": 1103975,
+      "approveTx": "0x2a1fb06dbea3568ce1e8b74232408db1e4467666ed5953a2e76da93f11f66902",
+      "session": "OVERNIGHT, fee 5000 pips",
+      "script": "scripts/einstein/ant-swap-check.mjs"
+    }
+  },
+  "intervalKeeping": {
+    "where": "the keeper-b Worker cron (workers/keeper-b/src/ant-calendar.mjs), not the owner's computer",
+    "proof": "on an anvil fork of mainnet with time advanced 7 hours the Worker module activated the PRE interval (phase 1) by itself and the second run saw it current; first live boundary after deploy is 09:00 UTC on 24 Nov 2026",
+    "wallet": "the Worker's BELL_TRANSACTION_PRIVATE_KEY wallet 0x14B71d1BA5dE1e718B1f1e05c8ec0333FE1d0079, about 0.000266 ETH at the time of writing",
+    "calendarEnds": "1 Jan 2027 (root 0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d, 114 leaves); a new root is needed before then"
+  },
+  "balancesAfter": {
+    "deployerEth": "0.000843 (0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399)",
+    "creatorLP_TEST": { "eth": "0.000288", "usdg": "0.356616", "ant": "0.004233" },
+    "workerTxWalletEth": "0.000266"
+  },
+  "costsSpent": {
+    "serviceFeeUsdg": 49,
+    "seedUsdg": 4.8,
+    "haltStackGasEth": "about 0.0005",
+    "poolCreationGasEth": "about 0.0002",
+    "delegateAuthorizeGasEth": "small, 4 transactions",
+    "lensDeployGasEth": "about 0.0001",
+    "publisherGasEth": "about 0.001 (the 22 reports that were stopped)"
+  },
+  "stillNeedsTheOwnersComputer": "one thing: the daily delegate renewal (scheduled task bell-ant-delegate-renew, 08:06 local). It needs the REPORTER post-quantum signer state, which is local and stateful, so it was not moved to the cloud. If the computer is off for more than about 25 hours, swaps on the ANT pool stop until it runs; funds and liquidity withdrawal are unaffected.",
+  "notDone": [
+    "no swap from the web page itself was clicked through (the same path was proven by script and the page type-checks)",
+    "Sourcify exact match for the v3 contracts, explorer verification",
+    "halt reporting on mainnet: REPORTER leaves for the halt registry, halt watcher and keeper hosting",
+    "the ANT pool's auction was not exercised",
+    "a new calendar root before 1 Jan 2027"
+  ]
+}

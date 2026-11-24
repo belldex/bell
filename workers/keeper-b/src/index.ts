@@ -36,6 +36,7 @@ import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.
 import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
 import { buildAntUpdate, AntUpdateError } from './ant-update.mjs';
+import { runAntCalendar } from './ant-calendar.mjs';
 import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
 
 export { KeeperState };
@@ -952,6 +953,21 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 const worker = {
   async scheduled(controller, env, ctx) {
     const nowSeconds = Math.floor(controller.scheduledTime / 1000);
+    // ANT's calendar interval is switched on here, not from the owner's computer; its price rides in the swap. Independent of the work below.
+    ctx.waitUntil((async () => {
+      try {
+        if (!env.BELL_ANT_CONFIG || !env.BELL_TRANSACTION_PRIVATE_KEY) return;
+        const rpcUrl = env.RH_MAINNET_RPC_PRIMARY || env.BELL_RPC_URL || env.RH_MAINNET_RPC_SECONDARY;
+        if (!rpcUrl) return;
+        const account = privateKeyToAccount(env.BELL_TRANSACTION_PRIVATE_KEY);
+        const client = createPublicClient({ transport: http(rpcUrl) });
+        const wallet = createWalletClient({ account, transport: http(rpcUrl) });
+        const result = await runAntCalendar({ cfg: JSON.parse(env.BELL_ANT_CONFIG), client, wallet, account, nowSeconds });
+        if (result.status !== 'calendar-current' && result.status !== 'skipped') console.log('scheduled ANT calendar', JSON.stringify(result));
+      } catch (error) {
+        console.error('scheduled ANT calendar failed', String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180));
+      }
+    })());
     // force=true: every cron tick repairs an empty calendar regardless of the boundary guard.
     // Boundary-only work (close capture) still self-gates inside the run.
     ctx.waitUntil(runScheduledMaintenance(env, { nowSeconds, force: true }).then(async (result) => {

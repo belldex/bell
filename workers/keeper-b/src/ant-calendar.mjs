@@ -1,0 +1,37 @@
+/**
+ * Keeps the ANT calendar interval active from the Worker's cron, so nothing has to run on the owner's computer for it.
+ *
+ * A pool only swaps inside an activated interval, and each interval (PRE, REGULAR, POST, OVERNIGHT) is switched on by a plain call with merkle
+ * proofs. When `currentInterval` reads empty, this rebuilds the published calendar (the rebuilt root must equal the committed root, or nothing
+ * is sent) and calls `activateInterval`. When the interval is still active it only reads. It never touches the price: the swap carries that
+ * (see ant-update.mjs).
+ */
+import { buildCalendarActivation } from './calendar-maintenance.mjs';
+
+const CALENDAR_ABI = [
+  { type: 'function', name: 'currentInterval', stateMutability: 'view', inputs: [{ type: 'bytes32' }], outputs: [{ type: 'tuple', components: [
+    { name: 'assetId', type: 'bytes32' }, { name: 'year', type: 'uint32' }, { name: 'index', type: 'uint32' }, { name: 'start', type: 'uint64' }, { name: 'end', type: 'uint64' }, { name: 'phase', type: 'uint8' }, { name: 'provenanceHash', type: 'bytes32' }] }] },
+  { type: 'function', name: 'activateInterval', stateMutability: 'nonpayable', inputs: [
+    { name: 'assetId', type: 'bytes32' },
+    { name: 'current', type: 'tuple', components: [{ name: 'assetId', type: 'bytes32' }, { name: 'year', type: 'uint32' }, { name: 'index', type: 'uint32' }, { name: 'start', type: 'uint64' }, { name: 'end', type: 'uint64' }, { name: 'phase', type: 'uint8' }, { name: 'provenanceHash', type: 'bytes32' }] },
+    { name: 'previous', type: 'tuple', components: [{ name: 'assetId', type: 'bytes32' }, { name: 'year', type: 'uint32' }, { name: 'index', type: 'uint32' }, { name: 'start', type: 'uint64' }, { name: 'end', type: 'uint64' }, { name: 'phase', type: 'uint8' }, { name: 'provenanceHash', type: 'bytes32' }] },
+    { name: 'next', type: 'tuple', components: [{ name: 'assetId', type: 'bytes32' }, { name: 'year', type: 'uint32' }, { name: 'index', type: 'uint32' }, { name: 'start', type: 'uint64' }, { name: 'end', type: 'uint64' }, { name: 'phase', type: 'uint8' }, { name: 'provenanceHash', type: 'bytes32' }] },
+    { name: 'proofs', type: 'bytes32[][]' }], outputs: [] },
+];
+
+/** `cfg` is BELL_ANT_CONFIG; `calendar` inside it is { coverageStart, coverageEnd, year, capabilityMask, root }. */
+export async function runAntCalendar({ cfg, client, wallet, account, chainId = 4663, nowSeconds = Math.floor(Date.now() / 1000) }) {
+  if (!cfg?.calendar || !cfg.calendarRegistry || !cfg.assetId) return { status: 'skipped', reason: 'no ANT calendar configured' };
+  if (nowSeconds >= Number(cfg.calendar.coverageEnd)) return { status: 'skipped', reason: 'the published ANT calendar has ended; a new root is needed' };
+  const current = await client.readContract({ address: cfg.calendarRegistry, abi: CALENDAR_ABI, functionName: 'currentInterval', args: [cfg.assetId] });
+  if (Number(current.phase) !== 0) return { status: 'calendar-current', phase: Number(current.phase) };
+  const activation = buildCalendarActivation({ config: cfg.calendar, chainId, calendarRegistry: cfg.calendarRegistry, assetId: cfg.assetId, nowSeconds });
+  const request = await client.simulateContract({
+    address: cfg.calendarRegistry, abi: CALENDAR_ABI, functionName: 'activateInterval',
+    args: [cfg.assetId, activation.current, activation.previous, activation.next, activation.proofs], account,
+  });
+  const hash = await wallet.writeContract({ ...request.request, maxFeePerGas: 100_000_000n, maxPriorityFeePerGas: 1_000_000n });
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  if (receipt.status !== 'success') throw new Error(`ANT calendar activation reverted (${hash})`);
+  return { status: 'calendar-activated', phase: activation.phase, txHash: hash };
+}
