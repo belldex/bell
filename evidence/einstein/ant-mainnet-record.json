@@ -164,11 +164,27 @@
   },
   "ankerKeeper": "The Worker cron (workers/keeper-b/src/ant-keeper.mjs) also keeps the pool through halts and closures: refreshState, a price report while RECOVERING, armResume, settle, and the closing anchor (report then captureClose) in the last five minutes before a planned closure. First planned closure: Thanksgiving, CLOSED from 2026-11-26T01:00:00Z. The recovery path was found when the first resume left the pool RECOVERING with a LOCKED auction: a swap cannot carry the report because a swap that reverts undoes it.",
   "brief3Remaining": {
-    "V4": "halt 2 lapses at unix 1795501035; a one-shot check is scheduled in the Claude session for 13:24 local on 24 Nov (needs the session open at that time)",
+    "V4": "halt 2 lapses at unix 1795501035 (06:17 UTC). The ant-session-swaps workflow takes the V4 swap right after, at 06:35 and 07:05 UTC on 24 Nov, from CI; no local job is involved.",
     "A5": "per-session swaps run from the GitHub workflow ant-session-swaps (cron at 01:05, 09:05, 14:35 and 21:05 UTC) with a separate prover wallet 0xEf4ae5048CDF3c2251Bd7250d73E1D5830E21F33 that holds about 0.15 USDG and 0.00012 ETH and no pool position; the script computes the session from the calendar and swaps only when that session has no recorded swap. Next ones: PRE 09:05 UTC and REGULAR 14:35 UTC on 24 Nov, POST 21:05 UTC, CLOSED 01:05 UTC on 26 Nov (Thanksgiving). Nothing runs on the owner's computer. The first forced CI swap landed with fee 10000 instead of 5000 because the V4 halt was still recorded, and the script correctly refused to record it.",
     "V5": "cannot be shown on the current calendar: CalendarRegistry.queueRoot rejects a root that starts before the previous root ends, and the ANT root runs to 1 Jan 2027; an EVENT window can only be carved into the next root",
     "haltWatcher": ".github/workflows/ant-halt-watcher.yml is built and tested but switched off (schedule commented out) until the owner approves Robinhood's isTradingHalt flag as the source; do not enable it while a test halt is recorded because it would resume it",
     "earningsDates": "nobody maintains them yet; the first event window needs the root for 1 Jan 2027 onward",
     "announcement": "the Einstein Hooks v3 announcement is not posted"
-  }
+  },
+  "monitoring": {
+    "workflow": ".github/workflows/ant-health.yml",
+    "every": "30 minutes",
+    "checks": [
+      "Worker gas wallet 0x14B7…0079 above 0.00015 ETH",
+      "prover wallet above 0.00004 ETH and 0.04 USDG",
+      "price delegate above 3 hours left",
+      "calendar interval active",
+      "calendar root with more than 21 days left",
+      "pool not stuck recovering for over 15 minutes and not HALTED in an open session without a registry halt",
+      "Worker pool directory lists the pool",
+      "Worker /ant-update signs a report in an open session"
+    ],
+    "alert": "one GitHub issue, 'ANT health: something needs attention', kept open with the details and closed by the workflow when every check passes"
+  },
+  "calendarRenewalGap": "The mainnet calendars of AAPL, NVDA and TSLA (and ANT) end around 1 Jan 2027. Each needs a new root queued, executed and activated through GOVERNANCE (ECDSA and one SHRINCS leaf each, with the registry's delay) before then. The GOVERNANCE signer state is still on the owner's computer; hosting it in CI is a decision for the owner because that role pauses, admits assets and signs every root."
 }
