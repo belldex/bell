@@ -88,6 +88,7 @@ const POOL_POLICY_ABI = parseAbi(['function getPolicy() view returns ((bool canS
 const POOL_STATE_ABI = parseAbi(['function state() view returns ((uint8 lifecycle,uint8 mode,bool closedLatched,uint64 closureNonce,uint64 reopenCandidateAt,uint64 oldValidUntil,uint64[2] reopenBaseObservations,uint64[2] lastOpenObservations,uint64 pauseNonce,uint64 bellStart,uint64 corporateUntil))']);
 const TOKEN_ABI = parseAbi(['function symbol() view returns (string)', 'function decimals() view returns (uint8)']);
 const AUCTION_REGISTRY_ABI = parseAbi(['function auctionFor(bytes32 poolId) view returns (address)']);
+const LENS_REGISTRY_ABI = parseAbi(['function lensForPool(bytes32 poolId) view returns (address)']);
 const AUCTION_ABI = parseAbi([
   'function currentStage() view returns (uint8)',
   'function blocksSwaps() view returns (bool)',
@@ -622,6 +623,19 @@ export async function runPools(env, { client, fetchImpl = fetch, cache = null } 
   }
   if (!Array.isArray(logs)) throw quoteError('chain RPC returned malformed factory logs', 503);
 
+  // A second factory (the halt-aware v3 stack) lists its pools beside the first. It is scanned from its own deployment block on every
+  // refresh, independent of the incremental cursor above, so a pool created before the cursor is still found; the range is small.
+  const extraFactory = env.BELL_POOL_FACTORY_EXTRA;
+  if (extraFactory) {
+    try {
+      const from = BigInt(env.BELL_POOL_EXTRA_FROM_BLOCK || genesisBlock);
+      const extra = await chain.request({ method: 'eth_getLogs', params: [{ address: extraFactory, fromBlock: toHex(from), toBlock: toHex(blockNumber), topics: [toEventSelector(POOL_CREATED_EVENT)] }] } as any);
+      if (Array.isArray(extra)) logs = [...logs, ...extra];
+    } catch (extraError) {
+      console.error('extra factory eth_getLogs failed', extraError?.name ?? 'Error');
+    }
+  }
+
   const found = new Map<string, any>();
   for (const log of logs) {
     try {
@@ -1022,8 +1036,6 @@ const worker = {
       if (request.method !== 'GET') return cors(json({ error: 'Method not allowed' }, 405));
       const input = parsePoolStatusRequest(url.pathname, url.searchParams);
       if (!input || input.error) return cors(json({ error: input?.error ?? 'Invalid status request' }, 400));
-      const lens = lensForPool(env.BELL_SWAP_LENS_MAP, input.poolId);
-      if (!lens) return cors(json({ error: 'No deployed Lens is registered for this pool' }, 404));
       const rpcUrl = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
       if (!rpcUrl) return cors(json({ error: 'Live pool status is temporarily unavailable' }, 503));
       try {
@@ -1031,6 +1043,12 @@ const worker = {
         const chainId = await client.getChainId();
         if (chainId !== 4663) return cors(json({ error: 'Live pool status is temporarily unavailable' }, 503));
         const blockNumber = await client.getBlockNumber();
+        let lens = lensForPool(env.BELL_SWAP_LENS_MAP, input.poolId);
+        if (!lens && env.BELL_SWAP_LENS_REGISTRY) {
+          lens = await client.readContract({ address: env.BELL_SWAP_LENS_REGISTRY, abi: LENS_REGISTRY_ABI, functionName: 'lensForPool', args: [input.poolId], blockNumber });
+          if (lens === '0x0000000000000000000000000000000000000000') lens = null;
+        }
+        if (!lens) return cors(json({ error: 'No deployed Lens is registered for this pool' }, 404));
         const [info, status, block] = await Promise.all([
           client.readContract({ address: lens, abi: BELL_SWAP_LENS_ABI, functionName: 'getPoolInfo', args: [input.poolId], blockNumber }),
           client.readContract({ address: lens, abi: BELL_SWAP_LENS_ABI, functionName: 'getSwapStatus', args: [input.poolId, input.zeroForOne, input.amountIn], blockNumber }),
@@ -1138,18 +1156,34 @@ const worker = {
         }
         const { cache: _omit, ...response } = pools;
         let auctions = null;
+        let lenses: Record<string, string> = {};
         const registry = env.BELL_AUCTION_REGISTRY;
-        const auctionRpc = env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
-        if (registry && auctionRpc && response.pools.length) {
+        const auctionRpc = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_ARCHIVE_RPC || env.BELL_RPC_URL || env.RH_MAINNET_RPC_PRIMARY;
+        if (auctionRpc && response.pools.length) {
           try {
-            auctions = await readAuctionBindings(createPublicClient({ transport: http(auctionRpc) }), {
+            const client = createPublicClient({ transport: http(auctionRpc) });
+            if (registry) auctions = await readAuctionBindings(client, {
               registry, pools: response.pools, blockNumber: BigInt(response.blockNumber),
             });
+            if (env.BELL_SWAP_LENS_REGISTRY) {
+              const addresses = await client.multicall({
+                contracts: response.pools.map((pool) => ({ address: env.BELL_SWAP_LENS_REGISTRY, abi: LENS_REGISTRY_ABI, functionName: 'lensForPool', args: [pool.poolId] })),
+                allowFailure: false, multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11', batchSize: 64_000,
+                blockNumber: BigInt(response.blockNumber),
+              });
+              lenses = Object.fromEntries(response.pools.flatMap((pool, index) => addresses[index] && addresses[index] !== '0x0000000000000000000000000000000000000000' ? [[pool.poolId, addresses[index]]] : []));
+            }
           } catch (error) {
-            console.error('pool auction bindings unavailable', error?.name ?? 'Error');
+            console.error('pool integration bindings unavailable', error?.name ?? 'Error');
           }
         }
-        return cors(json({ ...response, pools: integrationPoolFields(response.pools, env.BELL_SWAP_LENS_MAP, auctions) }));
+        let lensMap = {};
+        try {
+          const configured = JSON.parse(env.BELL_SWAP_LENS_MAP || '{}');
+          if (configured && typeof configured === 'object' && !Array.isArray(configured)) lensMap = configured;
+        } catch { /* malformed legacy map does not break the live pool directory */ }
+        lensMap = { ...lensMap, ...lenses };
+        return cors(json({ ...response, pools: integrationPoolFields(response.pools, JSON.stringify(lensMap), auctions) }));
       }
       catch (error) {
         const detail = String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 240);

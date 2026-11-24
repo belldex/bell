@@ -18,8 +18,11 @@ for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
   const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
   if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
 }
-const proof = JSON.parse(readFileSync('evidence/einstein/proof.json', 'utf8'));
-const { hook, poolId } = proof.pool;
+const argv = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : undefined; };
+// --pool <file> takes hook and poolId from a create-ant-pool record and writes lens-<name>.json; the default is the first Einstein pool.
+const poolFile = argv('pool');
+const { hook, poolId } = poolFile ? JSON.parse(readFileSync(poolFile, 'utf8')) : JSON.parse(readFileSync('evidence/einstein/proof.json', 'utf8')).pool;
+const outFile = argv('out') ?? 'evidence/einstein/lens.json';
 const artifact = JSON.parse(readFileSync('contracts/out-lens-ipfs/BellSwapLens.sol/BellSwapLens.json', 'utf8'));
 const rpc = env.RH_MAINNET_RPC_SECONDARY || env.RH_MAINNET_RPC_PRIMARY;
 const key = env.RH_MAINNET_DEPLOYER_PRIVATE_KEY;
@@ -56,5 +59,5 @@ for (let i = 0; i < 12; i += 1) {
 }
 if (bound[0].toLowerCase() !== hook.toLowerCase() || bound[1].toLowerCase() !== poolId.toLowerCase()) throw new Error('the Lens is bound to the wrong hook or pool');
 const record = { chainId: 4663, poolId, hook, lens: receipt.contractAddress, tx: hash, block: Number(receipt.blockNumber), gasUsed: Number(receipt.gasUsed), deployer: account.address };
-writeFileSync('evidence/einstein/lens.json', `${JSON.stringify(record, null, 2)}\n`);
-console.log(`Lens ${receipt.contractAddress} in block ${receipt.blockNumber}\nwrote evidence/einstein/lens.json`);
+writeFileSync(outFile, `${JSON.stringify(record, null, 2)}\n`);
+console.log(`Lens ${receipt.contractAddress} in block ${receipt.blockNumber}\nwrote ${outFile}`);
