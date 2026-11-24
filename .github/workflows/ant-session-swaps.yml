@@ -1,0 +1,70 @@
+name: ANT session swaps
+
+# Claim A5, from the cloud: one small real swap on the mainnet ANT/USDG pool in each market session (PRE, REGULAR, POST, CLOSED), the fee read from
+# the PoolManager Swap event, recorded in evidence/einstein/ant-mainnet-swaps.json, and the proof rebuilt. The swapper is a separate prover wallet
+# (ANT_PROVER_PRIVATE_KEY) that holds about 0.15 USDG and a little ETH and no pool position, so a leaked key costs cents. The script computes the
+# session from the calendar, swaps only when that session has no recorded swap yet, and does nothing otherwise, so the schedule below can fire
+# more often than needed. Times are UTC and fixed to US standard time; the script's own session check keeps it correct after the clocks change.
+
+on:
+  schedule:
+    - cron: "5 1 * * *"
+    - cron: "5 9 * * *"
+    - cron: "35 14 * * *"
+    - cron: "5 21 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Swap even if this session already has a recorded swap"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ant-session-swaps
+  cancel-in-progress: false
+
+jobs:
+  swap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Swap in the current session
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+          ANT_PROVER_PRIVATE_KEY: ${{ secrets.ANT_PROVER_PRIVATE_KEY }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          flag=""
+          if [ "$FORCE" = "true" ]; then flag="--force"; fi
+          node scripts/einstein/ant-session-swap.mjs --auto --i-authorize-spend $flag
+
+      - name: Rebuild the proof and commit
+        if: success()
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+        run: |
+          if [ -z "$(git status --porcelain evidence/einstein/ant-mainnet-swaps.json)" ]; then echo "nothing new"; exit 0; fi
+          node scripts/einstein/build-ant-proof.mjs --rpc "$RH_MAINNET_RPC_PRIMARY"
+          git config user.name "bell-keeper"
+          git config user.email "bell-keeper@users.noreply.github.com"
+          git add evidence/einstein/ant-mainnet-swaps.json evidence/einstein/ant/proof.json apps/web/components/einstein/ant-proof.json
+          git commit -m "test(einstein): ANT swap in a new session, fee read from the Swap event"
+          git pull --rebase origin main
+          git push origin HEAD:main
