@@ -24,10 +24,17 @@
     "createAndSeedTx": "0x65dc33a5e9a590dfa253a8d613c0fc519c31fe7a91c312df698af640ce0c0d14",
     "block": 121908958,
     "creator": "0xf3784048450e72596cd18bF079aED441894176e4",
-    "seed": { "usdg": 4.8, "ant": "about 0.0558 (at 85.775 USD)", "openingPriceUsd": 85.775 },
+    "seed": {
+      "usdg": 4.8,
+      "ant": "about 0.0558 (at 85.775 USD)",
+      "openingPriceUsd": 85.775
+    },
     "serviceFeeUsdg": 49,
     "caps": "0.24 USDG per trade, 0.96 USDG per window (half of NVDA's, first 30 days)",
-    "lens": { "address": "0xa07e32a3b3350027c7d6d030b6d141c28f85345d", "record": "evidence/einstein/lens-ant.json" },
+    "lens": {
+      "address": "0xa07e32a3b3350027c7d6d030b6d141c28f85345d",
+      "record": "evidence/einstein/lens-ant.json"
+    },
     "withdrawal": "the position NFT is held by the creator wallet; the hook has no remove-liquidity callback (mask 0x2cc0), exits were proven on the NVDA mainnet pool in evidence/einstein/exits.json"
   },
   "token": {
@@ -38,8 +45,26 @@
   },
   "priceSource": {
     "method": "swap-carried report: GET /ant-update on the keeper-b Worker signs the direct sample and one session report with the ANT delegate key from Robinhood's pricing API; the swap page puts it in oracleUpdates",
-    "delegateAuthorization": { "reporterLeaves": [1, 2, 3, 4], "validUntilUnix": [1795575178, 1795575189, 1795575200, 1795575212], "state": "evidence/deploy/mainnet-4663-ant.json (delegations)" },
-    "stoppedPublisher": { "reports": 22, "log": "evidence/einstein/ant-publish-mainnet.log", "why": "423,129 gas per report at 0.02 gwei is about 0.0000085 ETH, one every 45 seconds is about 0.0007 ETH an hour; stopped after about two hours" },
+    "delegateAuthorization": {
+      "reporterLeaves": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "validUntilUnix": [
+        1795575178,
+        1795575189,
+        1795575200,
+        1795575212
+      ],
+      "state": "evidence/deploy/mainnet-4663-ant.json (delegations)"
+    },
+    "stoppedPublisher": {
+      "reports": 22,
+      "log": "evidence/einstein/ant-publish-mainnet.log",
+      "why": "423,129 gas per report at 0.02 gwei is about 0.0000085 ETH, one every 45 seconds is about 0.0007 ETH an hour; stopped after about two hours"
+    },
     "firstSwap": {
       "tx": "0x539159a1a76d8f26defaa7a6d3bdaefb4a25da4ff33b43184cba8f1924ba03d6",
       "block": 121920440,
@@ -55,11 +80,16 @@
     "where": "the keeper-b Worker cron (workers/keeper-b/src/ant-calendar.mjs), not the owner's computer",
     "proof": "on an anvil fork of mainnet with time advanced 7 hours the Worker module activated the PRE interval (phase 1) by itself and the second run saw it current; first live boundary after deploy is 09:00 UTC on 24 Nov 2026",
     "wallet": "the Worker's BELL_TRANSACTION_PRIVATE_KEY wallet 0x14B71d1BA5dE1e718B1f1e05c8ec0333FE1d0079, about 0.000266 ETH at the time of writing",
-    "calendarEnds": "1 Jan 2027 (root 0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d, 114 leaves); a new root is needed before then"
+    "calendarEnds": "1 Jan 2027 (root 0xe0d59218fdeb5f4ab2b10064e454a4490d54a90b58f52d514d7977f0ebc3c33d, 114 leaves); a new root is needed before then",
+    "firstLiveBoundary": "09:00 UTC on 24 Nov 2026 (not yet observed when this was written)"
   },
   "balancesAfter": {
     "deployerEth": "0.000843 (0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399)",
-    "creatorLP_TEST": { "eth": "0.000288", "usdg": "0.356616", "ant": "0.004233" },
+    "creatorLP_TEST": {
+      "eth": "0.000288",
+      "usdg": "0.356616",
+      "ant": "0.004233"
+    },
     "workerTxWalletEth": "0.000266"
   },
   "costsSpent": {
@@ -71,12 +101,35 @@
     "lensDeployGasEth": "about 0.0001",
     "publisherGasEth": "about 0.001 (the 22 reports that were stopped)"
   },
-  "stillNeedsTheOwnersComputer": "one thing: the daily delegate renewal (scheduled task bell-ant-delegate-renew, 08:06 local). It needs the REPORTER post-quantum signer state, which is local and stateful, so it was not moved to the cloud. If the computer is off for more than about 25 hours, swaps on the ANT pool stop until it runs; funds and liquidity withdrawal are unaffected.",
+  "stillNeedsTheOwnersComputer": "nothing. The Worker signs price reports per swap and keeps the calendar interval active from its cron; the delegate renewal runs as the GitHub workflow .github/workflows/ant-delegate-renew.yml every 4 hours and renews only when under 6 hours remain.",
   "notDone": [
     "no swap from the web page itself was clicked through (the same path was proven by script and the page type-checks)",
     "Sourcify exact match for the v3 contracts, explorer verification",
     "halt reporting on mainnet: REPORTER leaves for the halt registry, halt watcher and keeper hosting",
     "the ANT pool's auction was not exercised",
     "a new calendar root before 1 Jan 2027"
-  ]
+  ],
+  "delegateRenewal": {
+    "where": "GitHub Actions workflow ant-delegate-renew (belldex/bell), cron 17 */4 * * *, concurrency group so runs never overlap",
+    "signerState": "REPORTER SHRINCS state is encrypted and kept on the pq-state branch (ciphertext only); the AES key, the REPORTER ECDSA key, the delegate key, the sender key and the RPC URL are repository secrets. The local copy was retired (contracts/pq/keys/robinhood-4663/reporter.enc.migrated-to-ci) so no leaf is used from two places; the local scheduled task bell-ant-delegate-renew is disabled.",
+    "firstCiRun": {
+      "run": "https://github.com/belldex/bell/actions/runs/45321452819",
+      "leaves": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "txs": [
+        "0x1a8751037b5e76325dda5db1c55203975968d7c2f0ae3182b60b54206cf87b06",
+        "0xd349f0a776e1b2116a9c8043ea30b2850634660d59b64f0c3ddc75b3b74c4976",
+        "0xeff55a62c6f058aec19de906475ab4e513d4da34e0c81435cf547f0fbd4fcbbc",
+        "0xfade6ef52c2cb8d463c31cae3cc5bd8b5aa495ba1df765b33efac808bc1ab652"
+      ],
+      "result": "delegation read back as 25.0 hours remaining on all four adapters"
+    },
+    "whyNotTheWorker": "a SHRINCS signature takes about 4 seconds of CPU (import 1.4 s, sign 2.8 s) and the Cloudflare account is on the Free plan (10 ms CPU, deploy with a CPU limit was refused: code 100328)",
+    "cost": "about 320,000 gas per adapter, roughly 0.000026 ETH a day, paid by the Worker wallet 0x14B71d1BA5dE1e718B1f1e05c8ec0333FE1d0079",
+    "risk": "the REPORTER keys now live in GitHub secrets; anyone who can push to belldex/bell or read its secrets could authorize a delegate and so sign ANT prices. Keep repository access tight."
+  }
 }
