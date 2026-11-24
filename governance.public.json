@@ -1,0 +1,7 @@
+{
+  "scheme": "shrincs-256s-keccak",
+  "role": "governance",
+  "maxSignatures": 4096,
+  "publicKeyCommitment": "0x98c3d63d44fc085ec232cdc58d16bd43f55e4c11a95eb4036809fe21eb094b7c",
+  "nextLeafIndex": 1
+}
