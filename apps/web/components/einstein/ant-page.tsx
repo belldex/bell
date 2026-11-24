@@ -10,11 +10,11 @@ const SECTIONS = [
   { id: "status", label: "Status", desc: "Where ANT stands." },
   { id: "pool", label: "The pool", desc: "The live ANT/USDG pool." },
   { id: "v3", label: "Halt proofs", desc: "Einstein Hooks v3 on this pool." },
+  { id: "claims", label: "Claims", desc: "A1 to A7." },
   { id: "mainnet", label: "On mainnet", desc: "What is on chain." },
   { id: "token", label: "The token", desc: "Which contract is Robinhood's ANT." },
   { id: "blocker", label: "Price source", desc: "How ANT is priced." },
   { id: "rehearsal", label: "Testnet rehearsal", desc: "The path, run end to end." },
-  { id: "claims", label: "Claims", desc: "A1 to A7." },
   { id: "check", label: "Check it yourself", desc: "Replay the checks." },
   { id: "limits", label: "Honest limits", desc: "What this does not show." },
 ] as const;
@@ -62,13 +62,14 @@ export function AntPage() {
           <div className="ein-hero__copy">
             <p className="ein-tag"><span>Einstein Hooks</span><b><TokenLogo symbol="ANT" size={20} /> ANT, Robinhood&apos;s Anthropic stock token</b></p>
             <h1>ANT is <em>live</em> on BELL.</h1>
-            <p className="ein-lede">{proof.subtitle}</p>
+            <p className="ein-lede">{proof.status === "live" ? "Robinhood's Anthropic stock token on a BELL pool, with session fees, trade caps and a halt circuit breaker. Every claim below links to its transaction, and anything not proven yet says so." : proof.subtitle}</p>
           </div>
         </header>
 
         <section id="status" className="ein-section ve-verdict" data-reveal data-status="scheduled">
           <p className="ve-verdict__status">{proof.status === "live" ? "Live, small seed" : proof.status === "admitted" ? "Admitted, no pool yet" : "Blocked"}</p>
-          <p className="ve-verdict__line">{proof.statusNote}</p>
+          <p className="ve-verdict__line">{proof.status === "live" ? "ANT/USDG is live on BELL mainnet." : proof.statusNote}</p>
+          {proof.status === "live" && <p className="ve-verdict__note">{proof.statusNote.replace(/^ANT\/USDG is live on BELL mainnet\.\s*/, "")}</p>}
         </section>
 
         {pool && (
@@ -107,6 +108,22 @@ export function AntPage() {
             </ol>
           </section>
         )}
+
+        <section id="claims" className="ein-section" data-reveal>
+          <h2>Claims</h2>
+          <ol className="pp-ledger">
+            {proof.claims.map((c) => {
+              const v = verdictOf(c.id);
+              const blockedBy = (c as { blockedBy?: string }).blockedBy;
+              return (
+                <li key={c.id} data-v={v.toLowerCase()}>
+                  <div className="pp-ledger__id"><b>{c.id}</b><span>{verdictLabel(v)}</span></div>
+                  <div className="pp-ledger__body"><h3>{c.title}</h3><p>{v === "PENDING" && blockedBy ? blockedBy : (replay.find((l) => l.startsWith(`${c.id} `)) ?? "").replace(/^\S+\s+\S+\s+/, "") || c.proof}</p><p className="pp-ledger__bar"><span>Proven when</span> {c.passes}</p></div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
 
         {mainnet && (
           <section id="mainnet" className="ein-section" data-reveal>
@@ -173,22 +190,6 @@ export function AntPage() {
             <p className="ein-fine">Test token <a href={`${rehearsal.network.explorer}/address/${rehearsal.token}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.token, 10, 8)}</a>{rehearsal.feed ? <>, fixture feed <a href={`${rehearsal.network.explorer}/address/${rehearsal.feed}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.feed, 10, 8)}</a></> : null}, hook <a href={`${rehearsal.network.explorer}/address/${rehearsal.hook}`} target="_blank" rel="noopener noreferrer">{short(rehearsal.hook, 10, 8)}</a>.</p>
           </section>
         ))}
-
-        <section id="claims" className="ein-section" data-reveal>
-          <h2>Claims</h2>
-          <ol className="pp-ledger">
-            {proof.claims.map((c) => {
-              const v = verdictOf(c.id);
-              const blockedBy = (c as { blockedBy?: string }).blockedBy;
-              return (
-                <li key={c.id} data-v={v.toLowerCase()}>
-                  <div className="pp-ledger__id"><b>{c.id}</b><span>{verdictLabel(v)}</span></div>
-                  <div className="pp-ledger__body"><h3>{c.title}</h3><p>{v === "PENDING" && blockedBy ? blockedBy : (replay.find((l) => l.startsWith(`${c.id} `)) ?? "").replace(/^\S+\s+\S+\s+/, "") || c.proof}</p><p className="pp-ledger__bar"><span>Proven when</span> {c.passes}</p></div>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
 
         <section id="check" className="ein-section" data-reveal>
           <h2>Check it yourself</h2>

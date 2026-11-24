@@ -30,11 +30,26 @@
   text-transform: uppercase;
 }
 .ein-tag b {
-  padding: 0.38rem 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.38rem 0.7rem 0.38rem 0.42rem;
   border: 1px solid color-mix(in srgb, var(--lp-accent) 60%, transparent);
   color: var(--lp-accent-light);
   font: inherit;
+  line-height: 1.5;
 }
+/* The shared token mark is only sized inside the app shell, so size it here: a small rounded chip, never the file's natural size. */
+.ein-tag .app-token-logo {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #fff;
+}
+.ein-tag .app-token-logo > img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .ein-hero h1 {
   margin: 0;
   font: 650 clamp(2.6rem, 5.3vw, 5.1rem) / 0.98 var(--lp-font-display);
@@ -217,6 +232,7 @@
 .ein-tabs button { padding: 0.72rem 1rem; border: 1px solid var(--lp-line-2); background: none; color: var(--lp-muted); font: 600 0.88rem/1 var(--lp-font-ui); cursor: pointer; transition: border-color 0.2s, color 0.2s; }
 .ein-tabs button:hover { border-color: var(--lp-muted); }
 .ein-tabs button.is-on { border-color: var(--lp-white); background: rgba(238, 236, 229, 0.07); color: var(--lp-white); }
+.ein-section h2 + .ein-ledger__lede { margin-top: 1.1rem; }
 .ein-ledger__lede { max-width: 46rem; margin: 0 0 1.4rem; color: var(--lp-muted); font: 400 1rem/1.6 var(--lp-font-ui); }
 .ein-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--lp-line-2); }
 .ein-row { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr) auto; align-items: center; gap: 1rem 1.5rem; padding: 1rem 0; border-bottom: 1px solid var(--lp-line); }
@@ -411,6 +427,7 @@
 .ve-verdict { padding-top: 2.4rem; padding-bottom: 2.4rem; border-top: 1px solid var(--lp-line); border-bottom: 1px solid var(--lp-line); }
 .ve-verdict__status { margin: 0 0 1rem; color: var(--lp-accent-light); font: 500 0.72rem/1 var(--lp-font-mono); letter-spacing: 0.14em; text-transform: uppercase; }
 .ve-verdict__line { margin: 0; max-width: 34ch; color: var(--lp-white); font: 650 clamp(1.7rem, 4vw, 2.7rem)/1.12 var(--lp-font-ui); letter-spacing: -0.035em; }
+.ve-verdict__note { margin: 1.2rem 0 0; max-width: 64ch; color: var(--lp-muted); font: 400 1rem/1.6 var(--lp-font-ui); overflow-wrap: anywhere; }
 .ve-verdict__line b { color: var(--lp-accent-light); font-weight: 650; }
 .ve-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.6rem; }
 .ve-card { padding: 1.4rem 1.4rem 1.2rem; border: 1px solid var(--lp-line-2); background: rgba(255, 255, 255, 0.02); }
