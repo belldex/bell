@@ -37,6 +37,7 @@ import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
 import { buildAntUpdate, AntUpdateError } from './ant-update.mjs';
 import { runAntCalendar } from './ant-calendar.mjs';
+import { runAntKeeper } from './ant-keeper.mjs';
 import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
 
 export { KeeperState };
@@ -964,6 +965,9 @@ const worker = {
         const wallet = createWalletClient({ account, transport: http(rpcUrl) });
         const result = await runAntCalendar({ cfg: JSON.parse(env.BELL_ANT_CONFIG), client, wallet, account, nowSeconds });
         if (result.status !== 'calendar-current' && result.status !== 'skipped') console.log('scheduled ANT calendar', JSON.stringify(result));
+        const cfg = JSON.parse(env.BELL_ANT_CONFIG);
+        const keeper = await runAntKeeper({ cfg, delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client, wallet, account });
+        if (keeper.status === 'acted') console.log('scheduled ANT keeper', JSON.stringify(keeper));
       } catch (error) {
         console.error('scheduled ANT calendar failed', String(error?.shortMessage ?? error?.message ?? error).replace(/https?:\/\/[^\s"'`]+/g, '[url]').slice(0, 180));
       }

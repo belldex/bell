@@ -9,9 +9,73 @@
       "verdict": "PASS",
       "tx": "0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858",
       "block": 121945899,
-      "error": "0x7fd2fae9",
+      "error": "InvalidPQSignature (0x7fd2fae9)",
       "note": "a halt with the REPORTER ECDSA signature and an empty post-quantum signature reverted; the registry stayed NORMAL"
+    },
+    "V1": {
+      "swapTx": "0xad335c30fcbe9d72fa88941e250601088f419b41027fa82f34324c969a8a53a8",
+      "block": 121947474,
+      "feePips": 10000,
+      "amountUsdg": 0.02,
+      "stateBefore": {
+        "registry": "HALTED",
+        "haltedUntil": 1795500316,
+        "hookMode": "CLOSED",
+        "canSwap": true,
+        "lpFeeUnits": 10000,
+        "reasonBits": "0",
+        "auction": "IDLE",
+        "auctionBlocksSwaps": false
+      },
+      "status": "success",
+      "haltTx": "0x1ac62987d7fdafc6f4c19f7eb9c4607f39f4a1ba72982f865e648a7f7b22da41",
+      "reporterLeaf": 9,
+      "haltId": 1,
+      "checkpointTx": "0x8edffbf0694409b0fa4e91a523292cfe90548c6e3d0b7b1318b03fc6a049fe4b",
+      "verdict": "PASS",
+      "note": "a hybrid-signed halt (ECDSA and one SHRINCS leaf) was recorded, the closure was checkpointed, and a swap during HALTED paid 10000 pips in the Swap event"
+    },
+    "V6": {
+      "verdict": "PASS",
+      "tx": "0xd685585a76af05aa09847a836a97f9d95c32ea1b94b330b45b1a14e16f0341eb",
+      "block": 121947543,
+      "removedBps": 100,
+      "liquidityBefore": "1989668204787",
+      "liquidityAfter": "1969771522740",
+      "hookEmittedLogs": false,
+      "stateBefore": {
+        "registry": "HALTED",
+        "haltedUntil": 1795500316,
+        "hookMode": "CLOSED",
+        "canSwap": true,
+        "lpFeeUnits": 10000,
+        "reasonBits": "0",
+        "auction": "IDLE",
+        "auctionBlocksSwaps": false
+      },
+      "note": "liquidity removed through the PositionManager while the registry was HALTED; the hook emitted no log and no post-quantum signature was needed"
+    },
+    "V2": {
+      "swapTx": "0xf3cc8b1bd7f7e2861e314cdd7ea75b4d7abeb76c49e15f4968eb9f13ed3bdbe6",
+      "block": 121948232,
+      "status": "reverted",
+      "error": "AuctionActive (0xb37f7006), raised by the hook and wrapped by the PoolManager",
+      "stateAtRevert": {
+        "registry": "RESUME_AUCTION",
+        "haltedUntil": 1795493511,
+        "hookMode": "CLOSED",
+        "canSwap": true,
+        "lpFeeUnits": 10000,
+        "reasonBits": "0",
+        "auction": "OPEN",
+        "auctionBlocksSwaps": true
+      },
+      "verdict": "PASS",
+      "resumeTx": "0x102ac78c795661ba19f24cc8aa316db0b5ef8fdf167a4c014713644d57bfc2e9",
+      "reporterLeaf": 10,
+      "armResumeTx": "0x8abcfe09c3fdc44e24502a945a332c734a0aa4179a3bb5b860927ea03db0d7f0",
+      "note": "a hybrid-signed resume, the reopening auction armed (stage OPEN), then a swap reverted with AuctionActive inside it"
     }
   },
-  "recordedAt": "2026-11-24T04:02:52.210Z"
+  "recordedAt": "2026-11-24T04:07:15.010Z"
 }
