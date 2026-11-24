@@ -1,0 +1,61 @@
+name: ANT health
+
+# Watches the live ANT pool and everything that keeps it alive, every 30 minutes, from the cloud: the Worker's gas wallet, the prover wallet, the
+# price delegate's remaining time, the calendar interval and root, the pool state (stuck recovering, halted with no reason), and the Worker's
+# endpoints. While anything is wrong it keeps one GitHub issue open with the details, so the owner is notified by GitHub; when everything is
+# healthy again it closes the issue. It only reads: no keys.
+
+on:
+  schedule:
+    - cron: "11,41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ant-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check
+        id: check
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+        run: |
+          set +e
+          node scripts/einstein/ant-health.mjs --rpc "$RH_MAINNET_RPC_PRIMARY" | tee health.txt
+          echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Keep one issue open while something is wrong
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODE: ${{ steps.check.outputs.code }}
+        run: |
+          title="ANT health: something needs attention"
+          number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ "$CODE" = "0" ]; then
+            if [ -n "$number" ]; then gh issue close "$number" --comment "All checks pass again ($(date -u +%FT%TZ))."; fi
+            exit 0
+          fi
+          body=$(printf 'The ANT health check found a problem at %s.\n\n```\n%s\n```\n\nThis issue closes itself when every check passes again.' "$(date -u +%FT%TZ)" "$(grep -E '^(PROBLEM|OK)' health.txt)")
+          if [ -n "$number" ]; then gh issue comment "$number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
