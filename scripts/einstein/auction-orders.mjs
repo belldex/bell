@@ -13,15 +13,19 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, fallback, parseAbi, parseEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { encodeFunctionData } from 'viem';
 
 const command = process.argv[2] ?? 'status';
 const broadcast = process.argv.includes('--broadcast');
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const env = {};
-for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
-  const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-  if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
-}
+try {
+  for (const line of readFileSync('.env', 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
+  }
+} catch { /* CI passes the environment */ }
+for (const [k, v] of Object.entries(process.env)) if (v) env[k] = v;
 const dir = 'evidence/einstein';
 const pool = JSON.parse(readFileSync(`${dir}/${readdirSync(dir).filter((f) => f.startsWith('first-pool-')).sort().pop()}`, 'utf8'));
 const pq = JSON.parse(readFileSync('evidence/deploy/pq-hooks-mainnet.json', 'utf8'));
@@ -34,8 +38,9 @@ const rpcUrls = [...new Set([rpcUrl, env.RH_MAINNET_RPC_SECONDARY, env.RH_MAINNE
 const transport = fallback(rpcUrls.map((u) => http(u, { retryCount: 40, retryDelay: 15000, timeout: 20000 })));
 const pc = createPublicClient({ transport });
 const acct = (k) => privateKeyToAccount(env[k].startsWith('0x') ? env[k] : `0x${env[k]}`);
-const buyer = acct('LP_TEST_PRIVATE_KEY');
-const seller = acct('LP_TEST_PRIVATE_KEY_2');
+// CI buys with the prover wallet (no pool position); locally it is still LP_TEST.
+const buyer = acct(env.AUCTION_BUYER_PRIVATE_KEY ? 'AUCTION_BUYER_PRIVATE_KEY' : 'LP_TEST_PRIVATE_KEY');
+const seller = acct(env.AUCTION_SELLER_PRIVATE_KEY ? 'AUCTION_SELLER_PRIVATE_KEY' : 'LP_TEST_PRIVATE_KEY_2');
 const wc = (a) => createWalletClient({ account: a, transport });
 
 const erc20 = parseAbi(['function balanceOf(address) view returns (uint256)', 'function allowance(address,address) view returns (uint256)', 'function approve(address,uint256) returns (bool)', 'function transfer(address,uint256) returns (bool)']);
@@ -89,6 +94,11 @@ if (command === 'status') {
   console.log(plan.length ? `to do: ${plan.map((p) => p[0]).join('; ')}` : 'nothing to prepare');
   if (broadcast) for (const [label, fn] of plan) { await fn(); log('done:', label); }
 } else if (command === 'run') {
+  // Nothing to do once a cycle with matched volume is on record: the weekly CI runs are only a retry for a missed window.
+  try {
+    const done = JSON.parse(readFileSync(`${dir}/auction.json`, 'utf8'));
+    if (done.settled && Number(done.settled.matchedBase) > 0 && !process.argv.includes('--force')) { console.log(`cycle ${done.cycle} is already recorded with matched volume: nothing to do`); process.exit(0); }
+  } catch { /* no evidence yet */ }
   log(`waiting for the order window of auction ${auction}`);
   // Wait for OPEN. A cycle that was LOCKED with nothing in it has to be settled (anyone may call settle) before the next one can be
   // armed, and a finished cycle has to be armed for the next CLOSED to open transition (anyone may call armNext; it does nothing outside
@@ -99,7 +109,36 @@ if (command === 'status') {
     if ([0, 4, 5].includes(st)) { try { const t = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'armNext' }); log('armNext sent', t.hash); } catch (e) { /* not armable yet */ } }
     await new Promise((r) => setTimeout(r, 15_000));
   }
-  log('order window is OPEN, submitting both orders');
+  log('order window is OPEN');
+  // N6: an ordinary swap while the auction window is open must be refused with AuctionActive. It is sent with a fixed gas limit and no simulation,
+  // so the reverted transaction lands on chain, and it is recorded in negatives.json for the proof.
+  try {
+    const manifest = JSON.parse(readFileSync('packages/protocol/generated/abi-manifest.json', 'utf8'));
+    const dep = JSON.parse(readFileSync('evidence/deploy/mainnet-4663.json', 'utf8'));
+    const hookAbi = parseAbi(['function configHash() view returns (bytes32)', 'function config() view returns ((address token0,address token1,bytes32 asset0,bytes32 asset1,address poolManager,address positionManager,address factory,address assetRegistry,address calendarRegistry,address safetyController,address treasuryAdapter,uint8 poolClass,uint8 liquidityMode,uint8 referenceMode,int24 tickSpacing,uint128[2] tradeCap,uint128[2] windowCap,uint128[2] closureCap,bytes32 policyId,address referenceAdapter0,address referenceAdapter1))']);
+    const cfg = await pc.readContract({ address: pool.hook, abi: hookAbi, functionName: 'config' });
+    const zeroForOne = cfg.token0.toLowerCase() === USDG.toLowerCase();
+    const amount = 10_000n; // 0.01 USDG
+    const allowance = await pc.readContract({ address: USDG, abi: erc20, functionName: 'allowance', args: [buyer.address, dep.router] });
+    if (allowance < amount) await sendTx(buyer, { address: USDG, abi: erc20, functionName: 'approve', args: [dep.router, amount] });
+    const request = {
+      hook: pool.hook, zeroForOne, exactInput: true, amountSpecified: amount, limitAmount: 1n,
+      sqrtPriceLimitX96: zeroForOne ? 4295128740n : 1461446703485210103287273052203988822378723970341n,
+      recipient: buyer.address, nonce: await pc.readContract({ address: dep.router, abi: manifest.interfaces.IBellRouter, functionName: 'nonces', args: [buyer.address] }),
+      deadline: BigInt(Math.floor(Date.now() / 1000) + 300), expectedConfigHash: await pc.readContract({ address: pool.hook, abi: hookAbi, functionName: 'configHash' }),
+      wrapInput: false, unwrapOutput: false, unwrapRefund: false, oracleUpdates: [],
+    };
+    const hash = await wc(buyer).sendTransaction({ to: dep.router, data: encodeFunctionData({ abi: manifest.interfaces.IBellRouter, functionName: 'swap', args: [request] }), gas: 3_000_000n });
+    const rc = await pc.waitForTransactionReceipt({ hash });
+    log(`N6 swap during the auction window: ${rc.status}`, hash);
+    if (rc.status === 'reverted') {
+      const file = `${dir}/negatives.json`;
+      let all = []; try { all = JSON.parse(readFileSync(file, 'utf8')); } catch { /* first one */ }
+      if (!all.some((x) => x.id === 'N6')) all.push({ id: 'N6', tx: hash, block: Number(rc.blockNumber), error: 'AuctionActive', selector: '0xb37f7006' });
+      writeFileSync(file, `${JSON.stringify(all, null, 2)}\n`);
+    }
+  } catch (e) { log('N6 attempt failed', String(e.shortMessage ?? e.message).slice(0, 160)); }
+  log('submitting both orders');
   const evidence = { auction, cycle: String(await pc.readContract({ address: auction, abi: auctionAbi, functionName: 'cycleId' })), orders: [] };
   const b = await sendTx(buyer, { address: auction, abi: auctionAbi, functionName: 'submitOrder', args: [true, BUY_USDG, priceX96(1.05)] });
   evidence.orders.push({ side: 'buy', wallet: buyer.address, tx: b.hash, block: Number(b.receipt.blockNumber) }); log('buy order', b.hash);

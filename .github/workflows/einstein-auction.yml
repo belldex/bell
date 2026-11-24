@@ -1,0 +1,72 @@
+name: Einstein auction cycle
+
+# Brief 1, P7 and N6, from the cloud: the Opening Bell Auction cycle on the NVDA/USDG Einstein pool with two real orders on opposite sides from two
+# different wallets, and an ordinary swap sent inside the order window that must revert with AuctionActive. The order window is the ten minutes before
+# the CLOSED to open boundary, so the run starts about half an hour early and waits for it (the script settles a stale cycle and arms the next one by
+# itself, and retries RPC calls for minutes). When it is done the proof is rebuilt and committed.
+#
+# Wallets: the buyer is the prover wallet (ANT_PROVER_PRIVATE_KEY, no pool position); the seller is a small wallet that only holds a little NVDA and gas
+# (AUCTION_SELLER_PRIVATE_KEY). LP_TEST, which holds the pool's seed position, is never used here.
+#
+# It does nothing once a cycle with matched volume is recorded, so the later weekly runs are a harmless retry for the case where a window is missed.
+
+on:
+  schedule:
+    - cron: "20 0 27 11 *"
+    - cron: "20 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      status_only:
+        description: "Only print the auction stage and the wallet balances (checks the secrets and the RPC), then stop"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: einstein-auction
+  cancel-in-progress: false
+
+jobs:
+  auction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run the cycle
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+          AUCTION_BUYER_PRIVATE_KEY: ${{ secrets.ANT_PROVER_PRIVATE_KEY }}
+          AUCTION_SELLER_PRIVATE_KEY: ${{ secrets.AUCTION_SELLER_PRIVATE_KEY }}
+          STATUS_ONLY: ${{ inputs.status_only }}
+        run: |
+          if [ "$STATUS_ONLY" = "true" ]; then node scripts/einstein/auction-orders.mjs status; exit 0; fi
+          node scripts/einstein/auction-orders.mjs run --broadcast
+
+      - name: Rebuild the proof and commit
+        if: always()
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+        run: |
+          if [ -z "$(git status --porcelain evidence/einstein/auction.json evidence/einstein/negatives.json)" ]; then echo "nothing new"; exit 0; fi
+          node scripts/einstein/build-proof.mjs --run --rpc "$RH_MAINNET_RPC_PRIMARY"
+          git config user.name "bell-keeper"
+          git config user.email "bell-keeper@users.noreply.github.com"
+          git add evidence/einstein/auction.json evidence/einstein/negatives.json evidence/einstein/proof.json apps/web/components/einstein/proof.json
+          git commit -m "test(einstein): auction cycle with two real orders and the swap refused inside the window"
+          git pull --rebase origin main
+          git push origin HEAD:main

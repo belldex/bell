@@ -91,7 +91,13 @@ async function runCheck(check, rpc, proof) {
         return { ok: false, note: `replay of ${check.tx.slice(0, 10)} did not revert` };
       } catch (e) {
         const data = lower(e.data ?? '');
-        return { ok: data.includes(check.selector.slice(2)), note: `${check.label}: reverted, ${check.error} selector ${data.includes(check.selector.slice(2)) ? 'found' : 'not found'} in the revert data` };
+        if (data.includes(check.selector.slice(2))) return { ok: true, note: `${check.label}: reverted, ${check.error} selector found in the revert data` };
+        // A public RPC prunes old state: without the state of the block before the transaction there is no revert data to read, which says nothing
+        // about the transaction. It reverted (the receipt says so); the error name needs an archive node.
+        if (!data && /historical state|not available|missing trie|header not found|pruned/i.test(String(e.message))) {
+          return { ok: false, partial: true, note: `${check.label} did revert on chain (receipt status 0); this RPC no longer has the state of the block before it, so ${check.error} (${check.selector}) needs an archive node to read` };
+        }
+        return { ok: false, note: `${check.label}: reverted, ${check.error} selector not found in the revert data` };
       }
     }
     case 'hookBits': {
@@ -115,17 +121,19 @@ export async function runProof(proof, rpc) {
   const results = [];
   for (const claim of proof.claims) {
     if (!claim.checks?.length) { results.push({ id: claim.id, verdict: 'PENDING', note: claim.pending ?? 'no on-chain evidence yet', gas: [] }); continue; }
-    let failed = null; let partial = null; const gas = []; let sourcifyTotal = 0; let sourcifyExact = 0;
+    let failed = null; let partial = null; let partialNote = null; const gas = []; let sourcifyTotal = 0; let sourcifyExact = 0;
     for (const check of claim.checks) {
       try {
         const r = await runCheck(check, rpc, proof);
         if (r.gasUsed) gas.push({ label: check.label, gasUsed: r.gasUsed });
+        if (!r.ok && r.partial) { partialNote = r.note; continue; }
         if (!r.ok) { failed = r.note; break; }
         if (check.kind === 'sourcify') { sourcifyTotal += 1; if (r.exact) sourcifyExact += 1; }
       } catch (e) { failed = `${check.kind}: ${e.message}`; break; }
     }
     if (sourcifyTotal && sourcifyExact < sourcifyTotal) partial = `${sourcifyExact} of ${sourcifyTotal} contracts are an exact match on Sourcify, and the other ${sourcifyTotal - sourcifyExact} are a match`;
     if (failed) results.push({ id: claim.id, verdict: 'FAIL', note: failed, gas });
+    else if (partialNote) results.push({ id: claim.id, verdict: 'PARTIAL', note: partialNote, gas });
     else if (partial || claim.partial) results.push({ id: claim.id, verdict: 'PARTIAL', note: partial ?? claim.partial, gas });
     else results.push({ id: claim.id, verdict: 'PASS', note: claim.passNote ?? 'all checks held', gas });
   }
@@ -136,7 +144,7 @@ export async function runNegatives(proof, rpc) {
   const out = [];
   for (const n of proof.negatives) {
     if (!n.check) { out.push({ id: n.id, verdict: 'PENDING', note: n.note }); continue; }
-    try { const r = await runCheck(n.check, rpc, proof); out.push({ id: n.id, verdict: r.ok ? 'PASS' : 'FAIL', note: r.note }); }
+    try { const r = await runCheck(n.check, rpc, proof); out.push({ id: n.id, verdict: r.ok ? 'PASS' : r.partial ? 'PARTIAL' : 'FAIL', note: r.note }); }
     catch (e) { out.push({ id: n.id, verdict: 'FAIL', note: e.message }); }
   }
   return out;

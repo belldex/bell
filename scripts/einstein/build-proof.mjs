@@ -165,6 +165,20 @@ if (firstPool?.status === 'success') {
     });
   }
 }
+// P7: two real orders on opposite sides from two wallets, and the cycle finalized at one clearing price with matched volume.
+const auctionEvidence = readOptional('evidence/einstein/auction.json');
+if (auctionEvidence?.orders?.length >= 2 && auctionEvidence.settled && Number(auctionEvidence.settled.matchedBase) > 0) {
+  const cycleData = `0xd230bf04${BigInt(auctionEvidence.cycle).toString(16).padStart(64, '0')}`;
+  Object.assign(claims.find((c) => c.id === 'P7'), {
+    pending: undefined,
+    passNote: `Cycle ${auctionEvidence.cycle}: a buy order and a sell order from two different wallets were submitted inside the order window, and the cycle finalized at one clearing price (${auctionEvidence.settled.clearingPriceX96} in X96) with ${auctionEvidence.settled.matchedBase} base units matched.`,
+    checks: [
+      ...auctionEvidence.orders.map((o) => ({ kind: 'txSuccess', label: `${o.side} order`, tx: o.tx })),
+      { kind: 'callWord', label: 'cycle finalized', to: auctionEvidence.auction, data: cycleData, word: 5, equals: 1 },
+      { kind: 'callWordMin', label: 'matched base', to: auctionEvidence.auction, data: cycleData, word: 4, min: 1 },
+    ],
+  });
+}
 for (const n of negatives) {
   const done = negativeTxs.find((x) => x.id === n.id);
   const [error, selector] = ERRORS[n.id] ?? [done?.error, done?.selector];
