@@ -14,4 +14,4 @@
 
 Logo files preserve their source proportions and colors inside equal-sized token slots. Simple Icons' project license does not automatically apply to every icon; check the per-icon license and applicable brand guidelines.
 
-- ANT uses the Anthropic mark from the `apple-touch-icon.png` that [anthropic.com](https://www.anthropic.com) serves (180x180, unmodified). Neither DexScreener nor Robinhood's pricing API publishes an image for the token, so the issuer's own mark is used for the canonical stock-token address. Check Anthropic's brand guidelines before using it outside the token slot.
+- ANT has no mark yet. Brief 3 forbids Anthropic's logo and brand marks, so the app shows the plain ticker until Robinhood's own token image for the contract (logoUrl in `api.robinhood.com/rhj/assets`) is added.

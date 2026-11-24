@@ -41,7 +41,7 @@
     "address": "0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373",
     "onChainName": "Anthropic, PBC Class A Common Stock • Robinhood Token",
     "symbol": "ANT",
-    "logo": "apps/web/public/assets/tokens/ant.png (Anthropic's own mark from anthropic.com, see the README beside it)"
+    "logo": "none yet on purpose: Brief 3 forbids Anthropic's logo and brand marks (an Anthropic mark was shown for a few hours on 24 Nov and was removed). The plain ticker shows until Robinhood's own token image (logoUrl in api.robinhood.com/rhj/assets) is added."
   },
   "priceSource": {
     "method": "swap-carried report: GET /ant-update on the keeper-b Worker signs the direct sample and one session report with the ANT delegate key from Robinhood's pricing API; the swap page puts it in oracleUpdates",
