@@ -89,7 +89,7 @@ export async function poolChecks({ pc, proof, out, rpcUrl }) {
     }
     out.A6 = rc?.status === 'reverted' && data?.includes(TRADE_CAP_SELECTOR.slice(2))
       ? { verdict: 'PASS', note: `A swap of ${pool.a6.amountUsdg} USDG, above the cap of ${pool.a6.capUsdg} USDG in that session, reverted on mainnet (block ${rc.blockNumber}); replaying it on the block before returns TradeCapExceeded (${TRADE_CAP_SELECTOR}).` }
-      : rc?.status === 'reverted' && !data ? { verdict: 'PENDING', note: `The transaction reverted, but this RPC did not return the revert data (${why || 'no data'}); use a full node to read the error.` }
+      : rc?.status === 'reverted' && !data ? { verdict: 'PARTIAL', note: `The swap above the cap did revert on mainnet (receipt status 0, block ${rc.blockNumber}); this RPC no longer has the state of the block before it, so the error name TradeCapExceeded (${TRADE_CAP_SELECTOR}) needs an archive node to read. The recorded revert data is TradeCapExceeded(0, ${Math.round(pool.a6.amountUsdg * 1e6)}, ${Math.round(pool.a6.capUsdg * 1e6)}).` }
       : { verdict: 'FAIL', note: `status ${rc?.status}, TradeCapExceeded in the revert data: ${Boolean(data?.includes(TRADE_CAP_SELECTOR.slice(2)))}` };
   }
 

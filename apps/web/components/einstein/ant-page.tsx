@@ -9,6 +9,7 @@ import proof from "./ant-proof.json";
 const SECTIONS = [
   { id: "status", label: "Status", desc: "Where ANT stands." },
   { id: "pool", label: "The pool", desc: "The live ANT/USDG pool." },
+  { id: "v3", label: "Halt proofs", desc: "Einstein Hooks v3 on this pool." },
   { id: "mainnet", label: "On mainnet", desc: "What is on chain." },
   { id: "token", label: "The token", desc: "Which contract is Robinhood's ANT." },
   { id: "blocker", label: "Price source", desc: "How ANT is priced." },
@@ -26,6 +27,17 @@ type Mainnet = { calendar?: { root: string; leafCount: number; txs: { tx: string
 const mainnet = (proof as { mainnet?: Mainnet }).mainnet;
 type Pool = { poolId: string; hook: string; factory: string; createTx: string; block: number; lens: string | null; seed: { usdg: number }; swaps: { session: string; expectedFeePips: number }[]; a6: { tx: string } | null; links: { create: { url: string }; swaps: { tx: string; url: string }[]; a6: { url: string } | null } };
 const pool = (proof as { pool?: Pool }).pool;
+type V3 = { links: Record<string, { tx: string; url: string }[]> };
+const v3 = (proof as { v3?: V3 }).v3;
+const V3_CLAIMS: { id: string; title: string }[] = [
+  { id: "V1", title: "A halt, then a swap paying 10000 pips" },
+  { id: "V2", title: "A resume, then a swap that reverts with AuctionActive" },
+  { id: "V3", title: "A halt with ECDSA only reverts" },
+  { id: "V4", title: "A halt that expires on its own, then a swap at the session fee" },
+  { id: "V5", title: "A swap inside an event window at the override fee" },
+  { id: "V6", title: "An exit during a halt, with no hook call" },
+  { id: "V7", title: "Sourcify exact match for every v3 contract" },
+];
 type Solution = { title: string; points: string[]; contract: string; tests: string };
 const solution = (proof.blocker as { solution?: Solution }).solution;
 const replay = (proof as { replay?: string[] }).replay ?? [];
@@ -72,6 +84,27 @@ export function AntPage() {
               {pool.links.swaps.map((t, i) => <div key={t.tx}><dt>Swap, {pool.swaps[i].session}</dt><dd><a href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)}</a> at {pool.swaps[i].expectedFeePips} pips</dd></div>)}
               {pool.links.a6 && <div><dt>Reverted above the cap</dt><dd><a href={pool.links.a6.url} target="_blank" rel="noopener noreferrer">{short(pool.a6?.tx ?? "", 10, 6)}</a>, TradeCapExceeded</dd></div>}
             </dl>
+          </section>
+        )}
+
+        {v3 && (
+          <section id="v3" className="ein-section" data-reveal>
+            <h2>Einstein Hooks v3 on this pool</h2>
+            <p className="ein-ledger__lede">This pool runs on the v3 hook stack: a halt registry that REPORTER signs with ECDSA and a post-quantum leaf, a halted state priced like CLOSED, a reopening auction after a halt, and a fail-safe that ends a halt by itself after two hours. These are real halts recorded on the live pool, not market halts: the Robinhood halt flag was not set. Each one cost the pool a few minutes at the CLOSED fee.</p>
+            <ol className="pp-ledger">
+              {V3_CLAIMS.map((c) => {
+                const v = verdictOf(c.id);
+                const line = (replay.find((l) => l.startsWith(`${c.id} `)) ?? "").replace(/^\S+\s+\S+\s+/, "");
+                return (
+                  <li key={c.id} data-v={v.toLowerCase()}>
+                    <div className="pp-ledger__id"><b>{c.id}</b><span>{verdictLabel(v)}</span></div>
+                    <div className="pp-ledger__body"><h3>{c.title}</h3><p>{line || "Not run yet."}</p>
+                      {(v3.links[c.id] ?? []).length > 0 && <p className="pp-ledger__bar">{v3.links[c.id].map((t) => <a key={t.tx} href={t.url} target="_blank" rel="noopener noreferrer">{short(t.tx, 10, 6)} </a>)}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
         )}
 

@@ -14,6 +14,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { createPublicClient, http, keccak256, parseAbi, getAddress } from 'viem';
 import { poolChecks } from './ant-pool-checks.mjs';
+import { haltChecks } from './ant-halt-checks.mjs';
 
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d; };
 const online = process.argv.includes('--online');
@@ -91,6 +92,7 @@ if (proof.rehearsals?.length && testnetRpc) {
   }
 }
 await poolChecks({ pc, proof, out });
+await haltChecks({ pc, proof, out });
 for (const id of ['A2', 'A3', 'A4', 'A5', 'A6', 'A7']) out[id] ??= { verdict: 'PENDING', note: proof.claims.find((c) => c.id === id)?.blockedBy ?? 'Waits for the pool.' };
 
 for (const [id, r] of Object.entries(out)) {

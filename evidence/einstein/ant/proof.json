@@ -485,7 +485,139 @@
       }
     }
   },
-  "lastRun": "2026-11-24T03:59:54.051Z",
+  "v3": {
+    "chainId": 4663,
+    "pool": "0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940",
+    "hook": "0x5839006Fdb458b81e50d9d393A775c1B5F406cc0",
+    "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+    "asset": "0x20c51040b2883238f3a070778b4fafe3f42bf072e07d762511ffe4380643ecea",
+    "checks": {
+      "V3": {
+        "verdict": "PASS",
+        "tx": "0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858",
+        "block": 121945899,
+        "error": "InvalidPQSignature (0x7fd2fae9)",
+        "note": "a halt with the REPORTER ECDSA signature and an empty post-quantum signature reverted; the registry stayed NORMAL"
+      },
+      "V1": {
+        "swapTx": "0xad335c30fcbe9d72fa88941e250601088f419b41027fa82f34324c969a8a53a8",
+        "block": 121947474,
+        "feePips": 10000,
+        "amountUsdg": 0.02,
+        "stateBefore": {
+          "registry": "HALTED",
+          "haltedUntil": 1795500316,
+          "hookMode": "CLOSED",
+          "canSwap": true,
+          "lpFeeUnits": 10000,
+          "reasonBits": "0",
+          "auction": "IDLE",
+          "auctionBlocksSwaps": false
+        },
+        "status": "success",
+        "haltTx": "0x1ac62987d7fdafc6f4c19f7eb9c4607f39f4a1ba72982f865e648a7f7b22da41",
+        "reporterLeaf": 9,
+        "haltId": 1,
+        "checkpointTx": "0x8edffbf0694409b0fa4e91a523292cfe90548c6e3d0b7b1318b03fc6a049fe4b",
+        "verdict": "PASS",
+        "note": "a hybrid-signed halt (ECDSA and one SHRINCS leaf) was recorded, the closure was checkpointed, and a swap during HALTED paid 10000 pips in the Swap event"
+      },
+      "V6": {
+        "verdict": "PASS",
+        "tx": "0xd685585a76af05aa09847a836a97f9d95c32ea1b94b330b45b1a14e16f0341eb",
+        "block": 121947543,
+        "removedBps": 100,
+        "liquidityBefore": "1989668204787",
+        "liquidityAfter": "1969771522740",
+        "hookEmittedLogs": false,
+        "stateBefore": {
+          "registry": "HALTED",
+          "haltedUntil": 1795500316,
+          "hookMode": "CLOSED",
+          "canSwap": true,
+          "lpFeeUnits": 10000,
+          "reasonBits": "0",
+          "auction": "IDLE",
+          "auctionBlocksSwaps": false
+        },
+        "note": "liquidity removed through the PositionManager while the registry was HALTED; the hook emitted no log and no post-quantum signature was needed"
+      },
+      "V2": {
+        "swapTx": "0xf3cc8b1bd7f7e2861e314cdd7ea75b4d7abeb76c49e15f4968eb9f13ed3bdbe6",
+        "block": 121948232,
+        "status": "reverted",
+        "error": "AuctionActive (0xb37f7006), raised by the hook and wrapped by the PoolManager",
+        "stateAtRevert": {
+          "registry": "RESUME_AUCTION",
+          "haltedUntil": 1795493511,
+          "hookMode": "CLOSED",
+          "canSwap": true,
+          "lpFeeUnits": 10000,
+          "reasonBits": "0",
+          "auction": "OPEN",
+          "auctionBlocksSwaps": true
+        },
+        "verdict": "PASS",
+        "resumeTx": "0x102ac78c795661ba19f24cc8aa316db0b5ef8fdf167a4c014713644d57bfc2e9",
+        "reporterLeaf": 10,
+        "armResumeTx": "0x8abcfe09c3fdc44e24502a945a332c734a0aa4179a3bb5b860927ea03db0d7f0",
+        "note": "a hybrid-signed resume, the reopening auction armed (stage OPEN), then a swap reverted with AuctionActive inside it"
+      }
+    },
+    "recordedAt": "2026-11-24T04:07:15.010Z",
+    "v4": {
+      "haltTx": "0x1eb33b34306fdbe769fc5530410a0e303ffc24400267a2b5db7c8b64dcc3a77e",
+      "haltId": 2,
+      "reporterLeaf": 11,
+      "haltedUntil": 1795501035,
+      "note": "a hybrid-signed halt left alone: no renew, no resume. It lapses by itself two hours after it was recorded."
+    },
+    "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+    "contracts": {
+      "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+      "policyOracleV3": "0x25e1BC6fBDB3fc87BFd6939fDf1596Ca2f42Af9e",
+      "auctionRegistry": "0xE059facc7840a226D299B68B6f697108bb1A75ff",
+      "auctionFactoryModuleV2": "0xa2328f5647ee9361ECdbCd30cF86593595ee2054",
+      "hookDeployer": "0x5A25480BE99d5a0767aD1aa57691a37D0338e088",
+      "poolFactory": "0x86e770E2f2B7Fb9511bC5901DcdEC12E0b916a91",
+      "hook": "0x5839006Fdb458b81e50d9d393A775c1B5F406cc0"
+    },
+    "links": {
+      "V3": [
+        {
+          "tx": "0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858"
+        }
+      ],
+      "V1": [
+        {
+          "tx": "0x1ac62987d7fdafc6f4c19f7eb9c4607f39f4a1ba72982f865e648a7f7b22da41",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x1ac62987d7fdafc6f4c19f7eb9c4607f39f4a1ba72982f865e648a7f7b22da41"
+        },
+        {
+          "tx": "0xad335c30fcbe9d72fa88941e250601088f419b41027fa82f34324c969a8a53a8",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xad335c30fcbe9d72fa88941e250601088f419b41027fa82f34324c969a8a53a8"
+        }
+      ],
+      "V6": [
+        {
+          "tx": "0xd685585a76af05aa09847a836a97f9d95c32ea1b94b330b45b1a14e16f0341eb",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xd685585a76af05aa09847a836a97f9d95c32ea1b94b330b45b1a14e16f0341eb"
+        }
+      ],
+      "V2": [
+        {
+          "tx": "0x102ac78c795661ba19f24cc8aa316db0b5ef8fdf167a4c014713644d57bfc2e9",
+          "url": "https://robinhoodchain.blockscout.com/tx/0x102ac78c795661ba19f24cc8aa316db0b5ef8fdf167a4c014713644d57bfc2e9"
+        },
+        {
+          "tx": "0xf3cc8b1bd7f7e2861e314cdd7ea75b4d7abeb76c49e15f4968eb9f13ed3bdbe6",
+          "url": "https://robinhoodchain.blockscout.com/tx/0xf3cc8b1bd7f7e2861e314cdd7ea75b4d7abeb76c49e15f4968eb9f13ed3bdbe6"
+        }
+      ]
+    }
+  },
+  "lastRun": "2026-11-24T04:22:33.425Z",
   "replay": [
     "A1  PASS    0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 has the same runtime code as AAPL, NVDA, TSLA (0x6c1fdd4000…), is named \"Anthropic, PBC Class A Common Stock • Robinhood Token\", symbol ANT, 18 decimals, uiMultiplier 1, oracle not paused. The 2 look-alike Anthropic tokens are different contracts without uiMultiplier.",
     "PASS    Robinhood's asset list names 0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373 for ANT on chain 4663, status ASSET_STATUS_ACTIVE.",
@@ -493,10 +625,17 @@
     "M1  PASS    AssetRegistry 0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18 names descriptor 0x20c51040b2… for ANT, the 4 delegated adapters have code, and 7 transactions succeeded.",
     "M2  PASS    The ANT calendar root 0xe0d59218fd… (114 intervals, 2026-11-23 to 2027-01-01) was queued through a hybrid-signed governance call and activated: 2 transactions succeeded.",
     "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 4) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
-    "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1989668204787 for it now.",
+    "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1969771522740 for it now.",
     "A4  PASS    The hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
     "A5  PARTIAL The Swap event fee matched in OVERNIGHT 5000 pips. Still to be shown, as the sessions occur: REGULAR, PRE, POST, CLOSED.",
-    "A6  PASS    A swap of 0.3 USDG, above the cap of 0.06 USDG in that session, reverted on mainnet (block 121940581); replaying it on the block before returns TradeCapExceeded (0xecb1f63f).",
-    "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed."
+    "A6  PARTIAL The swap above the cap did revert on mainnet (receipt status 0, block 121940581); this RPC no longer has the state of the block before it, so the error name TradeCapExceeded (0xecb1f63f) needs an archive node to read. The recorded revert data is TradeCapExceeded(0, 300000, 60000).",
+    "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed.",
+    "V1  PASS    A hybrid-signed halt was recorded (Halted event, REPORTER leaf 9); a swap inside its window paid 10000 pips in the Swap event.",
+    "V2  PARTIAL the swap did revert on mainnet (receipt status 0); this RPC no longer has the state of the block before it, so the error name AuctionActive (0xb37f7006) needs an archive node to read.",
+    "V3  PARTIAL the halt did revert on mainnet (receipt status 0); this RPC no longer has the state of the block before it, so the error name InvalidPQSignature (0x7fd2fae9) needs an archive node to read.",
+    "V4  PENDING The halt recorded in 0x1eb33b34… lapses on its own at 2026-11-24T06:17:15.000Z; nothing renews it.",
+    "V5  PENDING An event window in the ANT calendar and a swap inside it are not done yet.",
+    "V6  PASS    Liquidity was removed through the PositionManager inside the first halt's window (block 121947543); the hook emitted no log and no post-quantum signature was needed.",
+    "V7  PARTIAL Sourcify: haltRegistry match, policyOracleV3 match, auctionRegistry match, auctionFactoryModuleV2 match, hookDeployer match, poolFactory match, hook match. They were built without a compiler metadata hash (bytecode_hash none), so an exact match needs a rebuild and a redeploy; the owner chose to leave them as match."
   ]
 }

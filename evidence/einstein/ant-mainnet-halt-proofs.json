@@ -77,5 +77,12 @@
       "note": "a hybrid-signed resume, the reopening auction armed (stage OPEN), then a swap reverted with AuctionActive inside it"
     }
   },
-  "recordedAt": "2026-11-24T04:07:15.010Z"
+  "recordedAt": "2026-11-24T04:07:15.010Z",
+  "v4": {
+    "haltTx": "0x1eb33b34306fdbe769fc5530410a0e303ffc24400267a2b5db7c8b64dcc3a77e",
+    "haltId": 2,
+    "reporterLeaf": 11,
+    "haltedUntil": 1795501035,
+    "note": "a hybrid-signed halt left alone: no renew, no resume. It lapses by itself two hours after it was recorded."
+  }
 }

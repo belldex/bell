@@ -154,6 +154,11 @@ if (poolFiles.length && existsSync('evidence/deploy/halt-stack-4663.json') && pr
     links: { create: mtx(rec.txs.createAndSeed), lens: lens ? mtx(lens.tx) : null, swaps: swaps.swaps.map((s) => mtx(s.tx)), a6: swaps.a6 ? mtx(swaps.a6.tx) : null },
   };
   proof.mainnet.note = `Four delegated-attestation adapters were deployed against Robinhood's ANT and the asset was admitted through a governance call signed with ECDSA and SHRINCS (HybridAuth leaf ${proof.mainnet.pqLeafUsed}). The delegate key that signs each swap's price report is authorized for 25 hours at a time with one hybrid-signed call per adapter, renewed automatically by a scheduled workflow. The calendar root for ANT was signed with ECDSA and SHRINCS and is activated session by session.`;
+  if (existsSync('evidence/einstein/ant-mainnet-halt-proofs.json')) {
+    const hp = j('evidence/einstein/ant-mainnet-halt-proofs.json');
+    proof.v3 = { ...hp, hook: rec.hook, calendarRegistry: proof.pool.calendarRegistry, contracts: { ...halt.contracts, hook: rec.hook },
+      links: Object.fromEntries(Object.entries(hp.checks ?? {}).map(([k, c]) => [k, [c.haltTx, c.resumeTx, c.swapTx, c.tx].filter(Boolean).map(mtx)])) };
+  }
   proof.status = 'live';
   proof.statusNote = `ANT/USDG is live on BELL mainnet. Pool ${rec.poolId}, created in block ${rec.block} through the Einstein Hooks v3 factory with a ${rec.request.seedUsdg} USDG seed, which is small: the per-trade cap is about 0.24 USDG. BELL attests the price (Chainlink has no ANT feed): each swap carries a price report signed by a delegate key, so the pool refuses a swap when no fresh report is available.`;
   proof.blocker.title = 'ANT has no Chainlink feed, so BELL attests the price';
@@ -167,7 +172,7 @@ if (arg('rpc')) {
   let r = '';
   try { r = execFileSync(process.execPath, ['scripts/einstein/verify-einstein-ant.mjs', '--rpc', arg('rpc'), '--online', ...(arg('testnet-rpc') ? ['--testnet-rpc', arg('testnet-rpc')] : [])], { encoding: 'utf8' }); } catch (e) { r = e.stdout ?? ''; }
   proof.lastRun = new Date().toISOString();
-  proof.replay = r.split('\n').filter((l) => /^[ABM]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
+  proof.replay = r.split('\n').filter((l) => /^[ABMV]\d/.test(l) || /^R:/.test(l) || /^\s{3}\s*(PASS|FAIL|PENDING)/.test(l)).map((l) => l.trim());
 }
 writeFileSync(out, `${JSON.stringify(proof, null, 2)}\n`);
 copyFileSync(out, 'apps/web/components/einstein/ant-proof.json');
