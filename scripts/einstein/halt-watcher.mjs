@@ -4,6 +4,7 @@
  *
  *   node scripts/einstein/halt-watcher.mjs tick  --asset ANT [--symbol ANT] [--network mainnet]
  *   node scripts/einstein/halt-watcher.mjs loop  --asset ANT --every 20 --broadcast
+ *   node scripts/einstein/halt-watcher.mjs tick  --network mainnet --confirm-wait 45 --broadcast --i-authorize-spend   (one run per scheduler tick: two reads, 45 s apart)
  *
  * Default is a dry run: it reads the quote and the registry and prints the decision. With --broadcast it sends the hybrid-signed call, one
  * REPORTER leaf each. --network mainnet also needs --i-authorize-spend.
@@ -64,10 +65,18 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const state = JSON.parse(readFileSync(arg('state', MAINNET ? 'evidence/deploy/mainnet-4663-ant.json' : 'evidence/deploy/testnet-46630-ant-delegated.json'), 'utf8'));
   const asset = state.admittedDescriptorId; const symbol = arg('symbol', 'ANT');
   let last = null; let streak = 0;
+  const confirmWait = Number(arg('confirm-wait', '0'));
   const tick = async () => {
-    const obs = await readQuote(symbol);
-    const key = obs.halted === null ? 'null' : String(obs.halted);
+    let obs = await readQuote(symbol);
+    let key = obs.halted === null ? 'null' : String(obs.halted);
     streak = key === last ? streak + 1 : 1; last = key;
+    if (confirmWait > 0) {
+      // One run per scheduler tick (a CI cron keeps no memory between runs): read twice, confirmWait seconds apart, and act only if both agree.
+      await new Promise((r) => setTimeout(r, confirmWait * 1000));
+      const again = await readQuote(symbol);
+      const key2 = again.halted === null ? 'null' : String(again.halted);
+      obs = again; streak = key2 === key ? CONFIRMATIONS : 1; last = key2; key = key2;
+    }
     const reg = await status(asset);
     const now = Math.floor(Date.now() / 1000);
     const d = decide({ obs, registry: reg, streak, now });
