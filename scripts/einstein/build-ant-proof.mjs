@@ -70,7 +70,7 @@ const proof = {
   compliance: [
     'ANT is a tokenized debt security issued by Robinhood Assets (Jersey) Limited. It is not Anthropic equity and gives no shareholder rights.',
     'It may not be offered, sold or delivered in the United States or to U.S. persons.',
-    "BELL is not affiliated with Robinhood or Anthropic. This page does not use Anthropic's logo or brand marks.",
+    "BELL is not affiliated with Robinhood or Anthropic. The mark shown beside ANT is Anthropic's own logo, used only to identify the token; it does not mean Anthropic or Robinhood endorse BELL.",
   ],
   limits: [
     'Only the ANT contract that Robinhood lists is considered. ANTc (Coinbase, Base) and ANTon (Ondo, Ethereum and BNB Chain) are on chains where BELL is not deployed, and bridging them would create a new token with its own risk.',

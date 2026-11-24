@@ -14,4 +14,4 @@
 
 Logo files preserve their source proportions and colors inside equal-sized token slots. Simple Icons' project license does not automatically apply to every icon; check the per-icon license and applicable brand guidelines.
 
-- ANT has no mark yet. Brief 3 forbids Anthropic's logo and brand marks, so the app shows the plain ticker until Robinhood's own token image for the contract (logoUrl in `api.robinhood.com/rhj/assets`) is added.
+- ANT uses the Anthropic mark from the `apple-touch-icon.png` that [anthropic.com](https://www.anthropic.com) serves (180x180, unmodified). Brief 3 says not to use Anthropic's logo; the owner decided on 24 Nov 2026 to use it anyway, to identify the token. Robinhood's own token image (logoUrl in `api.robinhood.com/rhj/assets`) answers 403 Access Denied to every client, so it could not be used. Check Anthropic's brand guidelines before using the mark outside the token slot.
