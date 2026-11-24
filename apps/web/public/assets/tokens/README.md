@@ -13,3 +13,5 @@
 - USDG uses the [official Global Dollar token logo](https://globaldollar.com/brand). WETH uses the canonical Robinhood mainnet WETH mark from [Trust Wallet assets](https://github.com/trustwallet/assets/blob/master/blockchains/ethereum/tokenlist.json); ETH is the native zero-address asset and reuses that mark.
 
 Logo files preserve their source proportions and colors inside equal-sized token slots. Simple Icons' project license does not automatically apply to every icon; check the per-icon license and applicable brand guidelines.
+
+- ANT uses the Anthropic mark from the `apple-touch-icon.png` that [anthropic.com](https://www.anthropic.com) serves (180x180, unmodified). Neither DexScreener nor Robinhood's pricing API publishes an image for the token, so the issuer's own mark is used for the canonical stock-token address. Check Anthropic's brand guidelines before using it outside the token slot.

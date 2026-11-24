@@ -5,7 +5,7 @@ const MAINNET_TOKEN_MARKS: Record<string, { src: string; address: `0x${string}` 
   MSFT: { src: '/assets/tokens/msft.svg', address: '0xe93237C50D904957Cf27E7B1133b510C669c2e74' },
   AMZN: { src: '/assets/tokens/amazon.svg', address: '0x12f190a9F9d7D37a250758b26824B97CE941bF54' },
   PLTR: { src: '/assets/tokens/palantir.svg', address: '0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A' },
-  ANT: { src: '/assets/tokens/ant.svg', address: '0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373' },
+  ANT: { src: '/assets/tokens/ant.png', address: '0xbbB6c29bCc3a1028A2B54310DF73F4F7A3bcB373' },
   SPY: { src: '/assets/tokens/spy.svg', address: '0x117cc2133c37B721F49dE2A7a74833232B3B4C0C' },
   PONS: { src: '/assets/tokens/pons.png', address: '0x39dBED3a2bd333467115dE45665cC57F813C4571' },
   MEME: { src: '/assets/tokens/meme.png', address: '0x385F4f8ae47651ce5F58F5265395a669f8281e18' },
