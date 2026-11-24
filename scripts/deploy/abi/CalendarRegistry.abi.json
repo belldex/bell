@@ -1,0 +1,1156 @@
+[
+ {
+  "type": "constructor",
+  "inputs": [
+   {
+    "name": "safetyController_",
+    "type": "address",
+    "internalType": "address"
+   }
+  ],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "activateInterval",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "current",
+    "type": "tuple",
+    "internalType": "struct CalendarLeaf",
+    "components": [
+     {
+      "name": "assetId",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "year",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "index",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "start",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "end",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "phase",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "provenanceHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   },
+   {
+    "name": "previous",
+    "type": "tuple",
+    "internalType": "struct CalendarLeaf",
+    "components": [
+     {
+      "name": "assetId",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "year",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "index",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "start",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "end",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "phase",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "provenanceHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   },
+   {
+    "name": "next",
+    "type": "tuple",
+    "internalType": "struct CalendarLeaf",
+    "components": [
+     {
+      "name": "assetId",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "year",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "index",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "start",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "end",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "phase",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "provenanceHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   },
+   {
+    "name": "proofs",
+    "type": "bytes32[][]",
+    "internalType": "bytes32[][]"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "activateRoot",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "cancel",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "currentInterval",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "tuple",
+    "internalType": "struct CalendarLeaf",
+    "components": [
+     {
+      "name": "assetId",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "year",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "index",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "start",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "end",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "phase",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "provenanceHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "nextInterval",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "",
+    "type": "tuple",
+    "internalType": "struct CalendarLeaf",
+    "components": [
+     {
+      "name": "assetId",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "year",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "index",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "start",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "end",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "phase",
+      "type": "uint8",
+      "internalType": "uint8"
+     },
+     {
+      "name": "provenanceHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "operation",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "kind",
+    "type": "uint8",
+    "internalType": "uint8"
+   },
+   {
+    "name": "payloadHash",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "eta",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "expiry",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "status",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "function",
+  "name": "queueRoot",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "metadata",
+    "type": "tuple",
+    "internalType": "struct CalendarRoot",
+    "components": [
+     {
+      "name": "root",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     },
+     {
+      "name": "leafCount",
+      "type": "uint32",
+      "internalType": "uint32"
+     },
+     {
+      "name": "coverageStart",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "coverageEnd",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "queuedAt",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "executableAt",
+      "type": "uint64",
+      "internalType": "uint64"
+     },
+     {
+      "name": "datasetHash",
+      "type": "bytes32",
+      "internalType": "bytes32"
+     }
+    ]
+   }
+  ],
+  "outputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ],
+  "stateMutability": "nonpayable"
+ },
+ {
+  "type": "function",
+  "name": "safetyController",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "",
+    "type": "address",
+    "internalType": "contract ISafetyController"
+   }
+  ],
+  "stateMutability": "view"
+ },
+ {
+  "type": "event",
+  "name": "AssetActivated",
+  "inputs": [
+   {
+    "name": "descriptorId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "evidenceHash",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "AssetQueued",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "descriptorId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "eta",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "BudgetConsumed",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "epoch",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "closureNonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "gross0",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   },
+   {
+    "name": "gross1",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "CloseCaptured",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "boundaryHash",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "price18",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   },
+   {
+    "name": "inputAt",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "multiplier18",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ClosureEnded",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "nonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ClosureStarted",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "nonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "HealthCheckpoint",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "reasonBits",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "validUntil",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "IntervalActivated",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "leafHash",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "start",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "end",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ModeCheckpoint",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "mode",
+    "type": "uint8",
+    "indexed": false,
+    "internalType": "uint8"
+   },
+   {
+    "name": "reasons",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "closureNonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "reopenCandidateAt",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "OperationCancelled",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "Paused",
+  "inputs": [
+   {
+    "name": "target",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "nonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "PoolActivated",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "tokenId",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "positionKey",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "PoolCreated",
+  "inputs": [
+   {
+    "name": "hook",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "configHash",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "creator",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "recipient",
+    "type": "address",
+    "indexed": false,
+    "internalType": "address"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "PoolStaged",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "tokenId",
+    "type": "uint256",
+    "indexed": false,
+    "internalType": "uint256"
+   },
+   {
+    "name": "positionKey",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ReportAccepted",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "feedId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "observedAt",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "inputAt",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "phase",
+    "type": "uint8",
+    "indexed": false,
+    "internalType": "uint8"
+   },
+   {
+    "name": "reportHash",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ResumeQueued",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "target",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "nonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   },
+   {
+    "name": "eta",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "Resumed",
+  "inputs": [
+   {
+    "name": "target",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "nonce",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "RootActivated",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "root",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "datasetHash",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "RootQueued",
+  "inputs": [
+   {
+    "name": "operationId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "root",
+    "type": "bytes32",
+    "indexed": false,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "eta",
+    "type": "uint64",
+    "indexed": false,
+    "internalType": "uint64"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "SeedCaptured",
+  "inputs": [
+   {
+    "name": "poolId",
+    "type": "bytes32",
+    "indexed": true,
+    "internalType": "bytes32"
+   },
+   {
+    "name": "principal0",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   },
+   {
+    "name": "principal1",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "event",
+  "name": "ServiceFeePaid",
+  "inputs": [
+   {
+    "name": "creator",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "token",
+    "type": "address",
+    "indexed": true,
+    "internalType": "address"
+   },
+   {
+    "name": "amount",
+    "type": "uint128",
+    "indexed": false,
+    "internalType": "uint128"
+   },
+   {
+    "name": "recipient",
+    "type": "address",
+    "indexed": false,
+    "internalType": "address"
+   }
+  ],
+  "anonymous": false
+ },
+ {
+  "type": "error",
+  "name": "BadCalendarProof",
+  "inputs": [
+   {
+    "name": "assetId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "BadConfig",
+  "inputs": [
+   {
+    "name": "reason",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "BadLifecycle",
+  "inputs": [
+   {
+    "name": "lifecycle",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "BadReport",
+  "inputs": [
+   {
+    "name": "feedId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "reason",
+    "type": "uint8",
+    "internalType": "uint8"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "BadSeed",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "CapExceeded",
+  "inputs": [
+   {
+    "name": "currency",
+    "type": "uint8",
+    "internalType": "uint8"
+   },
+   {
+    "name": "capKind",
+    "type": "uint8",
+    "internalType": "uint8"
+   },
+   {
+    "name": "amount",
+    "type": "uint256",
+    "internalType": "uint256"
+   },
+   {
+    "name": "limit",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "ContextMismatch",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "DeadlineExpired",
+  "inputs": [
+   {
+    "name": "deadline",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "InvalidLeaf",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "InvalidPartition",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "NonceMismatch",
+  "inputs": [
+   {
+    "name": "expected",
+    "type": "uint64",
+    "internalType": "uint64"
+   },
+   {
+    "name": "supplied",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "PolicyBlocked",
+  "inputs": [
+   {
+    "name": "reasonBits",
+    "type": "uint256",
+    "internalType": "uint256"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "PricePathRejected",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "Replay",
+  "inputs": [
+   {
+    "name": "feedId",
+    "type": "bytes32",
+    "internalType": "bytes32"
+   },
+   {
+    "name": "observation",
+    "type": "uint64",
+    "internalType": "uint64"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "SettlementMismatch",
+  "inputs": [
+   {
+    "name": "token",
+    "type": "address",
+    "internalType": "address"
+   }
+  ]
+ },
+ {
+  "type": "error",
+  "name": "SlippageExceeded",
+  "inputs": []
+ },
+ {
+  "type": "error",
+  "name": "Unauthorized",
+  "inputs": []
+ }
+]

@@ -35,9 +35,10 @@ const ZERO32 = `0x${'0'.repeat(64)}`;
 const DAY = 86_400;
 const STATE_PATH = IS_MAINNET ? 'evidence/deploy/pq-hooks-mainnet-calendar-state.json' : 'evidence/deploy/testnet-46630-calendar-state.json';
 
-import CalendarArtifact from '../../contracts/out/CalendarRegistry.sol/CalendarRegistry.json' with { type: 'json' };
-
-const CALENDAR_ABI = CalendarArtifact.abi;
+// The ABI lives in the repo (scripts/deploy/abi) so a CI runner needs no forge build; the build artifact wins when it exists.
+const CALENDAR_ABI = existsSync('contracts/out/CalendarRegistry.sol/CalendarRegistry.json')
+  ? JSON.parse(readFileSync('contracts/out/CalendarRegistry.sol/CalendarRegistry.json', 'utf8')).abi
+  : JSON.parse(readFileSync(new URL('./abi/CalendarRegistry.abi.json', import.meta.url), 'utf8'));
 
 const ROOT_STATUS = { 0: 'NONE', 1: 'QUEUED', 2: 'DONE', 3: 'CANCELLED' };
 
