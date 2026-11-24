@@ -105,9 +105,12 @@
   "notDone": [
     "no swap from the web page itself was clicked through (the same path was proven by script and the page type-checks)",
     "Sourcify exact match for the v3 contracts, explorer verification",
-    "halt reporting on mainnet: REPORTER leaves for the halt registry, halt watcher and keeper hosting",
     "the ANT pool's auction was not exercised",
-    "a new calendar root before 1 Jan 2027"
+    "a new calendar root before 1 Jan 2027",
+    "V5 event window swap",
+    "A5 for REGULAR, PRE, POST and CLOSED as the sessions occur (the first CLOSED is Thanksgiving)",
+    "a new calendar root before 1 Jan 2027 needs GOVERNANCE signing, whose signer state is still on the owner's computer",
+    "earnings dates for event windows: nobody maintains them yet"
   ],
   "delegateRenewal": {
     "where": "GitHub Actions workflow ant-delegate-renew (belldex/bell), cron 17 */4 * * *, concurrency group so runs never overlap",
@@ -131,5 +134,33 @@
     "whyNotTheWorker": "a SHRINCS signature takes about 4 seconds of CPU (import 1.4 s, sign 2.8 s) and the Cloudflare account is on the Free plan (10 ms CPU, deploy with a CPU limit was refused: code 100328)",
     "cost": "about 320,000 gas per adapter, roughly 0.000026 ETH a day, paid by the Worker wallet 0x14B71d1BA5dE1e718B1f1e05c8ec0333FE1d0079",
     "risk": "the REPORTER keys now live in GitHub secrets; anyone who can push to belldex/bell or read its secrets could authorize a delegate and so sign ANT prices. Keep repository access tight."
-  }
+  },
+  "haltProofsMainnet": {
+    "file": "evidence/einstein/ant-mainnet-halt-proofs.json",
+    "note": "Real halts recorded on the live ANT pool on 24 Nov 2026, not market halts (the Robinhood halt flag was not set). Each cost the pool minutes at the CLOSED fee. REPORTER actions are hybrid-signed by the ant-halt-action workflow from the signer state on the pq-state branch.",
+    "V3": "0xcfe907ed087b9b6e65de42452b803b18d840146f07a3f6f779e97ba638b46858 reverted, InvalidPQSignature",
+    "V1": {
+      "halt": "0x1ac62987d7fdafc6f4c19f7eb9c4607f39f4a1ba72982f865e648a7f7b22da41",
+      "reporterLeaf": 9,
+      "swap": "0xad335c30fcbe9d72fa88941e250601088f419b41027fa82f34324c969a8a53a8",
+      "feePips": 10000
+    },
+    "V6": "0xd685585a76af05aa09847a836a97f9d95c32ea1b94b330b45b1a14e16f0341eb (1 percent of the position removed during the halt, no hook log)",
+    "V2": {
+      "resume": "0x102ac78c795661ba19f24cc8aa316db0b5ef8fdf167a4c014713644d57bfc2e9",
+      "reporterLeaf": 10,
+      "armResume": "0x8abcfe09c3fdc44e24502a945a332c734a0aa4179a3bb5b860927ea03db0d7f0",
+      "revertedSwap": "0xf3cc8b1bd7f7e2861e314cdd7ea75b4d7abeb76c49e15f4968eb9f13ed3bdbe6",
+      "error": "AuctionActive"
+    },
+    "V4": {
+      "halt": "0x1eb33b34306fdbe769fc5530410a0e303ffc24400267a2b5db7c8b64dcc3a77e",
+      "reporterLeaf": 11,
+      "lapsesAtUnix": 1795501035,
+      "status": "pending the lapse; a one-shot check is scheduled in the session for 13:24 local on 24 Nov"
+    },
+    "V5": "not done: needs an EVENT window in the ANT calendar (a new root signed through GOVERNANCE) and a swap inside it",
+    "V7": "all v3 contracts and the hook are Sourcify match, not exact; the owner chose to leave them as match"
+  },
+  "ankerKeeper": "The Worker cron (workers/keeper-b/src/ant-keeper.mjs) also keeps the pool through halts and closures: refreshState, a price report while RECOVERING, armResume, settle, and the closing anchor (report then captureClose) in the last five minutes before a planned closure. First planned closure: Thanksgiving, CLOSED from 2026-11-26T01:00:00Z. The recovery path was found when the first resume left the pool RECOVERING with a LOCKED auction: a swap cannot carry the report because a swap that reverts undoes it."
 }
