@@ -24,14 +24,16 @@ const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ?
 const broadcast = process.argv.includes('--broadcast');
 const MAINNET = arg('network', 'testnet') === 'mainnet';
 if (MAINNET && broadcast && !process.argv.includes('--i-authorize-spend')) throw new Error('a mainnet broadcast needs --broadcast --i-authorize-spend');
-const env = {}; for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); }
+const env = {};
+try { for (const l of readFileSync('.env', 'utf8').split(/\r?\n/)) { const m = l.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/); if (m) env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, ''); } } catch { /* no .env: CI passes everything through the environment */ }
+for (const [k, v] of Object.entries(process.env)) if (v) env[k] = v;
 const acct = (n) => privateKeyToAccount(env[n].startsWith('0x') ? env[n] : `0x${env[n]}`);
 const halt = JSON.parse(readFileSync(MAINNET ? 'evidence/deploy/halt-stack-4663.json' : 'evidence/deploy/halt-stack-testnet-46630.json', 'utf8'));
 if (halt.status !== 'BROADCAST') throw new Error('the halt stack manifest is not a broadcast deployment');
 const REGISTRY = halt.contracts.haltRegistry; const AUTH = halt.reused.hybridAuth;
 const rpc = MAINNET ? env.RH_MAINNET_RPC_PRIMARY : env.RH_TESTNET_RPC_PRIMARY;
 const pc = createPublicClient({ transport: http(rpc) });
-const sender = acct(MAINNET && env.RH_MAINNET_DEPLOYER_PRIVATE_KEY ? 'RH_MAINNET_DEPLOYER_PRIVATE_KEY' : 'DEPLOYER_PRIVATE_KEY'); // only pays gas
+const sender = acct(env.ANT_SENDER_PRIVATE_KEY ? 'ANT_SENDER_PRIVATE_KEY' : MAINNET && env.RH_MAINNET_DEPLOYER_PRIVATE_KEY ? 'RH_MAINNET_DEPLOYER_PRIVATE_KEY' : 'DEPLOYER_PRIVATE_KEY'); // only pays gas
 const wc = createWalletClient({ account: sender, transport: http(rpc) });
 const REPORTER = keccak256(stringToHex('REPORTER'));
 const ACTION = { halt: keccak256(stringToHex('BELL_HALT_V1')), renew: keccak256(stringToHex('BELL_HALT_RENEW_V1')), resume: keccak256(stringToHex('BELL_HALT_RESUME_V1')) };
