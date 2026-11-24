@@ -966,6 +966,13 @@ const worker = {
         const result = await runAntCalendar({ cfg: JSON.parse(env.BELL_ANT_CONFIG), client, wallet, account, nowSeconds });
         if (result.status !== 'calendar-current' && result.status !== 'skipped') console.log('scheduled ANT calendar', JSON.stringify(result));
         const cfg = JSON.parse(env.BELL_ANT_CONFIG);
+        // Other assets on the same PQ calendar registry (the NVDA pool) get their intervals activated too; nothing else is done for them here.
+        for (const extra of cfg.extraCalendars ?? []) {
+          try {
+            const r = await runAntCalendar({ cfg: { ...cfg, ...extra }, client, wallet, account, nowSeconds });
+            if (r.status === 'calendar-activated') console.log('scheduled calendar', extra.label, JSON.stringify(r));
+          } catch (extraError) { console.error('scheduled calendar failed', extra.label, String(extraError?.shortMessage ?? extraError?.message ?? extraError).slice(0, 140)); }
+        }
         const keeper = await runAntKeeper({ cfg, delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client, wallet, account });
         if (keeper.status === 'acted') console.log('scheduled ANT keeper', JSON.stringify(keeper));
       } catch (error) {
