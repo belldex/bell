@@ -162,5 +162,13 @@
     "V5": "not done: needs an EVENT window in the ANT calendar (a new root signed through GOVERNANCE) and a swap inside it",
     "V7": "all v3 contracts and the hook are Sourcify match, not exact; the owner chose to leave them as match"
   },
-  "ankerKeeper": "The Worker cron (workers/keeper-b/src/ant-keeper.mjs) also keeps the pool through halts and closures: refreshState, a price report while RECOVERING, armResume, settle, and the closing anchor (report then captureClose) in the last five minutes before a planned closure. First planned closure: Thanksgiving, CLOSED from 2026-11-26T01:00:00Z. The recovery path was found when the first resume left the pool RECOVERING with a LOCKED auction: a swap cannot carry the report because a swap that reverts undoes it."
+  "ankerKeeper": "The Worker cron (workers/keeper-b/src/ant-keeper.mjs) also keeps the pool through halts and closures: refreshState, a price report while RECOVERING, armResume, settle, and the closing anchor (report then captureClose) in the last five minutes before a planned closure. First planned closure: Thanksgiving, CLOSED from 2026-11-26T01:00:00Z. The recovery path was found when the first resume left the pool RECOVERING with a LOCKED auction: a swap cannot carry the report because a swap that reverts undoes it.",
+  "brief3Remaining": {
+    "V4": "halt 2 lapses at unix 1795501035; a one-shot check is scheduled in the session for 13:24 local on 24 Nov",
+    "A5": "per-session swaps are scheduled in the session by scripts/einstein/ant-session-swap.mjs: PRE 16:03, REGULAR 21:33 (24 Nov), POST 04:03 (25 Nov), CLOSED 08:03 (26 Nov, Thanksgiving), all local time; they only fire while this Claude session is open",
+    "V5": "cannot be shown on the current calendar: CalendarRegistry.queueRoot rejects a root that starts before the previous root ends, and the ANT root runs to 1 Jan 2027; an EVENT window can only be carved into the next root",
+    "haltWatcher": ".github/workflows/ant-halt-watcher.yml is built and tested but switched off (schedule commented out) until the owner approves Robinhood's isTradingHalt flag as the source; do not enable it while a test halt is recorded because it would resume it",
+    "earningsDates": "nobody maintains them yet; the first event window needs the root for 1 Jan 2027 onward",
+    "announcement": "the Einstein Hooks v3 announcement is not posted"
+  }
 }
