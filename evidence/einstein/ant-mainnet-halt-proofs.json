@@ -75,6 +75,14 @@
       "reporterLeaf": 10,
       "armResumeTx": "0x8abcfe09c3fdc44e24502a945a332c734a0aa4179a3bb5b860927ea03db0d7f0",
       "note": "a hybrid-signed resume, the reopening auction armed (stage OPEN), then a swap reverted with AuctionActive inside it"
+    },
+    "V4": {
+      "haltTx": "0x1eb33b34306fdbe769fc5530410a0e303ffc24400267a2b5db7c8b64dcc3a77e",
+      "haltedUntil": 1795501035,
+      "swapTx": "0x4f0ee78613b0aa2e329c1a465ba1939a0b0e901c67e9413a65f0a45a87920e39",
+      "feePips": 5000,
+      "session": "OVERNIGHT",
+      "status": "success"
     }
   },
   "recordedAt": "2026-11-24T04:07:15.010Z",
