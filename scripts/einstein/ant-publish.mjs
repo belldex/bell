@@ -80,6 +80,12 @@ async function authorize() {
     const preview = pq('preview', digest, key.nextStatefulLeaf);
     await pc.simulateContract({ address: adapter, abi: ADAPTER, functionName: 'authorizeDelegate', args: [delegate.address, validUntil, deadline, ecdsa, preview], account: sender });
     if (!broadcast) { console.log(`${name}: simulation passed (leaf ${key.nextStatefulLeaf}), not sent`); continue; }
+    // Signing spends a one-time leaf for good. If the transaction then cannot be sent (an empty sender wallet failed a run this way and left the
+    // local signer one leaf ahead of the chain), that leaf is lost and the role key has to be rotated. So the sender's balance is checked first.
+    const gasPrice = await pc.getGasPrice();
+    const needed = 4_000_000n * gasPrice * 2n;
+    const have = await pc.getBalance({ address: sender.address });
+    if (have < needed) throw new Error(`the sender ${sender.address} holds ${have} wei and needs about ${needed}: refusing to spend a post-quantum leaf on a transaction that cannot be sent`);
     const sig = pq('sign', digest, key.nextStatefulLeaf);
     const hash = await wc.writeContract({ address: adapter, abi: ADAPTER, functionName: 'authorizeDelegate', args: [delegate.address, validUntil, deadline, ecdsa, sig], gas: 4_000_000n });
     await wait(hash, `authorize ${name}`);
