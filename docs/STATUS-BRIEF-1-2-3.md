@@ -55,6 +55,16 @@ Jadwal A5 (otomatis, workflow `ant-session-chain`): REGULAR 25 Nov 14:30 UTC, PO
 
 Catatan kejadian: swap REGULAR dan POST tanggal 24 Nov terlewat. Rantai swap berhenti dua kali karena dompet gas Worker kosong, sehingga Worker tidak mengaktifkan interval kalender dan menolak update harga. Dompet diisi 0,0005 ETH (tx 0x793c97662bf5647d905204fad7b22b412f6d33caf0d1e37e4ce3e3f3c4ce01be) dan rantai sekarang mencoba ulang error yang muncul sebelum swap terkirim.
 
+## Insiden kunci REPORTER, 25 November
+
+Perpanjangan delegate harga jam 00:46 UTC menandatangani dengan leaf 12 dari kunci REPORTER pasca-kuantum, lalu transaksinya gagal terkirim karena dompet pengirim kosong. Signer di CI maju ke leaf 13 sementara `PQKeyRegistry` masih menunggu leaf 12 dan tidak punya cara melompat. Perpanjangan berikutnya gagal ("signer at leaf 13, chain expects 12"), dan delegate harga ANT hampir habis.
+
+Pemulihan: rotasi kunci lewat `HybridAuth.rotateRoleKey`, yang harus ditandatangani REPORTER sendiri di leaf yang dikenal rantai. Skrip `scripts/einstein/rotate-reporter-key.mjs` (workflow `reporter-key-rotation`) menandatangani digest rotasi di leaf 12 satu kali, hanya setelah memastikan signer lokal tepat satu leaf di depan rantai, kunci ECDSA cocok, dan simulasi mainnet lolos. Ini satu-satunya pemakaian ulang leaf yang disengaja, dan leaf 12 langsung terpakai oleh rotasi itu. Tanda tangan lama di leaf 12 tidak pernah masuk rantai, tapi calldata-nya sempat tercetak di log publik run yang gagal.
+
+Hasil: tx `0xa9f8a61cc96b6aa58064f9f294265881f1854949bc03b8ff6d8f3286ca0667e7`, kunci REPORTER versi 2, leaf kembali ke 1, budget 4096. Status lama disimpan sebagai `reporter-retired-v1` di branch `pq-state`. Perpanjangan delegate berikutnya berhasil dengan leaf 1 sampai 4, delegate valid 25 jam. Verifier Brief 1 (13 PASS, 2 PARTIAL, 3 PENDING) dan Brief 3 (12 PASS, 3 PARTIAL, 1 PENDING) tidak berubah.
+
+Pencegahan: perpanjangan sekarang mengecek saldo pengirim sebelum memakai leaf (commit `42a2dc4`).
+
 ## Infrastruktur
 
 - Situs: Cloudflare Pages (project `bell-web`), apex dan `www` lewat nameserver Cloudflare. Deploy otomatis dari GitHub Actions (`pages-deploy`) saat file situs berubah, ditambah rantai swap yang memicunya setelah mencatat swap.
