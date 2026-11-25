@@ -18,6 +18,12 @@
       "tx": "0x4c2d07b3b3b228bbe605a593d6b740312aadbf85f8f6fc2d907c58aa473dcba7",
       "amountUsdg": 0.02,
       "expectedFeePips": 500
+    },
+    {
+      "session": "POST",
+      "tx": "0x4025f59eebbdab5453506e7d393e6527c30754f4a9d0de3e0dba12eb8c41b87a",
+      "amountUsdg": 0.02,
+      "expectedFeePips": 3000
     }
   ],
   "a6": {
