@@ -32,7 +32,7 @@ Status: belum jalan di mainnet. Metode sudah di-commit (`docs/einstein-v3-evolve
 | Run | Status |
 | --- | --- |
 | Run 1, 20 sampai 23 Nov | Tidak dimulai. Pool tidak didanai tepat waktu, tidak ada yang di-seed dan tidak ada yang diukur. Ditandai postponed. |
-| Run 2, Thanksgiving 25 sampai 30 Nov | Dijadwalkan, mulai 25 Nov 21:00 UTC. Belum didanai. |
+| Run 2, Thanksgiving 25 sampai 30 Nov | Tidak dimulai (diputuskan 25 Nov): tidak ada modal yang didanai, jadi tidak ada yang di-seed dan diukur. Ditandai postponed di halaman. Jendela baru ditetapkan sebelum pool di-seed, dan metode di-commit dulu. |
 | Run 3, testnet 21 sampai 23 Nov | Selesai (final). Menguji mekanisme dengan token uji dan feed harga fixture, bukan ekonomi mainnet. |
 
 Yang menahan: keputusan modal. Dua pool (BELL dan kontrol tanpa hook) harus di-seed dengan jumlah USD yang sama dan range yang sama. Tidak ada klaim dari Brief 2 yang bisa dibuat sebelum itu.

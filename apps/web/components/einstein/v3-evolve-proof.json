@@ -130,8 +130,8 @@
         "startTs": 1795640400,
         "endTs": 1796050800
       },
-      "note": "Starts after Run 1 is published.",
-      "postponed": false,
+      "note": "Run 2 did not start on 25 November: nothing was funded, so nothing was seeded and nothing was measured. A new window is set before any pool is seeded, and the method is committed first.",
+      "postponed": true,
       "network": "mainnet",
       "outages": [],
       "methodCommit": null
