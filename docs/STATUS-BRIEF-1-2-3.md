@@ -68,5 +68,5 @@ Catatan kejadian: swap REGULAR dan POST tanggal 24 Nov terlewat. Rantai swap ber
 2. Brief 2 butuh keputusan modal sebelum bisa jalan.
 3. V5 butuh tanggal earnings dan root kalender berikutnya.
 4. Sourcify exact (P1, A7, V7) butuh rebuild dan redeploy, keputusan pemilik.
-5. GitHub melaporkan 54 kerentanan dependensi (15 tinggi), belum disentuh.
+5. Kerentanan dependensi produksi diturunkan dari 22 ke 4 (25 Nov, lewat pnpm overrides dan Next 16.4.5; build dan CI hijau). Sisa 4: `zod` 3.x dan `uuid` lewat wagmi/rainbowkit, perlu lompatan versi mayor dan belum diuji. Hitungan GitHub (54) juga mencakup dependensi dev dan belum diperiksa satu per satu.
 6. Belum ada tinjauan kriptografi independen (sudah tertulis di batasan jujur halaman).
