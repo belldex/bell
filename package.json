@@ -90,5 +90,14 @@
     "@foundry-rs/forge-linux-amd64": "1.7.1",
     "@foundry-rs/forge-linux-arm64": "1.7.1",
     "@foundry-rs/forge-win32-amd64": "1.7.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "hono@<4.13.16": "4.13.16",
+      "follow-redirects@<1.16.2": "1.16.2",
+      "decode-uri-component@<=0.5.0": "0.5.1",
+      "ws@>=8.0.0 <8.21.0": "8.21.0",
+      "zod@>=4.0.0 <4.6.6": "4.6.6"
+    }
   }
 }
