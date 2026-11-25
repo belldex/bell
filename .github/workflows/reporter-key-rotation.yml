@@ -1,0 +1,77 @@
+name: REPORTER key rotation (one-off recovery)
+
+# Recovers the REPORTER post-quantum key after the delegate renewal of 25 Nov 00:46 UTC signed with leaf 12 and then could not send its transaction (the
+# sender wallet was empty). The signer state is on leaf 13 and the registry still expects 12; the only way out is HybridAuth.rotateRoleKey. See
+# scripts/einstein/rotate-reporter-key.mjs for the safeguards. Run it first without `broadcast` (it only simulates on mainnet and saves nothing), then
+# with `broadcast`. It shares the concurrency group of the delegate renewal so the two never use the signer state at the same time.
+
+on:
+  workflow_dispatch:
+    inputs:
+      broadcast:
+        description: "Send the rotation (leave off for a simulation that saves nothing)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ant-delegate-renew
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: pq-state
+          path: pq-state
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts
+          (cd contracts/pq/signer && npm ci --no-audit --no-fund)
+          mkdir -p contracts/pq/keys/robinhood-4663
+          cp pq-state/reporter.enc pq-state/reporter.public.json contracts/pq/keys/robinhood-4663/
+
+      - name: Rotate the REPORTER key
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+          YAHOO_REPORTER_PRIVATE_KEY: ${{ secrets.YAHOO_REPORTER_PRIVATE_KEY }}
+          ANT_SENDER_PRIVATE_KEY: ${{ secrets.ANT_SENDER_PRIVATE_KEY }}
+          BELL_PQ_MAINNET_ENCRYPTION_KEY: ${{ secrets.BELL_PQ_MAINNET_ENCRYPTION_KEY }}
+          BROADCAST: ${{ inputs.broadcast }}
+        run: |
+          flag=""
+          if [ "$BROADCAST" = "true" ]; then flag="--broadcast"; fi
+          node scripts/einstein/rotate-reporter-key.mjs $flag
+
+      - name: Save the signer state
+        if: always() && inputs.broadcast
+        run: |
+          d=contracts/pq/keys/robinhood-4663
+          for f in "$d"/reporter.enc "$d"/reporter.public.json "$d"/reporter-retired-v*.enc "$d"/reporter-retired-v*.public.json "$d"/reporter-next.enc "$d"/reporter-next.public.json "$d"/reporter-next.public.json.done; do
+            [ -f "$f" ] && cp "$f" pq-state/
+          done
+          cd pq-state
+          git config user.name "bell-keeper"
+          git config user.email "bell-keeper@users.noreply.github.com"
+          git add -A
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "signer state after the REPORTER key rotation, run $GITHUB_RUN_NUMBER"
+            git push origin HEAD:pq-state
+          fi
