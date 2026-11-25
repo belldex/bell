@@ -1,0 +1,7 @@
+{
+  "scheme": "shrincs-256s-keccak",
+  "role": "reporter-next",
+  "maxSignatures": 4096,
+  "publicKeyCommitment": "0x0b478dfe80483852e4dccbb25c195c9118e8e3eeb5340231ead43bd756e5a950",
+  "nextLeafIndex": 1
+}
