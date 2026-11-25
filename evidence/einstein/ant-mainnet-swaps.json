@@ -12,6 +12,12 @@
       "tx": "0x4ca58e658d4fe981da5c68c1a0b2b3cce9006eab70ef9f70c3173cb1a9f99827",
       "amountUsdg": 0.02,
       "expectedFeePips": 3000
+    },
+    {
+      "session": "REGULAR",
+      "tx": "0x4c2d07b3b3b228bbe605a593d6b740312aadbf85f8f6fc2d907c58aa473dcba7",
+      "amountUsdg": 0.02,
+      "expectedFeePips": 500
     }
   ],
   "a6": {
