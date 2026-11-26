@@ -8,10 +8,14 @@ name: Einstein auction cycle
 # Wallets: the buyer is the prover wallet (ANT_PROVER_PRIVATE_KEY, no pool position); the seller is a small wallet that only holds a little NVDA and gas
 # (AUCTION_SELLER_PRIVATE_KEY). LP_TEST, which holds the pool's seed position, is never used here.
 #
+# 27 Nov has two starts, 23:50 and 00:20 UTC: a scheduled run can start late and the order window is only the ten minutes before 01:00, so the
+# earlier start waits for it. They share a concurrency group, and the second finds the cycle recorded and does nothing.
+#
 # It does nothing once a cycle with matched volume is recorded, so the later weekly runs are a harmless retry for the case where a window is missed.
 
 on:
   schedule:
+    - cron: "50 23 26 11 *"
     - cron: "20 0 27 11 *"
     - cron: "20 0 * * 1"
   workflow_dispatch:
@@ -31,7 +35,7 @@ concurrency:
 jobs:
   auction:
     runs-on: ubuntu-latest
-    timeout-minutes: 80
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
