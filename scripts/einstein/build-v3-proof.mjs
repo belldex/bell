@@ -36,14 +36,20 @@ const CLAIMS = [
 
 const files = readdirSync(dir).filter((f) => /^run-\d+\.json$/.test(f)).sort((a, b) => parseInt(a.slice(4), 10) - parseInt(b.slice(4), 10));
 const runs = [];
+let previous = { runs: [] }; try { previous = read('proof.json'); } catch { /* first build */ }
+const chainId = rpc ? parseInt(await rpc('eth_chainId', []), 16) : null;
 for (const f of files) {
   const run = read(f);
   const entry = { id: run.run, label: run.label, status: run.status, window: run.window, note: run.note ?? null, postponed: run.postponed ?? false, network: run.network ?? 'mainnet', outages: run.outages ?? [], methodCommit: run.methodCommit ?? null };
   if (run.config) {
     entry.config = run.config;
-    if (rpc) { entry.result = await buildRun(run.config, rpc); entry.generatedAt = new Date().toISOString(); }
+    const wantChain = (run.network ?? 'mainnet') === 'testnet' ? 46630 : 4663;
+    const old = previous.runs.find((x) => x.id === run.run);
+    if (rpc && chainId !== wantChain) { // this RPC is for the other network: keep what the last build on the right one recorded
+      if (old?.result) { entry.result = old.result; entry.generatedAt = old.generatedAt; if (old.replay) entry.replay = old.replay; }
+    } else if (rpc) { entry.result = await buildRun(run.config, rpc); entry.generatedAt = new Date().toISOString(); }
     else if (run.result) { entry.result = run.result; entry.generatedAt = run.generatedAt; }
-    if (rpc && doRun && entry.result) entry.replay = await verifyRun(entry, rpc);
+    if (rpc && chainId === wantChain && doRun && entry.result) entry.replay = await verifyRun(entry, rpc);
   }
   runs.push(entry);
 }

@@ -798,7 +798,239 @@
           "note": "E1 to E8 all pass from a public RPC."
         }
       }
+    },
+    {
+      "id": 4,
+      "label": "Thanksgiving weekend, 26 to 30 November",
+      "status": "live",
+      "window": {
+        "startTs": 1795679482,
+        "endTs": 1796050800
+      },
+      "note": "Mainnet, real tokens, about 5 USDG in total. The BELL side is the existing NVDA/USDG pool; the control pool was seeded at the BELL pool's price with the same liquidity and ticks, and both are measured from that block. The bot trades only while the Chainlink NVDA round is at most 6 hours old. This shows the mechanism on mainnet at a small size. It is not an economics result for real capital.",
+      "postponed": false,
+      "network": "mainnet",
+      "outages": [],
+      "methodCommit": "d0cb8bf0",
+      "config": {
+        "chain": {
+          "id": 4663,
+          "name": "Robinhood Chain",
+          "explorer": "https://robinhoodchain.blockscout.com",
+          "publicRpc": "https://rpc.chain.robinhood.com",
+          "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+          "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+          "feedKind": "chainlink"
+        },
+        "decimals": {
+          "usdg": 6,
+          "nvda": 18
+        },
+        "window": {
+          "startTs": 1795679482,
+          "endTs": 1796050800
+        },
+        "blocks": {
+          "start": 123524533
+        },
+        "pools": {
+          "bell": {
+            "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+            "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+            "positionId": "7",
+            "tickLower": 219360,
+            "tickUpper": 231420,
+            "liquidity": "171410381287",
+            "seed": {
+              "usdg": "623286",
+              "nvda": "3172917112413521"
+            },
+            "usdgIsCurrency0": true,
+            "initSqrtPriceX96": "6058368234633833898860828011619911",
+            "seedTx": "0x440c71e431304e72967d55d5bfcd6b6988e4f31726fcc0abfb25409bce465b63",
+            "seedBlock": 123524533,
+            "initBlock": 114372026
+          },
+          "control": {
+            "poolId": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+            "hook": "0x0000000000000000000000000000000000000000",
+            "positionId": "9",
+            "tickLower": 219360,
+            "tickUpper": 231420,
+            "liquidity": "171410381287",
+            "seed": {
+              "usdg": "623286",
+              "nvda": "3172917112413521"
+            },
+            "usdgIsCurrency0": true,
+            "initSqrtPriceX96": "6058368234633833898860828011619911",
+            "seedTx": "0x65fa1a092a4c465ae725330107d0fbcf9b3510250ca5e37cf02210b7644013c9",
+            "seedBlock": 123524533,
+            "initBlock": 123524533
+          }
+        },
+        "bot": {
+          "addresses": [
+            "0xaBd42eb3a8C1AB9B0Bb06f33a133B90bc71F2715"
+          ],
+          "sourceFile": "scripts/einstein/v3-evolve/mainnet-run.mjs",
+          "sourceUrl": "https://github.com/belldex/bell/blob/main/scripts/einstein/v3-evolve/mainnet-run.mjs",
+          "sourceSha256": "8f87d01b2a50c2320b7cd85095030d5296ca1c95a72c200610fb00e68893d1de",
+          "maxUsdg": 0.5
+        },
+        "blocked": []
+      },
+      "result": {
+        "blocks": {
+          "start": 123524533,
+          "end": 123588715,
+          "head": 123588715
+        },
+        "reference": {
+          "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
+          "start": {
+            "block": 123524533,
+            "roundId": "18446744073709554221",
+            "price": 151.64270618,
+            "updatedAt": 1795652351
+          },
+          "end": {
+            "block": 123588715,
+            "roundId": "18446744073709554221",
+            "price": 151.64270618,
+            "updatedAt": 1795652351,
+            "fresh": false
+          }
+        },
+        "pendingReferences": 0,
+        "bell": {
+          "role": "bell",
+          "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+          "startCapital": 1.104436,
+          "feesEarned": 0,
+          "lvr": 0,
+          "valueVsHold": 0,
+          "netBps": -0.002675,
+          "positionValueEnd": 1.104435,
+          "holdValueEnd": 1.104436,
+          "swaps": 0,
+          "volume": 0,
+          "organicSwaps": 0,
+          "botSwaps": 0,
+          "sessions": {},
+          "series": [],
+          "rows": []
+        },
+        "control": {
+          "role": "control",
+          "poolId": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+          "startCapital": 1.104436,
+          "feesEarned": 0,
+          "lvr": 0,
+          "valueVsHold": 0,
+          "netBps": -0.002675,
+          "positionValueEnd": 1.104435,
+          "holdValueEnd": 1.104436,
+          "swaps": 0,
+          "volume": 0,
+          "organicSwaps": 0,
+          "botSwaps": 0,
+          "sessions": {},
+          "series": [],
+          "rows": []
+        },
+        "verdict": {
+          "gapBps": 0,
+          "winner": "TIE"
+        },
+        "bands": [
+          {
+            "phase": "CLOSED",
+            "start": 1795679482,
+            "end": 1795741200
+          },
+          {
+            "phase": "OVERNIGHT",
+            "start": 1795741200,
+            "end": 1795770000
+          },
+          {
+            "phase": "PRE",
+            "start": 1795770000,
+            "end": 1795789800
+          },
+          {
+            "phase": "REGULAR",
+            "start": 1795789800,
+            "end": 1795802400
+          },
+          {
+            "phase": "POST",
+            "start": 1795802400,
+            "end": 1795816800
+          },
+          {
+            "phase": "CLOSED",
+            "start": 1795816800,
+            "end": 1796000400
+          },
+          {
+            "phase": "OVERNIGHT",
+            "start": 1796000400,
+            "end": 1796029200
+          },
+          {
+            "phase": "PRE",
+            "start": 1796029200,
+            "end": 1796049000
+          },
+          {
+            "phase": "REGULAR",
+            "start": 1796049000,
+            "end": 1796050800
+          }
+        ]
+      },
+      "generatedAt": "2026-11-26T10:59:10.214Z",
+      "replay": {
+        "E1": {
+          "verdict": "PASS",
+          "note": "measured from the window start block (the BELL pool is older, see the run 4 amendment): capital 1.104436 and 1.104436 USDG (gap 0.0000), same ticks, seeded 0 blocks (0 s) apart, and no swap on either pool before both were seeded"
+        },
+        "E2": {
+          "verdict": "PASS",
+          "note": "control pool hook is the zero address, BELL pool hook is 0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0"
+        },
+        "E3": {
+          "verdict": "PENDING",
+          "note": "The reference price is fixed when the run ends."
+        },
+        "E4": {
+          "verdict": "PASS",
+          "note": "fees earned: BELL 0, control 0 (matches the page)"
+        },
+        "E5": {
+          "verdict": "PASS",
+          "note": "LVR: BELL 0, control 0 (matches the page)"
+        },
+        "E6": {
+          "verdict": "PASS",
+          "note": "net LP result in bps: BELL -0.002675, control -0.002675 (matches the page)"
+        },
+        "E7": {
+          "verdict": "PENDING",
+          "note": "The bot has not traded yet."
+        },
+        "E8": {
+          "verdict": "PENDING",
+          "note": "No refused swap is on record for this run."
+        },
+        "E9": {
+          "verdict": "PARTIAL",
+          "note": "Not every one of E1 to E8 passes yet."
+        }
+      }
     }
   ],
-  "lastBuild": "2026-11-23T02:22:28.115Z"
+  "lastBuild": "2026-11-26T10:59:13.307Z"
 }

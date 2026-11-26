@@ -19,7 +19,7 @@ const near = (a, b, tol = 1e-6) => Math.abs(a - b) <= tol * Math.max(1, Math.abs
 const hex = (n) => `0x${n.toString(16)}`;
 
 async function initializedWith(rpc, cfg, pool) {
-  const logs = await rpc('eth_getLogs', [{ address: cfg.chain.poolManager, topics: [INITIALIZE, pool.poolId], fromBlock: hex(pool.seedBlock - 5000), toBlock: hex(pool.seedBlock) }]);
+  const logs = await rpc('eth_getLogs', [{ address: cfg.chain.poolManager, topics: [INITIALIZE, pool.poolId], fromBlock: hex((pool.initBlock ?? pool.seedBlock) - 5000), toBlock: hex(pool.initBlock ?? pool.seedBlock) }]);
   if (!logs.length) return null;
   return `0x${logs[0].data.slice(2 + 2 * 64 + 24, 2 + 3 * 64)}`.toLowerCase(); // id, currency0 and currency1 are topics; the data is fee, tickSpacing, hooks, sqrtPriceX96, tick
 }
@@ -43,7 +43,7 @@ export async function verifyRun(run, rpc, root = '.') {
   const firstSwap = Math.min(...[...b.rows, ...c.rows].map((x) => x.block), Infinity);
   const quiet = firstSwap > lastSeed;
   out.E1 = capitalGap <= 1 && sameTicks && seedSeconds <= 120 && quiet
-    ? { verdict: 'PASS', note: `capital ${b.startCapital} and ${c.startCapital} USDG (gap ${capitalGap.toFixed(4)}), same ticks, seeded ${seedGap} blocks (${seedSeconds} s) apart, and no swap on either pool before both were seeded` }
+    ? { verdict: 'PASS', note: `${bell.initBlock && bell.initBlock !== bell.seedBlock ? 'measured from the window start block (the BELL pool is older, see the run 4 amendment): ' : ''}capital ${b.startCapital} and ${c.startCapital} USDG (gap ${capitalGap.toFixed(4)}), same ticks, seeded ${seedGap} blocks (${seedSeconds} s) apart, and no swap on either pool before both were seeded` }
     : { verdict: 'FAIL', note: `capital gap ${capitalGap.toFixed(4)} USDG, same ticks ${sameTicks}, seed gap ${seedSeconds} s, no swap before both seeded ${quiet}` };
 
   const hooks = [await initializedWith(rpc, cfg, bell), await initializedWith(rpc, cfg, control)];

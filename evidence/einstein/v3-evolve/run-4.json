@@ -1,0 +1,81 @@
+{
+  "run": 4,
+  "label": "Thanksgiving weekend, 26 to 30 November",
+  "network": "mainnet",
+  "status": "live",
+  "window": {
+    "startTs": 1795679482,
+    "endTs": 1796050800
+  },
+  "note": "Mainnet, real tokens, about 5 USDG in total. The BELL side is the existing NVDA/USDG pool; the control pool was seeded at the BELL pool's price with the same liquidity and ticks, and both are measured from that block. The bot trades only while the Chainlink NVDA round is at most 6 hours old. This shows the mechanism on mainnet at a small size. It is not an economics result for real capital.",
+  "outages": [],
+  "config": {
+    "chain": {
+      "id": 4663,
+      "name": "Robinhood Chain",
+      "explorer": "https://robinhoodchain.blockscout.com",
+      "publicRpc": "https://rpc.chain.robinhood.com",
+      "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+      "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+      "feedKind": "chainlink"
+    },
+    "decimals": {
+      "usdg": 6,
+      "nvda": 18
+    },
+    "window": {
+      "startTs": 1795679482,
+      "endTs": 1796050800
+    },
+    "blocks": {
+      "start": 123524533
+    },
+    "pools": {
+      "bell": {
+        "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+        "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+        "positionId": "7",
+        "tickLower": 219360,
+        "tickUpper": 231420,
+        "liquidity": "171410381287",
+        "seed": {
+          "usdg": "623286",
+          "nvda": "3172917112413521"
+        },
+        "usdgIsCurrency0": true,
+        "initSqrtPriceX96": "6058368234633833898860828011619911",
+        "seedTx": "0x440c71e431304e72967d55d5bfcd6b6988e4f31726fcc0abfb25409bce465b63",
+        "seedBlock": 123524533,
+        "initBlock": 114372026
+      },
+      "control": {
+        "poolId": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+        "hook": "0x0000000000000000000000000000000000000000",
+        "positionId": "9",
+        "tickLower": 219360,
+        "tickUpper": 231420,
+        "liquidity": "171410381287",
+        "seed": {
+          "usdg": "623286",
+          "nvda": "3172917112413521"
+        },
+        "usdgIsCurrency0": true,
+        "initSqrtPriceX96": "6058368234633833898860828011619911",
+        "seedTx": "0x65fa1a092a4c465ae725330107d0fbcf9b3510250ca5e37cf02210b7644013c9",
+        "seedBlock": 123524533,
+        "initBlock": 123524533
+      }
+    },
+    "bot": {
+      "addresses": [
+        "0xaBd42eb3a8C1AB9B0Bb06f33a133B90bc71F2715"
+      ],
+      "sourceFile": "scripts/einstein/v3-evolve/mainnet-run.mjs",
+      "sourceUrl": "https://github.com/belldex/bell/blob/main/scripts/einstein/v3-evolve/mainnet-run.mjs",
+      "sourceSha256": "8f87d01b2a50c2320b7cd85095030d5296ca1c95a72c200610fb00e68893d1de",
+      "maxUsdg": 0.5
+    },
+    "blocked": []
+  },
+  "methodCommit": "d0cb8bf0"
+}
