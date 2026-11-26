@@ -39,19 +39,19 @@ Yang menahan: keputusan modal. Dua pool (BELL dan kontrol tanpa hook) harus di-s
 
 ## Brief 3: ANT/USDG dan Einstein Hooks v3
 
-Hasil replay: 12 PASS, 3 PARTIAL, 1 PENDING. Pool 0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940, hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, dibuat di blok 121908958 dengan seed 4,8 USDG.
+Hasil replay: 13 PASS, 2 PARTIAL, 1 PENDING. Pool 0x4a956b0c5cd1c87f7480d652099a2f346667b7d978b6d8d6441a1c39664e5940, hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, dibuat di blok 121908958 dengan seed 4,8 USDG.
 
 | Klaim | Status | Catatan |
 | --- | --- | --- |
 | A1, A2, A3, A4, A6 | PASS | Token ANT Robinhood, kalender PQ, pool dibuat, hook, swap di atas cap revert TradeCapExceeded. |
 | M1, M2 | PASS | Admisi di AssetRegistry dan root kalender aktif. |
 | V1, V2, V3, V4, V6 | PASS | Halt hybrid, resume dan auction (AuctionActive), halt tanpa tanda tangan PQ revert, halt yang lapse sendiri, exit saat HALTED. |
-| A5 Fee tiap sesi | PARTIAL | Baru OVERNIGHT (5000 pips) dan PRE (3000 pips) tercatat. REGULAR, POST, CLOSED belum. |
+| A5 Fee tiap sesi | PASS | Lima sesi tercatat di mainnet dan fee dibaca dari event Swap: OVERNIGHT 5000, PRE 3000, REGULAR 500 (tx 0x4c2d07b3b3b228bbe605a593d6b740312aadbf85f8f6fc2d907c58aa473dcba7), POST 3000 (tx 0x4025f59eebbdab5453506e7d393e6527c30754f4a9d0de3e0dba12eb8c41b87a), CLOSED 10000 (tx 0x743de4650f9a674f992b05eaa01053ed8879d5a9170dce0055c3d6971b276af2). |
 | A7, V7 Sourcify | PARTIAL | Match, bukan exact. Pemilik memilih membiarkan. |
 | V5 Swap di jendela earnings | PENDING | Butuh tanggal earnings sungguhan dan root kalender berikutnya. Root sekarang berlaku sampai 1 Jan 2027 dan registry menolak root yang tumpang tindih. Kodenya sudah dibuat dan diuji. |
 | B1 | Blocker | Chainlink tidak punya feed ANT. Harga di-attest BELL lewat kunci delegate. Ini asumsi kepercayaan dan tertulis di halaman. |
 
-Jadwal A5 (otomatis, workflow `ant-session-chain`): REGULAR 25 Nov 14:30 UTC, POST 25 Nov 21:00 UTC, CLOSED 26 Nov 01:00 UTC. Kalau lolos semua: 13 PASS, 2 PARTIAL, 1 PENDING.
+A5 selesai pada 26 Nov 01:31 UTC lewat workflow `ant-session-chain`. Catatan swap CLOSED: pool memakai closing anchor untuk harga, tetapi ANT tidak punya feed on-chain, sehingga registry menolak swap tanpa laporan harga (revert `ContextMismatch`). Swap CLOSED karena itu membawa satu laporan harga yang ditandatangani kunci delegate lewat adapter OVERNIGHT, dan fee 10000 pips tetap dikenakan sebagai sesi CLOSED. Worker tidak menandatangani untuk CLOSED, jadi rantai swap memakai kunci delegate dari GitHub secret untuk swap itu.
 
 Catatan kejadian: swap REGULAR dan POST tanggal 24 Nov terlewat. Rantai swap berhenti dua kali karena dompet gas Worker kosong, sehingga Worker tidak mengaktifkan interval kalender dan menolak update harga. Dompet diisi 0,0005 ETH (tx 0x793c97662bf5647d905204fad7b22b412f6d33caf0d1e37e4ce3e3f3c4ce01be) dan rantai sekarang mencoba ulang error yang muncul sebelum swap terkirim.
 
