@@ -35,6 +35,8 @@ Status: belum jalan di mainnet. Metode sudah di-commit (`docs/einstein-v3-evolve
 | Run 2, Thanksgiving 25 sampai 30 Nov | Tidak dimulai (diputuskan 25 Nov): tidak ada modal yang didanai, jadi tidak ada yang di-seed dan diukur. Ditandai postponed di halaman. Jendela baru ditetapkan sebelum pool di-seed, dan metode di-commit dulu. |
 | Run 3, testnet 21 sampai 23 Nov | Selesai (final). Menguji mekanisme dengan token uji dan feed harga fixture, bukan ekonomi mainnet. |
 
+Kebutuhan modal dihitung (26 Nov, `scripts/einstein/v3-evolve/mainnet-capital.mjs`, hanya baca): sisi kontrol butuh sekitar 1,78 USD (0,889 USDG dan 0,00547 NVDA, likuiditas dan tick sama dengan pool BELL). Pool BELL baru membayar service fee factory 49 USDG, jadi dua pool sekitar 52,6 USD, belum termasuk inventori bot dan gas. Memakai pool NVDA yang sudah ada sebagai sisi BELL menghindari fee itu, tapi mengubah aturan seed di blok yang sama, jadi metodenya harus diubah dan di-commit sebelum run.
+
 Yang menahan: keputusan modal. Dua pool (BELL dan kontrol tanpa hook) harus di-seed dengan jumlah USD yang sama dan range yang sama. Tidak ada klaim dari Brief 2 yang bisa dibuat sebelum itu.
 
 ## Brief 3: ANT/USDG dan Einstein Hooks v3
