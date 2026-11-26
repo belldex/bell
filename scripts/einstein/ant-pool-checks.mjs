@@ -70,7 +70,7 @@ export async function poolChecks({ pc, proof, out, rpcUrl }) {
   const covered = new Set((pool.swaps ?? []).map((s) => s.session));
   const missing = Object.keys(FEE_FOR).filter((k) => !covered.has(k));
   out.A5 = !a5ok ? { verdict: 'FAIL', note: 'a recorded swap did not show its expected fee in the Swap event' }
-    : missing.length === 0 ? { verdict: 'PASS', note: `The Swap event fee matched in every session: ${seen.join(', ')}.` }
+    : missing.length === 0 ? { verdict: 'PASS', note: `The Swap event fee matched in every session: ${seen.join(', ')}. ANT has no on-chain price feed, so each swap carries a price report signed by the BELL delegate key. The CLOSED swap carries it through the OVERNIGHT adapter and is still charged the CLOSED fee.` }
     : { verdict: 'PARTIAL', note: `The Swap event fee matched in ${seen.join(', ')}. Still to be shown, as the sessions occur: ${missing.join(', ')}.` };
 
   // A6

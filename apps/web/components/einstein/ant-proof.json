@@ -685,7 +685,7 @@
     "A2  PASS    The ANT calendar root 0xe0d59218fd… was queued, executed and activated through HybridAuth governance calls (ECDSA and SHRINCS), 2 transactions succeeded, and the CalendarRegistry shows an active interval (phase 5) right now. The roots are signed by the GOVERNANCE role, not REPORTER.",
     "A3  PASS    Created and seeded in one transaction at block 121908958: the factory emitted PoolCreated for pool 0x4a956b0c5c… with hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0, and the PoolManager holds liquidity 1969771522740 for it now.",
     "A4  PASS    The hook 0x5839006Fdb458b81e50d9d393A775c1B5F406cc0 has low 14 bits 0x2cc0, and the remove-liquidity bits 9, 8 and 0 are off.",
-    "A5  PASS    The Swap event fee matched in every session: OVERNIGHT 5000 pips, PRE 3000 pips, REGULAR 500 pips, POST 3000 pips, CLOSED 10000 pips.",
+    "A5  PASS    The Swap event fee matched in every session: OVERNIGHT 5000 pips, PRE 3000 pips, REGULAR 500 pips, POST 3000 pips, CLOSED 10000 pips. ANT has no on-chain price feed, so each swap carries a price report signed by the BELL delegate key. The CLOSED swap carries it through the OVERNIGHT adapter and is still charged the CLOSED fee.",
     "A6  PASS    A swap of 0.3 USDG, above the cap of 0.06 USDG in that session, reverted on mainnet (block 121940581); replaying it on the block before returns TradeCapExceeded (0xecb1f63f).",
     "A7  PARTIAL Sourcify: the Lens is exact_match and the hook is match. The factory builds hooks without a compiler metadata hash, so the hook can only reach match until the stack is rebuilt with it and redeployed.",
     "V1  PASS    A hybrid-signed halt was recorded (Halted event, REPORTER leaf 9); a swap inside its window paid 10000 pips in the Swap event.",
