@@ -23,7 +23,9 @@ The Einstein hook contract is the one already deployed (v2). The page says "Hook
 - Run 1: Friday 20 Nov 16:00 ET to Monday 23 Nov 10:00 ET (`startTs` 1795208400, `endTs` 1795446000).
 - Run 2: Wednesday 25 Nov 16:00 ET to Monday 30 Nov 10:00 ET, over Thanksgiving.
 
-Both are published whatever they show. A run is never deleted and no sub-window is picked.
+- Run 4 (amended 26 Nov, before any seeding): from the block in which the control pool is seeded to Monday 30 Nov 10:00 ET (`endTs` 1796050800). The BELL side is the existing NVDA/USDG Einstein pool and its LP position, because a new BELL pool costs a 49 USDG service fee that this run does not pay. That breaks the "seeded in the same block" rule above: the BELL position is measured from the window start block, with its tokens valued at that block, and the control pool gets the same liquidity, ticks and opening price. Capital is about 5 USDG in total, so this shows the mechanism, not the economics of real size. The bot stops if its inventory falls 0.5 USD below its starting value, and the stop is published.
+
+All runs are published whatever they show. A run is never deleted and no sub-window is picked.
 
 ## Reference price
 

@@ -5,14 +5,47 @@
   "question": "Over a real weekend, does an LP in a BELL pool end up with more value than an LP in a plain Uniswap v4 pool with the same capital and range?",
   "design": {
     "pair": "NVDA/USDG",
-    "bell": { "hook": "Einstein hook", "fee": "session based: 5, 30, 50 and 100 bps" },
-    "control": { "hook": "none (plain Uniswap v4)", "fee": "fixed 30 bps" },
+    "bell": {
+      "hook": "Einstein hook",
+      "fee": "session based: 5, 30, 50 and 100 bps"
+    },
+    "control": {
+      "hook": "none (plain Uniswap v4)",
+      "fee": "fixed 30 bps"
+    },
     "capital": "the same USD amount in both pools, same ticks, seeded in the same block or the next",
-    "flow": ["organic: swaps from outside wallets, counted as they come", "controlled: one public bot trades both pools toward the same reference price with the same logic and the same maximum size"]
+    "flow": [
+      "organic: swaps from outside wallets, counted as they come",
+      "controlled: one public bot trades both pools toward the same reference price with the same logic and the same maximum size"
+    ]
   },
   "windows": [
-    { "run": 1, "label": "Weekend 20 to 23 November", "startTs": 1795208400, "endTs": 1795446000, "from": "Fri 20 Nov 16:00 ET", "to": "Mon 23 Nov 10:00 ET" },
-    { "run": 2, "label": "Thanksgiving 25 to 30 November", "startTs": 1795640400, "endTs": 1796050800, "from": "Wed 25 Nov 16:00 ET", "to": "Mon 30 Nov 10:00 ET" }
+    {
+      "run": 1,
+      "label": "Weekend 20 to 23 November",
+      "startTs": 1795208400,
+      "endTs": 1795446000,
+      "from": "Fri 20 Nov 16:00 ET",
+      "to": "Mon 23 Nov 10:00 ET"
+    },
+    {
+      "run": 2,
+      "label": "Thanksgiving 25 to 30 November",
+      "startTs": 1795640400,
+      "endTs": 1796050800,
+      "from": "Wed 25 Nov 16:00 ET",
+      "to": "Mon 30 Nov 10:00 ET"
+    },
+    {
+      "run": 4,
+      "label": "Thanksgiving weekend, from the control seed to 30 November",
+      "startTs": null,
+      "startRule": "the block in which the control pool is seeded",
+      "endTs": 1796050800,
+      "from": "the control seed block, 26 Nov",
+      "to": "Mon 30 Nov 10:00 ET",
+      "amendedOn": "2026-11-26"
+    }
   ],
   "referencePrice": {
     "source": "Chainlink NVDA feed on Robinhood Chain (latestRoundData)",
@@ -28,12 +61,23 @@
     "netLpResult": "valueVsHold, in bps of starting capital. The headline is BELL minus control, in bps of capital.",
     "blockedFlow": "Swaps the BELL pool refused, each linked to its reverted transaction with the error name."
   },
-  "notAllowed": ["picking a sub-window", "changing the reference price after the fact", "leaving out a session that looks bad", "deleting a run"],
+  "notAllowed": [
+    "picking a sub-window",
+    "changing the reference price after the fact",
+    "leaving out a session that looks bad",
+    "deleting a run"
+  ],
   "limits": [
     "One asset and one weekend per run. Not a guarantee for every market or every weekend.",
     "Part of the flow comes from a controlled bot, labelled separately from organic flow.",
     "The control is one fixed fee tier (30 bps). Other tiers could do better or worse.",
     "If BELL loses a run, the page says so in the verdict line.",
     "Not an audit and not financial advice."
-  ]
+  ],
+  "runFourAmendments": {
+    "note": "Committed before the control pool is seeded. Runs 1 and 2 did not start; this is the first mainnet run.",
+    "bellPool": "The existing NVDA/USDG Einstein pool and its LP position (about 0.889 USDG and 0.00547 NVDA at seed) are the BELL side. A new BELL pool would cost a 49 USDG service fee, which this run does not pay. So the BELL pool was not seeded in the same block as the control: the position is measured from the window start block, valuing its tokens at that block, and the control gets the same liquidity, ticks and opening price.",
+    "capital": "About 5 USDG in total, so the run shows the mechanism, not the economics of real size.",
+    "botLossCap": "The bot stops when its inventory is worth 0.5 USD less than at the start, and the stop is published."
+  }
 }
