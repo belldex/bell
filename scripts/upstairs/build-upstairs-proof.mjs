@@ -10,8 +10,10 @@
  * PENDING is never a PASS.
  */
 import { readFileSync, writeFileSync, existsSync, copyFileSync, mkdirSync } from 'node:fs';
-import { createPublicClient, http, parseAbi, toFunctionSelector, keccak256, toHex } from 'viem';
+import { createPublicClient, http, parseAbi, keccak256, toHex } from 'viem';
 
+// The four-byte selector of a parameterless custom error. (viem's toFunctionSelector on an error ABI item hashes a different string.)
+const errorSelector = (name) => keccak256(toHex(`${name}()`)).slice(0, 10);
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : process.env.RPC_URL ?? null; };
 const rpcUrl = arg('rpc');
 const read = (f, d) => (existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : d);
@@ -97,7 +99,7 @@ if (!deploy) {
     proof.replay.U8 = !real.swapInTx ? { verdict: 'PASS', note: 'no Swap event from the PoolManager in the fill transaction' } : { verdict: 'FAIL', note: 'the fill transaction contains a PoolManager Swap event' };
     proof.replay.U9 = real.feeOk ? { verdict: 'PASS', note: `${Number(real.feeUsdg) / 1e6} USDG reached ${feeTo} and equals 5 bps of the notional, rounded up` } : { verdict: 'FAIL', note: 'the fee transfer is missing or not 5 bps' };
   }
-  const selector = (name) => toFunctionSelector(artifact.abi.find((x) => x.type === 'error' && x.name === name));
+  const selector = errorSelector;
   for (const [id, name] of [['U4', 'OutsideBand'], ['U5', 'UpstairsClosed'], ['U6', 'NonceUsed'], ['U7', 'BelowBlockSize']]) {
     const n = negatives.find((x) => x.id === id);
     if (!n) { proof.replay[id] = pending('No reverted transaction is on record for this claim.'); continue; }

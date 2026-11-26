@@ -52,7 +52,7 @@ const gasPrice = await pc.getGasPrice();
 const bal = await pc.getBalance({ address: account.address });
 console.log(`deploy gas about ${gas}, cost about ${Number(gas * gasPrice) / 1e18} ETH, deployer holds ${Number(bal) / 1e18} ETH, bytecode ${(artifact.deployedBytecode.object.length - 2) / 2} bytes`);
 if (!broadcast) { console.log('dry run: nothing sent'); process.exit(0); }
-if (bal < gas * gasPrice * 3n) throw new Error('not enough ETH for the deployment with a margin: nothing sent');
+if (bal < (gas * gasPrice * 18n) / 10n) throw new Error('not enough ETH for the deployment with a margin: nothing sent');
 const hash = await wc.deployContract({ abi: artifact.abi, bytecode: artifact.bytecode.object, args, gas: (gas * 13n) / 10n });
 const r = await pc.waitForTransactionReceipt({ hash });
 if (r.status !== 'success') throw new Error(`deployment failed ${hash}`);

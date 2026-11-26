@@ -82,45 +82,69 @@
       "passes": "It equals 5 bps of the notional, rounded up."
     }
   ],
-  "deployment": null,
+  "deployment": {
+    "chainId": 4663,
+    "deployedAt": "2026-11-26T12:21:39.426Z",
+    "contract": "0x4896301b7c1977388b4d2bb518ff119c9c10e530",
+    "deployTx": "0xf7253d51827150e6b51f54c9f5d0d477bcd75e1a04da75d759dbe03b33fa6526",
+    "block": 123606577,
+    "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+    "constructor": {
+      "assetRegistry": "0xb02cD68bCB8D3C624b7E3AfD3a9F48a4C64D9b18",
+      "calendarRegistry": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+      "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+      "quoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "feeRecipient": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+      "minNotional": "1000000",
+      "maxNotional": "50000000",
+      "maxFeedAge": 21600,
+      "stockTokens": [
+        "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC"
+      ],
+      "feeds": [
+        "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15"
+      ]
+    },
+    "note": "No owner, no setters, no proxy. The block cap is fixed at deploy because there is no independent audit. Raising it means a new deployment. Version 1 has no TWAP fallback: an asset with no Chainlink feed (ANT) cannot trade here."
+  },
   "prints": [],
   "replay": {
     "U1": {
-      "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
+      "verdict": "PASS",
+      "note": "code at 0x4896301b7c1977388b4d2bb518ff119c9c10e530, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify exact match is not checked here."
     },
     "U2": {
       "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
+      "note": "No qualifying block print yet."
     },
     "U3": {
       "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
-    },
-    "U4": {
-      "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
-    },
-    "U5": {
-      "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
-    },
-    "U6": {
-      "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
-    },
-    "U7": {
-      "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
+      "note": "No block print to check."
     },
     "U8": {
       "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
+      "note": "No block print to check."
     },
     "U9": {
       "verdict": "PENDING",
-      "note": "UpstairsSettlement is not deployed on mainnet yet."
+      "note": "No block print to check."
+    },
+    "U4": {
+      "verdict": "PENDING",
+      "note": "No reverted transaction is on record for this claim."
+    },
+    "U5": {
+      "verdict": "PASS",
+      "note": "0x8ee3d40be3aa77677160f557e260eddb5cf971ef1699be2381d7398274cc5d46 reverted and replays with UpstairsClosed"
+    },
+    "U6": {
+      "verdict": "PENDING",
+      "note": "No reverted transaction is on record for this claim."
+    },
+    "U7": {
+      "verdict": "PASS",
+      "note": "0x8d8deeb5de3598b3d93d3c5d6a18aa0e320b192cea35486be0e1f3d7e0a8af5d reverted and replays with BelowBlockSize"
     }
   },
-  "lastBuild": "2026-11-26T12:13:23.954Z"
+  "lastBuild": "2026-11-26T12:23:36.943Z"
 }
