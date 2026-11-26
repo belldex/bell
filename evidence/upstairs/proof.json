@@ -1,0 +1,126 @@
+{
+  "title": "BELL Upstairs",
+  "spec": {
+    "band": [
+      [
+        "REGULAR",
+        50
+      ],
+      [
+        "PRE",
+        100
+      ],
+      [
+        "POST",
+        100
+      ],
+      [
+        "OVERNIGHT",
+        150
+      ],
+      [
+        "CLOSED, HALTED, UNKNOWN",
+        null
+      ]
+    ],
+    "feeBps": 5,
+    "quoteSeconds": 120
+  },
+  "claims": [
+    {
+      "id": "U1",
+      "title": "The contract is what we say",
+      "proof": "Code on chain, no proxy slots, no owner or setter in the ABI.",
+      "passes": "All three hold. Sourcify exact match is checked by hand and listed in the note."
+    },
+    {
+      "id": "U2",
+      "title": "A real block settled",
+      "proof": "A BlockPrint at or above the block minimum between two different wallets, neither the deployer.",
+      "passes": "Such a print exists."
+    },
+    {
+      "id": "U3",
+      "title": "The price respected the band",
+      "proof": "The reference price and band for that block and session, recomputed.",
+      "passes": "The price is inside the band and the reference matches."
+    },
+    {
+      "id": "U4",
+      "title": "Out-of-band quotes fail",
+      "proof": "A reverted fill with OutsideBand.",
+      "passes": "The transaction reverted and replays with that error."
+    },
+    {
+      "id": "U5",
+      "title": "Closed-market fills fail",
+      "proof": "A reverted fill during CLOSED with UpstairsClosed.",
+      "passes": "The transaction reverted and replays with that error."
+    },
+    {
+      "id": "U6",
+      "title": "Replays fail",
+      "proof": "A second fill of the same quote with NonceUsed.",
+      "passes": "The transaction reverted and replays with that error."
+    },
+    {
+      "id": "U7",
+      "title": "Small trades are sent to the pool",
+      "proof": "A fill below the block minimum with BelowBlockSize.",
+      "passes": "The transaction reverted and replays with that error."
+    },
+    {
+      "id": "U8",
+      "title": "The pool was untouched",
+      "proof": "The logs of the fill transaction.",
+      "passes": "No Swap event from the PoolManager in the fill transaction."
+    },
+    {
+      "id": "U9",
+      "title": "The fee reached its address",
+      "proof": "The fee transfer in the fill transaction.",
+      "passes": "It equals 5 bps of the notional, rounded up."
+    }
+  ],
+  "deployment": null,
+  "prints": [],
+  "replay": {
+    "U1": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U2": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U3": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U4": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U5": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U6": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U7": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U8": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    },
+    "U9": {
+      "verdict": "PENDING",
+      "note": "UpstairsSettlement is not deployed on mainnet yet."
+    }
+  },
+  "lastBuild": "2026-11-26T12:13:23.954Z"
+}

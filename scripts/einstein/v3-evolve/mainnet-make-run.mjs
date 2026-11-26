@@ -29,7 +29,7 @@ const run = {
   note: 'Mainnet, real tokens, about 5 USDG in total. The BELL side is the existing NVDA/USDG pool; the control pool was seeded at the BELL pool\'s price with the same liquidity and ticks, and both are measured from that block. The bot trades only while the Chainlink NVDA round is at most 6 hours old. This shows the mechanism on mainnet at a small size. It is not an economics result for real capital.',
   outages: [],
   config: {
-    chain: { id: 4663, name: 'Robinhood Chain', explorer: 'https://robinhoodchain.blockscout.com', publicRpc: 'https://rpc.chain.robinhood.com', poolManager: cfg.poolManager, feed: cfg.feed, feedKind: 'chainlink' },
+    chain: { id: 4663, name: 'Robinhood Chain', explorer: 'https://robinhoodchain.blockscout.com', publicRpc: 'https://rpc.mainnet.chain.robinhood.com', poolManager: cfg.poolManager, feed: cfg.feed, feedKind: 'chainlink' },
     decimals: { usdg: 6, nvda: 18 },
     window: { startTs: cfg.window.startTs, endTs: cfg.window.endTs },
     blocks: { start: cfg.window.startBlock },
