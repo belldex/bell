@@ -41,7 +41,9 @@ export async function readAntPrice(symbol, fetchImpl = fetch, nowMs = Date.now()
 }
 
 /** `cfg` is { assetId, calendarRegistry, adapters: {name: address}, feedIds: [direct, regular, extended, overnight] }. */
-export async function buildAntUpdate({ cfg, delegateKey, client, fetchImpl = fetch, symbol = 'ANT' }) {
+/** In a CLOSED interval no session has a report of its own, but a pool with no on-chain feed still refuses a swap that carries none. `closedCarrier`
+ *  lets that one swap carry a report through the OVERNIGHT adapter (scope 3, sample phase 4); the pool still prices and charges the swap as CLOSED. */
+export async function buildAntUpdate({ cfg, delegateKey, client, fetchImpl = fetch, symbol = 'ANT', closedCarrier = false }) {
   if (!cfg?.assetId || !cfg.adapters || !cfg.feedIds || !delegateKey) throw new AntUpdateError('ANT updates are not configured', 503);
   const delegate = privateKeyToAccount(delegateKey.startsWith('0x') ? delegateKey : `0x${delegateKey}`);
   const price = await readAntPrice(symbol, fetchImpl);
@@ -51,8 +53,9 @@ export async function buildAntUpdate({ cfg, delegateKey, client, fetchImpl = fet
   ]);
   const now = Number(block.timestamp);
   const phase = Number(interval.phase);
-  if (BigInt(now) < interval.start || BigInt(now) >= interval.end || !(phase in SCOPE_OF_PHASE)) throw new AntUpdateError('no active session to report for');
-  const scope = SCOPE_OF_PHASE[phase];
+  if (BigInt(now) < interval.start || BigInt(now) >= interval.end || !(phase in SCOPE_OF_PHASE || (closedCarrier && phase === 5))) throw new AntUpdateError('no active session to report for');
+  const scope = phase === 5 ? 3 : SCOPE_OF_PHASE[phase];
+  const samplePhase = phase === 5 ? 4 : phase;
   const price18 = BigInt(Math.round(price * 1e6)) * 10n ** 12n;
   const mk = (feedId, samplePhase, tag) => ({
     descriptorId: ZERO32, feedId, phase: samplePhase, price18, observedAt: BigInt(now - 3), inputAt: BigInt(now - 3), validFrom: BigInt(now - 3),
@@ -65,7 +68,7 @@ export async function buildAntUpdate({ cfg, delegateKey, client, fetchImpl = fet
     return delegate.sign({ hash: digest });
   };
   const direct = mk(cfg.feedIds[0] ?? ZERO32, 0, 'direct');
-  const stream = mk(cfg.feedIds[scope], phase, `stream${scope}`);
+  const stream = mk(cfg.feedIds[scope], samplePhase, `stream${scope}`);
   const [directSig, streamSig] = await Promise.all([sign(cfg.adapters[ADAPTER_NAMES[0]], direct), sign(cfg.adapters[ADAPTER_NAMES[scope]], stream)]);
   const directSignature = encodeAbiParameters(parseAbiParameters('uint256 deadline, bytes ecdsa, bytes pq'), [deadline, directSig, '0x']);
   const report = encodeAbiParameters(parseAbiParameters(`${SAMPLE} sample, uint256 deadline, bytes ecdsa, bytes pq`), [stream, deadline, streamSig, '0x']);

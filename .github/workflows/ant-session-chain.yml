@@ -42,6 +42,7 @@ jobs:
         env:
           RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
           ANT_PROVER_PRIVATE_KEY: ${{ secrets.ANT_PROVER_PRIVATE_KEY }}
+          ANT_DELEGATE_PRIVATE_KEY: ${{ secrets.ANT_DELEGATE_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "bell-keeper"

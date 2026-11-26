@@ -9,7 +9,7 @@
  *
  * The swapper is ANT_PROVER_PRIVATE_KEY when set (a separate wallet that holds no pool position, used by the CI workflow), else LP_TEST.
  * With no delegate key in the environment, the price update is fetched from the keeper-b Worker's /ant-update, as the swap page does.
- * In a closed session there is no report to sign (the pool prices from its closing anchor), so the swap carries no update.
+ * In a closed session the pool prices from its closing anchor, but ANT has no on-chain feed and the registry refuses a swap with no report, so the swap carries a report through the OVERNIGHT adapter (needs ANT_DELEGATE_PRIVATE_KEY; the Worker does not sign for CLOSED).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http, parseAbi, parseUnits, parseEventLogs } from 'viem';
@@ -55,9 +55,9 @@ const v4Pending = Boolean(hp.v4?.haltedUntil) && now > hp.v4.haltedUntil + 240 &
 if (auto && !process.argv.includes('--force') && !v4Pending && doc.swaps.some((x) => x.session === expect)) { console.log(`${expect} is already recorded: nothing to do`); process.exit(0); }
 
 let updates = [];
-if (expect !== 'CLOSED') {
+{
   let b;
-  if (env.ANT_DELEGATE_PRIVATE_KEY) b = await buildAntUpdate({ cfg, delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client: pc });
+  if (env.ANT_DELEGATE_PRIVATE_KEY) b = await buildAntUpdate({ cfg, delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client: pc, closedCarrier: expect === 'CLOSED' });
   else { const r = await fetch(`${env.ANT_UPDATE_URL || 'https://bell-keeper-b.asysyifaq25.workers.dev'}/ant-update`); b = await r.json(); if (!r.ok) throw new Error(`the Worker refused the update: ${b.error}`); }
   updates = [{ assetId: b.assetId, directSample: Object.fromEntries(Object.entries(b.directSample).map(([k, v]) => ['price18', 'observedAt', 'inputAt', 'validFrom', 'expiresAt', 'validUntil', 'phase'].includes(k) ? [k, BigInt(v)] : [k, v])), directSignature: b.directSignature, reports: b.reports, closeBoundaryHash: b.closeBoundaryHash }];
 }
