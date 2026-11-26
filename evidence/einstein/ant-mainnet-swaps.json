@@ -24,6 +24,12 @@
       "tx": "0x4025f59eebbdab5453506e7d393e6527c30754f4a9d0de3e0dba12eb8c41b87a",
       "amountUsdg": 0.02,
       "expectedFeePips": 3000
+    },
+    {
+      "session": "CLOSED",
+      "tx": "0x743de4650f9a674f992b05eaa01053ed8879d5a9170dce0055c3d6971b276af2",
+      "amountUsdg": 0.02,
+      "expectedFeePips": 10000
     }
   ],
   "a6": {
