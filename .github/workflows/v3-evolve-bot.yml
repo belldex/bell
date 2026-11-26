@@ -1,0 +1,62 @@
+name: v3 Evolve run 4 bot
+
+# The arbitrage bot of v3 Evolve run 4 (docs/einstein-v3-evolve-method.md): it trades the BELL NVDA/USDG pool and the control pool toward the Chainlink NVDA
+# price with the same rule and size, only while the feed round is at most 6 hours old. The feed moves only while the market is open, so the bot runs in
+# short jobs around those hours instead of all weekend: Friday 27 Nov (half day), the Monday 30 Nov open before the window ends at 10:00 ET, and a
+# 20 minute check every three hours in between for any other feed update. Jobs share one concurrency group. Every run commits the bot log, and a gap in
+# the log is published as a gap. The bot wallet is a dedicated wallet that only holds this run's test funds.
+
+on:
+  schedule:
+    - cron: "10 14 27 11 *"
+    - cron: "40 13 30 11 *"
+    - cron: "7 */3 26-30 11 *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "How long the loop runs"
+        default: "20"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v3-evolve-bot
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 250
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run the bot
+        env:
+          RH_MAINNET_RPC_PRIMARY: ${{ secrets.RH_MAINNET_RPC_PRIMARY }}
+          V3_EVOLVE_BOT_PRIVATE_KEY: ${{ secrets.V3_EVOLVE_BOT_PRIVATE_KEY }}
+          MINUTES: ${{ inputs.minutes || (github.event.schedule == '10 14 27 11 *' && '225') || (github.event.schedule == '40 13 30 11 *' && '75') || '20' }}
+        run: node scripts/einstein/v3-evolve/mainnet-run.mjs loop --minutes "$MINUTES"
+
+      - name: Commit the bot log
+        if: always()
+        run: |
+          if [ -z "$(git status --porcelain evidence/einstein/v3-evolve/run-4-bot-log.jsonl)" ]; then echo "nothing new"; exit 0; fi
+          git config user.name "bell-keeper"
+          git config user.email "bell-keeper@users.noreply.github.com"
+          git add evidence/einstein/v3-evolve/run-4-bot-log.jsonl
+          git commit -m "test(einstein): v3 Evolve run 4 bot log"
+          git pull --rebase origin main
+          git push origin HEAD:main

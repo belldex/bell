@@ -1,0 +1,56 @@
+{
+  "chainId": 4663,
+  "createdAt": "2026-11-26T07:51:17.901Z",
+  "window": {
+    "startTs": 1795679482,
+    "endTs": 1796050800,
+    "startBlock": 123524533
+  },
+  "executor": "0x831c9272a482bbb8c84686a1c07be1f9acb2e405",
+  "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+  "router": "0x178d78419e8b7cd1f5e1e4a65f71d86c7f6516d5",
+  "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+  "tokens": {
+    "nvda": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+    "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+  },
+  "bot": {
+    "address": "0xaBd42eb3a8C1AB9B0Bb06f33a133B90bc71F2715",
+    "maxUsdg": 0.5,
+    "minUsdg": 0.01,
+    "lossCapUsd": 0.5,
+    "startValueUsd": 3.8881939549914772,
+    "startUsdg": 2.376714,
+    "startNvda": 0.009967376559459108,
+    "startRefPrice": 151.64270618,
+    "sourceFile": "scripts/einstein/v3-evolve/mainnet-run.mjs",
+    "rule": "scripts/einstein/v3-evolve/arb.mjs"
+  },
+  "pools": {
+    "bell": {
+      "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+      "hook": "0x745a56cA016502c3e5571070ac64E3Be9EBd2cc0",
+      "liquidity": "171410381287",
+      "startSqrtPriceX96": "6058368234633833898860828011619911",
+      "tickLower": 219360,
+      "tickUpper": 231420
+    },
+    "control": {
+      "poolId": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
+      "hook": "0x0000000000000000000000000000000000000000",
+      "fee": 3000,
+      "key": {
+        "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "currency1": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+        "fee": 3000,
+        "tickSpacing": 60,
+        "hooks": "0x0000000000000000000000000000000000000000"
+      },
+      "seedTx": "0x65fa1a092a4c465ae725330107d0fbcf9b3510250ca5e37cf02210b7644013c9",
+      "initializeTx": "0x615003ea8f89f8e53f94ebf70556cd20b661660c1a728202eccad8b64c19d033",
+      "seedBlock": 123524533,
+      "positionTokenId": "9"
+    }
+  },
+  "executorTx": "0xbae7052be985b7761eff9ba6c4ae35b9e03c46c22666892f1673529f49df4cde"
+}
