@@ -1160,7 +1160,8 @@ const worker = {
         if (!env.ANT_DELEGATE_PRIVATE_KEY || !env.BELL_ANT_CONFIG || !rpcUrl) throw new AntUpdateError('ANT updates are not configured', 503);
         const client = createPublicClient({ transport: http(rpcUrl) });
         if (await client.getChainId() !== 4663) throw new AntUpdateError('ANT updates are temporarily unavailable', 503);
-        const bundle = await buildAntUpdate({ cfg: JSON.parse(env.BELL_ANT_CONFIG), delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client });
+        // ?closed=1 asks for the CLOSED carrier: a swap in a closed interval still needs a report on a pool with no on-chain feed. Without it CLOSED is refused, as before.
+        const bundle = await buildAntUpdate({ cfg: JSON.parse(env.BELL_ANT_CONFIG), delegateKey: env.ANT_DELEGATE_PRIVATE_KEY, client, closedCarrier: url.searchParams.get('closed') === '1' });
         const response = json(bundle);
         response.headers.set('cache-control', 'no-store');
         return cors(response);
