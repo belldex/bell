@@ -24,7 +24,7 @@ const SPEC = {
   feeBps: 5, quoteSeconds: 120,
 };
 const CLAIMS = [
-  ['U1', 'The contract is what we say', 'Code on chain, no proxy slots, no owner or setter in the ABI.', 'All three hold. Sourcify exact match is checked by hand and listed in the note.'],
+  ['U1', 'The contract is what we say', 'Code on chain, no proxy slots, no owner or setter in the ABI.', 'All three hold. Sourcify exact match is not possible without a metadata hash, so the note records the Sourcify match instead.'],
   ['U2', 'A real block settled', 'A BlockPrint at or above the block minimum between two different wallets, neither the deployer.', 'Such a print exists.'],
   ['U3', 'The price respected the band', 'The reference price and band for that block and session, recomputed.', 'The price is inside the band and the reference matches.'],
   ['U4', 'Out-of-band quotes fail', 'A reverted fill with OutsideBand.', 'The transaction reverted and replays with that error.'],
@@ -61,7 +61,7 @@ if (!deploy) {
     && (await slot('0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103')) === 0n;
   const bad = artifact.abi.filter((x) => x.type === 'function' && /^(set|owner|transferOwnership|renounceOwnership|upgrade|pause|withdraw|sweep)/i.test(x.name)).map((x) => x.name);
   proof.replay.U1 = code && code !== '0x' && noProxy && !bad.length
-    ? { verdict: 'PASS', note: `code at ${addr}, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify exact match is not checked here.` }
+    ? { verdict: 'PASS', note: `code at ${addr}, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify reports a runtime and creation match (id 60000580), not an exact match: the build carries no metadata hash.` }
     : { verdict: 'FAIL', note: `code ${code ? 'present' : 'missing'}, no proxy slots ${noProxy}, suspicious functions ${bad.join(',') || 'none'}` };
 
   const min = BigInt(deploy.constructor.minNotional);

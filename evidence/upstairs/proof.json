@@ -31,7 +31,7 @@
       "id": "U1",
       "title": "The contract is what we say",
       "proof": "Code on chain, no proxy slots, no owner or setter in the ABI.",
-      "passes": "All three hold. Sourcify exact match is checked by hand and listed in the note."
+      "passes": "All three hold. Sourcify exact match is not possible without a metadata hash, so the note records the Sourcify match instead."
     },
     {
       "id": "U2",
@@ -111,7 +111,7 @@
   "replay": {
     "U1": {
       "verdict": "PASS",
-      "note": "code at 0x4896301b7c1977388b4d2bb518ff119c9c10e530, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify exact match is not checked here."
+      "note": "code at 0x4896301b7c1977388b4d2bb518ff119c9c10e530, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify reports a runtime and creation match (id 60000580), not an exact match: the build carries no metadata hash."
     },
     "U2": {
       "verdict": "PENDING",
@@ -146,5 +146,5 @@
       "note": "0x8d8deeb5de3598b3d93d3c5d6a18aa0e320b192cea35486be0e1f3d7e0a8af5d reverted and replays with BelowBlockSize"
     }
   },
-  "lastBuild": "2026-11-26T12:23:36.943Z"
+  "lastBuild": "2026-11-26T13:29:41.140Z"
 }
