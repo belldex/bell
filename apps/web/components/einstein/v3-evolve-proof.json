@@ -817,7 +817,7 @@
           "id": 4663,
           "name": "Robinhood Chain",
           "explorer": "https://robinhoodchain.blockscout.com",
-          "publicRpc": "https://rpc.chain.robinhood.com",
+          "publicRpc": "https://rpc.mainnet.chain.robinhood.com",
           "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
           "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
           "feedKind": "chainlink"
@@ -883,8 +883,8 @@
       "result": {
         "blocks": {
           "start": 123524533,
-          "end": 123590066,
-          "head": 123590066
+          "end": 123700138,
+          "head": 123700138
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -895,7 +895,7 @@
             "updatedAt": 1795652351
           },
           "end": {
-            "block": 123590066,
+            "block": 123700138,
             "roundId": "18446744073709554221",
             "price": 151.64270618,
             "updatedAt": 1795652351,
@@ -991,7 +991,7 @@
           }
         ]
       },
-      "generatedAt": "2026-11-26T11:05:24.059Z",
+      "generatedAt": "2026-11-26T19:22:55.895Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -1032,5 +1032,5 @@
       }
     }
   ],
-  "lastBuild": "2026-11-26T11:05:24.461Z"
+  "lastBuild": "2026-11-26T19:22:56.379Z"
 }

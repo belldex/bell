@@ -6,3 +6,6 @@
 {"at":"2026-11-26T07:58:54.606Z","pool":"feed","action":"stale","ageSeconds":27583}
 {"at":"2026-11-26T11:00:22.106Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
 {"at":"2026-11-26T11:00:22.107Z","pool":"feed","action":"stale","ageSeconds":38470}
+{"at":"2026-11-26T19:01:33.452Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
+{"at":"2026-11-26T19:09:43.461Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
+{"at":"2026-11-26T19:17:53.541Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
