@@ -1,2 +1,6 @@
 {"at":"2026-11-26T07:52:55.438Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
 {"at":"2026-11-26T07:52:55.440Z","pool":"feed","action":"stale","ageSeconds":27222}
+{"at":"2026-11-26T07:53:54.366Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-26T07:53:54.366Z","pool":"feed","action":"stale","ageSeconds":27283}
+{"at":"2026-11-26T07:58:54.605Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-26T07:58:54.606Z","pool":"feed","action":"stale","ageSeconds":27583}
