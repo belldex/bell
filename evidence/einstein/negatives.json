@@ -54,5 +54,12 @@
     "gasUsed": 524641,
     "amountInRaw": "10000",
     "direction": "usdg"
+  },
+  {
+    "id": "N6",
+    "tx": "0x27c3d74a4a2409d940da4d5b5784f627d6407cceedb262b6a4f82378a29935c5",
+    "block": 123874976,
+    "error": "AuctionActive",
+    "selector": "0xb37f7006"
   }
 ]

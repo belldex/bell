@@ -1,0 +1,29 @@
+{
+  "auction": "0xE24092Ed409DfE4edA17c80801f989f2c5D4Ac17",
+  "cycle": "3",
+  "orders": [
+    {
+      "side": "buy",
+      "wallet": "0xf3784048450e72596cd18bF079aED441894176e4",
+      "tx": "0x631c54654694b81dbd5b136230b2af0f61481b6637af6db774ed65cba1a09137",
+      "block": 123874747
+    },
+    {
+      "side": "sell",
+      "wallet": "0xE4d14b0494937221fA4f78a5e5a9BaD6Fa8753D3",
+      "tx": "0xbb0b9ea2b60046dc7eaa624d4220eec8d2d77a44be443fd9f00779c45fdaba23",
+      "block": 123874743
+    }
+  ],
+  "indicative": {
+    "priceX96": "12257190952175550464",
+    "matchedBase": "120000000000000"
+  },
+  "settleTx": "0x4c2ea13527b64dd7d7f1e12fd6ce9c9aad47e1f1b40a70469e2fa97f9cb49f90",
+  "settled": {
+    "stage": "SETTLED",
+    "clearingPriceX96": "12257190952175550464",
+    "matchedBase": "120000000000000"
+  },
+  "note": "Run by hand on 27 Nov 2026 because the scheduled CI run did not send its orders in time. The pool was RECOVERING after the closure until its calendar interval was activated and a fresh observation was 60 seconds old; settle was called at 01:13:36 UTC, before the 01:15 deadline."
+}

@@ -492,12 +492,48 @@
       "title": "The auction works with real orders",
       "question": "Does the auction work with real orders?",
       "passes": "At least two orders on opposite sides fill at one uniform price.",
-      "pending": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC. The same auction code ran a full cycle on the Elysium testnet on 7 November (not a mainnet proof): a sell and a buy order, settle in transaction 0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda, one clearing price of 99 USDG per stock, and an ordinary swap during the window reverted (transaction 0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80). Evidence: evidence/deploy/elysium-testnet-tests.json.",
-      "checks": [],
+      "checks": [
+        {
+          "kind": "txSuccess",
+          "label": "buy order",
+          "tx": "0x631c54654694b81dbd5b136230b2af0f61481b6637af6db774ed65cba1a09137"
+        },
+        {
+          "kind": "txSuccess",
+          "label": "sell order",
+          "tx": "0xbb0b9ea2b60046dc7eaa624d4220eec8d2d77a44be443fd9f00779c45fdaba23"
+        },
+        {
+          "kind": "callWord",
+          "label": "cycle finalized",
+          "to": "0xE24092Ed409DfE4edA17c80801f989f2c5D4Ac17",
+          "data": "0xd230bf040000000000000000000000000000000000000000000000000000000000000003",
+          "word": 5,
+          "equals": 1
+        },
+        {
+          "kind": "callWordMin",
+          "label": "matched base",
+          "to": "0xE24092Ed409DfE4edA17c80801f989f2c5D4Ac17",
+          "data": "0xd230bf040000000000000000000000000000000000000000000000000000000000000003",
+          "word": 4,
+          "min": 1
+        }
+      ],
+      "passNote": "Cycle 3: a buy order and a sell order from two different wallets were submitted inside the order window, and the cycle finalized at one clearing price (12257190952175550464 in X96) with 120000000000000 base units matched.",
       "result": {
-        "verdict": "PENDING",
-        "note": "The first auction cycle closed on 16 November with no orders in it: the script that places them started after the ten-minute window. The next cycle opens its order window on 23 November at 00:50 UTC. The same auction code ran a full cycle on the Elysium testnet on 7 November (not a mainnet proof): a sell and a buy order, settle in transaction 0xc1fed537d9757417c9a576b7a59b9371efdb19e44c1fbb440fe640d6db849eda, one clearing price of 99 USDG per stock, and an ordinary swap during the window reverted (transaction 0xf72e2336ea9b451c19e31f72aae7e06226021870b677e8a83780c7d94a348e80). Evidence: evidence/deploy/elysium-testnet-tests.json.",
-        "gas": []
+        "verdict": "PASS",
+        "note": "Cycle 3: a buy order and a sell order from two different wallets were submitted inside the order window, and the cycle finalized at one clearing price (12257190952175550464 in X96) with 120000000000000 base units matched.",
+        "gas": [
+          {
+            "label": "buy order",
+            "gasUsed": 203326
+          },
+          {
+            "label": "sell order",
+            "gasUsed": 228731
+          }
+        ]
       }
     },
     {
@@ -588,17 +624,23 @@
         },
         {
           "kind": "revertReason",
+          "label": "N6",
+          "tx": "0x27c3d74a4a2409d940da4d5b5784f627d6407cceedb262b6a4f82378a29935c5",
+          "selector": "0xb37f7006",
+          "error": "AuctionActive"
+        },
+        {
+          "kind": "revertReason",
           "label": "N7",
           "tx": "0xd7241ddb0c63eaf717456af14b6551929ce1e003d6171f8aab866d23c1a29ae1",
           "selector": "0x8b60127a",
           "error": "PolicyBlocked"
         }
       ],
-      "partial": "Reverted on mainnet with the named error: N1, N2, N3, N4, N5, N7. Not yet sent: N6.",
       "passNote": "Every negative test reverted on mainnet with the named error.",
       "result": {
-        "verdict": "PARTIAL",
-        "note": "Reverted on mainnet with the named error: N1, N2, N3, N4, N5, N7. Not yet sent: N6.",
+        "verdict": "PASS",
+        "note": "Every negative test reverted on mainnet with the named error.",
         "gas": []
       }
     },
@@ -771,12 +813,19 @@
       "id": "N6",
       "attempt": "Ordinary swap during the auction window",
       "mustRevertWith": "AuctionActive",
-      "mainnetTx": null,
-      "status": "PENDING",
-      "note": "Not yet sent on mainnet.",
+      "mainnetTx": "0x27c3d74a4a2409d940da4d5b5784f627d6407cceedb262b6a4f82378a29935c5",
+      "status": "PROVEN",
+      "note": "Reverted on mainnet in block 123874976 with AuctionActive.",
+      "check": {
+        "kind": "revertReason",
+        "label": "N6",
+        "tx": "0x27c3d74a4a2409d940da4d5b5784f627d6407cceedb262b6a4f82378a29935c5",
+        "selector": "0xb37f7006",
+        "error": "AuctionActive"
+      },
       "result": {
-        "verdict": "PENDING",
-        "note": "Not yet sent on mainnet."
+        "verdict": "PASS",
+        "note": "N6: reverted, AuctionActive selector found in the revert data"
       }
     },
     {
@@ -806,5 +855,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-24T06:24:31.018Z"
+  "lastRun": "2026-11-27T01:14:53.737Z"
 }
