@@ -3,7 +3,8 @@ name: v3 Evolve run 4 bot
 # The arbitrage bot of v3 Evolve run 4 (docs/einstein-v3-evolve-method.md): it trades the BELL NVDA/USDG pool and the control pool toward the Chainlink NVDA
 # price with the same rule and size, only while the feed round is at most 6 hours old. The feed moves only while the market is open, so the bot runs in
 # short jobs around those hours instead of all weekend: Friday 27 Nov (half day), the Monday 30 Nov open before the window ends at 10:00 ET, and a
-# 20 minute check every three hours in between for any other feed update. Jobs share one concurrency group. Every run commits the bot log, and a gap in
+# 20 minute check every three hours in between for any other feed update. GitHub does not run scheduled workflows on time (the 27 Nov auction start was skipped),
+# so every job also starts the next one until the window closes: the run does not depend on the schedule. Jobs share one concurrency group. Every run commits the bot log, and a gap in
 # the log is published as a gap. The bot wallet is a dedicated wallet that only holds this run's test funds.
 
 on:
@@ -66,3 +67,14 @@ jobs:
           git add -- $files
           git commit -m "test(einstein): v3 Evolve run 4 refresh"
           if git pull -q --rebase origin main && git push -q origin HEAD:main; then gh workflow run pages-deploy.yml --repo "$GITHUB_REPOSITORY" || echo "::warning::could not start the site deploy"; else echo "::warning::push failed, retried next time"; fi
+
+      - name: Start the next job until the window closes
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date +%s)" -lt 1796050800 ]; then
+            gh workflow run v3-evolve-bot.yml --repo "$GITHUB_REPOSITORY" -f minutes=230 || echo "::warning::could not start the next bot job"
+          else
+            echo "the window has closed: no next job"
+          fi
