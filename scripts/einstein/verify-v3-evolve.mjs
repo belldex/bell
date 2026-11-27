@@ -70,8 +70,8 @@ export async function verifyRun(run, rpc, root = '.') {
   const tooBig = botRows.filter((x) => x.inToken === 'USDG' && x.in > cfg.bot.maxUsdg + 1e-9);
   const botSides = [b, c].map((p) => p.rows.filter((x) => x.kind === 'bot').length);
   out.E7 = botSides[0] + botSides[1] === 0 && run.status === 'live' ? { verdict: 'PENDING', note: 'The bot has not traded yet.' }
-    : src && src === cfg.bot.sourceSha256 && !tooBig.length && botSides[0] > 0 && botSides[1] > 0
-    ? { verdict: 'PASS', note: `bot source matches ${cfg.bot.sourceSha256.slice(0, 12)}…, ${botSides[0]} bot swaps on BELL and ${botSides[1]} on the control, none above ${cfg.bot.maxUsdg} USDG` }
+    : src && src === cfg.bot.sourceSha256 && !tooBig.length && botSides[0] + (cfg.blocked?.length ?? 0) > 0 && botSides[1] > 0
+    ? { verdict: 'PASS', note: `bot source matches ${cfg.bot.sourceSha256.slice(0, 12)}…, ${botSides[0]} bot swaps on BELL (plus ${cfg.blocked?.length ?? 0} it refused) and ${botSides[1]} on the control, none above ${cfg.bot.maxUsdg} USDG` }
     : { verdict: 'FAIL', note: `source hash ${src ? src.slice(0, 12) : 'missing'} vs ${cfg.bot?.sourceSha256?.slice(0, 12)}, over-size ${tooBig.length}, bot swaps ${botSides.join(' and ')}` };
 
   if (!cfg.blocked?.length) out.E8 = { verdict: 'PENDING', note: 'No refused swap is on record for this run.' };

@@ -53,9 +53,13 @@ function verdictLine(run: Run) {
   if (run.postponed && !run.result) return <>Run {run.id} did not start on {day(run.window.startTs)} ET. The pools were not funded in time, so nothing was seeded or measured. New dates are set before any pool is seeded.</>;
   if (run.status === "scheduled" || !run.result) return <>Run {run.id} starts {day(run.window.startTs)} ET. Nothing is measured yet, so there is no result to show.</>;
   const g = run.result.verdict.gapBps;
-  const live = run.status === "live";
-  if (g === 0) return <>{live ? "Run in progress: " : ""}the BELL LP and the plain v4 LP are level.</>;
-  return <>{live ? "Run in progress: so far, the" : `Over ${run.label.toLowerCase()}, the`} BELL LP {live ? "is" : "ended"} <b>{Math.abs(g).toFixed(1)} bps of capital {g > 0 ? "ahead of" : "behind"}</b> a plain v4 LP.</>;
+  if (run.status === "live") {
+    // While the run is open the two pools are not comparable: they see different flow, and the BELL pool refuses trades its caps do not allow. No gap, no winner.
+    const b = run.result.bell.swaps; const c = run.result.control.swaps;
+    return <>Run in progress: {b} swap{b === 1 ? "" : "s"} on the BELL pool and {c} on the control pool so far. There is no verdict until the window closes on {day(run.window.endTs)} ET, because the two pools can only be compared once both have traded under the same rules.</>;
+  }
+  if (g === 0) return <>The BELL LP and the plain v4 LP are level.</>;
+  return <>{`Over ${run.label.toLowerCase()}, the`} BELL LP ended <b>{Math.abs(g).toFixed(1)} bps of capital {g > 0 ? "ahead of" : "behind"}</b> a plain v4 LP.</>;
 }
 
 function PoolCard({ pool, title, hook }: { pool: Pool; title: string; hook: string }) {
@@ -146,6 +150,7 @@ export function V3EvolvePage() {
           <p className="ve-verdict__line">{verdictLine(current)}</p>
           {testnet && (current.outages?.length ?? 0) > 0 && <p className="ein-fine"><b>The bot was not running</b> {current.outages!.map((o) => `from ${day(o.fromTs)} to ${day(o.toTs)} ET`).join("; ")}. The price path is a function of the clock, so when it came back it jumped to where the path had gone, and the pools were arbitraged on that jump.</p>}
           {testnet && <p className="ein-fine"><b>Testnet run.</b> Test tokens, a fixture price feed that follows a published seeded path, and the Einstein stack redeployed on Robinhood testnet. It tests the machinery. It is not a mainnet result, and the mainnet Run 1 is still postponed until the pools are funded.</p>}
+          {current.status === "live" && <p className="ein-fine"><b>Not a comparison yet.</b> The per-pool numbers below move with every trade. A pool that has been traded shows the cost of that trade, and a pool whose caps refused the bot shows nothing, so the two only line up once the window has closed.</p>}
           {r && r.pendingReferences > 0 && <p className="ein-fine">{r.pendingReferences} swap(s) are left out of LVR until the feed publishes its next round.</p>}
         </section>
 
@@ -247,7 +252,7 @@ export function V3EvolvePage() {
             {runs.map((run) => (
               <li key={run.id} data-status={run.status}>
                 <b>Run {run.id}</b><span>{run.label}{run.network === "testnet" ? " (testnet)" : ""}</span>
-                <span>{run.postponed && run.status === "scheduled" ? "postponed, not started" : run.status === "scheduled" ? "scheduled" : run.result ? `${run.status}, gap ${bps(run.result.verdict.gapBps)}` : run.status}</span>
+                <span>{run.postponed && run.status === "scheduled" ? "postponed, not started" : run.status === "scheduled" ? "scheduled" : run.result ? (run.status === "live" ? "live, no verdict yet" : `${run.status}, gap ${bps(run.result.verdict.gapBps)}`) : run.status}</span>
               </li>
             ))}
           </ol>

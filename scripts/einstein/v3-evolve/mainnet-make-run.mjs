@@ -38,7 +38,7 @@ const run = {
       control: pool(control, { positionId: control.positionTokenId, seedTx: control.seedTx, initBlock: control.seedBlock }),
     },
     bot: { addresses: [cfg.bot.address], sourceFile: cfg.bot.sourceFile, sourceUrl: `https://github.com/belldex/bell/blob/main/${cfg.bot.sourceFile}`, sourceSha256: sha, maxUsdg: cfg.bot.maxUsdg },
-    blocked: [],
+    blocked: existsSync('evidence/einstein/v3-evolve/run-4-blocked.json') ? JSON.parse(readFileSync('evidence/einstein/v3-evolve/run-4-blocked.json', 'utf8')) : [],
   },
 };
 const out = 'evidence/einstein/v3-evolve/run-4.json';

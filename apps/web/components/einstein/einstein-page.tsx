@@ -31,8 +31,8 @@ const never = [
 
 const status = [
   { state: "Live", title: "Contracts on mainnet", text: "Fifteen contracts since 14 November 2026. The source is verified on Sourcify as a match, not an exact match, because the build embeds no metadata hash." },
-  { state: "Live", title: "Calendars for AAPL, NVDA and TSLA", text: "Signed with both keys, queued, executed and active through 31 December 2026. Nothing activates the next interval automatically yet. The current one ends on 16 November at 01:00 UTC." },
-  { state: "Not yet", title: "A pool", text: "No pool uses this stack yet." },
+  { state: "Live", title: "Calendars for AAPL, NVDA and TSLA", text: "Signed with both keys, queued, executed and active through 31 December 2026. A keeper on a Cloudflare Worker now switches on each session's interval. The NVDA calendar runs to 1 January 2027 and its next root is queued automatically; AAPL and TSLA are not renewed automatically." },
+  { state: "Live", title: "A pool", text: "The NVDA/USDG pool runs on this stack. Five session fees, an auction that settled with two orders, seven failure tests and exits during a closure are all proven onchain: 17 of 18 claims, with one partial." },
   { state: "Not yet", title: "Independent review", text: "No independent cryptographic review has been done. None of this is audited." },
   { state: "Fixed", title: "Governance delay", text: "Zero seconds, set at deployment and impossible to change. Both signatures are still required for every change." },
 ];
@@ -56,7 +56,7 @@ export function EinsteinPage() {
               post-quantum one, both valid. Your liquidity exit never asks for either.
             </p>
             <p className="ein-fine">
-              Deployed on Robinhood Chain on 14 November 2026. No pool uses it yet, and it has not been independently audited.
+              Deployed on Robinhood Chain on 14 November 2026. The NVDA/USDG pool runs on it, and 17 of 18 claims about it are proven onchain. It has not been independently audited.
             </p>
             <div className="ein-actions">
               <a className="ein-btn ein-btn--solid" href="#gate">Try to break it</a>
@@ -149,8 +149,8 @@ export function EinsteinPage() {
       <footer className="legal__foot">
         <div className="lp-wrap">
           <p>
-            BELL is an independent protocol. The post-quantum hook stack is deployed on Robinhood Chain without any pool yet, and its
-            signing path was exercised on Elysium testnet. It has not been independently audited. It does not change Robinhood Chain or
+            BELL is an independent protocol. The post-quantum hook stack is deployed on Robinhood Chain and runs the NVDA/USDG pool, and its
+            signing path was also exercised on Elysium testnet. It has not been independently audited. It does not change Robinhood Chain or
             user-wallet cryptography.
           </p>
           <nav aria-label="Related">

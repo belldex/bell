@@ -36,6 +36,7 @@ import { eligibleAuctions, auctionSettlementResult } from './auction-settlement.
 import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
 import { buildAntUpdate, AntUpdateError } from './ant-update.mjs';
+import { tick as run4BotTick } from './run4-bot';
 import { runAntCalendar } from './ant-calendar.mjs';
 import { runAntKeeper } from './ant-keeper.mjs';
 import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
@@ -954,6 +955,10 @@ export async function runTick(env, { nowSeconds = Math.floor(Date.now() / 1000),
 const worker = {
   async scheduled(controller, env, ctx) {
     const nowSeconds = Math.floor(controller.scheduledTime / 1000);
+    // v3 Evolve run 4: the arbitrage bot ticks every five minutes on this Worker, so the run does not depend on GitHub Actions. Isolated: it cannot affect the work below.
+    if (env.RUN4_CONFIG && env.V3_EVOLVE_BOT_PRIVATE_KEY && Math.floor(nowSeconds / 60) % 5 === 0) {
+      ctx.waitUntil(run4BotTick(env).catch((e) => console.error('run4 bot tick failed', String(e?.shortMessage ?? e?.message ?? e).slice(0, 160))));
+    }
     // ANT's calendar interval is switched on here, not from the owner's computer; its price rides in the swap. Independent of the work below.
     ctx.waitUntil((async () => {
       try {

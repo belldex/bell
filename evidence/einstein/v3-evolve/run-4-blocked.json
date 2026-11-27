@@ -1,0 +1,8 @@
+[
+  {
+    "tx": "0x1a4f9e32961e62d2a49af872ca7c510f50c11f2c573b762e050c814878baa1f1",
+    "error": "TradeCapExceeded",
+    "selector": "0xecb1f63f",
+    "at": "2026-11-27T02:10:06Z"
+  }
+]

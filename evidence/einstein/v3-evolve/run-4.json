@@ -70,12 +70,19 @@
       "addresses": [
         "0xaBd42eb3a8C1AB9B0Bb06f33a133B90bc71F2715"
       ],
-      "sourceFile": "scripts/einstein/v3-evolve/mainnet-run.mjs",
-      "sourceUrl": "https://github.com/belldex/bell/blob/main/scripts/einstein/v3-evolve/mainnet-run.mjs",
-      "sourceSha256": "8f87d01b2a50c2320b7cd85095030d5296ca1c95a72c200610fb00e68893d1de",
+      "sourceFile": "workers/keeper-b/src/run4-bot.ts",
+      "sourceUrl": "https://github.com/belldex/bell/blob/main/workers/keeper-b/src/run4-bot.ts",
+      "sourceSha256": "7ff924d86f5ceaa723499a5960105bce3bbeabe17f26915fef71f1fd81551acd",
       "maxUsdg": 0.5
     },
-    "blocked": []
+    "blocked": [
+      {
+        "tx": "0x1a4f9e32961e62d2a49af872ca7c510f50c11f2c573b762e050c814878baa1f1",
+        "error": "TradeCapExceeded",
+        "selector": "0xecb1f63f",
+        "at": "2026-11-27T02:10:06Z"
+      }
+    ]
   },
   "methodCommit": "d0cb8bf0"
 }

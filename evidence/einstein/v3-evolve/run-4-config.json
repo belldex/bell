@@ -23,7 +23,7 @@
     "startUsdg": 2.376714,
     "startNvda": 0.009967376559459108,
     "startRefPrice": 151.64270618,
-    "sourceFile": "scripts/einstein/v3-evolve/mainnet-run.mjs",
+    "sourceFile": "workers/keeper-b/src/run4-bot.ts",
     "rule": "scripts/einstein/v3-evolve/arb.mjs"
   },
   "pools": {
