@@ -139,7 +139,7 @@ export function UpstairsPage() {
   const total = p.claims.length;
   const first = p.prints[0];
   return (
-    <div className="lp lp--bell up" id="top">
+    <div className="lp lp--bell up" id="top" data-phase="dark">
       <a className="lp-skip" href="#main">Skip to content</a>
       <LandingNav appName="BELL" sections={SECTIONS} />
       <LandingEffects />
