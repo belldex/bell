@@ -6,8 +6,8 @@
   font-family: var(--font-instrument, "Instrument Sans"), system-ui, sans-serif;
 }
 .up * { box-sizing: border-box; }
-.up a { color: var(--u-red2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(226, 116, 120, .45); }
-.up a:hover { color: #fff; text-decoration-color: #fff; }
+.up main a:not(.up-btn) { color: var(--u-red2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(226, 116, 120, .45); }
+.up main a:not(.up-btn):hover { color: #fff; text-decoration-color: #fff; }
 .up-wrap { width: 100%; margin: 0; padding-inline: var(--lp-gutter, 1.25rem); } /* same gutter as the navbar, so the content lines up with it */
 .up-mono { font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace; }
 
