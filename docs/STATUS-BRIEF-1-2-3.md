@@ -1,4 +1,4 @@
-| N6 | PASS | Swap biasa di dalam jendela order auction revert dengan AuctionActive (tx 0x27c3d74a…35c5, blok 123874976). || P11 Siapa pun bisa cek | PASS | Verifier jalan dari klon dangkal baru di commit 0437672 dengan hanya viem terpasang: P2 sampai P9 semuanya PASS. || P9 Kegagalan aman | PASS | N1 sampai N7 semuanya revert dengan error bernama. || P7 Auction jalan dengan order nyata | PASS | Cycle 3, 27 Nov 01:00 UTC: order beli dan order jual dari dua wallet berbeda masuk di jendela order, cycle ditutup di satu harga clearing dengan 0,00012 NVDA matched. Dikirim dan di-settle dengan tangan karena run CI tidak mengirim order tepat waktu. |# Status Brief 1, 2 dan 3
+# Status Brief 1, 2 dan 3
 
 Dicatat 25 November 2026 (UTC). Angka berasal dari verifier di repo (`scripts/einstein/verify-einstein-pool.mjs`, `verify-einstein-ant.mjs`) yang dijalankan terhadap RPC arsip mainnet 4663. Kalau ada angka di sini yang beda dengan halaman live, halaman live yang benar.
 
@@ -16,12 +16,12 @@ Hasil verifier (27 November 2026, dari klon bersih repo publik): 17 PASS, 1 PART
 | P4 Pool nyata dan berlikuiditas | PASS | Dibuat dan di-seed dalam satu tx, blok 114372026. |
 | P5 Kalender ditandatangani post-quantum | PASS | Tiga panggilan governance (ECDSA dan SHRINCS). |
 | P6 Fee sesi berlaku | PASS | Swap nyata di CLOSED, OVERNIGHT, PRE, REGULAR, POST. |
-| P7 Auction jalan dengan order nyata | PENDING | Siklus 16 Nov tanpa order. Workflow `einstein-auction` jalan di CI Jumat 27 Nov 00:20 UTC (07:20 WIB) dan Senin berikutnya. Berhenti sendiri setelah ada siklus bervolume. |
+| P7 Auction jalan dengan order nyata | PASS | Cycle 3, 27 Nov 01:00 UTC: order beli dan order jual dari dua wallet berbeda masuk di jendela order, cycle ditutup di satu harga clearing dengan 0,00012 NVDA matched (tx settle 0x4c2ea135…9f90). Dikirim dan di-settle dengan tangan karena run CI tidak mengirim order tepat waktu. |
 | P8 Selalu bisa keluar | PASS | Exit saat CLOSED dan saat pause, tanpa hook dan tanpa tanda tangan PQ. |
-| P9 Kegagalan aman | PARTIAL | N1 sampai N5 dan N7 revert dengan error bernama. N6 belum dikirim. |
+| P9 Kegagalan aman | PASS | N1 sampai N7 semuanya revert dengan error bernama. |
 | P10 Biaya verifikasi PQ | PASS | 323.735 gas lawan 70.433 (sekitar 4,6 kali). |
-| P11 Siapa pun bisa cek | PENDING | Hasil terakhir yang tercatat masih menyebut 3 PENDING. Selesai kalau P7 dan N6 selesai. |
-| N6 | PENDING | Swap biasa yang dikirim di dalam jendela order auction harus revert dengan AuctionActive. Dikerjakan oleh siklus auction yang sama dengan P7. |
+| P11 Siapa pun bisa cek | PASS | Verifier jalan dari klon dangkal baru di commit 0437672 dengan hanya viem terpasang: P2 sampai P9 semuanya PASS. |
+| N6 | PASS | Swap biasa di dalam jendela order auction revert dengan AuctionActive (tx 0x27c3d74a…35c5, blok 123874976). |
 
 Yang masih terbuka di Brief 1: hanya P1 (Sourcify exact), keputusan pemilik untuk membiarkan match. Kalender AAPL dan TSLA di stack lama tidak diperpanjang otomatis.
 
