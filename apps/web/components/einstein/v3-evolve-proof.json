@@ -883,8 +883,8 @@
       "result": {
         "blocks": {
           "start": 123524533,
-          "end": 123700138,
-          "head": 123700138
+          "end": 123880096,
+          "head": 123880096
         },
         "reference": {
           "rule": "Live feed round when it is at most 6 hours old at the swap; otherwise the first feed round published after the swap. Window start and end use the feed at those blocks.",
@@ -895,10 +895,10 @@
             "updatedAt": 1795652351
           },
           "end": {
-            "block": 123700138,
-            "roundId": "18446744073709554221",
-            "price": 151.64270618,
-            "updatedAt": 1795652351,
+            "block": 123880096,
+            "roundId": "18446744073709554222",
+            "price": 151.35125594,
+            "updatedAt": 1795741219,
             "fresh": false
           }
         },
@@ -911,8 +911,8 @@
           "lvr": 0,
           "valueVsHold": 0,
           "netBps": -0.002675,
-          "positionValueEnd": 1.104435,
-          "holdValueEnd": 1.104436,
+          "positionValueEnd": 1.103511,
+          "holdValueEnd": 1.103511,
           "swaps": 0,
           "volume": 0,
           "organicSwaps": 0,
@@ -929,8 +929,8 @@
           "lvr": 0,
           "valueVsHold": 0,
           "netBps": -0.002675,
-          "positionValueEnd": 1.104435,
-          "holdValueEnd": 1.104436,
+          "positionValueEnd": 1.103511,
+          "holdValueEnd": 1.103511,
           "swaps": 0,
           "volume": 0,
           "organicSwaps": 0,
@@ -991,7 +991,7 @@
           }
         ]
       },
-      "generatedAt": "2026-11-26T19:22:55.895Z",
+      "generatedAt": "2026-11-27T01:07:51.533Z",
       "replay": {
         "E1": {
           "verdict": "PASS",
@@ -1032,5 +1032,5 @@
       }
     }
   ],
-  "lastBuild": "2026-11-26T19:22:56.379Z"
+  "lastBuild": "2026-11-27T01:07:52.021Z"
 }

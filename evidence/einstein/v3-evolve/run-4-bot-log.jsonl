@@ -9,3 +9,24 @@
 {"at":"2026-11-26T19:01:33.452Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
 {"at":"2026-11-26T19:09:43.461Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
 {"at":"2026-11-26T19:17:53.541Z","pool":"loop","action":"tick-failed","error":"RPC Request failed."}
+{"at":"2026-11-27T00:18:52.600Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:18:52.601Z","pool":"feed","action":"stale","ageSeconds":86380}
+{"at":"2026-11-27T00:23:53.447Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:23:53.447Z","pool":"feed","action":"stale","ageSeconds":86681}
+{"at":"2026-11-27T00:28:54.342Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:28:54.342Z","pool":"feed","action":"stale","ageSeconds":86982}
+{"at":"2026-11-27T00:33:55.466Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:33:55.466Z","pool":"feed","action":"stale","ageSeconds":87283}
+{"at":"2026-11-27T00:38:56.419Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:38:56.419Z","pool":"feed","action":"stale","ageSeconds":87584}
+{"at":"2026-11-27T00:43:57.436Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:43:57.436Z","pool":"feed","action":"stale","ageSeconds":87885}
+{"at":"2026-11-27T00:48:58.594Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:48:58.594Z","pool":"feed","action":"stale","ageSeconds":88186}
+{"at":"2026-11-27T00:53:59.725Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:53:59.725Z","pool":"feed","action":"stale","ageSeconds":88487}
+{"at":"2026-11-27T00:59:00.861Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.8881939549914772,"ref":151.64270618,"feedUpdatedAt":1795652351}
+{"at":"2026-11-27T00:59:00.861Z","pool":"feed","action":"stale","ageSeconds":88788}
+{"at":"2026-11-27T01:04:01.814Z","pool":"bot","action":"status","usdg":2.376714,"nvda":0.009967376559459108,"valueUsd":3.885288960701052,"ref":151.35125594,"feedUpdatedAt":1795741219}
+{"at":"2026-11-27T01:04:03.705Z","pool":"bell","action":"sellNvda","amountIn":0.0007947818538846589,"token":"NVDA","price":171.02036698941436,"ref":151.35125594,"feePips":5000,"simulated":false,"tx":null,"status":"not-sent","error":"Execution reverted for an unknown reason."}
+{"at":"2026-11-27T01:04:03.879Z","pool":"control","action":"sellNvda","amountIn":0.0008071904505428214,"token":"NVDA","price":171.02036698941436,"ref":151.35125594,"feePips":3000,"simulated":true,"tx":null,"status":"not-sent","error":"The total cost (gas * gas fee + value) of executing this transaction exceeds the balance of the account."}
