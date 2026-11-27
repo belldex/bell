@@ -165,7 +165,7 @@ export function V3EvolvePage() {
             </section>
             <section id="chart" className="ein-section" data-reveal>
               <h2>Net LP result over time</h2>
-              <LineChart run={current} />
+              {r.bell.swaps + r.control.swaps >= 6 || current.status !== "live" ? <LineChart run={current} /> : <p className="ein-ledger__lede">The chart fills in as trades land. With only {r.bell.swaps + r.control.swaps} swap{r.bell.swaps + r.control.swaps === 1 ? "" : "s"} so far, a line would show one jump and nothing else.</p>}
             </section>
             <section id="sessions" className="ein-section" data-reveal>
               <h2>Fees against LVR, per session</h2>
