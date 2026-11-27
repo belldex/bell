@@ -30,6 +30,11 @@ const BANDS: [string, string][] = [["REGULAR", "50 bps"], ["PRE and POST", "100 
 const usd = (raw: string) => `${(Number(raw) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 2 })} USDG`;
 const short = (v: string, a = 8, b = 6) => `${v.slice(0, a)}…${v.slice(-b)}`;
 const link = (path: string, text: string) => <a href={`${EXPLORER}/${path}`} target="_blank" rel="noreferrer">{text}</a>;
+/** Turns every 32-byte hash and 20-byte address in a note into a short Blockscout link. */
+const linkify = (text: string) => text.split(/(0x[0-9a-fA-F]{64}|0x[0-9a-fA-F]{40})/g).map((part, i) =>
+  /^0x[0-9a-fA-F]{64}$/.test(part) ? <a key={i} href={`${EXPLORER}/tx/${part}`} target="_blank" rel="noreferrer">{short(part, 10, 8)}</a>
+  : /^0x[0-9a-fA-F]{40}$/.test(part) ? <a key={i} href={`${EXPLORER}/address/${part}`} target="_blank" rel="noreferrer">{short(part, 8, 6)}</a>
+  : part);
 const et = (ts: number) => new Date(ts * 1000).toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" });
 
 export function UpstairsPage() {
@@ -110,7 +115,7 @@ export function UpstairsPage() {
           <h2>Check it yourself</h2>
           <ul className="pp-links">
             {p.claims.map((c) => (
-              <li key={c.id}><b>{c.id}</b> {c.title}: <b>{p.replay[c.id]?.verdict ?? "PENDING"}</b>. {p.replay[c.id]?.note}</li>
+              <li key={c.id}><b>{c.id}</b> {c.title}: <b>{p.replay[c.id]?.verdict ?? "PENDING"}</b>. {linkify(p.replay[c.id]?.note ?? "")}</li>
             ))}
           </ul>
           <CopyCommand command="node scripts/upstairs/build-upstairs-proof.mjs --rpc https://rpc.mainnet.chain.robinhood.com" />
