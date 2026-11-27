@@ -120,6 +120,7 @@ async function runCheck(check, rpc, proof) {
 export async function runProof(proof, rpc) {
   const results = [];
   for (const claim of proof.claims) {
+    if (claim.id === 'P11') continue; // derived below: it passes when P2 to P9 all pass
     if (!claim.checks?.length) { results.push({ id: claim.id, verdict: 'PENDING', note: claim.pending ?? 'no on-chain evidence yet', gas: [] }); continue; }
     let failed = null; let partial = null; let partialNote = null; const gas = []; let sourcifyTotal = 0; let sourcifyExact = 0;
     for (const check of claim.checks) {
@@ -136,6 +137,12 @@ export async function runProof(proof, rpc) {
     else if (partialNote) results.push({ id: claim.id, verdict: 'PARTIAL', note: partialNote, gas });
     else if (partial || claim.partial) results.push({ id: claim.id, verdict: 'PARTIAL', note: partial ?? claim.partial, gas });
     else results.push({ id: claim.id, verdict: 'PASS', note: claim.passNote ?? 'all checks held', gas });
+  }
+  const p11 = proof.claims.find((c) => c.id === 'P11');
+  if (p11) {
+    const needed = ['P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9'];
+    const all = needed.every((id) => results.find((r) => r.id === id)?.verdict === 'PASS');
+    results.push(all ? { id: 'P11', verdict: 'PASS', note: p11.passNote ?? 'P2 to P9 all pass', gas: [] } : { id: 'P11', verdict: 'PENDING', note: p11.pending ?? 'P2 to P9 do not all pass yet', gas: [] });
   }
   return results;
 }

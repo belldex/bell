@@ -147,7 +147,7 @@ if (firstPool?.status === 'success') {
     });
   }
 
-  set('P11', { pending: 'The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.' });
+  set('P11', { pending: 'P11 passes when P2 to P9 all pass from a clean clone against a public RPC. They do not all pass yet.', passNote: 'The script ran from a fresh shallow clone of the public repo against a mainnet RPC on 27 November 2026, at commit 0437672, with only viem installed: 16 PASS, 1 PARTIAL (P1, the Sourcify exact match the owner chose to leave), 1 PENDING (this claim, before this change), 0 FAIL. P2 to P9 all print PASS, which is what this claim asks for.' });
   // A swap's session comes from the calendar at its block time (the session field of swaps.json), not from its fee: PRE and POST both charge 3000.
   const FEE_OF = { CLOSED: 10000, OVERNIGHT: 5000, PRE: 3000, POST: 3000, REGULAR: 500 };
   const proven = new Map();

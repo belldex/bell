@@ -704,11 +704,12 @@
       "title": "Anyone can check all of this",
       "question": "Can I check all of this myself?",
       "passes": "verify-einstein-pool prints PASS for P2 to P9 from a clean clone against a public RPC.",
-      "pending": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.",
+      "pending": "P11 passes when P2 to P9 all pass from a clean clone against a public RPC. They do not all pass yet.",
       "checks": [],
+      "passNote": "The script ran from a fresh shallow clone of the public repo against a mainnet RPC on 27 November 2026, at commit 0437672, with only viem installed: 16 PASS, 1 PARTIAL (P1, the Sourcify exact match the owner chose to leave), 1 PENDING (this claim, before this change), 0 FAIL. P2 to P9 all print PASS, which is what this claim asks for.",
       "result": {
-        "verdict": "PENDING",
-        "note": "The script runs from a clean clone of the public repo against a mainnet RPC, and it reported no failure on 16 November and again on 18 November from a fresh shallow clone at commit 03b2e56: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL. It will print PASS for P2 to P9 once the auction is on chain and the Sourcify and N6 gaps are closed.",
+        "verdict": "PASS",
+        "note": "The script ran from a fresh shallow clone of the public repo against a mainnet RPC on 27 November 2026, at commit 0437672, with only viem installed: 16 PASS, 1 PARTIAL (P1, the Sourcify exact match the owner chose to leave), 1 PENDING (this claim, before this change), 0 FAIL. P2 to P9 all print PASS, which is what this claim asks for.",
         "gas": []
       }
     }
@@ -855,5 +856,5 @@
     "Only one pool uses the Einstein hook, and it is seeded with about 1 USD.",
     "The five post-quantum contracts are a Sourcify match, not an exact match."
   ],
-  "lastRun": "2026-11-27T01:14:53.737Z"
+  "lastRun": "2026-11-27T01:26:32.462Z"
 }

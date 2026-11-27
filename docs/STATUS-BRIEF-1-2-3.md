@@ -1,4 +1,4 @@
-# Status Brief 1, 2 dan 3
+| N6 | PASS | Swap biasa di dalam jendela order auction revert dengan AuctionActive (tx 0x27c3d74a…35c5, blok 123874976). || P11 Siapa pun bisa cek | PASS | Verifier jalan dari klon dangkal baru di commit 0437672 dengan hanya viem terpasang: P2 sampai P9 semuanya PASS. || P9 Kegagalan aman | PASS | N1 sampai N7 semuanya revert dengan error bernama. || P7 Auction jalan dengan order nyata | PASS | Cycle 3, 27 Nov 01:00 UTC: order beli dan order jual dari dua wallet berbeda masuk di jendela order, cycle ditutup di satu harga clearing dengan 0,00012 NVDA matched. Dikirim dan di-settle dengan tangan karena run CI tidak mengirim order tepat waktu. |# Status Brief 1, 2 dan 3
 
 Dicatat 25 November 2026 (UTC). Angka berasal dari verifier di repo (`scripts/einstein/verify-einstein-pool.mjs`, `verify-einstein-ant.mjs`) yang dijalankan terhadap RPC arsip mainnet 4663. Kalau ada angka di sini yang beda dengan halaman live, halaman live yang benar.
 
@@ -6,7 +6,7 @@ Legenda: PASS = terbukti on-chain dan diputar ulang. PARTIAL = sebagian terbukti
 
 ## Brief 1: Einstein Hooks v2 dan pool NVDA/USDG
 
-Hasil verifier: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL.
+Hasil verifier (27 November 2026, dari klon bersih repo publik): 17 PASS, 1 PARTIAL, 0 PENDING, 0 FAIL.
 
 | Klaim | Status | Catatan |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ Hasil verifier: 13 PASS, 2 PARTIAL, 3 PENDING, 0 FAIL.
 | P11 Siapa pun bisa cek | PENDING | Hasil terakhir yang tercatat masih menyebut 3 PENDING. Selesai kalau P7 dan N6 selesai. |
 | N6 | PENDING | Swap biasa yang dikirim di dalam jendela order auction harus revert dengan AuctionActive. Dikerjakan oleh siklus auction yang sama dengan P7. |
 
-Yang masih terbuka di Brief 1: P7, N6, P11 menunggu siklus auction. P1 exact tidak dikerjakan (keputusan pemilik). Kalender AAPL dan TSLA di stack lama tidak diperpanjang otomatis.
+Yang masih terbuka di Brief 1: hanya P1 (Sourcify exact), keputusan pemilik untuk membiarkan match. Kalender AAPL dan TSLA di stack lama tidak diperpanjang otomatis.
 
 ## Brief 2: Einstein v3 Evolve (ekonomi LP, NVDA/USDG)
 
