@@ -107,44 +107,62 @@
     },
     "note": "No owner, no setters, no proxy. The block cap is fixed at deploy because there is no independent audit. Raising it means a new deployment. Version 1 has no TWAP fallback: an asset with no Chainlink feed (ANT) cannot trade here."
   },
-  "prints": [],
+  "prints": [
+    {
+      "tx": "0x9df93040c44d468178776497633f7cf08fb5afba7a24b30c347446078708db79",
+      "block": 123887038,
+      "ts": 1795742430,
+      "stockToken": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "maker": "0xE4d14b0494937221fA4f78a5e5a9BaD6Fa8753D3",
+      "taker": "0xf3784048450e72596cd18bF079aED441894176e4",
+      "makerSells": true,
+      "stockAmount": "6800000000000000",
+      "price": "152136686000000000000",
+      "referencePrice": "152136686290000000000",
+      "session": 4,
+      "feeUsdg": "518",
+      "notionalUsdg": "1034529",
+      "swapInTx": false,
+      "feeOk": true
+    }
+  ],
   "replay": {
     "U1": {
       "verdict": "PASS",
       "note": "code at 0x4896301b7c1977388b4d2bb518ff119c9c10e530, the EIP-1967 implementation and admin slots are zero, and the ABI has no owner or setter function. Sourcify reports a runtime and creation match (id 60000580), not an exact match: the build carries no metadata hash."
     },
     "U2": {
-      "verdict": "PENDING",
-      "note": "No qualifying block print yet."
+      "verdict": "PASS",
+      "note": "block 0x9df93040c44d468178776497633f7cf08fb5afba7a24b30c347446078708db79: 1.034529 USDG between two different wallets, neither the deployer"
     },
     "U3": {
-      "verdict": "PENDING",
-      "note": "No block print to check."
+      "verdict": "PASS",
+      "note": "reference 152.13668629, price 152.136686, session 4, band 150 bps, distance 0 bps"
     },
     "U8": {
-      "verdict": "PENDING",
-      "note": "No block print to check."
+      "verdict": "PASS",
+      "note": "no Swap event from the PoolManager in the fill transaction"
     },
     "U9": {
-      "verdict": "PENDING",
-      "note": "No block print to check."
+      "verdict": "PASS",
+      "note": "0.000518 USDG reached 0x6c3659988bd5f9e94f927b3fd7d0ee3746f8d399 and equals 5 bps of the notional, rounded up"
     },
     "U4": {
-      "verdict": "PENDING",
-      "note": "No reverted transaction is on record for this claim."
+      "verdict": "PASS",
+      "note": "0x64810861d3c89a2e520016d2b6341c7aef8835e5933bcab94cb7160504cd2adf reverted and replays with OutsideBand"
     },
     "U5": {
       "verdict": "PASS",
       "note": "0x8ee3d40be3aa77677160f557e260eddb5cf971ef1699be2381d7398274cc5d46 reverted and replays with UpstairsClosed"
     },
     "U6": {
-      "verdict": "PENDING",
-      "note": "No reverted transaction is on record for this claim."
+      "verdict": "PASS",
+      "note": "0x2969cd71e3d67a2df13b7e649f87ed289734f1c16f34842e60cd7612d1e2bd94 reverted and replays with NonceUsed"
     },
     "U7": {
       "verdict": "PASS",
       "note": "0x8d8deeb5de3598b3d93d3c5d6a18aa0e320b192cea35486be0e1f3d7e0a8af5d reverted and replays with BelowBlockSize"
     }
   },
-  "lastBuild": "2026-11-26T13:29:41.140Z"
+  "lastBuild": "2026-11-27T01:20:43.567Z"
 }
