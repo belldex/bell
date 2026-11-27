@@ -164,7 +164,6 @@ export function UpstairsPage() {
               <span className="up-art__badge">UPSTAIRS · BLOCK DESK</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/assets/upstairs-hero.jpg" alt="A cutaway building: a queue of small trades at the turnstile on the ground floor, and one large block passing between two parties upstairs." width={1280} height={800} />
-              <figcaption className="up-art__cap"><span>THE FLOOR: SMALL TRADES, CAPPED</span><span>UPSTAIRS: ONE BLOCK, ONE TRANSACTION</span></figcaption>
             </figure>
           </div>
         </section>

@@ -8,7 +8,7 @@
 .up * { box-sizing: border-box; }
 .up a { color: var(--u-red2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(226, 116, 120, .45); }
 .up a:hover { color: #fff; text-decoration-color: #fff; }
-.up-wrap { width: min(1240px, 100% - 48px); margin: 0 auto; }
+.up-wrap { width: 100%; margin: 0; padding-inline: var(--lp-gutter, 1.25rem); } /* same gutter as the navbar, so the content lines up with it */
 .up-mono { font-family: var(--font-geist-mono, "Geist Mono"), ui-monospace, monospace; }
 
 /* Hero */
@@ -134,7 +134,6 @@
   .up-bands { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
-  .up-wrap { width: calc(100% - 32px); }
   .up-hero { padding-top: 112px; }
   .up-claims, .up-limits, .up-bands { grid-template-columns: 1fr; }
   .up-chart { padding: 16px 12px; }
