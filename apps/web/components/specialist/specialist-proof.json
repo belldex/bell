@@ -1,0 +1,103 @@
+{
+  "title": "BELL Specialist",
+  "label": "test",
+  "claims": [
+    {
+      "id": "S1",
+      "title": "The registry cannot be changed",
+      "proof": "Code on chain, no proxy slots, no owner or setter in the ABI.",
+      "passes": "All three hold."
+    },
+    {
+      "id": "S2",
+      "title": "A Specialist is bonded and assigned",
+      "proof": "A bond transaction, and an assignment that spent one HybridAuth leaf (ECDSA and SHRINCS).",
+      "passes": "Both exist, from the same address."
+    },
+    {
+      "id": "S3",
+      "title": "The auction duty is measured",
+      "proof": "AuctionDutyRecorded for each cycle, matching the auction contract's own order events.",
+      "passes": "Every recorded cycle agrees with the auction."
+    },
+    {
+      "id": "S4",
+      "title": "The floor duty is measured",
+      "proof": "Checkpoint events, each matching the position and the pool tick at its block.",
+      "passes": "Every checkpoint agrees with the chain at its block."
+    },
+    {
+      "id": "S5",
+      "title": "Scoring follows the rules",
+      "proof": "Each EpochScored recomputed from the checkpoint and cycle events.",
+      "passes": "The recomputed outcome equals the emitted one."
+    },
+    {
+      "id": "S6",
+      "title": "Rewards are paid",
+      "proof": "A Rewarded event after a passing epoch, with the USDG transfer.",
+      "passes": "The transfer exists and equals the event."
+    },
+    {
+      "id": "S7",
+      "title": "Slashing works",
+      "proof": "A Slashed event after a missed duty, with the BELL burn transfer.",
+      "passes": "The burn transfer exists and equals the event."
+    },
+    {
+      "id": "S8",
+      "title": "Unbonding cannot dodge a bad epoch",
+      "proof": "A slash applied after UnbondRequested and before Unbonded.",
+      "passes": "Such a slash exists."
+    },
+    {
+      "id": "S9",
+      "title": "Exits stay open",
+      "proof": "The Specialist withdraws liquidity without a hook call, and D2 fails for the next checkpoint.",
+      "passes": "The withdrawal succeeded, the hook has no remove-liquidity flag, and the next checkpoint failed."
+    }
+  ],
+  "deployment": null,
+  "epochs": [],
+  "events": [],
+  "specialist": null,
+  "replay": {
+    "S1": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S2": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S3": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S4": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S5": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S6": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S7": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S8": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    },
+    "S9": {
+      "verdict": "PENDING",
+      "note": "SpecialistRegistry is not deployed on mainnet yet."
+    }
+  },
+  "lastBuild": "2026-11-28T05:47:34.508Z"
+}

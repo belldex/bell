@@ -37,6 +37,7 @@ import { readAuctionBindings, readAuctionSnapshots } from './auction-read.mjs';
 import { readPoolReceipts } from './pool-receipts.mjs';
 import { buildAntUpdate, AntUpdateError } from './ant-update.mjs';
 import { tick as run4BotTick } from './run4-bot';
+import { tick as specialistTick } from './specialist-keeper';
 import { runAntCalendar } from './ant-calendar.mjs';
 import { runAntKeeper } from './ant-keeper.mjs';
 import { integrationPoolFields, lensForPool, parsePoolStatusRequest } from './pool-status.mjs';
@@ -958,6 +959,11 @@ const worker = {
     // v3 Evolve run 4: the arbitrage bot ticks every five minutes on this Worker, so the run does not depend on GitHub Actions. Isolated: it cannot affect the work below.
     if (env.RUN4_CONFIG && env.V3_EVOLVE_BOT_PRIVATE_KEY && Math.floor(nowSeconds / 60) % 5 === 0) {
       ctx.waitUntil(run4BotTick(env).catch((e) => console.error('run4 bot tick failed', String(e?.shortMessage ?? e?.message ?? e).slice(0, 160))));
+    }
+    // The Specialist registry: record finished auction cycles, score finished epochs, take floor checkpoints, and (for the test Specialist) place the
+    // Opening Bell orders. Every call is simulated first. Isolated like the bot above.
+    if (env.SPECIALIST_CONFIG && Math.floor(nowSeconds / 60) % 2 === 0) {
+      ctx.waitUntil(specialistTick(env).catch((e) => console.error('specialist tick failed', String(e?.shortMessage ?? e?.message ?? e).slice(0, 160))));
     }
     // ANT's calendar interval is switched on here, not from the owner's computer; its price rides in the swap. Independent of the work below.
     ctx.waitUntil((async () => {
