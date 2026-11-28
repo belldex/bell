@@ -1,0 +1,49 @@
+{
+  "chainId": 4663,
+  "label": "test",
+  "deployedAt": "2026-11-28T05:52:28.098Z",
+  "contract": "0x425e56e630e6104616ed2b348d0902ad386f5ce1",
+  "deployTx": "0xf949944b691aaf15f85dfea475b0f8c9c53549d2b295c3220115114edf25e0ed",
+  "block": 124816259,
+  "deployer": "0x6C3659988bd5f9E94F927B3FD7d0Ee3746f8d399",
+  "constructor": {
+    "hybridAuth": "0xBaab2DaE7fF472964eD0dac40CAB1e0e795009C7",
+    "assignRole": "GOVERNANCE",
+    "bell": "0xc5d6c1d90c8a87a07e2670b99b1556e818803228",
+    "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+    "poolManager": "0x8b26fefa276860592d45114cb30b335dddd87b56",
+    "positionManager": "0x84da249aafa359886c6a2ae1ebdc78a6059b662d",
+    "calendar": "0x77813F7A761bfa5722DC5ee1a6E5b4B849D49003",
+    "haltRegistry": "0xc7cD9dd031989536EfFB999BcA4cCc92e03F6A1B",
+    "params": {
+      "genesis": "1795824000",
+      "epochSeconds": "86400",
+      "slotSeconds": "900",
+      "unbondDelay": "86400",
+      "d1PassBps": "8000",
+      "d2PassBps": "9000",
+      "minCheckpoints": "4",
+      "auctionBandBps": "150",
+      "minTickWidth": "600",
+      "smallSlashBps": "500",
+      "largeSlashBps": "2500",
+      "rewardShareBps": "1000",
+      "maxRewardPerEpoch": "100000",
+      "checkpointTip": "1000",
+      "minBondBell": "100000000000000000000",
+      "minBondUsdg": "1000000"
+    },
+    "stocks": [
+      {
+        "symbol": "NVDA",
+        "stockId": "0xe108948b9667048232851f26a1427d3a908b22da622562906ca50ea536c2ecfb",
+        "auction": "0xE24092Ed409DfE4edA17c80801f989f2c5D4Ac17",
+        "poolId": "0x8a96c3e3ef5a1cca5c4db6254b3451b959877c2595fed7b04c124eb9d3bfffef",
+        "minBuyQuote": "20000",
+        "minSellBase": "100000000000000",
+        "minLiquidity": "100000000000"
+      }
+    ]
+  },
+  "note": "Test instance: short epochs and a short unbond delay so the whole lifecycle can be measured in days. Run by a team wallet, labelled as such. No owner, no setters, no proxy."
+}
